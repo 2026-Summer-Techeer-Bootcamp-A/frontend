@@ -2502,6 +2502,7 @@
   gap: 10px;
 }
 .ax-avatar {
+  position: relative;
   width: 34px;
   height: 34px;
   border-radius: 10px;
@@ -2512,13 +2513,45 @@
   justify-content: center;
   flex: none;
 }
+
+/* ============ AI 인사이트 전용 — Apple Intelligence 글로우 ============ */
+/* 팔레트는 Apple Intelligence 실제 톤(블러·회전으로만 표현, 채도 높은 단색 채움 금지) */
+.ax-card { position: relative; isolation: isolate; }
+.ax-card__halo {
+  position: absolute;
+  inset: -16px;
+  border-radius: 32px;
+  background: conic-gradient(from 0deg, #bc82f3, #8d9fff, #ff6778, #ffba71, #c686ff, #f5b9ea, #bc82f3);
+  filter: blur(22px);
+  opacity: 0;
+  z-index: -1;
+  transition: opacity 0.7s ease;
+  animation: ax-halo-spin 9s linear infinite;
+}
+.ax-card.generating .ax-card__halo { opacity: 0.5; }
+@keyframes ax-halo-spin { to { transform: rotate(360deg); } }
+
+.ax-avatar--orb {
+  background: none;
+  overflow: hidden;
+}
+.ax-avatar__orb {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, #bc82f3, #8d9fff, #ff6778, #ffba71, #c686ff, #f5b9ea, #bc82f3);
+  filter: saturate(1.05);
+  box-shadow: 0 0 9px rgba(188, 130, 243, 0.4);
+  animation: ax-orb-spin 6s linear infinite;
+}
+@keyframes ax-orb-spin { to { transform: rotate(360deg); } }
 .ax-head .nm { font-size: 13.5px; font-weight: 800; }
 .ax-head .st { font-size: 11px; color: var(--muted); font-weight: 600; }
 
 /* 채팅 스레드 */
 .ax-thread { display: flex; flex-direction: column; gap: 10px; width: 100%; }
 .ax-msg { max-width: 82%; font-size: 13px; line-height: 1.55; padding: 10px 13px; border-radius: 14px; }
-/* 어시스턴트 — 뉴트럴 버블 + 보더 (그라디언트 금지) */
+/* 어시스턴트 — 일반 화면(뉴트럴 버블+보더). AI 인사이트 카드(.ax-card) 안에서는 아래 override로 보더리스 */
 .ax-msg.bot {
   align-self: flex-start;
   background: #eef1f6;
@@ -2526,13 +2559,20 @@
   border: 1px solid var(--line);
   border-bottom-left-radius: 5px;
 }
-/* 사용자 — 액센트 소프트(솔리드 액센트 X, 소프트 톤으로 대화 균형) */
+/* 사용자 — 뉴트럴 그레이(액센트 컬러 코딩 없이 담백하게, AI 쪽에 시선이 가도록) */
 .ax-msg.me {
   align-self: flex-end;
-  background: var(--a050);
-  color: var(--accent-700);
-  border: 1px solid var(--a100);
+  background: #f4f4f8;
+  color: var(--ink);
+  border: none;
   border-bottom-right-radius: 5px;
+}
+/* AI 인사이트 카드 안의 어시스턴트 답변 — 보더·배경 없이 글로우 카드 위에 바로 얹힘(Apple Intelligence는 텍스트를 박스에 가두지 않음) */
+.ax-card .ax-msg.bot {
+  background: none;
+  border: none;
+  padding: 0;
+  max-width: 100%;
 }
 
 /* 타이핑 인디케이터 */
@@ -2558,6 +2598,55 @@
 @keyframes axtype {
   0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
   30% { opacity: 1; transform: translateY(-3px); }
+}
+
+/* 스트리밍 중 커서 — 딱딱한 점멸 대신 은은하게 숨쉬듯 페이드 */
+.ax-caret {
+  display: inline-block;
+  width: 2px;
+  height: 12px;
+  margin-left: 2px;
+  background: var(--ink);
+  vertical-align: -1px;
+  animation: axcaret 1s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+@keyframes axcaret { 0%, 100% { opacity: 1; } 50% { opacity: 0.15; } }
+
+/* 문장 단위 그라운딩 — 답변을 한 덩어리가 아니라 "문장 + 그 문장의 근거"로 분해해 보여줌 */
+.ax-msg--grounded { display: flex; flex-direction: column; gap: 6px; }
+.ax-seg { display: block; line-height: 1.6; }
+/* 글자 단위 페이드 — 뚝뚝 끊기지 않고 살살 스며들듯(Toss 롤링 넘버와 같은 결의 소프트 디셀러레이트) */
+.ax-char {
+  display: inline-block;
+  white-space: pre;
+  animation: ax-char-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes ax-char-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.ax-inline-cite {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  vertical-align: middle;
+  white-space: nowrap;
+  animation: ax-cite-in 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.ax-inline-cite .dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #bc82f3, #8d9fff);
+  flex: none;
+}
+@keyframes ax-cite-in {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: none; }
 }
 
 /* 컴포저 입력 + 전송 */
