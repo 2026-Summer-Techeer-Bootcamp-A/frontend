@@ -1,0 +1,109 @@
+{
+  "pearl": "g-company-generation",
+  "as_of": "2026-07-07",
+  "pool": "domestic",
+  "sample_size": 2993,
+  "sample_note": "점핏 등록 기업 · establishDate 98% 기준",
+  "data": {
+    "generations": [
+      {
+        "key": "legacy",
+        "label": "레거시\n(~2009)",
+        "n": 782
+      },
+      {
+        "key": "growth",
+        "label": "성장기\n(2010-17)",
+        "n": 954
+      },
+      {
+        "key": "young",
+        "label": "신생\n(2018~)",
+        "n": 1257
+      }
+    ],
+    "matrix": [
+      {
+        "tech": "Java",
+        "shares": [
+          31.1,
+          27.1,
+          19.2
+        ],
+        "trend": -11.9
+      },
+      {
+        "tech": "Oracle",
+        "shares": [
+          12.8,
+          4.5,
+          2.1
+        ],
+        "trend": -10.7
+      },
+      {
+        "tech": "Linux",
+        "shares": [
+          20.7,
+          15.3,
+          10.5
+        ],
+        "trend": -10.2
+      },
+      {
+        "tech": "Node.js",
+        "shares": [
+          6.4,
+          10.4,
+          16.4
+        ],
+        "trend": 10.0
+      },
+      {
+        "tech": "Git",
+        "shares": [
+          12.1,
+          23.1,
+          24.2
+        ],
+        "trend": 12.1
+      },
+      {
+        "tech": "JavaScript",
+        "shares": [
+          27.5,
+          32.6,
+          40.3
+        ],
+        "trend": 12.8
+      },
+      {
+        "tech": "TypeScript",
+        "shares": [
+          5.0,
+          10.8,
+          19.7
+        ],
+        "trend": 14.7
+      },
+      {
+        "tech": "AWS",
+        "shares": [
+          13.3,
+          21.6,
+          28.9
+        ],
+        "trend": 15.6
+      },
+      {
+        "tech": "React",
+        "shares": [
+          10.1,
+          17.9,
+          26.7
+        ],
+        "trend": 16.6
+      }
+    ]
+  }
+}

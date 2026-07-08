@@ -1,0 +1,889 @@
+{
+  "pearl": "l-github-chronicle",
+  "as_of": "2026-07-07",
+  "pool": "global",
+  "sample_size": 37,
+  "sample_note": "GitHub 스타 히스토리 2012~2026(월별 스냅샷) · 수동 매핑 37개 저장소",
+  "data": {
+    "years": [
+      2012,
+      2013,
+      2014,
+      2015,
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025,
+      2026
+    ],
+    "lines": [
+      {
+        "tech": "React",
+        "points": [
+          {
+            "year": 2013,
+            "rank": 12,
+            "stars": 3455
+          },
+          {
+            "year": 2014,
+            "rank": 7,
+            "stars": 12550
+          },
+          {
+            "year": 2015,
+            "rank": 2,
+            "stars": 34459
+          },
+          {
+            "year": 2016,
+            "rank": 2,
+            "stars": 58889
+          },
+          {
+            "year": 2017,
+            "rank": 2,
+            "stars": 89637
+          },
+          {
+            "year": 2018,
+            "rank": 3,
+            "stars": 124871
+          },
+          {
+            "year": 2019,
+            "rank": 2,
+            "stars": 150987
+          },
+          {
+            "year": 2020,
+            "rank": 2,
+            "stars": 174382
+          },
+          {
+            "year": 2021,
+            "rank": 2,
+            "stars": 194524
+          },
+          {
+            "year": 2022,
+            "rank": 2,
+            "stars": 217527
+          },
+          {
+            "year": 2023,
+            "rank": 1,
+            "stars": 237366
+          },
+          {
+            "year": 2024,
+            "rank": 1,
+            "stars": 255052
+          },
+          {
+            "year": 2025,
+            "rank": 1,
+            "stars": 265115
+          },
+          {
+            "year": 2026,
+            "rank": 1,
+            "stars": 266399
+          }
+        ],
+        "owned": true
+      },
+      {
+        "tech": "Vue",
+        "points": [
+          {
+            "year": 2013,
+            "rank": 18,
+            "stars": 8
+          },
+          {
+            "year": 2014,
+            "rank": 17,
+            "stars": 3069
+          },
+          {
+            "year": 2015,
+            "rank": 16,
+            "stars": 11883
+          },
+          {
+            "year": 2016,
+            "rank": 6,
+            "stars": 38816
+          },
+          {
+            "year": 2017,
+            "rank": 4,
+            "stars": 81060
+          },
+          {
+            "year": 2018,
+            "rank": 2,
+            "stars": 126803
+          },
+          {
+            "year": 2019,
+            "rank": 1,
+            "stars": 161750
+          },
+          {
+            "year": 2020,
+            "rank": 1,
+            "stars": 188152
+          },
+          {
+            "year": 2021,
+            "rank": 1,
+            "stars": 204622
+          },
+          {
+            "year": 2022,
+            "rank": 1,
+            "stars": 217891
+          },
+          {
+            "year": 2023,
+            "rank": 2,
+            "stars": 225929
+          },
+          {
+            "year": 2024,
+            "rank": 2,
+            "stars": 231441
+          },
+          {
+            "year": 2025,
+            "rank": 2,
+            "stars": 234230
+          },
+          {
+            "year": 2026,
+            "rank": 2,
+            "stars": 234603
+          }
+        ],
+        "owned": false
+      },
+      {
+        "tech": "TensorFlow",
+        "points": [
+          {
+            "year": 2015,
+            "rank": 10,
+            "stars": 15496
+          },
+          {
+            "year": 2016,
+            "rank": 3,
+            "stars": 42408
+          },
+          {
+            "year": 2017,
+            "rank": 3,
+            "stars": 87666
+          },
+          {
+            "year": 2018,
+            "rank": 4,
+            "stars": 122292
+          },
+          {
+            "year": 2019,
+            "rank": 3,
+            "stars": 147711
+          },
+          {
+            "year": 2020,
+            "rank": 3,
+            "stars": 164025
+          },
+          {
+            "year": 2021,
+            "rank": 3,
+            "stars": 175689
+          },
+          {
+            "year": 2022,
+            "rank": 3,
+            "stars": 186537
+          },
+          {
+            "year": 2023,
+            "rank": 3,
+            "stars": 198774
+          },
+          {
+            "year": 2024,
+            "rank": 3,
+            "stars": 209110
+          },
+          {
+            "year": 2025,
+            "rank": 3,
+            "stars": 215072
+          },
+          {
+            "year": 2026,
+            "rank": 3,
+            "stars": 215915
+          }
+        ],
+        "owned": false
+      },
+      {
+        "tech": "Bootstrap",
+        "points": [
+          {
+            "year": 2012,
+            "rank": 1,
+            "stars": 25018
+          },
+          {
+            "year": 2013,
+            "rank": 1,
+            "stars": 47927
+          },
+          {
+            "year": 2014,
+            "rank": 1,
+            "stars": 64115
+          },
+          {
+            "year": 2015,
+            "rank": 1,
+            "stars": 82419
+          },
+          {
+            "year": 2016,
+            "rank": 1,
+            "stars": 100513
+          },
+          {
+            "year": 2017,
+            "rank": 1,
+            "stars": 119030
+          },
+          {
+            "year": 2018,
+            "rank": 1,
+            "stars": 132063
+          },
+          {
+            "year": 2019,
+            "rank": 4,
+            "stars": 143613
+          },
+          {
+            "year": 2020,
+            "rank": 4,
+            "stars": 155225
+          },
+          {
+            "year": 2021,
+            "rank": 4,
+            "stars": 166024
+          },
+          {
+            "year": 2022,
+            "rank": 4,
+            "stars": 174938
+          },
+          {
+            "year": 2023,
+            "rank": 4,
+            "stars": 182678
+          },
+          {
+            "year": 2024,
+            "rank": 4,
+            "stars": 190100
+          },
+          {
+            "year": 2025,
+            "rank": 4,
+            "stars": 193521
+          },
+          {
+            "year": 2026,
+            "rank": 4,
+            "stars": 193829
+          }
+        ],
+        "owned": false
+      },
+      {
+        "tech": "Flutter",
+        "points": [
+          {
+            "year": 2015,
+            "rank": 26,
+            "stars": 2539
+          },
+          {
+            "year": 2016,
+            "rank": 28,
+            "stars": 3832
+          },
+          {
+            "year": 2017,
+            "rank": 27,
+            "stars": 9598
+          },
+          {
+            "year": 2018,
+            "rank": 12,
+            "stars": 46119
+          },
+          {
+            "year": 2019,
+            "rank": 5,
+            "stars": 82239
+          },
+          {
+            "year": 2020,
+            "rank": 5,
+            "stars": 112585
+          },
+          {
+            "year": 2021,
+            "rank": 5,
+            "stars": 139520
+          },
+          {
+            "year": 2022,
+            "rank": 5,
+            "stars": 156700
+          },
+          {
+            "year": 2023,
+            "rank": 5,
+            "stars": 170588
+          },
+          {
+            "year": 2024,
+            "rank": 5,
+            "stars": 182065
+          },
+          {
+            "year": 2025,
+            "rank": 5,
+            "stars": 188677
+          },
+          {
+            "year": 2026,
+            "rank": 5,
+            "stars": 189422
+          }
+        ],
+        "owned": false
+      },
+      {
+        "tech": "Next.js",
+        "points": [
+          {
+            "year": 2016,
+            "rank": 24,
+            "stars": 7585
+          },
+          {
+            "year": 2017,
+            "rank": 20,
+            "stars": 20620
+          },
+          {
+            "year": 2018,
+            "rank": 22,
+            "stars": 32687
+          },
+          {
+            "year": 2019,
+            "rank": 19,
+            "stars": 43828
+          },
+          {
+            "year": 2020,
+            "rank": 14,
+            "stars": 60477
+          },
+          {
+            "year": 2021,
+            "rank": 9,
+            "stars": 81117
+          },
+          {
+            "year": 2022,
+            "rank": 6,
+            "stars": 101759
+          },
+          {
+            "year": 2023,
+            "rank": 6,
+            "stars": 120906
+          },
+          {
+            "year": 2024,
+            "rank": 6,
+            "stars": 135241
+          },
+          {
+            "year": 2025,
+            "rank": 6,
+            "stars": 142853
+          },
+          {
+            "year": 2026,
+            "rank": 6,
+            "stars": 143823
+          }
+        ],
+        "owned": false
+      },
+      {
+        "tech": "Node.js",
+        "points": [
+          {
+            "year": 2014,
+            "rank": 13,
+            "stars": 6440
+          },
+          {
+            "year": 2015,
+            "rank": 8,
+            "stars": 19099
+          },
+          {
+            "year": 2016,
+            "rank": 7,
+            "stars": 31574
+          },
+          {
+            "year": 2017,
+            "rank": 6,
+            "stars": 46573
+          },
+          {
+            "year": 2018,
+            "rank": 5,
+            "stars": 59872
+          },
+          {
+            "year": 2019,
+            "rank": 6,
+            "stars": 71272
+          },
+          {
+            "year": 2020,
+            "rank": 6,
+            "stars": 81856
+          },
+          {
+            "year": 2021,
+            "rank": 6,
+            "stars": 90977
+          },
+          {
+            "year": 2022,
+            "rank": 7,
+            "stars": 100612
+          },
+          {
+            "year": 2023,
+            "rank": 7,
+            "stars": 110647
+          },
+          {
+            "year": 2024,
+            "rank": 7,
+            "stars": 120063
+          },
+          {
+            "year": 2025,
+            "rank": 7,
+            "stars": 125567
+          },
+          {
+            "year": 2026,
+            "rank": 7,
+            "stars": 126392
+          }
+        ],
+        "owned": true
+      },
+      {
+        "tech": "Kubernetes",
+        "points": [
+          {
+            "year": 2014,
+            "rank": 14,
+            "stars": 5470
+          },
+          {
+            "year": 2015,
+            "rank": 15,
+            "stars": 12077
+          },
+          {
+            "year": 2016,
+            "rank": 17,
+            "stars": 20158
+          },
+          {
+            "year": 2017,
+            "rank": 14,
+            "stars": 31655
+          },
+          {
+            "year": 2018,
+            "rank": 10,
+            "stars": 46756
+          },
+          {
+            "year": 2019,
+            "rank": 7,
+            "stars": 63298
+          },
+          {
+            "year": 2020,
+            "rank": 7,
+            "stars": 75982
+          },
+          {
+            "year": 2021,
+            "rank": 7,
+            "stars": 87180
+          },
+          {
+            "year": 2022,
+            "rank": 8,
+            "stars": 98663
+          },
+          {
+            "year": 2023,
+            "rank": 8,
+            "stars": 108926
+          },
+          {
+            "year": 2024,
+            "rank": 8,
+            "stars": 117961
+          },
+          {
+            "year": 2025,
+            "rank": 8,
+            "stars": 124033
+          },
+          {
+            "year": 2026,
+            "rank": 8,
+            "stars": 124925
+          }
+        ],
+        "owned": false
+      },
+      {
+        "tech": "TypeScript",
+        "points": [
+          {
+            "year": 2014,
+            "rank": 16,
+            "stars": 3080
+          },
+          {
+            "year": 2015,
+            "rank": 18,
+            "stars": 8593
+          },
+          {
+            "year": 2016,
+            "rank": 19,
+            "stars": 18526
+          },
+          {
+            "year": 2017,
+            "rank": 15,
+            "stars": 30871
+          },
+          {
+            "year": 2018,
+            "rank": 13,
+            "stars": 44223
+          },
+          {
+            "year": 2019,
+            "rank": 11,
+            "stars": 58923
+          },
+          {
+            "year": 2020,
+            "rank": 9,
+            "stars": 70647
+          },
+          {
+            "year": 2021,
+            "rank": 10,
+            "stars": 80745
+          },
+          {
+            "year": 2022,
+            "rank": 10,
+            "stars": 91768
+          },
+          {
+            "year": 2023,
+            "rank": 10,
+            "stars": 101489
+          },
+          {
+            "year": 2024,
+            "rank": 10,
+            "stars": 108513
+          },
+          {
+            "year": 2025,
+            "rank": 9,
+            "stars": 113615
+          },
+          {
+            "year": 2026,
+            "rank": 9,
+            "stars": 114182
+          }
+        ],
+        "owned": true
+      },
+      {
+        "tech": "Angular",
+        "points": [
+          {
+            "year": 2014,
+            "rank": 24,
+            "stars": 644
+          },
+          {
+            "year": 2015,
+            "rank": 19,
+            "stars": 8152
+          },
+          {
+            "year": 2016,
+            "rank": 15,
+            "stars": 20539
+          },
+          {
+            "year": 2017,
+            "rank": 11,
+            "stars": 33928
+          },
+          {
+            "year": 2018,
+            "rank": 11,
+            "stars": 46753
+          },
+          {
+            "year": 2019,
+            "rank": 10,
+            "stars": 60223
+          },
+          {
+            "year": 2020,
+            "rank": 8,
+            "stars": 75719
+          },
+          {
+            "year": 2021,
+            "rank": 8,
+            "stars": 86060
+          },
+          {
+            "year": 2022,
+            "rank": 9,
+            "stars": 95018
+          },
+          {
+            "year": 2023,
+            "rank": 9,
+            "stars": 104568
+          },
+          {
+            "year": 2024,
+            "rank": 9,
+            "stars": 110231
+          },
+          {
+            "year": 2025,
+            "rank": 10,
+            "stars": 113437
+          },
+          {
+            "year": 2026,
+            "rank": 10,
+            "stars": 113835
+          }
+        ],
+        "owned": false
+      },
+      {
+        "tech": "Deno",
+        "points": [
+          {
+            "year": 2018,
+            "rank": 23,
+            "stars": 26507
+          },
+          {
+            "year": 2019,
+            "rank": 23,
+            "stars": 38760
+          },
+          {
+            "year": 2020,
+            "rank": 10,
+            "stars": 70351
+          },
+          {
+            "year": 2021,
+            "rank": 11,
+            "stars": 79924
+          },
+          {
+            "year": 2022,
+            "rank": 11,
+            "stars": 88595
+          },
+          {
+            "year": 2023,
+            "rank": 11,
+            "stars": 94732
+          },
+          {
+            "year": 2024,
+            "rank": 11,
+            "stars": 105203
+          },
+          {
+            "year": 2025,
+            "rank": 11,
+            "stars": 109630
+          },
+          {
+            "year": 2026,
+            "rank": 11,
+            "stars": 110208
+          }
+        ],
+        "owned": false
+      },
+      {
+        "tech": "PyTorch",
+        "points": [
+          {
+            "year": 2017,
+            "rank": 26,
+            "stars": 10819
+          },
+          {
+            "year": 2018,
+            "rank": 25,
+            "stars": 22833
+          },
+          {
+            "year": 2019,
+            "rank": 24,
+            "stars": 35323
+          },
+          {
+            "year": 2020,
+            "rank": 23,
+            "stars": 46542
+          },
+          {
+            "year": 2021,
+            "rank": 22,
+            "stars": 54852
+          },
+          {
+            "year": 2022,
+            "rank": 21,
+            "stars": 63804
+          },
+          {
+            "year": 2023,
+            "rank": 15,
+            "stars": 76967
+          },
+          {
+            "year": 2024,
+            "rank": 12,
+            "stars": 89303
+          },
+          {
+            "year": 2025,
+            "rank": 12,
+            "stars": 97784
+          },
+          {
+            "year": 2026,
+            "rank": 12,
+            "stars": 98907
+          }
+        ],
+        "owned": false
+      }
+    ],
+    "events": [
+      {
+        "year": 2014,
+        "over": "Docker",
+        "under": "Rails",
+        "over_stars": 18217,
+        "under_stars": 16848
+      },
+      {
+        "year": 2015,
+        "over": "React",
+        "under": "jQuery",
+        "over_stars": 34459,
+        "under_stars": 32335
+      },
+      {
+        "year": 2016,
+        "over": "TensorFlow",
+        "under": "jQuery",
+        "over_stars": 42408,
+        "under_stars": 39525
+      },
+      {
+        "year": 2016,
+        "over": "Docker",
+        "under": "jQuery",
+        "over_stars": 40434,
+        "under_stars": 39525
+      },
+      {
+        "year": 2016,
+        "over": "Laravel",
+        "under": "Rails",
+        "over_stars": 29240,
+        "under_stars": 28499
+      },
+      {
+        "year": 2016,
+        "over": "Node.js",
+        "under": "Rails",
+        "over_stars": 31574,
+        "under_stars": 28499
+      }
+    ]
+  }
+}

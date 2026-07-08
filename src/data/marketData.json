@@ -1,0 +1,2160 @@
+{
+ "skillShare": {
+  "국내": {
+   "asOf": "2026-07-07",
+   "N": 7104,
+   "techFiltered": false,
+   "items": [
+    {
+     "tech": "JavaScript",
+     "count": 1719,
+     "share": 24.2,
+     "owned": true
+    },
+    {
+     "tech": "Python",
+     "count": 1661,
+     "share": 23.4,
+     "owned": true
+    },
+    {
+     "tech": "AWS",
+     "count": 1592,
+     "share": 22.4,
+     "owned": true
+    },
+    {
+     "tech": "Git",
+     "count": 1316,
+     "share": 18.5,
+     "owned": true
+    },
+    {
+     "tech": "Java",
+     "count": 1247,
+     "share": 17.6,
+     "owned": false
+    },
+    {
+     "tech": "Spring",
+     "count": 857,
+     "share": 12.1,
+     "owned": false
+    },
+    {
+     "tech": "TypeScript",
+     "count": 854,
+     "share": 12.0,
+     "owned": true
+    },
+    {
+     "tech": "Linux",
+     "count": 839,
+     "share": 11.8,
+     "owned": true
+    },
+    {
+     "tech": "Docker",
+     "count": 806,
+     "share": 11.3,
+     "owned": true
+    },
+    {
+     "tech": "MySQL",
+     "count": 782,
+     "share": 11.0,
+     "owned": true
+    },
+    {
+     "tech": "C++",
+     "count": 763,
+     "share": 10.7,
+     "owned": false
+    },
+    {
+     "tech": "Kubernetes",
+     "count": 673,
+     "share": 9.5,
+     "owned": false
+    },
+    {
+     "tech": "Node.js",
+     "count": 669,
+     "share": 9.4,
+     "owned": true
+    },
+    {
+     "tech": "React",
+     "count": 658,
+     "share": 9.3,
+     "owned": true
+    },
+    {
+     "tech": "SQL",
+     "count": 503,
+     "share": 7.1,
+     "owned": true
+    },
+    {
+     "tech": "PostgreSQL",
+     "count": 501,
+     "share": 7.1,
+     "owned": true
+    },
+    {
+     "tech": "HTML",
+     "count": 476,
+     "share": 6.7,
+     "owned": true
+    },
+    {
+     "tech": "Next.js",
+     "count": 470,
+     "share": 6.6,
+     "owned": false
+    },
+    {
+     "tech": "GCP",
+     "count": 436,
+     "share": 6.1,
+     "owned": false
+    },
+    {
+     "tech": "CSS",
+     "count": 431,
+     "share": 6.1,
+     "owned": true
+    }
+   ]
+  },
+  "국외": {
+   "asOf": "2026-07-07",
+   "N": 11677,
+   "techFiltered": true,
+   "items": [
+    {
+     "tech": "Python",
+     "count": 2882,
+     "share": 24.7,
+     "owned": true
+    },
+    {
+     "tech": "AWS",
+     "count": 2405,
+     "share": 20.6,
+     "owned": true
+    },
+    {
+     "tech": "SQL",
+     "count": 2311,
+     "share": 19.8,
+     "owned": true
+    },
+    {
+     "tech": "Git",
+     "count": 1964,
+     "share": 16.8,
+     "owned": true
+    },
+    {
+     "tech": "JavaScript",
+     "count": 1808,
+     "share": 15.5,
+     "owned": true
+    },
+    {
+     "tech": "Azure",
+     "count": 1781,
+     "share": 15.3,
+     "owned": false
+    },
+    {
+     "tech": "Kubernetes",
+     "count": 1317,
+     "share": 11.3,
+     "owned": false
+    },
+    {
+     "tech": "Docker",
+     "count": 1229,
+     "share": 10.5,
+     "owned": true
+    },
+    {
+     "tech": "GCP",
+     "count": 1229,
+     "share": 10.5,
+     "owned": false
+    },
+    {
+     "tech": "Java",
+     "count": 1130,
+     "share": 9.7,
+     "owned": false
+    },
+    {
+     "tech": "TypeScript",
+     "count": 1035,
+     "share": 8.9,
+     "owned": true
+    },
+    {
+     "tech": "Jira",
+     "count": 898,
+     "share": 7.7,
+     "owned": false
+    },
+    {
+     "tech": "PostgreSQL",
+     "count": 847,
+     "share": 7.3,
+     "owned": true
+    },
+    {
+     "tech": "Salesforce",
+     "count": 826,
+     "share": 7.1,
+     "owned": false
+    },
+    {
+     "tech": "Terraform",
+     "count": 757,
+     "share": 6.5,
+     "owned": false
+    },
+    {
+     "tech": "CSS",
+     "count": 685,
+     "share": 5.9,
+     "owned": true
+    },
+    {
+     "tech": "HTML",
+     "count": 684,
+     "share": 5.9,
+     "owned": true
+    },
+    {
+     "tech": "Linux",
+     "count": 681,
+     "share": 5.8,
+     "owned": true
+    },
+    {
+     "tech": "Node.js",
+     "count": 652,
+     "share": 5.6,
+     "owned": true
+    },
+    {
+     "tech": "Figma",
+     "count": 595,
+     "share": 5.1,
+     "owned": false
+    }
+   ]
+  }
+ },
+ "pulse": {
+  "asOf": "2026-07-07",
+  "note": "국내(원티드·점핏) 기준",
+  "items": [
+   {
+    "tech": "Java",
+    "kind": "opp",
+    "text": "Java · 국내 수요 상위, 미보유",
+    "evidence": "국내 공고 1,247건이 요구"
+   },
+   {
+    "tech": "TypeScript",
+    "kind": "rising",
+    "text": "TypeScript · 국내 수요 증가",
+    "evidence": "국내 공고 2022 99건 → 2026 478건"
+   },
+   {
+    "tech": "JavaScript",
+    "kind": "strength",
+    "text": "JavaScript · 국내 수요 상위, 보유",
+    "evidence": "국내 공고의 24.2%가 요구"
+   }
+  ]
+ },
+ "cooccurrence": {
+  "React": {
+   "base": 1870,
+   "items": [
+    {
+     "tech": "JavaScript",
+     "coRate": 82,
+     "coCount": 1539
+    },
+    {
+     "tech": "TypeScript",
+     "coRate": 41,
+     "coCount": 766
+    },
+    {
+     "tech": "Git",
+     "coRate": 37,
+     "coCount": 691
+    },
+    {
+     "tech": "Node.js",
+     "coRate": 34,
+     "coCount": 640
+    },
+    {
+     "tech": "AWS",
+     "coRate": 34,
+     "coCount": 630
+    },
+    {
+     "tech": "CSS",
+     "coRate": 29,
+     "coCount": 547
+    },
+    {
+     "tech": "HTML",
+     "coRate": 24,
+     "coCount": 458
+    },
+    {
+     "tech": "Python",
+     "coRate": 21,
+     "coCount": 396
+    }
+   ]
+  },
+  "Kubernetes": {
+   "base": 7678,
+   "items": [
+    {
+     "tech": "AWS",
+     "coRate": 56,
+     "coCount": 4315
+    },
+    {
+     "tech": "Python",
+     "coRate": 48,
+     "coCount": 3682
+    },
+    {
+     "tech": "Docker",
+     "coRate": 47,
+     "coCount": 3592
+    },
+    {
+     "tech": "Git",
+     "coRate": 33,
+     "coCount": 2545
+    },
+    {
+     "tech": "Terraform",
+     "coRate": 30,
+     "coCount": 2330
+    },
+    {
+     "tech": "GCP",
+     "coRate": 30,
+     "coCount": 2323
+    },
+    {
+     "tech": "Azure",
+     "coRate": 26,
+     "coCount": 2001
+    },
+    {
+     "tech": "PostgreSQL",
+     "coRate": 25,
+     "coCount": 1943
+    }
+   ]
+  },
+  "Python": {
+   "base": 16945,
+   "items": [
+    {
+     "tech": "AWS",
+     "coRate": 38,
+     "coCount": 6456
+    },
+    {
+     "tech": "SQL",
+     "coRate": 26,
+     "coCount": 4374
+    },
+    {
+     "tech": "JavaScript",
+     "coRate": 25,
+     "coCount": 4315
+    },
+    {
+     "tech": "Git",
+     "coRate": 23,
+     "coCount": 3976
+    },
+    {
+     "tech": "Kubernetes",
+     "coRate": 22,
+     "coCount": 3682
+    },
+    {
+     "tech": "Docker",
+     "coRate": 20,
+     "coCount": 3306
+    },
+    {
+     "tech": "TypeScript",
+     "coRate": 19,
+     "coCount": 3302
+    },
+    {
+     "tech": "PostgreSQL",
+     "coRate": 18,
+     "coCount": 3061
+    }
+   ]
+  },
+  "AWS": {
+   "base": 14885,
+   "items": [
+    {
+     "tech": "Python",
+     "coRate": 43,
+     "coCount": 6456
+    },
+    {
+     "tech": "JavaScript",
+     "coRate": 31,
+     "coCount": 4683
+    },
+    {
+     "tech": "Git",
+     "coRate": 31,
+     "coCount": 4550
+    },
+    {
+     "tech": "Azure",
+     "coRate": 30,
+     "coCount": 4511
+    },
+    {
+     "tech": "Kubernetes",
+     "coRate": 29,
+     "coCount": 4315
+    },
+    {
+     "tech": "GCP",
+     "coRate": 28,
+     "coCount": 4190
+    },
+    {
+     "tech": "Docker",
+     "coRate": 26,
+     "coCount": 3908
+    },
+    {
+     "tech": "PostgreSQL",
+     "coRate": 25,
+     "coCount": 3722
+    }
+   ]
+  },
+  "TypeScript": {
+   "base": 9930,
+   "items": [
+    {
+     "tech": "JavaScript",
+     "coRate": 53,
+     "coCount": 5289
+    },
+    {
+     "tech": "AWS",
+     "coRate": 37,
+     "coCount": 3683
+    },
+    {
+     "tech": "Python",
+     "coRate": 33,
+     "coCount": 3302
+    },
+    {
+     "tech": "PostgreSQL",
+     "coRate": 30,
+     "coCount": 2941
+    },
+    {
+     "tech": "Git",
+     "coRate": 28,
+     "coCount": 2737
+    },
+    {
+     "tech": "Node.js",
+     "coRate": 25,
+     "coCount": 2472
+    },
+    {
+     "tech": "Kubernetes",
+     "coRate": 18,
+     "coCount": 1768
+    },
+    {
+     "tech": "Docker",
+     "coRate": 16,
+     "coCount": 1567
+    }
+   ]
+  },
+  "Spring": {
+   "base": 2297,
+   "items": [
+    {
+     "tech": "Java",
+     "coRate": 77,
+     "coCount": 1763
+    },
+    {
+     "tech": "AWS",
+     "coRate": 42,
+     "coCount": 972
+    },
+    {
+     "tech": "JavaScript",
+     "coRate": 33,
+     "coCount": 747
+    },
+    {
+     "tech": "Git",
+     "coRate": 31,
+     "coCount": 706
+    },
+    {
+     "tech": "Docker",
+     "coRate": 26,
+     "coCount": 599
+    },
+    {
+     "tech": "Kubernetes",
+     "coRate": 24,
+     "coCount": 558
+    },
+    {
+     "tech": "MySQL",
+     "coRate": 23,
+     "coCount": 531
+    },
+    {
+     "tech": "SQL",
+     "coRate": 22,
+     "coCount": 504
+    }
+   ]
+  }
+ },
+ "trend": {
+  "asOf": "2026-07-07",
+  "sources": [
+   "hn",
+   "jumpit",
+   "wanted"
+  ],
+  "excludes": "himalayas(현재 스냅샷)",
+  "series": [
+   {
+    "period": "2019",
+    "hn": 0,
+    "jumpit": 0,
+    "wanted": 10,
+    "N": 10
+   },
+   {
+    "period": "2020",
+    "hn": 0,
+    "jumpit": 0,
+    "wanted": 12,
+    "N": 12
+   },
+   {
+    "period": "2021",
+    "hn": 0,
+    "jumpit": 161,
+    "wanted": 16,
+    "N": 177
+   },
+   {
+    "period": "2022",
+    "hn": 7590,
+    "jumpit": 901,
+    "wanted": 30,
+    "N": 8521
+   },
+   {
+    "period": "2023",
+    "hn": 4176,
+    "jumpit": 566,
+    "wanted": 34,
+    "N": 4776
+   },
+   {
+    "period": "2024",
+    "hn": 3938,
+    "jumpit": 585,
+    "wanted": 67,
+    "N": 4590
+   },
+   {
+    "period": "2025",
+    "hn": 4056,
+    "jumpit": 415,
+    "wanted": 425,
+    "N": 4896
+   },
+   {
+    "period": "2026",
+    "hn": 1983,
+    "jumpit": 450,
+    "wanted": 3405,
+    "N": 5838
+   }
+  ]
+ },
+ "industry": {
+  "asOf": "2026-07-07",
+  "N": 1529,
+  "note": "국내 분류 가능 공고(text_rule)만",
+  "industries": [
+   "헬스케어",
+   "금융IT/핀테크",
+   "미디어/콘텐츠",
+   "에듀테크",
+   "커머스",
+   "모빌리티/물류"
+  ],
+  "industryN": {
+   "헬스케어": 245,
+   "금융IT/핀테크": 204,
+   "미디어/콘텐츠": 204,
+   "에듀테크": 169,
+   "커머스": 163,
+   "모빌리티/물류": 161
+  },
+  "techs": [
+   "JavaScript",
+   "AWS",
+   "Java",
+   "Git",
+   "Python",
+   "React",
+   "MySQL",
+   "Spring",
+   "Linux",
+   "TypeScript"
+  ],
+  "matrix": [
+   [
+    28,
+    22,
+    19,
+    20,
+    21,
+    15,
+    13,
+    11,
+    16,
+    12
+   ],
+   [
+    35,
+    30,
+    34,
+    23,
+    25,
+    22,
+    16,
+    24,
+    17,
+    12
+   ],
+   [
+    46,
+    28,
+    25,
+    23,
+    18,
+    26,
+    16,
+    17,
+    10,
+    16
+   ],
+   [
+    43,
+    30,
+    25,
+    27,
+    19,
+    21,
+    18,
+    17,
+    12,
+    12
+   ],
+   [
+    48,
+    33,
+    29,
+    29,
+    14,
+    23,
+    33,
+    21,
+    11,
+    17
+   ],
+   [
+    27,
+    17,
+    29,
+    22,
+    25,
+    14,
+    9,
+    18,
+    17,
+    7
+   ]
+  ]
+ },
+ "certGap": {
+  "asOf": "2026-07-07",
+  "N": 4136,
+  "required": [
+   {
+    "name": "AWS Solutions Architect",
+    "count": 1451,
+    "share": 100,
+    "owned": false
+   },
+   {
+    "name": "PMP",
+    "count": 1018,
+    "share": 70,
+    "owned": false
+   },
+   {
+    "name": "CISSP",
+    "count": 722,
+    "share": 50,
+    "owned": false
+   },
+   {
+    "name": "CISM",
+    "count": 351,
+    "share": 24,
+    "owned": false
+   },
+   {
+    "name": "AWS Certified (일반)",
+    "count": 340,
+    "share": 23,
+    "owned": false
+   },
+   {
+    "name": "CISA",
+    "count": 315,
+    "share": 22,
+    "owned": false
+   },
+   {
+    "name": "CEH",
+    "count": 177,
+    "share": 12,
+    "owned": false
+   },
+   {
+    "name": "AWS Developer/SysOps",
+    "count": 158,
+    "share": 11,
+    "owned": false
+   },
+   {
+    "name": "정보처리기사",
+    "count": 151,
+    "share": 10,
+    "owned": true
+   },
+   {
+    "name": "CKA (Kubernetes Administrator)",
+    "count": 134,
+    "share": 9,
+    "owned": false
+   }
+  ],
+  "ownedCerts": [
+   "정보처리기사"
+  ],
+  "ownedCount": 1
+ },
+ "companyBySkill": {
+  "Kubernetes": {
+   "splitDate": "2026-01-07",
+   "present": [
+    {
+     "company": "커넥트웨이브",
+     "count": 11
+    },
+    {
+     "company": "엘리스",
+     "count": 9
+    },
+    {
+     "company": "유모스원",
+     "count": 8
+    },
+    {
+     "company": "업스테이지",
+     "count": 8
+    },
+    {
+     "company": "씨제이올리브영(CJ올리브영)",
+     "count": 6
+    },
+    {
+     "company": "마키나락스",
+     "count": 6
+    }
+   ],
+   "past": [
+    {
+     "company": "힙합퍼",
+     "count": 1
+    },
+    {
+     "company": "휴이노에임",
+     "count": 1
+    },
+    {
+     "company": "휴레이포지티브",
+     "count": 1
+    },
+    {
+     "company": "한국선불카드",
+     "count": 1
+    },
+    {
+     "company": "하이퍼엑셀",
+     "count": 1
+    },
+    {
+     "company": "피플라이프",
+     "count": 1
+    }
+   ],
+   "domesticNote": "국내(원티드·점핏) · 점핏 2024-10~"
+  },
+  "TypeScript": {
+   "splitDate": "2026-01-07",
+   "present": [
+    {
+     "company": "레브잇",
+     "count": 7
+    },
+    {
+     "company": "업스테이지",
+     "count": 6
+    },
+    {
+     "company": "페칭",
+     "count": 5
+    },
+    {
+     "company": "인티그레이션(메디스트림)",
+     "count": 5
+    },
+    {
+     "company": "벳칭",
+     "count": 5
+    },
+    {
+     "company": "미리디",
+     "count": 5
+    }
+   ],
+   "past": [
+    {
+     "company": "쿠키플레이스",
+     "count": 3
+    },
+    {
+     "company": "미리디",
+     "count": 2
+    },
+    {
+     "company": "두나무(업비트/증권플러스)",
+     "count": 2
+    },
+    {
+     "company": "낭만상회",
+     "count": 2
+    },
+    {
+     "company": "힙합퍼",
+     "count": 1
+    },
+    {
+     "company": "휴먼밸런스",
+     "count": 1
+    }
+   ],
+   "domesticNote": "국내(원티드·점핏) · 점핏 2024-10~"
+  },
+  "Spring": {
+   "splitDate": "2026-01-07",
+   "present": [
+    {
+     "company": "쿠팡",
+     "count": 12
+    },
+    {
+     "company": "커넥트웨이브",
+     "count": 7
+    },
+    {
+     "company": "컬리",
+     "count": 5
+    },
+    {
+     "company": "아이알큐더스",
+     "count": 5
+    },
+    {
+     "company": "씨제이올리브영(CJ올리브영)",
+     "count": 5
+    },
+    {
+     "company": "빗썸",
+     "count": 5
+    }
+   ],
+   "past": [
+    {
+     "company": "에이아이세스",
+     "count": 2
+    },
+    {
+     "company": "아인잡(AINJOB)",
+     "count": 2
+    },
+    {
+     "company": "스토어링크",
+     "count": 2
+    },
+    {
+     "company": "힙합퍼",
+     "count": 1
+    },
+    {
+     "company": "휴비넷",
+     "count": 1
+    },
+    {
+     "company": "화이트스캔",
+     "count": 1
+    }
+   ],
+   "domesticNote": "국내(원티드·점핏) · 점핏 2024-10~"
+  },
+  "AWS": {
+   "splitDate": "2026-01-07",
+   "present": [
+    {
+     "company": "아마존(Amazon)",
+     "count": 21
+    },
+    {
+     "company": "씨제이올리브영(CJ올리브영)",
+     "count": 16
+    },
+    {
+     "company": "컬리",
+     "count": 9
+    },
+    {
+     "company": "업스테이지",
+     "count": 9
+    },
+    {
+     "company": "유모스원",
+     "count": 8
+    },
+    {
+     "company": "넥스트증권",
+     "count": 8
+    }
+   ],
+   "past": [
+    {
+     "company": "쿠키플레이스",
+     "count": 3
+    },
+    {
+     "company": "패스트파이브",
+     "count": 2
+    },
+    {
+     "company": "퀀텀유니버스",
+     "count": 2
+    },
+    {
+     "company": "아인잡(AINJOB)",
+     "count": 2
+    },
+    {
+     "company": "아이아이컴바인드",
+     "count": 2
+    },
+    {
+     "company": "딥메트릭스",
+     "count": 2
+    }
+   ],
+   "domesticNote": "국내(원티드·점핏) · 점핏 2024-10~"
+  }
+ },
+ "techDetail": {
+  "TypeScript": {
+   "byCareer": [
+    {
+     "band": "신입~2년",
+     "count": 247
+    },
+    {
+     "band": "3~5년",
+     "count": 386
+    },
+    {
+     "band": "6~9년",
+     "count": 66
+    },
+    {
+     "band": "10년+",
+     "count": 16
+    }
+   ],
+   "spark": [
+    {
+     "y": "2021",
+     "n": 12
+    },
+    {
+     "y": "2022",
+     "n": 1674
+    },
+    {
+     "y": "2023",
+     "n": 839
+    },
+    {
+     "y": "2024",
+     "n": 884
+    },
+    {
+     "y": "2025",
+     "n": 1070
+    },
+    {
+     "y": "2026",
+     "n": 980
+    }
+   ],
+   "owned": true
+  },
+  "Kubernetes": {
+   "byCareer": [
+    {
+     "band": "신입~2년",
+     "count": 140
+    },
+    {
+     "band": "3~5년",
+     "count": 387
+    },
+    {
+     "band": "6~9년",
+     "count": 91
+    },
+    {
+     "band": "10년+",
+     "count": 32
+    }
+   ],
+   "spark": [
+    {
+     "y": "2021",
+     "n": 8
+    },
+    {
+     "y": "2022",
+     "n": 942
+    },
+    {
+     "y": "2023",
+     "n": 404
+    },
+    {
+     "y": "2024",
+     "n": 344
+    },
+    {
+     "y": "2025",
+     "n": 401
+    },
+    {
+     "y": "2026",
+     "n": 729
+    }
+   ],
+   "owned": false
+  },
+  "Spring": {
+   "byCareer": [
+    {
+     "band": "신입~2년",
+     "count": 203
+    },
+    {
+     "band": "3~5년",
+     "count": 467
+    },
+    {
+     "band": "6~9년",
+     "count": 109
+    },
+    {
+     "band": "10년+",
+     "count": 48
+    }
+   ],
+   "spark": [
+    {
+     "y": "2021",
+     "n": 31
+    },
+    {
+     "y": "2022",
+     "n": 262
+    },
+    {
+     "y": "2023",
+     "n": 139
+    },
+    {
+     "y": "2024",
+     "n": 135
+    },
+    {
+     "y": "2025",
+     "n": 78
+    },
+    {
+     "y": "2026",
+     "n": 425
+    }
+   ],
+   "owned": false
+  },
+  "Python": {
+   "byCareer": [
+    {
+     "band": "신입~2년",
+     "count": 611
+    },
+    {
+     "band": "3~5년",
+     "count": 829
+    },
+    {
+     "band": "6~9년",
+     "count": 155
+    },
+    {
+     "band": "10년+",
+     "count": 41
+    }
+   ],
+   "spark": [
+    {
+     "y": "2021",
+     "n": 18
+    },
+    {
+     "y": "2022",
+     "n": 1851
+    },
+    {
+     "y": "2023",
+     "n": 1020
+    },
+    {
+     "y": "2024",
+     "n": 941
+    },
+    {
+     "y": "2025",
+     "n": 1103
+    },
+    {
+     "y": "2026",
+     "n": 1670
+    }
+   ],
+   "owned": true
+  }
+ },
+ "map": {
+  "asOf": "2026-07-07",
+  "N": 60,
+  "pins": [
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/372725",
+    "lat": 37.48569,
+    "lng": 127.11932,
+    "company": "쿠팡",
+    "title": "[쿠팡] 백엔드 개발 팀장",
+    "district": "송파구",
+    "matchPct": 0,
+    "tier": "대기업",
+    "held": 0,
+    "total": 3,
+    "logo": "https://static.wanted.co.kr/images/wdes/256_4_logo_coupang.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/367805",
+    "lat": 37.48569,
+    "lng": 127.11932,
+    "company": "쿠팡",
+    "title": "[쿠팡] 백엔드 개발자",
+    "district": "송파구",
+    "matchPct": 17,
+    "tier": "대기업",
+    "held": 1,
+    "total": 6,
+    "logo": "https://static.wanted.co.kr/images/wdes/256_4_logo_coupang.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/372717",
+    "lat": 37.55167,
+    "lng": 126.97292,
+    "company": "씨제이올리브영(CJ올리브영)",
+    "title": "Backend Engineer (공통영역개선)",
+    "district": "용산구",
+    "matchPct": 67,
+    "tier": "대기업",
+    "held": 4,
+    "total": 6,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_5.9a0666c5.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/371804",
+    "lat": 37.55167,
+    "lng": 126.97292,
+    "company": "씨제이올리브영(CJ올리브영)",
+    "title": "Data Architect (시니어)",
+    "district": "용산구",
+    "matchPct": 0,
+    "tier": "대기업",
+    "held": 0,
+    "total": 3,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_5.9a0666c5.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/369830",
+    "lat": 37.57835,
+    "lng": 126.89165,
+    "company": "씨제이이엔엠(CJ ENM)",
+    "title": "[Mnet Plus] Data Engineer",
+    "district": "마포구",
+    "matchPct": 29,
+    "tier": "대기업",
+    "held": 4,
+    "total": 14,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.6e8f5df8.jpg"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/321958",
+    "lat": 37.57835,
+    "lng": 126.89165,
+    "company": "씨제이이엔엠(CJ ENM)",
+    "title": "[Mnet Plus] Backend Engineer",
+    "district": "마포구",
+    "matchPct": 50,
+    "tier": "대기업",
+    "held": 2,
+    "total": 4,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.6e8f5df8.jpg"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/372211",
+    "lat": 37.39427,
+    "lng": 127.11032,
+    "company": "카카오모빌리티(kakaomobility)",
+    "title": "자율주행 AI Perception 엔지니어 (R&D)",
+    "district": "분당구",
+    "matchPct": 25,
+    "tier": "대기업",
+    "held": 1,
+    "total": 4,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.f10801c3.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/366385",
+    "lat": 37.38871,
+    "lng": 127.11194,
+    "company": "카카오모빌리티(kakaomobility)",
+    "title": "자율주행 관제 플랫폼 백엔드 엔지니어",
+    "district": "분당구",
+    "matchPct": 17,
+    "tier": "대기업",
+    "held": 1,
+    "total": 6,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.f10801c3.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/369794",
+    "lat": 37.38979,
+    "lng": 127.10986,
+    "company": "카카오페이증권(kakaopay증권)",
+    "title": "프로덕트 엔지니어(시니어)",
+    "district": "분당구",
+    "matchPct": 38,
+    "tier": "대기업",
+    "held": 3,
+    "total": 8,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.244779d0.jpg"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/365498",
+    "lat": 37.38979,
+    "lng": 127.10986,
+    "company": "카카오페이증권(kakaopay증권)",
+    "title": "유가증권서비스 백엔드 개발 (시니어)",
+    "district": "분당구",
+    "matchPct": 0,
+    "tier": "대기업",
+    "held": 0,
+    "total": 3,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.244779d0.jpg"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/349922",
+    "lat": 37.39549,
+    "lng": 127.11211,
+    "company": "카카오뱅크(kakaobank)",
+    "title": "서비스 아키텍트",
+    "district": "분당구",
+    "matchPct": 24,
+    "tier": "대기업",
+    "held": 6,
+    "total": 25,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_5.f41a84ba.jpg"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/366910",
+    "lat": 37.38979,
+    "lng": 127.10986,
+    "company": "카카오헬스케어",
+    "title": "케어챗 B/E 개발자 (5~10년)",
+    "district": "분당구",
+    "matchPct": 0,
+    "tier": "대기업",
+    "held": 0,
+    "total": 3,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.2f7ac875.jpg"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/364864",
+    "lat": 37.38979,
+    "lng": 127.10986,
+    "company": "카카오헬스케어",
+    "title": "[계약직][AI Native EHR] Front-End Engineer",
+    "district": "분당구",
+    "matchPct": 75,
+    "tier": "대기업",
+    "held": 3,
+    "total": 4,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.2f7ac875.jpg"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/371955",
+    "lat": 37.50885,
+    "lng": 126.88924,
+    "company": "비바리퍼블리카(토스)",
+    "title": "[토스인슈어런스] IT Manager",
+    "district": "구로구",
+    "matchPct": 17,
+    "tier": "대기업",
+    "held": 1,
+    "total": 6,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.e2a0e131.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/370479",
+    "lat": 37.50885,
+    "lng": 126.88924,
+    "company": "비바리퍼블리카(토스)",
+    "title": "[토스인슈어런스] Server Developer",
+    "district": "구로구",
+    "matchPct": 16,
+    "tier": "대기업",
+    "held": 3,
+    "total": 19,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.e2a0e131.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/368076",
+    "lat": 37.50003,
+    "lng": 127.03291,
+    "company": "토스뱅크",
+    "title": "Data Engineer (Finance)",
+    "district": "강남구",
+    "matchPct": 33,
+    "tier": "대기업",
+    "held": 1,
+    "total": 3,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.4c87bb58.jpg"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/368075",
+    "lat": 37.50003,
+    "lng": 127.03291,
+    "company": "토스뱅크",
+    "title": "Data Engineer (Platform)",
+    "district": "강남구",
+    "matchPct": 33,
+    "tier": "대기업",
+    "held": 3,
+    "total": 9,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.4c87bb58.jpg"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/370534",
+    "lat": 37.49045,
+    "lng": 127.03053,
+    "company": "토스플레이스",
+    "title": "Frontend UX Engineer (Design System)",
+    "district": "서초구",
+    "matchPct": 38,
+    "tier": "대기업",
+    "held": 3,
+    "total": 8,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_5.7f4ffb9f.jpg"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/362865",
+    "lat": 37.49045,
+    "lng": 127.03053,
+    "company": "토스플레이스",
+    "title": "Data Analytics Engineer",
+    "district": "서초구",
+    "matchPct": 40,
+    "tier": "대기업",
+    "held": 2,
+    "total": 5,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_5.7f4ffb9f.jpg"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/362064",
+    "lat": 37.50011,
+    "lng": 127.03344,
+    "company": "컬리",
+    "title": "커머스 백엔드 개발자(광고)",
+    "district": "강남구",
+    "matchPct": 11,
+    "tier": "대기업",
+    "held": 1,
+    "total": 9,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.e2c011d3.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/370318",
+    "lat": 37.4138,
+    "lng": 127.5183,
+    "company": "업스테이지",
+    "title": "AI Model Production - Agents & Document AI",
+    "district": "",
+    "matchPct": 75,
+    "tier": "중견",
+    "held": 3,
+    "total": 4,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.3fb0dcb3.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/368946",
+    "lat": 37.4138,
+    "lng": 127.5183,
+    "company": "업스테이지",
+    "title": "AI Agent Platform Engineering",
+    "district": "",
+    "matchPct": 0,
+    "tier": "중견",
+    "held": 0,
+    "total": 3,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.3fb0dcb3.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/372838",
+    "lat": 37.4129,
+    "lng": 127.09414,
+    "company": "포티투닷(42dot)",
+    "title": "Localization Engineer (자율주행)",
+    "district": "수정구",
+    "matchPct": 33,
+    "tier": "중견",
+    "held": 1,
+    "total": 3,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.a2574442.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/366281",
+    "lat": 37.4129,
+    "lng": 127.09414,
+    "company": "포티투닷(42dot)",
+    "title": "Senior Computer Vision Engineer (자율주행)",
+    "district": "수정구",
+    "matchPct": 33,
+    "tier": "중견",
+    "held": 1,
+    "total": 3,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.a2574442.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/355021",
+    "lat": 37.54044,
+    "lng": 126.94635,
+    "company": "뱅크샐러드",
+    "title": "Data Analyst (데이터 애널리스트, 건강 PA)",
+    "district": "마포구",
+    "matchPct": 33,
+    "tier": "중견",
+    "held": 2,
+    "total": 6,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.793cd2cc.jpg"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/344634",
+    "lat": 37.54044,
+    "lng": 126.94635,
+    "company": "뱅크샐러드",
+    "title": "Data Analyst (데이터 애널리스트, 앱테크)",
+    "district": "마포구",
+    "matchPct": 50,
+    "tier": "중견",
+    "held": 2,
+    "total": 4,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.793cd2cc.jpg"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/363764",
+    "lat": 37.51355,
+    "lng": 127.06206,
+    "company": "패스트파이브",
+    "title": "백엔드 개발자 (크레딧·정산)",
+    "district": "강남구",
+    "matchPct": 46,
+    "tier": "중견",
+    "held": 6,
+    "total": 13,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.f801be3d.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/361096",
+    "lat": 37.51355,
+    "lng": 127.06206,
+    "company": "패스트파이브",
+    "title": "백엔드 개발자 (멤버십 플랫폼)",
+    "district": "강남구",
+    "matchPct": 50,
+    "tier": "중견",
+    "held": 5,
+    "total": 10,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.f801be3d.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/369738",
+    "lat": 37.49351,
+    "lng": 127.02921,
+    "company": "마키나락스",
+    "title": "Backend Engineer (Runway Platform)",
+    "district": "서초구",
+    "matchPct": 17,
+    "tier": "중견",
+    "held": 1,
+    "total": 6,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_5.95dc2f38.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/368178",
+    "lat": 37.50905,
+    "lng": 127.06089,
+    "company": "노타(Nota)",
+    "title": "[NetsPresso] AI Engineer",
+    "district": "강남구",
+    "matchPct": 67,
+    "tier": "중견",
+    "held": 2,
+    "total": 3,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.f047f959.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/368177",
+    "lat": 37.50905,
+    "lng": 127.06089,
+    "company": "노타(Nota)",
+    "title": "[NetsPresso] Senior AI Engineer",
+    "district": "강남구",
+    "matchPct": 67,
+    "tier": "중견",
+    "held": 2,
+    "total": 3,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.f047f959.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/371194",
+    "lat": 37.48132,
+    "lng": 126.88378,
+    "company": "커넥트웨이브",
+    "title": "[CC CTO] DevOps Engineer",
+    "district": "금천구",
+    "matchPct": 17,
+    "tier": "중견",
+    "held": 1,
+    "total": 6,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_5.12ce2b6d.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/371183",
+    "lat": 37.48132,
+    "lng": 126.88378,
+    "company": "커넥트웨이브",
+    "title": "[CC CTO] Search Engineer",
+    "district": "금천구",
+    "matchPct": 36,
+    "tier": "중견",
+    "held": 4,
+    "total": 11,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_5.12ce2b6d.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/359810",
+    "lat": 37.50993,
+    "lng": 127.10592,
+    "company": "버즈빌(buzzvil)",
+    "title": "[Ad Spark] 백엔드 개발자(3년 이상 or 전문연구요원 편입/전직 희망)",
+    "district": "송파구",
+    "matchPct": 22,
+    "tier": "중견",
+    "held": 5,
+    "total": 23,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.b67154c7.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/357878",
+    "lat": 37.50993,
+    "lng": 127.10592,
+    "company": "버즈빌(buzzvil)",
+    "title": "Analytics Engineer (5년 이상)",
+    "district": "송파구",
+    "matchPct": 50,
+    "tier": "중견",
+    "held": 4,
+    "total": 8,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.b67154c7.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/372978",
+    "lat": 37.4939,
+    "lng": 127.03092,
+    "company": "넛지헬스케어(캐시워크)",
+    "title": "[병역특례 현역/보충역] Flutter개발자",
+    "district": "강남구",
+    "matchPct": 0,
+    "tier": "중견",
+    "held": 0,
+    "total": 3,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.e1a9fa79.jpg"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/359901",
+    "lat": 37.4939,
+    "lng": 127.03092,
+    "company": "넛지헬스케어(캐시워크)",
+    "title": "[병역특례 현역/보충역] 데이터엔지니어",
+    "district": "강남구",
+    "matchPct": 33,
+    "tier": "중견",
+    "held": 3,
+    "total": 9,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.e1a9fa79.jpg"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/363657",
+    "lat": 37.49973,
+    "lng": 127.02558,
+    "company": "뤼튼테크놀로지스",
+    "title": "[크랙] QA Manager",
+    "district": "서초구",
+    "matchPct": 33,
+    "tier": "중견",
+    "held": 5,
+    "total": 15,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_5.9fedc176.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/342789",
+    "lat": 37.49973,
+    "lng": 127.02558,
+    "company": "뤼튼테크놀로지스",
+    "title": "AX Backend Engineer (Java)",
+    "district": "서초구",
+    "matchPct": 30,
+    "tier": "중견",
+    "held": 3,
+    "total": 10,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_5.9fedc176.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/370296",
+    "lat": 37.56748,
+    "lng": 126.98841,
+    "company": "코드잇(codeit)",
+    "title": "커리큘럼 기획 매니저 [소프트웨어 엔지니어링 교육]",
+    "district": "중구",
+    "matchPct": 38,
+    "tier": "중견",
+    "held": 3,
+    "total": 8,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.11d3876d.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/367085",
+    "lat": 36.4212,
+    "lng": 127.42168,
+    "company": "니어스랩",
+    "title": "[개발부문/대전] 항공 및 로보틱스 엔지니어 (GNC)",
+    "district": "대덕구",
+    "matchPct": 40,
+    "tier": "중소",
+    "held": 2,
+    "total": 5,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.4ddbe47d.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/367083",
+    "lat": 36.4212,
+    "lng": 127.42168,
+    "company": "니어스랩",
+    "title": "[개발부문/대전] 항공 및 로보틱스 엔지니어 (UAV Autonomy)",
+    "district": "대덕구",
+    "matchPct": 43,
+    "tier": "중소",
+    "held": 3,
+    "total": 7,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.4ddbe47d.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/366221",
+    "lat": 37.49481,
+    "lng": 127.03096,
+    "company": "스트라드비젼(STRADVISION)",
+    "title": "Technical Project Manager (E2E)",
+    "district": "강남구",
+    "matchPct": 40,
+    "tier": "중소",
+    "held": 2,
+    "total": 5,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.99a201cf.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/364756",
+    "lat": 37.49481,
+    "lng": 127.03096,
+    "company": "스트라드비젼(STRADVISION)",
+    "title": "Data AI Engineer",
+    "district": "강남구",
+    "matchPct": 20,
+    "tier": "중소",
+    "held": 1,
+    "total": 5,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.99a201cf.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/366934",
+    "lat": 37.49834,
+    "lng": 127.03452,
+    "company": "씨드로닉스",
+    "title": "백엔드 엔지니어",
+    "district": "강남구",
+    "matchPct": 67,
+    "tier": "중소",
+    "held": 6,
+    "total": 9,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.79152c83.jpg"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/326795",
+    "lat": 37.50698,
+    "lng": 127.06089,
+    "company": "페이타랩(패스오더)",
+    "title": "[병역특례] 데이터 엔지니어 (Growth Data Engineer), 부산",
+    "district": "강남구",
+    "matchPct": 33,
+    "tier": "중소",
+    "held": 1,
+    "total": 3,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.2b945c4f.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/326794",
+    "lat": 37.50698,
+    "lng": 127.06089,
+    "company": "페이타랩(패스오더)",
+    "title": "[병역특례] 데이터 엔지니어 (Growth Data Engineer), 서울",
+    "district": "강남구",
+    "matchPct": 33,
+    "tier": "중소",
+    "held": 1,
+    "total": 3,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.2b945c4f.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/372680",
+    "lat": 37.50206,
+    "lng": 127.02467,
+    "company": "유모스원",
+    "title": "Data & AI Engineering Lead",
+    "district": "서초구",
+    "matchPct": 30,
+    "tier": "중소",
+    "held": 3,
+    "total": 10,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_5.88990421.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/369049",
+    "lat": 37.50206,
+    "lng": 127.02467,
+    "company": "유모스원",
+    "title": "Senior Cloud Infra Engineer (DevOps, SRE)",
+    "district": "서초구",
+    "matchPct": 25,
+    "tier": "중소",
+    "held": 4,
+    "total": 16,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_5.88990421.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/370637",
+    "lat": 37.50588,
+    "lng": 127.05213,
+    "company": "에이비일팔공(AB180)",
+    "title": "Technical Support manager",
+    "district": "강남구",
+    "matchPct": 0,
+    "tier": "중소",
+    "held": 0,
+    "total": 6,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_5.eb6e1320.jpg"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/370636",
+    "lat": 37.50584,
+    "lng": 127.05217,
+    "company": "에이비일팔공(AB180)",
+    "title": "Solution Architect",
+    "district": "강남구",
+    "matchPct": 0,
+    "tier": "중소",
+    "held": 0,
+    "total": 4,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_5.eb6e1320.jpg"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/371792",
+    "lat": 37.52498,
+    "lng": 126.9253,
+    "company": "넥스트증권",
+    "title": "QA Engineer BackOffice(6개월-12개월)",
+    "district": "영등포구",
+    "matchPct": 33,
+    "tier": "중소",
+    "held": 1,
+    "total": 3,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_5.ab1f0688.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/370357",
+    "lat": 37.52498,
+    "lng": 126.9253,
+    "company": "넥스트증권",
+    "title": "Backend Engineer (Service Platform)",
+    "district": "영등포구",
+    "matchPct": 21,
+    "tier": "중소",
+    "held": 3,
+    "total": 14,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_5.ab1f0688.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/372472",
+    "lat": 37.52202,
+    "lng": 127.03635,
+    "company": "씨메스로보틱스",
+    "title": "로보틱스 SW 엔지니어 (전문연구요원 가능)",
+    "district": "강남구",
+    "matchPct": 60,
+    "tier": "중소",
+    "held": 3,
+    "total": 5,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_5.043e22ee.jpg"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/372436",
+    "lat": 37.52202,
+    "lng": 127.03635,
+    "company": "씨메스로보틱스",
+    "title": "플랫폼 풀스택 엔지니어",
+    "district": "강남구",
+    "matchPct": 64,
+    "tier": "중소",
+    "held": 7,
+    "total": 11,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_5.043e22ee.jpg"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/369201",
+    "lat": 37.48643,
+    "lng": 126.89213,
+    "company": "폴라리스쓰리디(Polaris3D)",
+    "title": "펌웨어 개발자(임베디드 펌웨어 개발) (서울)",
+    "district": "구로구",
+    "matchPct": 0,
+    "tier": "중소",
+    "held": 0,
+    "total": 4,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_5.f15ae078.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/365950",
+    "lat": 36.01849,
+    "lng": 129.34191,
+    "company": "폴라리스쓰리디(Polaris3D)",
+    "title": "이리온 C++ 어플리케이션 개발자 (포항)",
+    "district": "남구",
+    "matchPct": 67,
+    "tier": "중소",
+    "held": 2,
+    "total": 3,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_5.f15ae078.png"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/371315",
+    "lat": 37.49672,
+    "lng": 127.02458,
+    "company": "모레",
+    "title": "Senior SRE/DevOps Engineer",
+    "district": "서초구",
+    "matchPct": 50,
+    "tier": "중소",
+    "held": 4,
+    "total": 8,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.b843ce02.jpg"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/370720",
+    "lat": 37.49672,
+    "lng": 127.02458,
+    "company": "모레",
+    "title": "AI Agent System Engineer",
+    "district": "서초구",
+    "matchPct": 50,
+    "tier": "중소",
+    "held": 2,
+    "total": 4,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.b843ce02.jpg"
+   },
+   {
+    "id": "wanted:wanted:https://www.wanted.co.kr/wd/369688",
+    "lat": 37.49669,
+    "lng": 127.03006,
+    "company": "아이씨티케이",
+    "title": "기술지원 담당자(SW)",
+    "district": "서울",
+    "matchPct": 33,
+    "tier": "중소",
+    "held": 1,
+    "total": 3,
+    "logo": "https://static.wanted.co.kr/images/wdes/0_4.288166a2.png"
+   }
+  ],
+  "clusters": [
+   {
+    "district": "강남구",
+    "count": 18,
+    "avgMatch": 36,
+    "lat": 37.50003,
+    "lng": 127.03291
+   },
+   {
+    "district": "서초구",
+    "count": 9,
+    "avgMatch": 35,
+    "lat": 37.49045,
+    "lng": 127.03053
+   },
+   {
+    "district": "분당구",
+    "count": 7,
+    "avgMatch": 26,
+    "lat": 37.39427,
+    "lng": 127.11032
+   },
+   {
+    "district": "송파구",
+    "count": 4,
+    "avgMatch": 22,
+    "lat": 37.48569,
+    "lng": 127.11932
+   },
+   {
+    "district": "마포구",
+    "count": 4,
+    "avgMatch": 40,
+    "lat": 37.57835,
+    "lng": 126.89165
+   },
+   {
+    "district": "구로구",
+    "count": 3,
+    "avgMatch": 11,
+    "lat": 37.50885,
+    "lng": 126.88924
+   },
+   {
+    "district": "용산구",
+    "count": 2,
+    "avgMatch": 34,
+    "lat": 37.55167,
+    "lng": 126.97292
+   },
+   {
+    "district": "수정구",
+    "count": 2,
+    "avgMatch": 33,
+    "lat": 37.4129,
+    "lng": 127.09414
+   },
+   {
+    "district": "금천구",
+    "count": 2,
+    "avgMatch": 26,
+    "lat": 37.48132,
+    "lng": 126.88378
+   },
+   {
+    "district": "대덕구",
+    "count": 2,
+    "avgMatch": 42,
+    "lat": 36.4212,
+    "lng": 127.42168
+   },
+   {
+    "district": "영등포구",
+    "count": 2,
+    "avgMatch": 27,
+    "lat": 37.52498,
+    "lng": 126.9253
+   },
+   {
+    "district": "중구",
+    "count": 1,
+    "avgMatch": 38,
+    "lat": 37.56748,
+    "lng": 126.98841
+   },
+   {
+    "district": "남구",
+    "count": 1,
+    "avgMatch": 67,
+    "lat": 36.01849,
+    "lng": 129.34191
+   },
+   {
+    "district": "서울",
+    "count": 1,
+    "avgMatch": 33,
+    "lat": 37.49669,
+    "lng": 127.03006
+   }
+  ],
+  "heatmap": [
+   {
+    "district": "강남구",
+    "count": 18
+   },
+   {
+    "district": "서초구",
+    "count": 9
+   },
+   {
+    "district": "분당구",
+    "count": 7
+   },
+   {
+    "district": "송파구",
+    "count": 4
+   },
+   {
+    "district": "마포구",
+    "count": 4
+   },
+   {
+    "district": "구로구",
+    "count": 3
+   },
+   {
+    "district": "용산구",
+    "count": 2
+   },
+   {
+    "district": "수정구",
+    "count": 2
+   },
+   {
+    "district": "금천구",
+    "count": 2
+   },
+   {
+    "district": "대덕구",
+    "count": 2
+   },
+   {
+    "district": "영등포구",
+    "count": 2
+   },
+   {
+    "district": "중구",
+    "count": 1
+   },
+   {
+    "district": "남구",
+    "count": 1
+   },
+   {
+    "district": "서울",
+    "count": 1
+   }
+  ],
+  "note": "국내 · 유명 회사"
+ },
+ "asOf": "2026-07-07"
+}

@@ -1,0 +1,243 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  font-family: 'Poppins', 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+button {
+  font-family: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+ul {
+  list-style: none;
+}
+
+/* ---------- Stage: 배경 위에 폰 목업을 올리는 캔버스 ---------- */
+.stage {
+  min-height: 100%;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  overflow: auto;
+}
+
+.stage--purple {
+  /* 1번 이미지 배경: 위 밝은 회색 → 아래 연보라 */
+  background: linear-gradient(160deg, #f4f4f7 0%, #ecebf6 45%, #dcd9f2 100%);
+}
+
+.stage--blue {
+  /* 2번 이미지 배경: 맑은 하늘색 블루 그라데이션 */
+  background: linear-gradient(165deg, #dce9f5 0%, #c2d9ef 45%, #93b9e0 100%);
+}
+
+.stage--gray {
+  /* 3번 이미지 배경: 밝은 회색 */
+  background: radial-gradient(120% 120% at 70% 20%, #f2f2f4 0%, #e7e8ea 55%, #dedfe2 100%);
+}
+
+/* 2번 이미지: 3D 기울기 무대 */
+.stage--tilt {
+  perspective: 1800px;
+}
+.phone--tilt {
+  transform: rotateX(6deg) rotateY(-19deg) rotateZ(2deg) scale(1.02);
+  transform-origin: center center;
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.35) inset,
+    -30px 60px 90px -30px rgba(10, 30, 60, 0.55),
+    0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+/* ---------- iPhone 목업 프레임 ---------- */
+.phone {
+  position: relative;
+  width: 390px;
+  height: 844px;
+  border-radius: 56px;
+  background: #0b0b0d;
+  padding: 12px;
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.35) inset,
+    0 40px 80px -20px rgba(40, 40, 80, 0.45),
+    0 8px 24px rgba(0, 0, 0, 0.2);
+  flex: none;
+}
+
+.phone__screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 46px;
+  overflow: hidden;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Dynamic Island */
+.phone__island {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 122px;
+  height: 34px;
+  background: #0b0b0d;
+  border-radius: 20px;
+  z-index: 40;
+}
+
+/* 상태바 */
+.statusbar {
+  height: 54px;
+  flex: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 30px 6px;
+  z-index: 30;
+}
+
+.statusbar__time {
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: 0.2px;
+}
+
+.statusbar__icons {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.statusbar--light .statusbar__time,
+.statusbar--light .statusbar__icons {
+  color: #0b0b0d;
+}
+
+.statusbar--dark .statusbar__time,
+.statusbar--dark .statusbar__icons {
+  color: #ffffff;
+}
+
+/* 홈 인디케이터 바 */
+.home-indicator {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 138px;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.28);
+  z-index: 30;
+}
+
+.home-indicator--light {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+/* 스크롤 영역 */
+.screen-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(47, 97, 184, 0.26) transparent;
+}
+.screen-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.screen-scroll::-webkit-scrollbar-thumb {
+  background: rgba(47, 97, 184, 0.26);
+  border-radius: 4px;
+}
+.screen-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---------- 갤러리 인덱스 ---------- */
+.gallery {
+  min-height: 100%;
+  background: linear-gradient(160deg, #0f1020 0%, #1a1c34 100%);
+  color: #fff;
+  padding: 64px 32px 80px;
+}
+.gallery__head {
+  max-width: 960px;
+  margin: 0 auto 40px;
+}
+.gallery__head h1 {
+  font-size: 34px;
+  font-weight: 700;
+}
+.gallery__head p {
+  margin-top: 8px;
+  color: #a9acd6;
+  font-size: 15px;
+  font-weight: 400;
+}
+.gallery__grid {
+  max-width: 960px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
+}
+.gallery__card {
+  display: block;
+  border-radius: 20px;
+  padding: 26px 24px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition:
+    transform 0.18s ease,
+    background 0.18s ease;
+}
+.gallery__card:hover {
+  transform: translateY(-4px);
+  background: rgba(255, 255, 255, 0.09);
+}
+.gallery__swatch {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  margin-bottom: 18px;
+}
+.gallery__card h3 {
+  font-size: 17px;
+  font-weight: 600;
+}
+.gallery__card span {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  color: #9497c4;
+  font-weight: 400;
+}

@@ -1,0 +1,970 @@
+/* ============ 채용시장 시각화 위젯 — 디자인 시스템 정합 ============ */
+.wg-list {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  margin-top: 40px;
+}
+.wg-heroskills {
+  margin-top: 22px;
+  padding: 16px 18px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  max-width: 680px;
+}
+.wg-heroskills__label {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+.wg-heroskills__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.wg-heroskills__note {
+  display: block;
+  margin-top: 10px;
+  font-size: 11.5px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.wg-navnote {
+  margin-top: 20px;
+  padding: 12px 10px;
+  font-size: 11.5px;
+  line-height: 1.7;
+  color: var(--muted);
+  font-weight: 600;
+  border-top: 1px solid var(--line);
+}
+
+/* ---------- 위젯 프레임 ---------- */
+.wg {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 26px 28px 20px;
+  scroll-margin-top: 20px;
+}
+.wg__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 4px;
+}
+.wg__tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--accent-50);
+  padding: 4px 9px;
+  border-radius: 7px;
+  margin-bottom: 9px;
+}
+.wg__scopebadge {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #ac5623;
+  background: #fbeee2;
+  padding: 3px 8px;
+  border-radius: 6px;
+  margin-left: 8px;
+  margin-bottom: 9px;
+  vertical-align: middle;
+}
+.wg__title {
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  color: var(--ink);
+}
+.wg__headline {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink2, #43454c);
+  font-weight: 500;
+  margin: 2px 0 20px;
+  max-width: 680px;
+}
+.wg__headline b {
+  font-weight: 800;
+}
+.wg__body {
+  margin-bottom: 14px;
+}
+.wg__foot {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  flex-wrap: wrap;
+}
+.wg__asof {
+  font-weight: 700;
+  color: var(--ink2, #43454c);
+}
+.wg__dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--neutral-300, #cdd2db);
+}
+.wg__note {
+  color: #9a9ea8;
+  font-weight: 500;
+  margin-left: auto;
+  font-size: 11px;
+}
+
+/* ---------- 세그먼트 (재사용) ---------- */
+.wg-seg {
+  font-size: 12.5px;
+}
+
+/* ---------- 레전드 ---------- */
+.wg-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.wg-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.wg-legend i {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  flex: none;
+}
+.wg-legend__hint {
+  margin-left: auto;
+  color: #9a9ea8;
+}
+
+/* ============ A — Hype vs Hire ============ */
+.wg-a {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.65fr);
+  gap: 22px;
+}
+.wg-a__chart {
+  position: relative;
+}
+.wg-a__quads {
+  position: absolute;
+  inset: 24px 100px 48px 58px;
+  pointer-events: none;
+}
+.wg-a__quads .q {
+  position: absolute;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.82);
+  white-space: nowrap;
+}
+.wg-a__quads .tl {
+  top: 0;
+  left: 0;
+  color: #b8892b;
+}
+.wg-a__quads .tr {
+  top: 0;
+  right: 0;
+  color: var(--muted);
+}
+.wg-a__quads .bl {
+  bottom: 0;
+  left: 0;
+  color: var(--neutral-300, #a2a6b0);
+}
+.wg-a__quads .br {
+  bottom: 0;
+  right: 0;
+  color: var(--danger, #c8382d);
+}
+.wg-a__side {
+  border-left: 1px solid var(--line);
+  padding-left: 20px;
+}
+.wg-a__ptitle,
+.wg-a__lltitle {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+.wg-a__ptitle span {
+  font-weight: 600;
+  color: #b8892b;
+  font-size: 11px;
+  margin-left: 4px;
+}
+.wg-a__lltitle {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.wg-a__pearl {
+  display: flex;
+  flex-direction: column;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--line2, #eef1f6);
+}
+.wg-a__pearl b {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.wg-a__pearl span {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.wg-a__ll {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+}
+.wg-a__ll b {
+  font-size: 12.5px;
+  font-weight: 700;
+  flex: 1;
+}
+.wg-a__lag {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--accent-700);
+  background: var(--accent-50);
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+.wg-a__corr {
+  font-size: 10.5px;
+  color: var(--muted);
+  font-family: 'SF Mono', monospace;
+  font-weight: 700;
+}
+
+/* ============ C — 커버리지 분포 ============ */
+.wg-c {
+  display: grid;
+  grid-template-columns: minmax(0, 0.42fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.wg-c__left {
+  padding-top: 6px;
+}
+.wg-c__gauge {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+.wg-c__ring {
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex: none;
+}
+.wg-c__ring::after {
+  content: '';
+  position: absolute;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: #fff;
+}
+.wg-c__ring b {
+  position: relative;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.wg-c__ring em {
+  font-style: normal;
+  font-size: 14px;
+}
+.wg-c__glabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.wg-c__gsub {
+  font-size: 11.5px;
+  color: var(--muted);
+  font-weight: 600;
+  margin-top: 2px;
+}
+.wg-c__matched {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  background: var(--bg);
+  border-radius: 14px;
+}
+.wg-c__matched b {
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -1.4px;
+  color: var(--ink);
+  line-height: 1;
+}
+.wg-c__matched span {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink2, #43454c);
+  margin-top: 4px;
+}
+.wg-c__matched em {
+  font-style: normal;
+  color: var(--muted);
+  font-weight: 600;
+}
+.wg-c__delta {
+  align-self: flex-start;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+  background: var(--accent);
+  padding: 3px 9px;
+  border-radius: 7px;
+}
+.wg-c__myskills {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.wg-c__mslabel {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 9px;
+}
+.wg-c__mslabel em {
+  font-style: normal;
+  color: #9a9ea8;
+  font-weight: 600;
+}
+.wg-c__mschips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.wg-c__howto {
+  background: var(--bg);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+}
+.wg-c__howtitle {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+.wg-c__steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.wg-c__steps li {
+  font-size: 12px;
+  line-height: 1.65;
+  color: var(--muted);
+  font-weight: 500;
+}
+.wg-c__steps b {
+  font-weight: 800;
+  color: var(--ink2, #43454c);
+}
+.wg-c__steps li:first-child b:first-child,
+.wg-c__steps li b:first-child {
+  color: var(--accent-700);
+}
+.wg-c__svg {
+  width: 100%;
+  height: 280px;
+  display: block;
+}
+.wg-c__bar {
+  transition: height 0.6s cubic-bezier(0, 0, 0.2, 1), y 0.6s cubic-bezier(0, 0, 0.2, 1),
+    fill 0.25s ease, opacity 0.25s ease;
+}
+.wg-c__xlab {
+  font-size: 10px;
+  fill: #9a9ea8;
+  font-weight: 600;
+  font-family: 'SF Mono', monospace;
+}
+.wg-c__ylab {
+  font-size: 9.5px;
+  fill: #9a9ea8;
+  font-weight: 600;
+  font-family: 'SF Mono', monospace;
+}
+.wg-c__axistitle {
+  font-size: 10.5px;
+  fill: var(--muted);
+  font-weight: 700;
+  font-family: 'Pretendard', -apple-system, sans-serif;
+}
+.wg-c__slider {
+  margin-top: 6px;
+}
+.wg-c__slider span {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.wg-c__slider b {
+  color: var(--accent-700);
+  font-weight: 800;
+}
+.wg-c__slider input {
+  width: 100%;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.wg-c__whatif {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin-top: 16px;
+}
+.wg-c__wilabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-right: 2px;
+}
+.wg-c__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 9px;
+  padding: 6px 11px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+.wg-c__chip em {
+  font-style: normal;
+  font-size: 10.5px;
+  color: var(--muted);
+  font-weight: 700;
+}
+.wg-c__chip:hover {
+  border-color: var(--accent-200, #bcd0f0);
+}
+.wg-c__chip.on {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.wg-c__chip.on em {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* ============ Y4 — 트렌드 전파 ============ */
+.wg-y4 {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.65fr);
+  gap: 22px;
+  align-items: start;
+}
+.wg-y4__list {
+  border-left: 1px solid var(--line);
+  padding-left: 20px;
+}
+.wg-y4__ltitle {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+.wg-y4__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--line2, #eef1f6);
+  font-size: 12px;
+}
+.wg-y4__lead {
+  font-weight: 800;
+}
+.wg-y4__arrow {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.wg-y4__foll {
+  font-weight: 800;
+  flex: 1;
+}
+.wg-y4__corr {
+  font-size: 10.5px;
+  font-family: 'SF Mono', monospace;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+/* ============ X — 직군 간 스택 궁합 ============ */
+.wg-x__cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 16px;
+}
+.wg-x__card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 13px;
+}
+.wg-x__cname {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+.wg-x__cname span {
+  font-weight: 600;
+  color: var(--muted);
+  font-size: 10.5px;
+  margin-left: 4px;
+}
+.wg-x__ctech {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+/* ============ L — 15년 GitHub 연대기 ============ */
+.wg-l__events {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 14px 16px;
+  background: var(--bg);
+  border-radius: 12px;
+}
+.wg-l__event {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 12.5px;
+  color: var(--ink2, #43454c);
+  font-weight: 500;
+}
+.wg-l__event b {
+  font-weight: 800;
+}
+.wg-l__eyear {
+  font-size: 11px;
+  font-weight: 800;
+  color: #fff;
+  background: var(--accent);
+  padding: 2px 7px;
+  border-radius: 6px;
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============ R — 산업 스택 지문 ============ */
+.wg-r__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: 420px;
+  justify-content: flex-end;
+}
+
+/* ============ S — 응답 잘 오는 회사 ============ */
+.wg-s {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: 24px;
+}
+.wg-s__bigstat {
+  margin-bottom: 20px;
+}
+.wg-s__bigstat b {
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: -1.6px;
+  color: var(--ink);
+  line-height: 1;
+}
+.wg-s__bigstat em {
+  font-style: normal;
+  font-size: 22px;
+}
+.wg-s__bigstat span {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+  margin-top: 6px;
+}
+.wg-s__stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.wg-s__srow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.wg-s__slabel {
+  width: 56px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted);
+  flex: none;
+}
+.wg-s__strack {
+  flex: 1;
+  height: 10px;
+  background: #eceef3;
+  border-radius: 5px;
+  overflow: hidden;
+}
+.wg-s__strack i {
+  display: block;
+  height: 100%;
+  border-radius: 5px;
+}
+.wg-s__sn {
+  width: 44px;
+  text-align: right;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink2, #43454c);
+  flex: none;
+}
+.wg-s__right {
+  border-left: 1px solid var(--line);
+  padding-left: 22px;
+}
+.wg-s__rtitle {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+.wg-s__cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 380px;
+  overflow-y: auto;
+}
+.wg-s__card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 11px 13px;
+}
+.wg-s__cname {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 5px;
+}
+.wg-s__crate {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink2, #43454c);
+}
+.wg-s__badge {
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 6px;
+  color: #fff;
+}
+.wg-s__badge.high { background: var(--accent-300, #8fb0e2); color: #16305c; }
+.wg-s__badge.very_high { background: var(--accent); }
+.wg-s__cchips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+/* ============ G — 회사 세대론 ============ */
+.wg-g {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr);
+  gap: 22px;
+}
+.wg-g__panel {
+  border-left: 1px solid var(--line);
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.wg-g__ptitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+.wg-g__bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.wg-g__blabel {
+  width: 44px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.wg-g__track {
+  flex: 1;
+  height: 12px;
+  background: #eceef3;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.wg-g__track i {
+  display: block;
+  height: 100%;
+  border-radius: 6px;
+  background: var(--neutral-300, #cdd2db);
+  transition: width 0.7s cubic-bezier(0, 0, 0.2, 1);
+}
+.wg-g__bar.dom .wg-g__track i {
+  background: linear-gradient(90deg, #4a7bd0, var(--accent));
+}
+.wg-g__bar b {
+  width: 38px;
+  text-align: right;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.wg-g__bar.dom b {
+  color: var(--accent-700);
+}
+.wg-g__verdict {
+  margin-top: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink2, #43454c);
+}
+
+/* ============ H — 신입의 문 ============ */
+.wg-h {
+  position: relative;
+}
+.wg-h__quads {
+  position: absolute;
+  inset: 22px 24px 44px 50px;
+  pointer-events: none;
+}
+.wg-h__quads .q {
+  position: absolute;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  padding: 3px 8px;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.82);
+}
+.wg-h__quads .tl {
+  top: 0;
+  left: 0;
+  color: var(--muted);
+}
+.wg-h__quads .tr {
+  top: 0;
+  right: 0;
+  color: #b8892b;
+}
+.wg-h__quads .bl {
+  bottom: 0;
+  left: 0;
+  color: var(--neutral-300, #a2a6b0);
+}
+.wg-h__quads .br {
+  bottom: 0;
+  right: 0;
+  color: var(--danger, #c8382d);
+}
+
+/* ============ K — 아키타입 배지 ============ */
+.wg-k {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.wg-k__card {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 16px 18px 18px;
+  background: #fff;
+}
+.wg-k__card.rising {
+  background: linear-gradient(180deg, #f2f8f4 0%, #fff 60%);
+  border-color: #d4ead9;
+}
+.wg-k__card.hype {
+  background: linear-gradient(180deg, #f7efd9 0%, #fff 60%);
+  border-color: #ecdcb0;
+}
+.wg-k__card.falling {
+  background: linear-gradient(180deg, #fdf5f4 0%, #fff 60%);
+  border-color: #f3d9d6;
+}
+.wg-k__chead {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 14px;
+}
+.wg-k__icon {
+  font-size: 22px;
+  line-height: 1;
+}
+.wg-k__ctitle {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.3px;
+}
+.wg-k__csub {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-top: 1px;
+}
+.wg-k__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.wg-k__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 5px 9px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: default;
+  position: relative;
+  transition: transform 0.12s ease, border-color 0.12s ease;
+}
+.wg-k__badge:hover {
+  transform: translateY(-1px);
+  border-color: var(--neutral-300, #cdd2db);
+}
+.wg-k__badge em {
+  font-style: normal;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.wg-k__badge.dual {
+  border-color: #ecdcb0;
+  background: #fdf8ec;
+}
+.wg-k__dual {
+  font-size: 9px;
+  font-weight: 800;
+  color: #fff;
+  background: #b8892b;
+  border-radius: 5px;
+  padding: 2px 4px;
+  letter-spacing: 0.2px;
+}
+.wg-k__foot {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.65;
+  color: var(--muted);
+  font-weight: 500;
+}
+.wg-k__foot b {
+  font-weight: 700;
+  color: var(--ink2, #43454c);
+}
+
+/* ---------- 반응형 ---------- */
+@media (max-width: 900px) {
+  .wg-a,
+  .wg-c,
+  .wg-g,
+  .wg-k,
+  .wg-s,
+  .wg-y4 {
+    grid-template-columns: 1fr;
+  }
+  .wg-x__cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .wg-a__side,
+  .wg-g__panel,
+  .wg-s__right,
+  .wg-y4__list {
+    border-left: none;
+    border-top: 1px solid var(--line);
+    padding-left: 0;
+    padding-top: 18px;
+  }
+}

@@ -1,0 +1,882 @@
+[
+{
+"tech": "Python",
+"count": 16945
+},
+{
+"tech": "AWS",
+"count": 14885
+},
+{
+"tech": "JavaScript",
+"count": 13938
+},
+{
+"tech": "Git",
+"count": 11117
+},
+{
+"tech": "TypeScript",
+"count": 9930
+},
+{
+"tech": "SQL",
+"count": 9814
+},
+{
+"tech": "Kubernetes",
+"count": 7678
+},
+{
+"tech": "PostgreSQL",
+"count": 7480
+},
+{
+"tech": "Azure",
+"count": 6984
+},
+{
+"tech": "Salesforce",
+"count": 6718
+},
+{
+"tech": "GCP",
+"count": 6480
+},
+{
+"tech": "Docker",
+"count": 6453
+},
+{
+"tech": "Java",
+"count": 6267
+},
+{
+"tech": "Node.js",
+"count": 5007
+},
+{
+"tech": "Linux",
+"count": 4937
+},
+{
+"tech": "HTML",
+"count": 4666
+},
+{
+"tech": "CSS",
+"count": 4435
+},
+{
+"tech": "Terraform",
+"count": 4191
+},
+{
+"tech": "Slack",
+"count": 3822
+},
+{
+"tech": "MySQL",
+"count": 3545
+},
+{
+"tech": "Jira",
+"count": 3485
+},
+{
+"tech": "HubSpot",
+"count": 3203
+},
+{
+"tech": "C++",
+"count": 3157
+},
+{
+"tech": "iOS",
+"count": 2852
+},
+{
+"tech": "Android",
+"count": 2832
+},
+{
+"tech": "Ruby",
+"count": 2826
+},
+{
+"tech": "Redis",
+"count": 2779
+},
+{
+"tech": "Figma",
+"count": 2644
+},
+{
+"tech": "Rails",
+"count": 2626
+},
+{
+"tech": "C#",
+"count": 2613
+},
+{
+"tech": "PHP",
+"count": 2572
+},
+{
+"tech": "Vue",
+"count": 2499
+},
+{
+"tech": ".NET",
+"count": 2411
+},
+{
+"tech": "GraphQL",
+"count": 2409
+},
+{
+"tech": "SAP",
+"count": 2361
+},
+{
+"tech": "Next.js",
+"count": 2338
+},
+{
+"tech": "Spring",
+"count": 2297
+},
+{
+"tech": "Kafka",
+"count": 2234
+},
+{
+"tech": "Notion",
+"count": 2141
+},
+{
+"tech": "Oracle",
+"count": 2139
+},
+{
+"tech": "MongoDB",
+"count": 2136
+},
+{
+"tech": "Angular",
+"count": 2048
+},
+{
+"tech": "Power BI",
+"count": 1970
+},
+{
+"tech": "React",
+"count": 1870
+},
+{
+"tech": "React Native",
+"count": 1858
+},
+{
+"tech": "Jenkins",
+"count": 1737
+},
+{
+"tech": "Kotlin",
+"count": 1706
+},
+{
+"tech": "Snowflake",
+"count": 1704
+},
+{
+"tech": "Django",
+"count": 1703
+},
+{
+"tech": "Bash",
+"count": 1688
+},
+{
+"tech": "Tableau",
+"count": 1670
+},
+{
+"tech": "WordPress",
+"count": 1645
+},
+{
+"tech": "GitHub Actions",
+"count": 1607
+},
+{
+"tech": "S3",
+"count": 1540
+},
+{
+"tech": "Workday",
+"count": 1530
+},
+{
+"tech": "Shopify",
+"count": 1520
+},
+{
+"tech": "Express",
+"count": 1487
+},
+{
+"tech": "Grafana",
+"count": 1463
+},
+{
+"tech": "PyTorch",
+"count": 1446
+},
+{
+"tech": "SQL Server",
+"count": 1445
+},
+{
+"tech": "Lambda",
+"count": 1421
+},
+{
+"tech": "OpenAI",
+"count": 1399
+},
+{
+"tech": "Ansible",
+"count": 1363
+},
+{
+"tech": "Elasticsearch",
+"count": 1346
+},
+{
+"tech": "GitHub Copilot",
+"count": 1344
+},
+{
+"tech": "ChatGPT",
+"count": 1301
+},
+{
+"tech": "Databricks",
+"count": 1287
+},
+{
+"tech": "Prometheus",
+"count": 1227
+},
+{
+"tech": "Asana",
+"count": 1210
+},
+{
+"tech": "Confluence",
+"count": 1202
+},
+{
+"tech": "Airflow",
+"count": 1100
+},
+{
+"tech": "dbt",
+"count": 1087
+},
+{
+"tech": "RDS",
+"count": 1072
+},
+{
+"tech": "BigQuery",
+"count": 1061
+},
+{
+"tech": "FastAPI",
+"count": 1055
+},
+{
+"tech": "Photoshop",
+"count": 1042
+},
+{
+"tech": "Stripe",
+"count": 1035
+},
+{
+"tech": "Redux",
+"count": 1031
+},
+{
+"tech": "Datadog",
+"count": 1023
+},
+{
+"tech": "Tailwind",
+"count": 1022
+},
+{
+"tech": "Web3",
+"count": 982
+},
+{
+"tech": "Canva",
+"count": 939
+},
+{
+"tech": "TensorFlow",
+"count": 918
+},
+{
+"tech": "Looker",
+"count": 891
+},
+{
+"tech": "EC2",
+"count": 882
+},
+{
+"tech": "ECS",
+"count": 873
+},
+{
+"tech": "PowerShell",
+"count": 873
+},
+{
+"tech": "ServiceNow",
+"count": 841
+},
+{
+"tech": "Zapier",
+"count": 841
+},
+{
+"tech": "NetSuite",
+"count": 834
+},
+{
+"tech": "Illustrator",
+"count": 814
+},
+{
+"tech": "LangChain",
+"count": 803
+},
+{
+"tech": "RabbitMQ",
+"count": 784
+},
+{
+"tech": "Gemini",
+"count": 752
+},
+{
+"tech": "EKS",
+"count": 751
+},
+{
+"tech": "Flask",
+"count": 734
+},
+{
+"tech": "Helm",
+"count": 721
+},
+{
+"tech": "Claude API",
+"count": 717
+},
+{
+"tech": "Scala",
+"count": 706
+},
+{
+"tech": "Laravel",
+"count": 698
+},
+{
+"tech": "Zendesk",
+"count": 685
+},
+{
+"tech": "CloudFormation",
+"count": 681
+},
+{
+"tech": "Playwright",
+"count": 671
+},
+{
+"tech": "Jest",
+"count": 670
+},
+{
+"tech": "Cypress",
+"count": 666
+},
+{
+"tech": "Flutter",
+"count": 665
+},
+{
+"tech": "Spark",
+"count": 655
+},
+{
+"tech": "Selenium",
+"count": 653
+},
+{
+"tech": "DynamoDB",
+"count": 648
+},
+{
+"tech": "Microsoft Teams",
+"count": 643
+},
+{
+"tech": "jQuery",
+"count": 637
+},
+{
+"tech": "NestJS",
+"count": 634
+},
+{
+"tech": "Linear",
+"count": 611
+},
+{
+"tech": "Pandas",
+"count": 602
+},
+{
+"tech": "Elixir",
+"count": 600
+},
+{
+"tech": "Sass",
+"count": 598
+},
+{
+"tech": "Redshift",
+"count": 596
+},
+{
+"tech": "Webpack",
+"count": 584
+},
+{
+"tech": "Postman",
+"count": 582
+},
+{
+"tech": "CloudWatch",
+"count": 580
+},
+{
+"tech": "GitLab CI",
+"count": 580
+},
+{
+"tech": "ArgoCD",
+"count": 573
+},
+{
+"tech": "ClickUp",
+"count": 562
+},
+{
+"tech": "After Effects",
+"count": 531
+},
+{
+"tech": "Premiere Pro",
+"count": 531
+},
+{
+"tech": "ClickHouse",
+"count": 528
+},
+{
+"tech": "AutoCAD",
+"count": 505
+},
+{
+"tech": "Firebase",
+"count": 496
+},
+{
+"tech": "Heroku",
+"count": 482
+},
+{
+"tech": "gRPC",
+"count": 481
+},
+{
+"tech": "Bootstrap",
+"count": 479
+},
+{
+"tech": "Active Directory",
+"count": 477
+},
+{
+"tech": "Microsoft Dynamics",
+"count": 466
+},
+{
+"tech": "Sketch",
+"count": 458
+},
+{
+"tech": "ELK",
+"count": 441
+},
+{
+"tech": "Vercel",
+"count": 438
+},
+{
+"tech": "Apex",
+"count": 437
+},
+{
+"tech": "Trello",
+"count": 436
+},
+{
+"tech": "Bedrock",
+"count": 434
+},
+{
+"tech": "Scikit-learn",
+"count": 427
+},
+{
+"tech": "Zoho",
+"count": 425
+},
+{
+"tech": "Nginx",
+"count": 423
+},
+{
+"tech": "Hugging Face",
+"count": 410
+},
+{
+"tech": "Splunk",
+"count": 410
+},
+{
+"tech": "Cloudflare",
+"count": 398
+},
+{
+"tech": "NumPy",
+"count": 395
+},
+{
+"tech": "InDesign",
+"count": 381
+},
+{
+"tech": "CircleCI",
+"count": 375
+},
+{
+"tech": "Sentry",
+"count": 366
+},
+{
+"tech": "MariaDB",
+"count": 351
+},
+{
+"tech": "Twilio",
+"count": 351
+},
+{
+"tech": "Monday.com",
+"count": 338
+},
+{
+"tech": "Pulumi",
+"count": 337
+},
+{
+"tech": "Okta",
+"count": 333
+},
+{
+"tech": "Vite",
+"count": 318
+},
+{
+"tech": "SageMaker",
+"count": 314
+},
+{
+"tech": "Atlassian",
+"count": 310
+},
+{
+"tech": "Power Automate",
+"count": 308
+},
+{
+"tech": "Hadoop",
+"count": 306
+},
+{
+"tech": "SwiftUI",
+"count": 300
+},
+{
+"tech": "Webflow",
+"count": 297
+},
+{
+"tech": "WebRTC",
+"count": 291
+},
+{
+"tech": "Symfony",
+"count": 286
+},
+{
+"tech": "Supabase",
+"count": 283
+},
+{
+"tech": "GKE",
+"count": 280
+},
+{
+"tech": "Hibernate",
+"count": 273
+},
+{
+"tech": "Solidity",
+"count": 273
+},
+{
+"tech": "CUDA",
+"count": 266
+},
+{
+"tech": "C",
+"count": 265
+},
+{
+"tech": "Objective-C",
+"count": 264
+},
+{
+"tech": "ABAP",
+"count": 262
+},
+{
+"tech": "WebAssembly",
+"count": 257
+},
+{
+"tech": "AKS",
+"count": 253
+},
+{
+"tech": "Vertex AI",
+"count": 253
+},
+{
+"tech": "WebGL",
+"count": 252
+},
+{
+"tech": "Flink",
+"count": 251
+},
+{
+"tech": "JUnit",
+"count": 245
+},
+{
+"tech": "Storybook",
+"count": 240
+},
+{
+"tech": "Svelte",
+"count": 238
+},
+{
+"tech": "JPA",
+"count": 235
+},
+{
+"tech": "Celery",
+"count": 234
+},
+{
+"tech": "Prisma",
+"count": 234
+},
+{
+"tech": "Web Components",
+"count": 233
+},
+{
+"tech": "Gradle",
+"count": 232
+},
+{
+"tech": "LlamaIndex",
+"count": 231
+},
+{
+"tech": "New Relic",
+"count": 229
+},
+{
+"tech": "Loki",
+"count": 225
+},
+{
+"tech": "MuleSoft",
+"count": 224
+},
+{
+"tech": "Pinecone",
+"count": 223
+},
+{
+"tech": "Unreal Engine",
+"count": 222
+},
+{
+"tech": "Electron",
+"count": 220
+},
+{
+"tech": "Jetpack",
+"count": 220
+},
+{
+"tech": "OpenStack",
+"count": 215
+},
+{
+"tech": "Perl",
+"count": 215
+},
+{
+"tech": "Cassandra",
+"count": 212
+},
+{
+"tech": "Material UI",
+"count": 210
+},
+{
+"tech": "PowerApps",
+"count": 205
+},
+{
+"tech": "Visual Studio",
+"count": 204
+},
+{
+"tech": "Fivetran",
+"count": 203
+},
+{
+"tech": "Swagger",
+"count": 195
+},
+{
+"tech": "OpenShift",
+"count": 194
+},
+{
+"tech": "Haskell",
+"count": 193
+},
+{
+"tech": "Hive",
+"count": 192
+},
+{
+"tech": "Metabase",
+"count": 192
+},
+{
+"tech": "Ajax",
+"count": 190
+},
+{
+"tech": "Visual Studio Code",
+"count": 186
+},
+{
+"tech": "Drupal",
+"count": 185
+},
+{
+"tech": "SCADA",
+"count": 182
+},
+{
+"tech": "Apache JMeter",
+"count": 174
+},
+{
+"tech": "OpenCV",
+"count": 174
+},
+{
+"tech": "Istio",
+"count": 170
+},
+{
+"tech": "Mocha",
+"count": 170
+},
+{
+"tech": "Zustand",
+"count": 169
+},
+{
+"tech": "MATLAB",
+"count": 167
+},
+{
+"tech": "Pytest",
+"count": 165
+},
+{
+"tech": "Appium",
+"count": 162
+},
+{
+"tech": "Adobe XD",
+"count": 160
+},
+{
+"tech": "FPGA",
+"count": 159
+},
+{
+"tech": "Neo4j",
+"count": 159
+},
+{
+"tech": "Kibana",
+"count": 156
+}
+]

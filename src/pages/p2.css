@@ -1,0 +1,242 @@
+/* ============ 2번 이미지 (파란 글래스 테마) ============ */
+.p2 {
+  --blue: #3f73a3;
+  --ink: #22303f;
+  font-family: 'Poppins', sans-serif;
+  color: var(--ink);
+  padding: 8px 22px 0;
+  min-height: 100%;
+}
+
+.p2__topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+.p2__hey {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 30px;
+  padding: 6px 16px 6px 6px;
+  backdrop-filter: blur(6px);
+}
+.p2__avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #cbd5e0;
+}
+.p2__hey span {
+  font-size: 15px;
+  font-weight: 500;
+}
+.p2__bell {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #33475b;
+}
+
+.p2__label {
+  font-size: 14px;
+  color: #47596b;
+  margin: 22px 0 6px;
+  font-weight: 400;
+}
+.p2__title {
+  font-size: 33px;
+  line-height: 1.12;
+  font-weight: 700;
+  letter-spacing: -0.6px;
+  color: #1d2b39;
+}
+
+.p2__searchrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+.p2__search {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 30px;
+  padding: 15px 20px;
+  color: #5b6c7c;
+  font-size: 15px;
+  backdrop-filter: blur(6px);
+}
+.p2__filter {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #33475b;
+  box-shadow: 0 8px 18px rgba(30, 60, 90, 0.15);
+}
+
+.p2card {
+  background: #ffffff;
+  border-radius: 26px;
+  padding: 20px;
+  margin-top: 20px;
+  box-shadow: 0 18px 40px -14px rgba(30, 60, 100, 0.28);
+}
+.p2card__top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.p2card__logo {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.p2card__co {
+  font-size: 20px;
+  font-weight: 600;
+  color: #2a3a49;
+}
+.p2card__actions {
+  margin-left: auto;
+  display: flex;
+  gap: 10px;
+}
+.p2card__circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #f4f6f8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #55677a;
+}
+.p2card__role {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: #2a3a49;
+  margin: 18px 0 16px;
+}
+.p2card__tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+.p2card__tag {
+  font-size: 12.5px;
+  color: #3f4f5e;
+  background: #f2f5f8;
+  border-radius: 12px;
+  padding: 9px 13px;
+  white-space: nowrap;
+}
+.p2card__pay {
+  font-size: 24px;
+  font-weight: 700;
+  color: #2f6db8;
+  margin: 18px 0 16px;
+}
+.p2card__pay small {
+  font-size: 15px;
+  font-weight: 500;
+  color: #6b7b8a;
+}
+.p2card__foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.p2card__apply {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f4f6f8;
+  border-radius: 30px;
+  padding: 8px 16px 8px 10px;
+  font-size: 13px;
+  color: #46586a;
+  white-space: nowrap;
+  flex: none;
+}
+.p2card__avatars {
+  display: flex;
+}
+.p2card__avatars img,
+.p2card__avatars span {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  object-fit: cover;
+  background: #c3ceda;
+  display: inline-block;
+}
+.p2card__avatars > * + * {
+  margin-left: -10px;
+}
+.p2card__details {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #3f73a3;
+  color: #fff;
+  border-radius: 22px;
+  padding: 14px 18px;
+  font-size: 15px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* 하단 글래스 탭바 */
+.p2nav {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 40px;
+  padding: 8px;
+  backdrop-filter: blur(10px);
+  z-index: 20;
+}
+.p2nav__item {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #5b6c7c;
+}
+.p2nav__item--active {
+  background: #3f73a3;
+  color: #fff;
+  box-shadow: 0 8px 16px -4px rgba(63, 115, 163, 0.7);
+}

@@ -1,0 +1,149 @@
+{
+  "pearl": "s-response-rate",
+  "as_of": "2026-07-07",
+  "pool": "domestic",
+  "sample_size": 2653,
+  "sample_note": "원티드 응답률 정보 있는 공고 기준 (원티드 전용, 전체의 66%)",
+  "data": {
+    "levels": [
+      {
+        "level": "very_low",
+        "n": 826
+      },
+      {
+        "level": "low",
+        "n": 445
+      },
+      {
+        "level": "normal",
+        "n": 712
+      },
+      {
+        "level": "high",
+        "n": 269
+      },
+      {
+        "level": "very_high",
+        "n": 401
+      }
+    ],
+    "median_rate": 76.1,
+    "examples": [
+      {
+        "company": "포티투닷(42dot)",
+        "level": "very_high",
+        "rate": 97.86,
+        "matched": [
+          "AWS",
+          "Git",
+          "JavaScript",
+          "Node.js",
+          "Python",
+          "React",
+          "TypeScript"
+        ],
+        "matched_n": 7
+      },
+      {
+        "company": "볼트테크코리아",
+        "level": "very_high",
+        "rate": 97.0,
+        "matched": [
+          "AWS",
+          "Git",
+          "JavaScript",
+          "Node.js",
+          "Python",
+          "React",
+          "TypeScript"
+        ],
+        "matched_n": 7
+      },
+      {
+        "company": "스파크플러스 (SPARKPLUS)",
+        "level": "high",
+        "rate": 90.0,
+        "matched": [
+          "AWS",
+          "Git",
+          "JavaScript",
+          "MySQL",
+          "Node.js",
+          "Python",
+          "TypeScript"
+        ],
+        "matched_n": 7
+      },
+      {
+        "company": "호패",
+        "level": "very_high",
+        "rate": 100.0,
+        "matched": [
+          "AWS",
+          "Git",
+          "JavaScript",
+          "MySQL",
+          "Node.js",
+          "TypeScript"
+        ],
+        "matched_n": 6
+      },
+      {
+        "company": "같다(gatda Corp)",
+        "level": "very_high",
+        "rate": 98.73,
+        "matched": [
+          "AWS",
+          "Git",
+          "JavaScript",
+          "MySQL",
+          "Node.js",
+          "TypeScript"
+        ],
+        "matched_n": 6
+      },
+      {
+        "company": "아르고스아이덴티티코리아",
+        "level": "very_high",
+        "rate": 98.57,
+        "matched": [
+          "AWS",
+          "Git",
+          "JavaScript",
+          "Node.js",
+          "Python",
+          "TypeScript"
+        ],
+        "matched_n": 6
+      },
+      {
+        "company": "피치인터랙티브",
+        "level": "very_high",
+        "rate": 97.96,
+        "matched": [
+          "AWS",
+          "Git",
+          "JavaScript",
+          "MySQL",
+          "Node.js",
+          "Python"
+        ],
+        "matched_n": 6
+      },
+      {
+        "company": "레브잇",
+        "level": "very_high",
+        "rate": 96.3,
+        "matched": [
+          "AWS",
+          "Git",
+          "JavaScript",
+          "MySQL",
+          "Node.js",
+          "TypeScript"
+        ],
+        "matched_n": 6
+      }
+    ]
+  }
+}

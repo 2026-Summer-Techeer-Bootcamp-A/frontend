@@ -1,0 +1,159 @@
+{
+  "pearl": "o-global-domestic-gap",
+  "as_of": "2026-07-07",
+  "pool": "both",
+  "sample_size": 124237,
+  "sample_note": "순수 기술 스택만(SaaS·협업툴·디자인툴 제외) · 글로벌 N=117,133 · 국내 N=7,104 · 각 풀 내 점유율(%) 비교",
+  "data": {
+    "global_favored": [
+      {
+        "tech": "Rails",
+        "category": "backend",
+        "global_pct": 2.23,
+        "domestic_pct": 0.27,
+        "diff": 1.96,
+        "g_n": 2607,
+        "d_n": 19
+      },
+      {
+        "tech": "Ruby",
+        "category": "language",
+        "global_pct": 2.38,
+        "domestic_pct": 0.48,
+        "diff": 1.91,
+        "g_n": 2792,
+        "d_n": 34
+      },
+      {
+        "tech": "Azure",
+        "category": "cloud_services",
+        "global_pct": 5.69,
+        "domestic_pct": 4.55,
+        "diff": 1.14,
+        "g_n": 6661,
+        "d_n": 323
+      },
+      {
+        "tech": "Terraform",
+        "category": "devops",
+        "global_pct": 3.44,
+        "domestic_pct": 2.34,
+        "diff": 1.1,
+        "g_n": 4025,
+        "d_n": 166
+      },
+      {
+        "tech": "SQL",
+        "category": "language",
+        "global_pct": 7.95,
+        "domestic_pct": 7.08,
+        "diff": 0.87,
+        "g_n": 9311,
+        "d_n": 503
+      },
+      {
+        "tech": "Angular",
+        "category": "frontend",
+        "global_pct": 1.69,
+        "domestic_pct": 0.97,
+        "diff": 0.72,
+        "g_n": 1979,
+        "d_n": 69
+      },
+      {
+        "tech": "Snowflake",
+        "category": "data_db",
+        "global_pct": 1.41,
+        "domestic_pct": 0.8,
+        "diff": 0.6,
+        "g_n": 1647,
+        "d_n": 57
+      },
+      {
+        "tech": "dbt",
+        "category": "data_db",
+        "global_pct": 0.91,
+        "domestic_pct": 0.31,
+        "diff": 0.6,
+        "g_n": 1065,
+        "d_n": 22
+      }
+    ],
+    "domestic_favored": [
+      {
+        "tech": "JavaScript",
+        "category": "language",
+        "global_pct": 10.43,
+        "domestic_pct": 24.2,
+        "diff": -13.77,
+        "g_n": 12219,
+        "d_n": 1719
+      },
+      {
+        "tech": "Java",
+        "category": "language",
+        "global_pct": 4.29,
+        "domestic_pct": 17.55,
+        "diff": -13.27,
+        "g_n": 5020,
+        "d_n": 1247
+      },
+      {
+        "tech": "AWS",
+        "category": "cloud_services",
+        "global_pct": 11.35,
+        "domestic_pct": 22.41,
+        "diff": -11.06,
+        "g_n": 13293,
+        "d_n": 1592
+      },
+      {
+        "tech": "Spring",
+        "category": "backend",
+        "global_pct": 1.23,
+        "domestic_pct": 12.06,
+        "diff": -10.83,
+        "g_n": 1440,
+        "d_n": 857
+      },
+      {
+        "tech": "Python",
+        "category": "language",
+        "global_pct": 13.05,
+        "domestic_pct": 23.38,
+        "diff": -10.33,
+        "g_n": 15284,
+        "d_n": 1661
+      },
+      {
+        "tech": "Git",
+        "category": "devops",
+        "global_pct": 8.37,
+        "domestic_pct": 18.52,
+        "diff": -10.16,
+        "g_n": 9801,
+        "d_n": 1316
+      },
+      {
+        "tech": "C++",
+        "category": "language",
+        "global_pct": 2.04,
+        "domestic_pct": 10.74,
+        "diff": -8.7,
+        "g_n": 2394,
+        "d_n": 763
+      },
+      {
+        "tech": "MySQL",
+        "category": "data_db",
+        "global_pct": 2.36,
+        "domestic_pct": 11.01,
+        "diff": -8.65,
+        "g_n": 2763,
+        "d_n": 782
+      }
+    ],
+    "g_total": 117133,
+    "d_total": 7104
+  }
+}

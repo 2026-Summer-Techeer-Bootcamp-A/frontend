@@ -1,0 +1,371 @@
+{
+  "pearl": "h-newcomer-gate",
+  "as_of": "2026-07-07",
+  "pool": "domestic",
+  "sample_size": 3078,
+  "sample_note": "점핏 · newcomer 플래그 또는 minCareer=0 기준",
+  "data": {
+    "items": [
+      {
+        "tech": "JavaScript",
+        "open_rate": 15,
+        "postings": 1064,
+        "newcomer_n": 161
+      },
+      {
+        "tech": "Java",
+        "open_rate": 14,
+        "postings": 757,
+        "newcomer_n": 108
+      },
+      {
+        "tech": "AWS",
+        "open_rate": 12,
+        "postings": 698,
+        "newcomer_n": 84
+      },
+      {
+        "tech": "Git",
+        "open_rate": 14,
+        "postings": 635,
+        "newcomer_n": 89
+      },
+      {
+        "tech": "Python",
+        "open_rate": 21,
+        "postings": 619,
+        "newcomer_n": 128
+      },
+      {
+        "tech": "React",
+        "open_rate": 13,
+        "postings": 608,
+        "newcomer_n": 80
+      },
+      {
+        "tech": "Spring",
+        "open_rate": 11,
+        "postings": 484,
+        "newcomer_n": 54
+      },
+      {
+        "tech": "MySQL",
+        "open_rate": 14,
+        "postings": 474,
+        "newcomer_n": 64
+      },
+      {
+        "tech": "Linux",
+        "open_rate": 20,
+        "postings": 449,
+        "newcomer_n": 91
+      },
+      {
+        "tech": "TypeScript",
+        "open_rate": 11,
+        "postings": 406,
+        "newcomer_n": 46
+      },
+      {
+        "tech": "C++",
+        "open_rate": 23,
+        "postings": 402,
+        "newcomer_n": 92
+      },
+      {
+        "tech": "Node.js",
+        "open_rate": 14,
+        "postings": 367,
+        "newcomer_n": 51
+      },
+      {
+        "tech": "HTML",
+        "open_rate": 21,
+        "postings": 341,
+        "newcomer_n": 71
+      },
+      {
+        "tech": "C#",
+        "open_rate": 22,
+        "postings": 309,
+        "newcomer_n": 67
+      },
+      {
+        "tech": "CSS",
+        "open_rate": 20,
+        "postings": 306,
+        "newcomer_n": 60
+      },
+      {
+        "tech": "Docker",
+        "open_rate": 16,
+        "postings": 275,
+        "newcomer_n": 45
+      },
+      {
+        "tech": "C",
+        "open_rate": 25,
+        "postings": 265,
+        "newcomer_n": 66
+      },
+      {
+        "tech": "SQL",
+        "open_rate": 16,
+        "postings": 236,
+        "newcomer_n": 38
+      },
+      {
+        "tech": "Android",
+        "open_rate": 17,
+        "postings": 229,
+        "newcomer_n": 39
+      },
+      {
+        "tech": "Vue",
+        "open_rate": 12,
+        "postings": 207,
+        "newcomer_n": 25
+      },
+      {
+        "tech": "iOS",
+        "open_rate": 16,
+        "postings": 194,
+        "newcomer_n": 31
+      },
+      {
+        "tech": "Oracle",
+        "open_rate": 10,
+        "postings": 173,
+        "newcomer_n": 18
+      },
+      {
+        "tech": "Kotlin",
+        "open_rate": 9,
+        "postings": 173,
+        "newcomer_n": 16
+      },
+      {
+        "tech": "PostgreSQL",
+        "open_rate": 11,
+        "postings": 171,
+        "newcomer_n": 18
+      },
+      {
+        "tech": "Next.js",
+        "open_rate": 9,
+        "postings": 168,
+        "newcomer_n": 15
+      },
+      {
+        "tech": "PHP",
+        "open_rate": 15,
+        "postings": 162,
+        "newcomer_n": 24
+      },
+      {
+        "tech": "React Native",
+        "open_rate": 17,
+        "postings": 155,
+        "newcomer_n": 26
+      },
+      {
+        "tech": "jQuery",
+        "open_rate": 17,
+        "postings": 154,
+        "newcomer_n": 26
+      },
+      {
+        "tech": "SQL Server",
+        "open_rate": 20,
+        "postings": 150,
+        "newcomer_n": 30
+      },
+      {
+        "tech": "Embedded",
+        "open_rate": 18,
+        "postings": 149,
+        "newcomer_n": 27
+      },
+      {
+        "tech": "Kubernetes",
+        "open_rate": 10,
+        "postings": 149,
+        "newcomer_n": 15
+      },
+      {
+        "tech": "Azure",
+        "open_rate": 10,
+        "postings": 146,
+        "newcomer_n": 14
+      },
+      {
+        "tech": "Redis",
+        "open_rate": 9,
+        "postings": 129,
+        "newcomer_n": 11
+      },
+      {
+        "tech": "Flutter",
+        "open_rate": 21,
+        "postings": 122,
+        "newcomer_n": 26
+      },
+      {
+        "tech": "MariaDB",
+        "open_rate": 11,
+        "postings": 120,
+        "newcomer_n": 13
+      },
+      {
+        "tech": "Jira",
+        "open_rate": 13,
+        "postings": 117,
+        "newcomer_n": 15
+      },
+      {
+        "tech": "GCP",
+        "open_rate": 6,
+        "postings": 114,
+        "newcomer_n": 7
+      },
+      {
+        "tech": "MongoDB",
+        "open_rate": 10,
+        "postings": 112,
+        "newcomer_n": 11
+      },
+      {
+        "tech": "Machine Learning",
+        "open_rate": 33,
+        "postings": 112,
+        "newcomer_n": 37
+      },
+      {
+        "tech": ".NET",
+        "open_rate": 23,
+        "postings": 109,
+        "newcomer_n": 25
+      },
+      {
+        "tech": "PyTorch",
+        "open_rate": 30,
+        "postings": 107,
+        "newcomer_n": 32
+      },
+      {
+        "tech": "Swift",
+        "open_rate": 9,
+        "postings": 98,
+        "newcomer_n": 9
+      },
+      {
+        "tech": "TensorFlow",
+        "open_rate": 29,
+        "postings": 96,
+        "newcomer_n": 28
+      },
+      {
+        "tech": "Deep Learning",
+        "open_rate": 36,
+        "postings": 90,
+        "newcomer_n": 32
+      },
+      {
+        "tech": "Django",
+        "open_rate": 20,
+        "postings": 84,
+        "newcomer_n": 17
+      },
+      {
+        "tech": "NestJS",
+        "open_rate": 14,
+        "postings": 78,
+        "newcomer_n": 11
+      },
+      {
+        "tech": "Jenkins",
+        "open_rate": 9,
+        "postings": 69,
+        "newcomer_n": 6
+      },
+      {
+        "tech": "Go",
+        "open_rate": 14,
+        "postings": 69,
+        "newcomer_n": 10
+      },
+      {
+        "tech": "MCU",
+        "open_rate": 16,
+        "postings": 67,
+        "newcomer_n": 11
+      },
+      {
+        "tech": "Redux",
+        "open_rate": 9,
+        "postings": 65,
+        "newcomer_n": 6
+      },
+      {
+        "tech": "Unity",
+        "open_rate": 29,
+        "postings": 63,
+        "newcomer_n": 18
+      },
+      {
+        "tech": "Slack",
+        "open_rate": 13,
+        "postings": 60,
+        "newcomer_n": 8
+      },
+      {
+        "tech": "Figma",
+        "open_rate": 8,
+        "postings": 59,
+        "newcomer_n": 5
+      },
+      {
+        "tech": "MSA",
+        "open_rate": 7,
+        "postings": 58,
+        "newcomer_n": 4
+      },
+      {
+        "tech": "Angular",
+        "open_rate": 11,
+        "postings": 56,
+        "newcomer_n": 6
+      },
+      {
+        "tech": "OpenCV",
+        "open_rate": 24,
+        "postings": 55,
+        "newcomer_n": 13
+      },
+      {
+        "tech": "Kafka",
+        "open_rate": 4,
+        "postings": 53,
+        "newcomer_n": 2
+      },
+      {
+        "tech": "FastAPI",
+        "open_rate": 8,
+        "postings": 49,
+        "newcomer_n": 4
+      },
+      {
+        "tech": "Notion",
+        "open_rate": 15,
+        "postings": 48,
+        "newcomer_n": 7
+      },
+      {
+        "tech": "GraphQL",
+        "open_rate": 11,
+        "postings": 47,
+        "newcomer_n": 5
+      }
+    ]
+  }
+}

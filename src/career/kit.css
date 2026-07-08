@@ -1,0 +1,624 @@
+/* ============ 커리어 위젯 킷 (.kit-*) — career DS 토큰 재사용 ============ */
+/* 모션 커브(tokens.ts motion): standard / decelerate / spring */
+
+/* ---- ArcGauge ---- */
+.kit-arc__fill {
+  transition: stroke-dashoffset 0.75s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.kit-arc__ghost {
+  transition: stroke-dashoffset 0.75s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+/* ---- 1. StatHero ---- */
+.kit-hero {
+  padding: 8px 2px 4px;
+}
+.kit-hero__label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--c-muted);
+}
+.kit-hero__num {
+  font-size: 62px;
+  font-weight: 800;
+  letter-spacing: -5px;
+  line-height: 1;
+  color: var(--c-ink);
+  /* tabular-nums(고정폭) 제거 — 숫자가 자연스럽게 더 붙게 */
+  margin-top: 6px;
+  display: flex;
+  align-items: baseline;
+  gap: 0;
+}
+.kit-hero__unit {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -1.5px;
+  margin-left: -3px;
+}
+.kit-hero__tag {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-700);
+  background: var(--accent-50);
+  border-radius: 8px;
+  padding: 4px 9px;
+  margin-left: 10px;
+  align-self: center;
+  letter-spacing: 0;
+}
+.kit-hero__sub {
+  font-size: 13.5px;
+  color: var(--c-muted);
+  line-height: 1.5;
+  margin-top: 10px;
+  max-width: 88%;
+}
+.kit-hero__sub b {
+  color: var(--c-ink);
+  font-weight: 700;
+}
+
+/* ---- 2. CoverageWhatIf ---- */
+.kit-whatif {
+  margin-top: 4px;
+}
+.kit-whatif__gauge {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+.kit-whatif__center {
+  position: absolute;
+  bottom: 2px;
+  left: 0;
+  right: 0;
+  text-align: center;
+}
+.kit-whatif__center b {
+  font-size: 34px;
+  font-weight: 800;
+  color: var(--c-ink);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -1.5px;
+}
+.kit-whatif__center b span {
+  font-size: 18px;
+}
+.kit-whatif__delta {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--semantic-success, #218a58);
+  color: #218a58;
+  margin-left: 6px;
+  vertical-align: 6px;
+}
+.kit-whatif__cap {
+  text-align: center;
+  font-size: 13px;
+  color: var(--c-muted);
+  line-height: 1.5;
+  margin: 6px auto 14px;
+  max-width: 92%;
+}
+.kit-whatif__cap b { color: var(--c-ink); font-weight: 700; }
+.kit-whatif__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+.kit-whatif__chip {
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 8px 13px;
+  border-radius: 12px;
+  background: #fbeee2;
+  color: #ac5623;
+  border: 1px solid #f4dcc4;
+  transition: transform 0.12s cubic-bezier(0.25, 0.1, 0.25, 1), background 0.15s, color 0.15s;
+}
+.kit-whatif__chip:active { transform: scale(0.95); }
+.kit-whatif__chip.on {
+  background: linear-gradient(180deg, #3a6fca, var(--c-accent));
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 2px 8px -2px rgba(47, 97, 184, 0.5);
+}
+.kit-linkrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  margin-top: 14px;
+  padding: 11px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--c-card);
+  color: var(--c-primary);
+  font-weight: 700;
+  font-size: 13.5px;
+  box-shadow: var(--e1);
+}
+
+/* ---- 3. OpportunityQuadrant ---- */
+.kit-quad__svg { width: 100%; height: auto; }
+.kit-quad__ax { font-size: 10px; fill: var(--c-muted); font-weight: 600; }
+.kit-quad__lbl { font-size: 9.5px; fill: var(--c-ink); font-weight: 700; }
+.kit-quad__legend {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+  justify-content: center;
+}
+.kit-quad__legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--c-muted);
+  font-weight: 600;
+}
+.kit-quad__legend i { width: 9px; height: 9px; border-radius: 50%; }
+
+/* ---- 4. PulseCard ---- */
+.kit-pulse { display: flex; flex-direction: column; gap: 10px; }
+.kit-pulse__row {
+  display: flex;
+  gap: 11px;
+  align-items: center;
+  padding: 12px 13px;
+  border-radius: 14px;
+  background: var(--c-card);
+  border: 1px solid var(--line);
+}
+/* 좌측 스트라이프(Don't) 대신 아이콘 색 배경 칩으로 성격 구분 */
+.kit-pulse__ic {
+  flex: none;
+  width: 30px; height: 30px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; line-height: 1;
+}
+.kit-pulse__ic.opp { background: #fbeee2; }
+.kit-pulse__ic.strength { background: var(--accent-50); }
+.kit-pulse__ic.rising { background: #e6f5ed; }
+.kit-pulse__tx { font-size: 13px; line-height: 1.5; color: var(--c-ink); }
+.kit-pulse__tx b { font-weight: 700; }
+
+/* ---- 5. SectionHeader ---- */
+.kit-sec {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 26px 2px 10px;
+}
+.kit-sec__l { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.kit-sec__t { font-size: 19px; font-weight: 800; letter-spacing: -0.6px; color: var(--c-ink); }
+.kit-sec__h { font-size: 12px; color: var(--c-muted); font-weight: 500; }
+
+/* ---- 6. DisclosureCard ---- */
+.kit-disc {
+  background: var(--c-card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: var(--e1);
+  margin-top: 12px;
+  overflow: hidden;
+}
+.kit-disc__head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 15px 16px;
+  background: transparent;
+  cursor: pointer;
+}
+.kit-disc__l { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
+.kit-disc__t { font-size: 15px; font-weight: 700; color: var(--c-ink); }
+.kit-disc__s { font-size: 12px; color: var(--c-muted); }
+.kit-disc__chev {
+  color: var(--c-muted);
+  flex: none;
+  transition: transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.kit-disc.open .kit-disc__chev { transform: rotate(180deg); }
+.kit-disc__body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.35s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.kit-disc.open .kit-disc__body { grid-template-rows: 1fr; }
+.kit-disc__inner { overflow: hidden; }
+.kit-disc.open .kit-disc__inner { padding: 0 16px 16px; }
+
+/* ---- 7. ResumeHeroCard ---- */
+.kit-rhero {
+  margin-top: 14px;
+  border-radius: 22px;
+  padding: 20px;
+  color: #fff;
+  background: linear-gradient(145deg, #2f61b8 0%, #21447c 100%);
+  box-shadow: 0 12px 30px -10px rgba(33, 68, 124, 0.55);
+}
+.kit-rhero__top { display: flex; align-items: center; gap: 16px; }
+.kit-rhero__ring {
+  width: 88px; height: 88px; border-radius: 50%; flex: none;
+  display: flex; align-items: center; justify-content: center;
+}
+.kit-rhero__hole {
+  width: 66px; height: 66px; border-radius: 50%;
+  background: #21447c;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.kit-rhero__hole b { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.kit-rhero__hole span { font-size: 9px; opacity: 0.7; }
+.kit-rhero__info { flex: 1; min-width: 0; }
+.kit-rhero__title { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
+.kit-rhero__meta { font-size: 13px; opacity: 0.82; margin-top: 3px; }
+.kit-rhero__chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+.kit-rhero__chips span {
+  font-size: 10.5px; font-weight: 600;
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 7px; padding: 3px 8px;
+}
+.kit-rhero__chips .more { background: rgba(255, 255, 255, 0.28); }
+.kit-rhero__edit {
+  width: 100%; margin-top: 16px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff; border-radius: 12px; padding: 11px;
+  font-weight: 700; font-size: 13.5px;
+  transition: background 0.15s, transform 0.12s;
+}
+.kit-rhero__edit:active { transform: scale(0.98); background: rgba(255, 255, 255, 0.24); }
+
+/* ---- 8. MenuRow ---- */
+.kit-menu {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 15px 4px;
+  background: transparent;
+  border-bottom: 1px solid var(--line);
+  font-size: 14.5px;
+  color: var(--c-ink);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.kit-menu:last-child { border-bottom: none; }
+.kit-menu:active { background: #f4f6fa; }
+.kit-menu__ic { color: var(--c-accent); display: flex; flex: none; }
+.kit-menu.danger .kit-menu__ic { color: var(--semantic-danger, #c8382d); color: #c8382d; }
+.kit-menu.danger .kit-menu__lb { color: #c8382d; }
+.kit-menu__lb { flex: 1; text-align: left; font-weight: 500; }
+.kit-menu__v { font-size: 13px; color: var(--c-muted); }
+.kit-menu__chev { color: #c2c7d0; flex: none; }
+
+/* ---- 9. BottomSheet ---- */
+.kit-sheet__wrap { position: absolute; inset: 0; z-index: 40; pointer-events: none; }
+.kit-sheet__wrap.show { pointer-events: auto; }
+.kit-sheet__ov {
+  position: absolute; inset: 0;
+  background: rgba(20, 20, 40, 0.34);
+  opacity: 0;
+  transition: opacity 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.kit-sheet__wrap.show .kit-sheet__ov { opacity: 1; }
+.kit-sheet {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  background: var(--c-card);
+  border: 1px solid var(--line);
+  border-bottom: none;
+  border-radius: 24px 24px 0 0;
+  padding: 8px 20px 26px;
+  box-shadow: var(--e4);
+  transform: translateY(102%);
+  /* 시트만 스프링(과도 절제) */
+  transition: transform 0.42s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.kit-sheet__wrap.show .kit-sheet { transform: translateY(0); }
+.kit-sheet__grip {
+  width: 44px; height: 5px; border-radius: 3px;
+  background: #dfe2e8; margin: 6px auto 14px;
+}
+
+/* ---- 10. PageTransition (진입=decelerate) ---- */
+@keyframes kit-tab-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes kit-push-in {
+  from { opacity: 0.4; transform: translateX(24px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes kit-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.kit-trans--tab { animation: kit-tab-in 0.34s cubic-bezier(0, 0, 0.2, 1) backwards; }
+.kit-trans--push { animation: kit-push-in 0.4s cubic-bezier(0, 0, 0.2, 1) backwards; }
+.kit-trans--fade { animation: kit-fade-in 0.3s cubic-bezier(0, 0, 0.2, 1) backwards; }
+@media (prefers-reduced-motion: reduce) {
+  .kit-trans--tab, .kit-trans--push, .kit-trans--fade { animation: none; }
+  .kit-arc__fill, .kit-arc__ghost { transition: none; }
+}
+
+/* ---- 11. MiniScore ---- */
+.kit-mini {
+  border-radius: 50%; flex: none;
+  display: flex; align-items: center; justify-content: center;
+}
+.kit-mini__hole {
+  width: 70%; height: 70%; border-radius: 50%;
+  background: var(--c-card);
+  box-shadow: inset 0 0 0 1px var(--line);
+  display: flex; align-items: center; justify-content: center;
+}
+.kit-mini__hole b {
+  font-size: 14px; font-weight: 800;
+  color: var(--c-ink); font-variant-numeric: tabular-nums;
+  letter-spacing: -0.5px;
+}
+
+/* ---- 12. JobCardCompact ---- */
+.kit-jc {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--c-card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  box-shadow: var(--e1);
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.12s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.kit-jc:hover { border-color: var(--accent-200); box-shadow: var(--e2); }
+.kit-jc:active { transform: scale(0.99); }
+.kit-jc__body { flex: 1; min-width: 0; text-align: left; }
+.kit-jc__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--c-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* 긴 이름 스크롤(마퀴) 변형 */
+.kit-jc__title.scroll { overflow: hidden; }
+.kit-jc__title.scroll span {
+  display: inline-block;
+  white-space: nowrap;
+  animation: kit-marquee 9s linear infinite;
+}
+@keyframes kit-marquee {
+  0%, 12% { transform: translateX(0); }
+  88%, 100% { transform: translateX(calc(-100% + 180px)); }
+}
+.kit-jc__co {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+  min-width: 0;
+}
+.kit-jc__coname {
+  font-size: 12px;
+  color: var(--c-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.kit-jc__tag {
+  font-size: 10px;
+  font-weight: 700;
+  background: #f2f3f6;
+  color: #5b5e66;
+  border-radius: 6px;
+  padding: 2px 6px;
+  white-space: nowrap;
+  flex: none;
+}
+
+/* ---- 카드 모드 토글 ---- */
+.kit-cardmode {
+  display: inline-flex;
+  background: #eceef3;
+  border-radius: 12px;
+  padding: 3px;
+}
+.kit-cardmode button {
+  padding: 6px 12px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-muted);
+}
+.kit-cardmode button.on {
+  background: var(--c-card);
+  color: var(--accent-700);
+  font-weight: 700;
+  box-shadow: var(--e1);
+}
+
+/* ---- DS 쇼케이스 데모 래퍼 ---- */
+.kit-showcase { display: flex; flex-direction: column; gap: 22px; }
+.kit-demo {
+  background: #f6f8fc;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 16px;
+}
+.kit-demo__lb {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--c-muted);
+  margin-bottom: 12px;
+  letter-spacing: 0;
+}
+.kit-demo__stage { background: transparent; }
+.kit-menulist {
+  background: var(--c-card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 4px 14px;
+  box-shadow: var(--e1);
+}
+
+.kit-quad__q { font-size: 9px; font-weight: 800; fill: var(--c-muted); letter-spacing: 0; }
+.kit-quad__q.opp { fill: #c76a2e; }
+
+/* ---- CoverageWhatIf 막대(게이지 대체) ---- */
+.kit-cbar {
+  position: relative;
+  height: 14px;
+  border-radius: 7px;
+  background: #e7ecf4;
+  overflow: hidden;
+  margin-top: 2px;
+}
+.kit-cbar__base {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  border-radius: 7px;
+  background: linear-gradient(90deg, #4a7bd0, var(--c-accent));
+  transition: width 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.kit-cbar__ghost {
+  position: absolute; top: 0; bottom: 0;
+  border-radius: 0 7px 7px 0;
+  background: var(--accent-200);
+  transition: left 0.5s cubic-bezier(0.25, 0.1, 0.25, 1), width 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.kit-cbar__cap {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; margin: 9px 0 12px;
+  font-size: 12.5px; color: var(--c-muted);
+}
+.kit-cbar__cap b { color: var(--c-ink); font-weight: 700; }
+.kit-cbar__delta { color: #218a58; font-weight: 800; flex: none; }
+
+/* ---- CoverageHistogram (Image#2 스타일) ---- */
+.kit-hist__chart {
+  position: relative; height: 84px;
+  display: flex; align-items: flex-end; gap: 3px; padding-top: 6px;
+}
+.kit-hist__col { flex: 1; display: flex; align-items: flex-end; height: 100%; }
+.kit-hist__col i {
+  width: 100%; border-radius: 3px 3px 0 0; min-height: 2px;
+  background: #dfe4ec;
+  transition: height 0.5s cubic-bezier(0.25, 0.1, 0.25, 1), background 0.3s;
+}
+.kit-hist__col i.on { background: var(--c-accent); }
+.kit-hist__thr { position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px dashed #9aa4b4; z-index: 2; }
+.kit-hist__axis { display: flex; justify-content: space-between; font-size: 10px; color: var(--c-muted); margin-top: 5px; }
+.kit-hist__axis .thr { font-weight: 600; }
+.kit-hist__cap { font-size: 13px; color: var(--c-muted); margin-top: 9px; }
+.kit-hist__cap b { color: var(--c-ink); font-weight: 800; font-size: 15px; font-variant-numeric: tabular-nums; }
+.kit-hist__delta { color: #218a58; font-weight: 800; margin-left: 5px; font-size: 12px; }
+.kit-hist__sub { font-size: 11px; }
+
+/* ---- SwipePager ---- */
+.kit-pager { overflow: hidden; touch-action: pan-y; }
+.kit-pager__track { display: flex; transition: transform 0.38s cubic-bezier(0.25, 0.1, 0.25, 1); }
+.kit-pager__page { flex: 0 0 100%; min-width: 0; }
+.kit-pager__dots { display: flex; justify-content: center; gap: 6px; margin-top: 12px; }
+.kit-pager__dots button { width: 6px; height: 6px; border-radius: 999px; background: #cdd2db; transition: width 0.25s, background 0.25s; }
+.kit-pager__dots button.on { width: 18px; background: var(--c-accent); }
+
+/* ---- TechIcon (기술 스택 이니셜 배지) ---- */
+.kit-ticon {
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 8px; color: #fff; font-weight: 800; flex: none;
+  letter-spacing: 0; font-family: 'SF Mono', 'Roboto Mono', ui-monospace, monospace;
+  box-shadow: inset 0 -1px 2px rgba(0, 0, 0, 0.12);
+}
+/* SwipePager 포커스 아웃라인 제거 */
+.kit-pager-root { outline: none; }
+
+/* ---- 편집 가능한 스킬 칩 ---- */
+.kit-schip {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--accent-50); color: var(--accent-700);
+  border: 1px solid var(--accent-100); border-radius: 10px;
+  padding: 5px 9px 5px 6px; font-size: 12px; font-weight: 650;
+}
+.kit-schip__x { display: inline-flex; color: var(--accent-700); opacity: 0.55; padding: 0; margin-left: 1px; }
+.kit-schip__x:active { opacity: 1; }
+.kit-schip.add {
+  background: var(--c-card); color: var(--c-primary);
+  border: 1px dashed #b9c4d6; cursor: pointer; padding: 6px 11px;
+}
+.kit-schip.add:active { transform: scale(0.96); }
+
+/* ---- 기술 검색 시트 ---- */
+.kit-picker__hd { font-size: 16px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+.kit-picker__hd span { font-size: 12px; color: var(--c-muted); font-weight: 500; }
+.kit-picker__search {
+  display: flex; align-items: center; gap: 9px; margin-top: 12px;
+  background: #f4f6fa; border: 1px solid var(--line); border-radius: 12px;
+  padding: 0 13px; height: 44px; color: var(--c-muted);
+}
+.kit-picker__search input { flex: 1; border: none; background: none; outline: none; font-size: 14px; color: var(--c-ink); font-family: inherit; }
+.kit-picker__list { margin-top: 12px; max-height: 46vh; overflow-y: auto; }
+.kit-picker__row { width: 100%; display: flex; align-items: center; gap: 11px; padding: 10px 4px; border-bottom: 1px solid var(--line); }
+.kit-picker__row .nm { flex: 1; text-align: left; font-size: 14px; font-weight: 600; color: var(--c-ink); }
+.kit-picker__row .ct { font-size: 11.5px; color: var(--c-muted); font-variant-numeric: tabular-nums; }
+.kit-picker__row .act { color: var(--c-primary); display: flex; }
+.kit-picker__row.on .act { color: #218a58; }
+.kit-picker__row.on .nm { color: var(--c-muted); }
+.kit-picker__empty { text-align: center; color: var(--c-muted); font-size: 13px; padding: 24px; }
+
+/* 이력서 전환 칩 */
+.kit-schip.rchip { cursor: pointer; }
+.kit-schip.rchip.on { background: var(--accent-100); border-color: var(--accent-200); }
+
+/* ---- 지도 미니 잡카드 (가로) + 스켈레톤 ---- */
+.kit-mjc {
+  flex: 0 0 auto; width: 176px;
+  display: flex; align-items: center; gap: 9px;
+  background: rgba(255, 255, 255, 0.97); border: 1px solid var(--line);
+  border-radius: 14px; padding: 8px 10px; box-shadow: var(--e2);
+  backdrop-filter: blur(6px);
+  animation: kit-mjc-in 0.32s cubic-bezier(0, 0, 0.2, 1) both;
+}
+.kit-mjc:active { transform: scale(0.97); }
+.kit-mjc__b { min-width: 0; text-align: left; display: flex; flex-direction: column; gap: 2px; }
+.kit-mjc__nm { font-size: 12.5px; font-weight: 700; color: var(--c-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 112px; }
+.kit-mjc__mt { font-size: 11px; font-weight: 700; color: var(--c-accent); font-variant-numeric: tabular-nums; }
+@keyframes kit-mjc-in { from { opacity: 0; transform: translateY(-7px); } to { opacity: 1; transform: none; } }
+.kit-sk {
+  background: linear-gradient(90deg, #eef1f6 25%, #e2e7f0 37%, #eef1f6 63%);
+  background-size: 400% 100%; animation: kit-shimmer 1.2s ease-in-out infinite; border-radius: 6px;
+}
+.kit-sk--logo { width: 36px; height: 36px; border-radius: 10px; flex: none; }
+.kit-sk--l1 { width: 84px; height: 11px; }
+.kit-sk--l2 { width: 52px; height: 9px; }
+@keyframes kit-shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+
+/* ---- 커스텀 스크롤바 UI (.kit-scroll) — 세로/가로 ---- */
+.kit-scroll { overflow: auto; scrollbar-width: thin; scrollbar-color: rgba(47, 97, 184, 0.35) transparent; }
+.kit-scroll::-webkit-scrollbar { width: 7px; height: 7px; }
+.kit-scroll::-webkit-scrollbar-thumb {
+  background: rgba(47, 97, 184, 0.32); border-radius: 7px;
+  border: 2px solid transparent; background-clip: padding-box;
+}
+.kit-scroll::-webkit-scrollbar-thumb:hover { background: rgba(47, 97, 184, 0.52); background-clip: padding-box; }
+.kit-scroll::-webkit-scrollbar-track { background: rgba(20, 30, 60, 0.05); border-radius: 7px; }
+.kit-scroll--x { overflow-x: auto; overflow-y: hidden; }
+
+/* 실제 브랜드 아이콘(simple-icons)은 밝은 정사각 배경 */
+.kit-ticon--real { background: #f2f4f8; box-shadow: inset 0 0 0 1px rgba(20, 30, 60, 0.06); }
+.kit-ticon--real svg { display: block; }
+
+/* 펄스 근거 라인 */
+.kit-pulse__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.kit-pulse__ev { font-size: 11px; color: var(--c-muted); font-variant-numeric: tabular-nums; line-height: 1.35; }
