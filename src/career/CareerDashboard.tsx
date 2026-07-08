@@ -197,7 +197,7 @@ export default function CareerDashboard() {
                 />
 
                 {/* 2막 — 포지셔닝 인사이트 (스와이프 5페이지) */}
-                <div className="cr-widget" style={{ marginTop: 12, padding: '15px 16px', marginBottom: 14 }}>
+                <div className="cr-widget" style={{ marginTop: 12, padding: '16px', marginBottom: 14 }}>
                   <SwipePager pages={[
                     {
                       key: 'cov',
@@ -215,7 +215,7 @@ export default function CareerDashboard() {
                       key: 'pulse',
                       node: (
                         <>
-                          <div className="scr-card__title" style={{ marginBottom: 12 }}>요즘의 시장 <span style={{ fontSize: 11, color: 'var(--c-muted)', fontWeight: 500 }}>국내 데이터 근거</span></div>
+                          <div className="scr-card__title" style={{ marginBottom: 6 }}>요즘의 시장 <span style={{ fontSize: 11, color: 'var(--c-muted)', fontWeight: 500 }}>국내 데이터 근거</span></div>
                           <PulseCard items={PULSE} />
                         </>
                       ),
