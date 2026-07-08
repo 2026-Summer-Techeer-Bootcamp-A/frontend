@@ -58,7 +58,7 @@
 .cr-greet-line {
   font-size: 12.5px;
   color: var(--c-muted);
-  margin-top: 8px;
+  margin-top: 12px;
 }
 .cr-greet-line b {
   color: var(--c-ink);
@@ -849,7 +849,7 @@
 .crd {
   font-family: 'Pretendard', 'Poppins', sans-serif;
   color: var(--c-ink);
-  padding: 4px 22px 40px;
+  padding: 4px 20px 40px;
 }
 .crd * {
   letter-spacing: var(--c-ls);
@@ -858,7 +858,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 6px 0 4px;
+  padding: 12px 0 4px;
 }
 .crd__back {
   color: var(--c-ink);
