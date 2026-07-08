@@ -18,6 +18,11 @@
   font-weight: 600;
   color: var(--c-muted);
 }
+.kit-hero__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
 .kit-hero__num {
   font-size: 62px;
   font-weight: 800;
@@ -29,6 +34,44 @@
   display: flex;
   align-items: baseline;
   gap: 0;
+}
+.kit-hero__rings {
+  flex: none;
+  margin-left: 10px;
+}
+.kit-rings__fill, .kit-rings__ghost {
+  transition: stroke-dashoffset 0.9s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.kit-hero__legend-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+.kit-rlg {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--c-muted);
+  white-space: nowrap;
+}
+.kit-rlg i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  flex: none;
+}
+.kit-rlg b {
+  color: var(--c-ink);
+  font-weight: 700;
+}
+.kit-rlg__note {
+  color: var(--accent-700);
+  font-weight: 700;
 }
 .kit-hero__unit {
   font-size: 28px;
@@ -319,8 +362,8 @@
   padding: 8px 20px 26px;
   box-shadow: var(--e4);
   transform: translateY(102%);
-  /* 시트만 스프링(과도 절제) */
-  transition: transform 0.42s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  /* 바운스 없는 ease-in-out — DS Don't: 장식용 오버슈트 금지 */
+  transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .kit-sheet__wrap.show .kit-sheet { transform: translateY(0); }
 .kit-sheet__grip {
@@ -529,7 +572,7 @@
 /* ---- SwipePager ---- */
 .kit-pager { overflow: hidden; touch-action: pan-y; }
 .kit-pager__track { display: flex; transition: transform 0.38s cubic-bezier(0.25, 0.1, 0.25, 1); }
-.kit-pager__page { flex: 0 0 100%; min-width: 0; }
+.kit-pager__page { flex: 0 0 100%; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
 .kit-pager__dots { display: flex; justify-content: center; gap: 6px; margin-top: 12px; }
 .kit-pager__dots button { width: 6px; height: 6px; border-radius: 999px; background: #cdd2db; transition: width 0.25s, background 0.25s; }
 .kit-pager__dots button.on { width: 18px; background: var(--c-accent); }
@@ -543,6 +586,56 @@
 }
 /* SwipePager 포커스 아웃라인 제거 */
 .kit-pager-root { outline: none; }
+
+/* ---- 다이나믹 독 ---- */
+.kit-dock {
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  background: #fff;
+  border: 1px solid var(--line);
+  box-shadow: var(--e3);
+  overflow: hidden;
+  z-index: 20;
+  border-radius: 40px;
+  transition:
+    width 0.52s cubic-bezier(0.22, 1, 0.36, 1),
+    height 0.52s cubic-bezier(0.22, 1, 0.36, 1),
+    border-radius 0.52s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.kit-dock.expanded { border-radius: 28px; }
+.kit-dock__face {
+  position: absolute;
+  inset: 0;
+  transition: opacity 0.22s ease, transform 0.28s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.kit-dock__face--collapsed {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 12px;
+}
+.kit-dock__face--expanded {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 14px 14px 10px;
+  opacity: 0;
+  transform: scale(0.94);
+  pointer-events: none;
+}
+.kit-dock.expanded .kit-dock__face--collapsed {
+  opacity: 0;
+  transform: scale(0.9);
+  pointer-events: none;
+}
+.kit-dock.expanded .kit-dock__face--expanded {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+  transition-delay: 0.14s;
+}
 
 /* ---- 편집 가능한 스킬 칩 ---- */
 .kit-schip {

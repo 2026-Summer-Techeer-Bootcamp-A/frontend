@@ -11,11 +11,13 @@ import {
 } from 'lucide-react'
 import { palette, typography, radius, spacing, elevation, motion } from './tokens'
 import KitShowcase from './KitShowcase'
+import TossDetails from './TossDetails'
 import './design-system.css'
 
 const NAV = [
   { id: 'guide', label: 'Do & Don\'t' },
   { id: 'kit', label: '커리어 위젯 킷 ★' },
+  { id: 'toss', label: '기타 디테일 ✨' },
   { id: 'colors', label: '컬러' },
   { id: 'typography', label: '타이포그래피' },
   { id: 'tokens', label: '라운드·스페이싱·엘리베이션' },
@@ -1435,6 +1437,14 @@ export default function DesignSystem() {
               <p>홈·시장·마이·지도 재설계에 쓰는 위계형 위젯. Apple 톤 + 슬레이트블루, 과장식 없음.</p>
             </div>
             <KitShowcase />
+          </section>
+
+          <section className="ds-sec" id="toss">
+            <div className="ds-sec__head">
+              <h2>기타 디테일 <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--muted)' }}>마이크로 인터랙션 10</span></h2>
+              <p>블러·비네팅·스크롤 반응 헤더·오도미터 등 세밀한 디테일. 박스를 스크롤하거나 탭·버튼을 눌러보세요.</p>
+            </div>
+            <TossDetails />
           </section>
         </main>
       </div>

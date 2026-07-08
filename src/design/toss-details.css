@@ -1,0 +1,198 @@
+/* ============ Toss식 마이크로 디테일 (.td-*) — career 토큰 사용 ============ */
+.td-scope { display: flex; flex-direction: column; gap: 20px; }
+.td-demo { background: #f6f8fc; border: 1px solid var(--line); border-radius: 18px; padding: 14px; }
+.td-demo__lb { font-size: 12px; font-weight: 700; color: var(--c-muted); margin-bottom: 12px; letter-spacing: 0; }
+.td-demo__lb span { color: #a2a6b0; font-weight: 500; }
+
+.td-box {
+  height: 190px; overflow-y: auto; position: relative;
+  background: var(--c-card); border: 1px solid var(--line); border-radius: 14px;
+  scrollbar-width: thin; scrollbar-color: rgba(47, 97, 184, 0.3) transparent;
+}
+.td-box::-webkit-scrollbar { width: 5px; }
+.td-box::-webkit-scrollbar-thumb { background: rgba(47, 97, 184, 0.3); border-radius: 5px; }
+
+.td-listrow {
+  display: flex; align-items: center; gap: 9px;
+  padding: 12px 14px; border-bottom: 1px solid var(--line);
+  font-size: 13.5px; color: var(--c-ink); font-weight: 500;
+}
+.td-listrow b { margin-left: auto; color: var(--semantic-success, #218a58); color: #1c7a4d; font-weight: 700; font-variant-numeric: tabular-nums; }
+.td-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c-accent); flex: none; }
+
+/* 1. 스크롤 반응 헤더 */
+.td-chead {
+  position: sticky; top: 0; z-index: 3;
+  background: var(--c-card); padding: 12px 14px 10px;
+  border-bottom: 1px solid var(--line);
+  transition: box-shadow 0.2s ease;
+}
+.td-chead__row {
+  display: flex; align-items: center; justify-content: space-between;
+  overflow: hidden; transition: height 0.2s ease, opacity 0.2s ease, margin 0.2s ease;
+  font-size: 12.5px; color: var(--c-muted); font-weight: 600;
+}
+.td-chead__ics { display: flex; gap: 12px; color: var(--c-muted); }
+.td-chead__title {
+  font-weight: 800; color: var(--c-ink); letter-spacing: -1px; line-height: 1.1;
+  transition: font-size 0.2s ease; font-variant-numeric: tabular-nums;
+}
+.td-chead__title span { color: var(--c-ink); }
+.td-chead__tabs { display: flex; gap: 6px; transition: transform 0.2s ease, margin 0.2s ease; }
+.td-chead__tabs button {
+  font-size: 12.5px; font-weight: 600; color: var(--c-muted);
+  padding: 5px 11px; border-radius: 10px; background: #eef0f4;
+}
+.td-chead__tabs button.on { background: var(--c-accent); color: #fff; }
+
+/* 2. 프로스티드 블러 */
+.td-frost { position: relative; }
+.td-frost__grad {
+  position: absolute; inset: 0; z-index: 0;
+  background: linear-gradient(135deg, #dfe8fb 0%, #f7efd9 45%, #e6f5ed 100%);
+  opacity: 0.6;
+}
+.td-frost__bar {
+  position: sticky; top: 0; z-index: 2;
+  padding: 12px 14px; font-size: 13px; font-weight: 700; color: var(--c-ink);
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(12px) saturate(1.4); -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.6);
+}
+.td-frost__body { position: relative; z-index: 1; }
+.td-frost__body .td-listrow { background: transparent; }
+
+/* 3. 하단 비네팅 페이드 */
+.td-fadewrap { position: relative; }
+.td-fade {
+  position: absolute; left: 0; right: 6px; bottom: 0; height: 64px; pointer-events: none;
+  border-radius: 0 0 14px 14px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, rgba(246, 248, 252, 0.9) 70%, #eef1f6 100%);
+  transition: opacity 0.25s ease; opacity: 1;
+}
+.td-fade.hide { opacity: 0; }
+
+/* 4. 슬라이딩 세그먼트 */
+.td-seg {
+  position: relative; display: flex; background: #eceef3;
+  border-radius: 14px; padding: 3px; width: 240px;
+}
+.td-seg__pill {
+  position: absolute; top: 3px; bottom: 3px; border-radius: 11px;
+  background: var(--c-card); box-shadow: var(--e1);
+  transition: left 0.34s cubic-bezier(0.175, 0.885, 0.32, 1.275), width 0.34s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.td-seg button {
+  position: relative; z-index: 1; flex: 1; padding: 8px 0;
+  font-size: 13px; font-weight: 600; color: var(--c-muted);
+  transition: color 0.2s;
+}
+.td-seg button.on { color: var(--accent-700); font-weight: 700; }
+
+/* 5. 롤링 넘버 */
+.td-roll { display: flex; align-items: center; justify-content: space-between; padding: 4px; }
+.td-roll b { font-size: 40px; font-weight: 800; letter-spacing: -2px; color: var(--c-ink); }
+.td-roll b span { font-size: 18px; margin-left: 3px; color: var(--c-muted); font-weight: 700; }
+.td-roll__btns { display: flex; gap: 8px; }
+.td-roll__btns button {
+  padding: 9px 14px; border-radius: 12px; background: #eef0f4;
+  font-size: 13px; font-weight: 700; color: var(--c-ink);
+  transition: transform 0.12s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.td-roll__btns button:active { transform: scale(0.92); }
+
+/* 6. 프레스 스프링 */
+.td-press-list { display: flex; flex-direction: column; gap: 8px; }
+.td-press {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 13px 14px; border-radius: 13px;
+  background: var(--c-card); border: 1px solid var(--line);
+  font-size: 14px; font-weight: 600; color: var(--c-ink);
+  transition: transform 0.16s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.16s;
+}
+.td-press:active { transform: scale(0.955); box-shadow: var(--e2); }
+.td-press__ic { display: flex; color: var(--c-accent); }
+
+/* 7. 스티키 섹션 헤더 */
+.td-sticky {
+  position: sticky; top: 0; z-index: 2;
+  padding: 8px 14px; font-size: 11.5px; font-weight: 800; color: var(--c-muted);
+  background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 3px 8px -6px rgba(20, 30, 60, 0.5);
+}
+
+/* 8. 스크롤 진행 */
+.td-progwrap { position: relative; }
+.td-prog {
+  position: absolute; top: 0; left: 0; right: 6px; height: 3px; z-index: 5;
+  background: #e7ecf4; border-radius: 3px; overflow: hidden;
+}
+.td-prog i { display: block; height: 100%; background: var(--c-accent); border-radius: 3px; }
+
+/* 9. 토스트 */
+.td-toastwrap { position: relative; height: 96px; display: flex; align-items: flex-start; }
+.td-toast {
+  position: absolute; left: 50%; bottom: 8px; transform: translate(-50%, 20px);
+  display: inline-flex; align-items: center; gap: 7px;
+  background: #1c1d21; color: #fff; font-size: 13px; font-weight: 600;
+  padding: 11px 16px; border-radius: 13px; white-space: nowrap;
+  box-shadow: 0 10px 26px -6px rgba(20, 30, 60, 0.5);
+  opacity: 0; pointer-events: none;
+  transition: transform 0.34s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.25s;
+}
+.td-toast.show { transform: translate(-50%, 0); opacity: 1; }
+
+/* 10. 스태거 등장 */
+.td-stagwrap { display: flex; flex-direction: column; gap: 10px; }
+.td-stag { display: flex; flex-direction: column; gap: 8px; }
+.td-stag__item {
+  padding: 12px 14px; border-radius: 12px;
+  background: var(--c-card); border: 1px solid var(--line);
+  font-size: 13.5px; font-weight: 600; color: var(--c-ink);
+  animation: td-stag-in 0.42s cubic-bezier(0, 0, 0.2, 1) backwards;
+}
+@keyframes td-stag-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* 공통 버튼 */
+.td-btn {
+  align-self: flex-start; padding: 9px 15px; border-radius: 12px;
+  background: var(--c-accent); color: #fff; font-size: 13px; font-weight: 700;
+  box-shadow: 0 4px 12px -4px rgba(47, 97, 184, 0.5);
+  transition: transform 0.12s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.td-btn:active { transform: scale(0.94); }
+
+/* 5. 오도미터 (숫자 릴 + 이동 중 모션블러) */
+.od { display: inline-flex; align-items: baseline; }
+.od-reel { display: inline-block; height: 1em; line-height: 1; overflow: hidden; vertical-align: baseline; }
+.od-col {
+  display: flex; flex-direction: column; will-change: transform, filter;
+  transition: transform 0.52s cubic-bezier(0.22, 1, 0.36, 1), filter 0.22s ease;
+  filter: blur(0);
+}
+.od-cell { height: 1em; display: flex; align-items: center; justify-content: center; }
+.od-reel.rolling .od-col { filter: blur(2.4px); }
+
+/* 11. 다이나믹 독 */
+.td-dockwrap { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+.td-dockstage {
+  position: relative; width: 100%; height: 340px;
+  background: #eef1f6; border-radius: 20px; overflow: hidden;
+}
+.td-dockicon {
+  width: 44px; height: 44px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: #b6bac4;
+}
+.td-dockicon.on { background: var(--c-accent); color: #fff; }
+.td-dock__hd { font-size: 12.5px; font-weight: 700; color: var(--c-muted); margin-bottom: 8px; flex: none; }
+.td-dock__list { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; min-height: 0; }
+.td-dock__row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 12px; border-radius: 14px; background: var(--accent-50);
+  border: none; font-size: 13.5px; font-weight: 700; color: var(--c-ink);
+  transition: transform 0.12s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.td-dock__row:active { transform: scale(0.97); }
+.td-dock__row .mt { color: var(--c-accent); font-weight: 800; }

@@ -126,7 +126,7 @@
   text-overflow: ellipsis;
 }
 .scr-bar__tr {
-  height: 10px;
+  height: 8px;
   border-radius: 5px;
   background: #eceef3;
   overflow: hidden;
@@ -245,7 +245,7 @@
   font-weight: 600;
 }
 .scr-cooc__row .tr {
-  height: 8px;
+  height: 7px;
   border-radius: 4px;
   background: #eceef3;
   overflow: hidden;
@@ -670,7 +670,7 @@
 }
 .lsheet__badge.hi { color: #fff; background: var(--c-accent); }
 .lsheet__meta { display: flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--c-muted); margin-top: 14px; }
-.lsheet__bar { height: 8px; border-radius: 4px; background: #eceef3; overflow: hidden; margin-top: 8px; }
+.lsheet__bar { height: 7px; border-radius: 4px; background: #eceef3; overflow: hidden; margin-top: 8px; }
 .lsheet__bar i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, #4a7bd0, var(--c-accent)); }
 .lsheet__barlbl { font-size: 11px; color: var(--c-muted); margin-top: 6px; font-variant-numeric: tabular-nums; }
 
@@ -781,22 +781,22 @@
 .lpincard__nm { font-size: 11.5px; font-weight: 700; color: var(--c-ink); max-width: 66px; overflow: hidden; text-overflow: ellipsis; }
 .lpincard__mt { font-size: 11px; font-weight: 800; color: var(--c-accent); font-variant-numeric: tabular-nums; }
 
-/* 지도 지역 컨텍스트 메뉴 (클러스터 클릭 시 그 지점에서 등장) */
-.lctxmenu__ov { position: absolute; inset: 0; z-index: 24; }
-.lctxmenu {
-  position: absolute; z-index: 25; width: 212px;
-  transform: translate(-50%, 12px); transform-origin: top center;
-  background: #fff; border: 1px solid var(--line); border-radius: 16px;
-  box-shadow: 0 18px 40px -8px rgba(20, 30, 60, 0.3); padding: 8px;
-  animation: lctx-in 0.22s cubic-bezier(0, 0, 0.2, 1) backwards;
+/* 지도 지역 컨텍스트 — 다이나믹 독(하단 독 확장) 내부 리스트 */
+.lctxmenu__ov { position: absolute; inset: 0; z-index: 19; }
+.lctxmenu__hd {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; font-weight: 700; color: var(--c-muted); padding: 0 2px 8px; flex: none;
 }
-@keyframes lctx-in {
-  from { opacity: 0; transform: translate(-50%, 12px) scale(0.82); }
-  to { opacity: 1; transform: translate(-50%, 12px) scale(1); }
+.lctxmenu__back {
+  flex: none; width: 24px; height: 24px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--accent-50); color: var(--accent-700);
+  transition: transform 0.12s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
-.lctxmenu__hd { font-size: 11px; font-weight: 700; color: var(--c-muted); padding: 4px 8px 8px; }
-.lctxmenu__list { max-height: 214px; }
-.lctxmenu__row { width: 100%; display: flex; align-items: center; gap: 9px; padding: 7px 8px; border-radius: 9px; }
+.lctxmenu__back:active { transform: scale(0.9); }
+.lctxmenu__list { flex: 1; min-height: 0; overflow-y: auto; }
+.lctxmenu__row { width: 100%; display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 12px; }
 .lctxmenu__row:active { background: var(--accent-50); }
-.lctxmenu__row .nm { flex: 1; text-align: left; font-size: 13px; font-weight: 600; color: var(--c-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.lctxmenu__row .mt { font-size: 12px; font-weight: 800; color: var(--c-accent); font-variant-numeric: tabular-nums; }
+.lctxmenu__row .info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; align-items: flex-start; }
+.lctxmenu__row .nm { text-align: left; font-size: 13.5px; font-weight: 600; color: var(--c-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.lctxmenu__row .mt { flex: none; font-size: 12.5px; font-weight: 800; color: var(--c-accent); font-variant-numeric: tabular-nums; }

@@ -4,7 +4,8 @@ import { MapPin, Calendar, SlidersHorizontal, Check } from 'lucide-react'
 import PhoneFrame from '../components/PhoneFrame'
 import CompanyLogo from './CompanyLogo'
 import CareerTabBar from './CareerTabBar'
-import { PageTransition, StatHero, CoverageHistogram, PulseCard, SwipePager, SectionHeader, JobCardCompact, CardModeToggle, type CardMode, type PulseItem } from './kit'
+import { PageTransition, StatHero, CoverageHistogram, PulseCard, SwipePager, SectionHeader, JobCardCompact, CardModeToggle, ActivityRings, RingLegend, matchGrad, type CardMode, type PulseItem, type RingMetric } from './kit'
+import { IndustryFitRadar, TechChainRoadmap } from './insights'
 import { THEME, themeVars } from './themes'
 import data from '../data/careerData.json'
 import market from '../data/marketData.json'
@@ -17,12 +18,32 @@ const TIER_RANK: Record<string, number> = { 대기업: 0, 중견: 1, 중소: 2 }
 const tierRank = (t: string | null) => (t && t in TIER_RANK ? TIER_RANK[t] : 3)
 
 const RESUME: string[] = data.resume.skills
-const TOP = data.topTechs
 const AS_OF = data.meta.asOf
 const MARKET: Record<string, { open: number; soon: number }> = data.meta.market
 
-const GAP6 = TOP.filter((t) => !RESUME.includes(t.tech)).slice(0, 6)
-const PULSE = (market.pulse as { items: PulseItem[] }).items
+const YEARLY = market.techYearly as { years: string[]; series: { tech: string; shares: number[]; delta: number; owned: boolean }[] }
+const PULSE_BASE = (market.pulse as { items: PulseItem[] }).items
+const PULSE_BASE_TECHS = new Set(PULSE_BASE.map((it) => it.tech))
+const YEARLY_DECLINE = [...YEARLY.series]
+  .filter((r) => !r.owned && r.delta < 0 && !PULSE_BASE_TECHS.has(r.tech))
+  .sort((a, b) => a.delta - b.delta)[0]
+const PULSE: PulseItem[] = [
+  ...PULSE_BASE,
+  ...(YEARLY_DECLINE ? [{
+    tech: YEARLY_DECLINE.tech,
+    text: <>{YEARLY_DECLINE.tech} · 국내 수요 감소</>,
+    evidence: `국내 점유율 ${YEARLY.years[0]} ${YEARLY_DECLINE.shares[0]}% → ${YEARLY.years[YEARLY.years.length - 1]} ${YEARLY_DECLINE.shares[YEARLY_DECLINE.shares.length - 1]}%`,
+  }] : []),
+]
+
+// "배우면" 칩 = 국내 채용시장 기준 미보유 상위 5 (Java·Spring·C++·Kubernetes·Next.js …)
+const WHATIF = (market.skillShare as never as Record<string, { items: { tech: string; count: number; owned: boolean }[] }>)['국내']
+  .items.filter((i) => !i.owned).slice(0, 5).map((i) => ({ tech: i.tech, count: i.count }))
+
+// 운동 링 2지표: 기술 커버리지 · 조건(매칭 50%+) 만족 공고 도달률
+const DOM_POSTINGS = data.postings.filter((p) => p.pool === '국내')
+const REACH_LIST = DOM_POSTINGS.filter((p) => p.matchPct >= 50)
+const REACH_PCT = Math.round((REACH_LIST.length / DOM_POSTINGS.length) * 100)
 
 function ddayInfo(close: string) {
   if (!close) return null
@@ -61,7 +82,7 @@ export function JobCard({ p, onOpen }: { p: (typeof data.postings)[number]; onOp
           <b>{p.matchPct}% 매칭</b>
         </div>
         <div className="cr-track">
-          <i style={{ width: `${p.matchPct}%` }} />
+          <i style={{ width: `${p.matchPct}%`, background: matchGrad(p.matchPct) }} />
         </div>
       </div>
       <div className="cr-chips">
@@ -115,6 +136,10 @@ export default function CareerDashboard() {
   }, [pool, sort, hideExp])
 
   const cov = data.resume.coveragePct
+  const RINGS: RingMetric[] = [
+    { key: 'cov', label: '커버리지', pct: cov, color: 'var(--c-accent)' },
+    { key: 'reach', label: '도달률', pct: REACH_PCT, color: 'var(--accent-700)', note: `${REACH_LIST.length}개 공고` },
+  ]
   const mk = MARKET[pool]
   const histJobs = useMemo(
     () => data.postings.filter((p) => p.pool === pool).map((p) => ({ techs: p.techs, held: p.matchHeld, total: p.matchTotal })),
@@ -128,17 +153,21 @@ export default function CareerDashboard() {
           <PageTransition type="fade">
             {/* 1막 — 히어로: 포지셔닝 점수 */}
             <div className="cr-greet-line">좋은 아침이에요 👋 <b>리버</b>님</div>
-            <StatHero value={cov} title="시장 커버리지" tag={`상위 ${data.resume.heldTop}/${data.resume.kTop}`} />
+            <StatHero
+              value={cov} title="시장 커버리지"
+              rings={<ActivityRings metrics={RINGS} />}
+              legend={<RingLegend metrics={RINGS} />}
+            />
 
-            {/* 2막 — 커버리지 분포 + 요즘의 시장 (스와이프 2페이지) */}
-            <div className="cr-widget" style={{ marginTop: 12, padding: '15px 16px' }}>
+            {/* 2막 — 포지셔닝 인사이트 (스와이프 5페이지) */}
+            <div className="cr-widget" style={{ marginTop: 12, padding: '15px 16px', marginBottom: 14 }}>
               <SwipePager pages={[
                 {
                   key: 'cov',
                   node: (
                     <>
                       <div className="scr-card__title" style={{ marginBottom: 6 }}>커버리지 분포 · 배우면?</div>
-                      <CoverageHistogram postings={histJobs} mySkills={RESUME} gap={GAP6} />
+                      <CoverageHistogram postings={histJobs} mySkills={RESUME} gap={WHATIF} />
                     </>
                   ),
                 },
@@ -148,6 +177,24 @@ export default function CareerDashboard() {
                     <>
                       <div className="scr-card__title" style={{ marginBottom: 12 }}>요즘의 시장 <span style={{ fontSize: 11, color: 'var(--c-muted)', fontWeight: 500 }}>국내 데이터 근거</span></div>
                       <PulseCard items={PULSE} />
+                    </>
+                  ),
+                },
+                {
+                  key: 'radar',
+                  node: (
+                    <>
+                      <div className="scr-card__title" style={{ marginBottom: 6 }}>업종 적합도 <span style={{ fontSize: 11, color: 'var(--c-muted)', fontWeight: 500 }}>보유 기술 기준 실측</span></div>
+                      <IndustryFitRadar />
+                    </>
+                  ),
+                },
+                {
+                  key: 'roadmap',
+                  node: (
+                    <>
+                      <div className="scr-card__title" style={{ marginBottom: 6 }}>다음 스텝 로드맵 <span style={{ fontSize: 11, color: 'var(--c-muted)', fontWeight: 500 }}>내 스택과 강하게 얽힌 순</span></div>
+                      <TechChainRoadmap />
                     </>
                   ),
                 },

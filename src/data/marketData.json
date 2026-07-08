@@ -1211,6 +1211,129 @@
    "owned": true
   }
  },
+ "techYearly": {
+  "asOf": "2026-07-07",
+  "source": "jumpit",
+  "N": 2467,
+  "years": [
+   "2022",
+   "2023",
+   "2024",
+   "2025"
+  ],
+  "series": [
+   {
+    "tech": "Java",
+    "owned": false,
+    "shares": [
+     30.4,
+     26.9,
+     21.7,
+     16.6
+    ],
+    "delta": -13.8
+   },
+   {
+    "tech": "Python",
+    "owned": true,
+    "shares": [
+     16.5,
+     17.7,
+     18.8,
+     26.3
+    ],
+    "delta": 9.8
+   },
+   {
+    "tech": "Next.js",
+    "owned": false,
+    "shares": [
+     3.2,
+     5.8,
+     6.8,
+     9.9
+    ],
+    "delta": 6.7
+   },
+   {
+    "tech": "Vue",
+    "owned": false,
+    "shares": [
+     8.9,
+     6.9,
+     6.3,
+     4.3
+    ],
+    "delta": -4.6
+   },
+   {
+    "tech": "Spring",
+    "owned": false,
+    "shares": [
+     17.1,
+     17.7,
+     16.4,
+     12.8
+    ],
+    "delta": -4.3
+   },
+   {
+    "tech": "Docker",
+    "owned": true,
+    "shares": [
+     7.7,
+     7.6,
+     9.7,
+     11.8
+    ],
+    "delta": 4.1
+   },
+   {
+    "tech": "FastAPI",
+    "owned": false,
+    "shares": [
+     0.2,
+     1.1,
+     1.7,
+     4.3
+    ],
+    "delta": 4.1
+   },
+   {
+    "tech": "AWS",
+    "owned": true,
+    "shares": [
+     25.3,
+     23.7,
+     21.9,
+     21.2
+    ],
+    "delta": -4.1
+   },
+   {
+    "tech": "TypeScript",
+    "owned": true,
+    "shares": [
+     11.0,
+     13.3,
+     18.8,
+     14.5
+    ],
+    "delta": 3.5
+   },
+   {
+    "tech": "Kotlin",
+    "owned": false,
+    "shares": [
+     5.8,
+     6.9,
+     6.2,
+     4.1
+    ],
+    "delta": -1.7
+   }
+  ]
+ },
  "map": {
   "asOf": "2026-07-07",
   "N": 60,
