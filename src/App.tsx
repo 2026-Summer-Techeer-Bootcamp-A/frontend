@@ -21,6 +21,7 @@ import DesignSystem from './design/DesignSystem'
 import DoDont from './design/DoDont'
 import LikeApple from './design/LikeApple'
 import IconSets from './design/IconSets'
+import TossDetails from './design/TossDetails'
 import WidgetsDemo from './pages/widgets/WidgetsDemo'
 
 export default function App() {
@@ -42,6 +43,7 @@ export default function App() {
       <Route path="/design-system/guide" element={<DoDont />} />
       <Route path="/design-system/apple" element={<LikeApple />} />
       <Route path="/design-system/icons" element={<IconSets />} />
+      <Route path="/design-system/toss" element={<TossDetails />} />
       <Route path="/widgets" element={<WidgetsDemo />} />
       <Route path="/p1-home" element={<P1Home />} />
       <Route path="/p1-list" element={<P1List />} />

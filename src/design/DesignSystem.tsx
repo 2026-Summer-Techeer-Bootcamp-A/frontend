@@ -11,7 +11,6 @@ import {
 } from 'lucide-react'
 import { palette, typography, radius, spacing, elevation, motion } from './tokens'
 import KitShowcase from './KitShowcase'
-import TossDetails from './TossDetails'
 import './design-system.css'
 
 const NAV = [
@@ -1440,11 +1439,28 @@ export default function DesignSystem() {
           </section>
 
           <section className="ds-sec" id="toss">
-            <div className="ds-sec__head">
-              <h2>기타 디테일 <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--muted)' }}>마이크로 인터랙션 10</span></h2>
-              <p>블러·비네팅·스크롤 반응 헤더·오도미터 등 세밀한 디테일. 박스를 스크롤하거나 탭·버튼을 눌러보세요.</p>
-            </div>
-            <TossDetails />
+            <Link
+              to="/design-system/toss"
+              style={{
+                display: 'block',
+                background: 'linear-gradient(135deg, #1c1d21, #2f4a7c)',
+                borderRadius: 20,
+                padding: '28px 30px',
+                color: '#fff',
+                textDecoration: 'none',
+              }}
+            >
+              <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.5, opacity: 0.75, textTransform: 'uppercase' }}>
+                20개 항목 · 4개 카테고리
+              </span>
+              <h2 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.6px', margin: '8px 0 6px' }}>
+                기타 디테일 →
+              </h2>
+              <p style={{ fontSize: 13.5, opacity: 0.85, lineHeight: 1.6, maxWidth: 640 }}>
+                블러·비네팅·스크롤 반응 헤더·오도미터·FLIP 재정렬·셰어드 엘리먼트 모프 등 토스류 폴리시드 앱의
+                미세 인터랙션 모음. 박스를 스크롤하거나 탭·드래그해 보세요.
+              </p>
+            </Link>
           </section>
         </main>
       </div>

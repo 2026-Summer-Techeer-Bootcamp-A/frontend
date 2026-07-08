@@ -196,3 +196,80 @@
 }
 .td-dock__row:active { transform: scale(0.97); }
 .td-dock__row .mt { color: var(--c-accent); font-weight: 800; }
+
+/* 12. 스크롤 방향 감지 탭바 */
+.td-hidebar {
+  position: absolute; left: 12px; right: 12px; bottom: 10px; z-index: 4;
+  display: flex; justify-content: space-around; padding: 6px;
+  background: var(--c-card); border-radius: 22px; box-shadow: var(--e2);
+  transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.18s ease;
+}
+.td-hidebar.hide { transform: translateY(140%); opacity: 0; }
+
+/* 13. 셰어드 엘리먼트 모프 전환 */
+.td-morph { overflow: hidden; }
+.td-morph__row {
+  display: flex; align-items: center; gap: 9px; height: 100%;
+  padding: 14px; font-size: 13.5px; font-weight: 600; color: var(--c-ink); cursor: pointer;
+}
+.td-morph__detail {
+  position: absolute; inset: 0; padding: 16px; background: var(--c-card);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.td-morph__hd { font-size: 15px; font-weight: 800; color: var(--c-ink); }
+.td-morph__detail p { font-size: 12.5px; color: var(--c-muted); }
+
+/* 14. 러버밴드 오버스크롤 */
+.td-rubber { overflow: auto; }
+
+/* 15. FLIP 리스트 재정렬 */
+.td-flipwrap { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.td-flip { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+.td-flip__item {
+  padding: 12px 14px; border-radius: 12px;
+  background: var(--c-card); border: 1px solid var(--line);
+  font-size: 13.5px; font-weight: 600; color: var(--c-ink);
+}
+
+/* 16. 스와이프 액션 */
+.td-swiperow { position: relative; overflow: hidden; border-radius: 13px; }
+.td-swiperow__action {
+  position: absolute; right: 0; top: 0; bottom: 0; width: 72px;
+  background: #c8382d; color: #fff; font-size: 12.5px; font-weight: 700;
+}
+.td-swiperow__front {
+  position: relative; background: var(--c-card); border: 1px solid var(--line);
+  padding: 16px 14px; font-size: 13.5px; color: var(--c-muted); touch-action: pan-y;
+}
+
+/* 17. 당겨서 새로고침 */
+.td-ptr { height: 190px; overflow: hidden auto; position: relative; touch-action: pan-y; }
+.td-ptr__indicator {
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: var(--c-muted); overflow: hidden;
+}
+
+/* 18. 증감 색상 플래시 */
+.td-flashwrap { display: flex; align-items: center; justify-content: space-between; padding: 4px; }
+.td-flashnum {
+  font-size: 25px; font-weight: 800; letter-spacing: -0.5px; color: var(--c-ink);
+  font-variant-numeric: tabular-nums; padding: 8px 10px; border-radius: 10px;
+  transition: background-color 0.3s ease-out, color 0.3s ease-out;
+}
+.td-flashnum.up { background: #e6f5ed; color: #1c7a4d; }
+.td-flashnum.down { background: #fbe9e7; color: #c8382d; }
+
+/* 19. 체크마크 드로잉 */
+.td-checkwrap { display: flex; align-items: center; gap: 18px; }
+.td-check__circle { stroke-dasharray: 151; stroke-dashoffset: 151; animation: td-draw 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+.td-check__mark { stroke-dasharray: 40; stroke-dashoffset: 40; animation: td-draw 0.3s cubic-bezier(0.4, 0, 0.2, 1) 0.45s forwards; }
+@keyframes td-draw { to { stroke-dashoffset: 0; } }
+
+/* 20. 절제된 컨페티 */
+.td-confettiwrap { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.td-confetti__stage { position: relative; height: 56px; width: 100%; }
+.td-confetti__bit {
+  position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; border-radius: 2px;
+  animation: td-confetti 0.65s cubic-bezier(0.2, 0.8, 0.4, 1) forwards;
+}
+@keyframes td-confetti { to { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: 0; } }
