@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { ChevronLeft, Bookmark, MapPin, Briefcase, Calendar } from 'lucide-react'
 import PhoneFrame from '../components/PhoneFrame'
 import CompanyLogo from './CompanyLogo'
+import { matchGrad } from './kit'
 import { THEME, themeVars } from './themes'
 import data from '../data/careerData.json'
 import './career.css'
@@ -86,7 +87,7 @@ export default function JobDetail() {
               <b>{p.matchPct}%</b>
             </h4>
             <div className="cr-track">
-              <i style={{ width: `${p.matchPct}%` }} />
+              <i style={{ width: `${p.matchPct}%`, background: matchGrad(p.matchPct) }} />
             </div>
             <div className="cr-chips">
               {held.map((s) => (

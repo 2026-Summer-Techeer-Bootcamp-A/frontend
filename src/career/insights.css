@@ -1,0 +1,180 @@
+/* ============ 인사이트 위젯 (.ins-*) — report.md Wow-Point + 통계 탭 확장 ============ */
+
+.ins-legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--c-muted);
+}
+.ins-legend span { display: inline-flex; align-items: center; gap: 4px; }
+.ins-legend i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; }
+
+.ins-hint {
+  font-size: 11px;
+  color: var(--c-muted);
+  margin-top: 6px;
+  line-height: 1.5;
+}
+.ins-scopebadge {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--accent-700);
+  background: var(--accent-50);
+  border-radius: 7px;
+  padding: 3px 8px;
+  margin-bottom: 8px;
+}
+
+/* ---- 업종 적합도 레이더 ---- */
+.ins-radar__cap {
+  font-size: 12.5px;
+  color: var(--c-muted);
+  line-height: 1.6;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+.ins-radar__cap b { color: var(--c-ink); font-weight: 700; }
+
+/* ---- 자격증 갭 위젯 ---- */
+.ins-certcap__lbl {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-muted);
+  margin-bottom: 10px;
+}
+.ins-certcap__lbl b { color: var(--accent-700); font-weight: 800; }
+.ins-certcap__n {
+  font-size: 10.5px;
+  font-weight: 700;
+  opacity: 0.72;
+  margin-left: 2px;
+}
+
+/* ---- 연쇄 기술 로드맵 ---- */
+.ins-chain__step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+.ins-chain__step:last-of-type { border-bottom: none; }
+.ins-chain__badge {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--c-accent);
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+.ins-chain__body { flex: 1; min-width: 0; }
+.ins-chain__t {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--c-ink);
+}
+.ins-chain__arrow { color: var(--c-muted); flex: none; }
+.ins-chain__sub {
+  font-size: 11.5px;
+  color: var(--c-muted);
+  margin-top: 3px;
+}
+.ins-chain__sub b { color: var(--accent-700); font-weight: 700; }
+
+/* ---- 기업 규모별 기술 비교 ---- */
+.ins-tier__hint {
+  font-size: 12px;
+  color: var(--c-muted);
+  margin-bottom: 10px;
+}
+.ins-tier__legend {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--c-muted);
+}
+.ins-tier__legend span { display: inline-flex; align-items: center; gap: 4px; }
+.ins-tier__legend i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+/* ---- 세대별(레거시→신진) 트렌드 ---- */
+.ins-gen__panel { margin-top: 10px; }
+.ins-gen__bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+.ins-gen__blabel {
+  width: 40px;
+  flex: none;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--c-muted);
+}
+.ins-gen__bar.dom .ins-gen__blabel { color: var(--accent-700); }
+.ins-gen__track {
+  flex: 1;
+  height: 7px;
+  border-radius: 4px;
+  background: var(--accent-50);
+  overflow: hidden;
+  display: block;
+}
+.ins-gen__track i { display: block; height: 100%; background: var(--c-accent); border-radius: 4px; }
+.ins-gen__val { width: 34px; flex: none; font-size: 11.5px; font-weight: 700; text-align: right; }
+.ins-gen__verdict {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-ink);
+  margin-top: 8px;
+}
+.ins-gen__verdict b { color: var(--accent-700); font-weight: 800; }
+
+/* ---- 급상승/급감 랭킹 바 ---- */
+.ins-mov__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+}
+.ins-mov__k {
+  width: 92px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--c-ink);
+}
+.ins-mov__tr {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--line);
+  overflow: hidden;
+  display: block;
+}
+.ins-mov__tr i { display: block; height: 100%; border-radius: 4px; }
+.ins-mov__tr i.up { background: var(--c-accent); }
+.ins-mov__tr i.down { background: #c8382d; }
+.ins-mov__v { width: 48px; flex: none; font-size: 11.5px; font-weight: 800; text-align: right; }
+.ins-mov__v.up { color: var(--c-accent); }
+.ins-mov__v.down { color: #c8382d; }

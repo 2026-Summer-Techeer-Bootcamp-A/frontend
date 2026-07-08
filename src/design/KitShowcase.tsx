@@ -5,7 +5,8 @@ import CompanyLogo from '../career/CompanyLogo'
 import {
   StatHero, CoverageHistogram, OpportunityQuadrant, PulseCard, SectionHeader,
   DisclosureCard, ResumeHeroCard, MenuRow, BottomSheet, MiniScore, TechIcon,
-  MiniJobCard, SkillChip, JobCardCompact, CardModeToggle, type CardMode, type QuadItem,
+  MiniJobCard, SkillChip, JobCardCompact, CardModeToggle, ActivityRings, RingLegend,
+  type CardMode, type QuadItem, type RingMetric,
 } from '../career/kit'
 import career from '../data/careerData.json'
 import '../career/career.css'
@@ -17,6 +18,10 @@ const HIST = career.postings.filter((p) => p.pool === '국내').map((p) => ({ te
 const quad: QuadItem[] = TOP.slice(0, 12).map((t) => ({
   tech: t.tech, demand: t.count, owned: RESUME.includes(t.tech), count: t.count,
 }))
+const RINGS_DEMO: RingMetric[] = [
+  { key: 'cov', label: '커버리지', pct: 73, color: 'var(--c-accent)' },
+  { key: 'reach', label: '도달률', pct: 25, color: 'var(--accent-700)', note: '15개 공고' },
+]
 
 function Demo({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -39,6 +44,14 @@ export default function KitShowcase() {
           value={73} title="시장 커버리지"
           sub={<>당신의 <b>14개 기술</b>이 활성 공고의 상당수에 등장해요.</>}
           tag="데모"
+        />
+      </Demo>
+
+      <Demo label="운동 링 2지표 (ActivityRings) — 커버리지 · 조건 만족 공고 도달률">
+        <StatHero
+          value={73} title="시장 커버리지"
+          rings={<ActivityRings metrics={RINGS_DEMO} />}
+          legend={<RingLegend metrics={RINGS_DEMO} />}
         />
       </Demo>
 

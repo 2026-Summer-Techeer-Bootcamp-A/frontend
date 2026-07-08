@@ -50,17 +50,71 @@ export function ArcGauge({ pct, size = 168, ghost }: { pct: number; size?: numbe
 
 /* ---------- 1. 포지셔닝 점수 히어로 ---------- */
 export function StatHero({
-  value, unit = '%', title, sub, tag,
-}: { value: number; unit?: string; title: string; sub?: ReactNode; tag?: string }) {
+  value, unit = '%', title, sub, tag, rings, legend,
+}: { value: number; unit?: string; title: string; sub?: ReactNode; tag?: ReactNode; rings?: ReactNode; legend?: ReactNode }) {
   const n = useCountUp(value)
   return (
     <div className="kit-hero">
       <div className="kit-hero__label">{title}</div>
-      <div className="kit-hero__num">
-        {n}<span className="kit-hero__unit">{unit}</span>
-        {tag && <span className="kit-hero__tag">{tag}</span>}
+      <div className="kit-hero__row">
+        <div className="kit-hero__num">
+          {n}<span className="kit-hero__unit">{unit}</span>
+          {tag && <span className="kit-hero__tag">{tag}</span>}
+        </div>
+        {rings && <div className="kit-hero__rings">{rings}</div>}
       </div>
       {sub && <div className="kit-hero__sub">{sub}</div>}
+      {legend && <div className="kit-hero__legend">{legend}</div>}
+    </div>
+  )
+}
+
+/* ---------- Apple 운동 링 스타일 2-지표 통합 요약 ----------
+   장식용이 아니라, 히어로 숫자(기술 커버리지) 하나로는 안 보이는
+   "도달률"(실제 지원 가능한 공고 비율)을 함께 겹쳐 보여주는 요약. */
+export type RingMetric = { key: string; label: string; pct: number; ghost?: number; color: string; note?: string }
+
+export function ActivityRings({ metrics, size = 66 }: { metrics: RingMetric[]; size?: number }) {
+  const sw = size * 0.115
+  const gap = sw * 0.32
+  const c = size / 2
+  const pad = 1.5
+  return (
+    <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} className="kit-rings">
+      {metrics.map((m, i) => {
+        const r = c - pad - sw / 2 - i * (sw + gap)
+        const circ = 2 * Math.PI * r
+        const off = (v: number) => circ * (1 - Math.max(0, Math.min(100, v)) / 100)
+        return (
+          <g key={m.key} transform={`rotate(-90 ${c} ${c})`}>
+            <circle cx={c} cy={c} r={r} fill="none" stroke="var(--accent-50)" strokeWidth={sw} />
+            {m.ghost != null && m.ghost > m.pct && (
+              <circle
+                cx={c} cy={c} r={r} fill="none" stroke={m.color} opacity={0.32} strokeWidth={sw} strokeLinecap="round"
+                strokeDasharray={circ} strokeDashoffset={off(m.ghost)} className="kit-rings__ghost"
+              />
+            )}
+            <circle
+              cx={c} cy={c} r={r} fill="none" stroke={m.color} strokeWidth={sw} strokeLinecap="round"
+              strokeDasharray={circ} strokeDashoffset={off(m.pct)} className="kit-rings__fill"
+            />
+          </g>
+        )
+      })}
+    </svg>
+  )
+}
+
+export function RingLegend({ metrics }: { metrics: RingMetric[] }) {
+  return (
+    <div className="kit-hero__legend-row">
+      {metrics.map((m) => (
+        <span key={m.key} className="kit-rlg">
+          <i style={{ background: m.color }} />
+          {m.label} <b>{m.pct}%</b>
+          {m.note && <span className="kit-rlg__note">{m.note}</span>}
+        </span>
+      ))}
     </div>
   )
 }
@@ -191,6 +245,27 @@ export function SwipePager({ pages }: { pages: { key: string; node: ReactNode }[
   )
 }
 
+/* ---------- 다이나믹 독 — 하단 독(내비게이션 바)이 다이나믹 아일랜드처럼
+   너비·높이·라운드가 부드럽게 변하며 그 자리에서 리스트가 펼쳐짐.
+   지도처럼 화면 아무 지점에나 뜨는 컨텍스트 메뉴 대신, 항상 엄지가 닿는
+   하단 고정 위치에서 확장되므로 모바일에서 다루기 쉬움. ---------- */
+export function DynamicDock({
+  expanded, collapsed, children, width = 268, expandedWidth = 320, expandedHeight = 320,
+}: {
+  expanded: boolean; collapsed: ReactNode; children: ReactNode
+  width?: number; expandedWidth?: number; expandedHeight?: number
+}) {
+  return (
+    <div
+      className={`kit-dock${expanded ? ' expanded' : ''}`}
+      style={{ width: expanded ? expandedWidth : width, height: expanded ? expandedHeight : 64 }}
+    >
+      <div className="kit-dock__face kit-dock__face--collapsed">{collapsed}</div>
+      <div className="kit-dock__face kit-dock__face--expanded">{children}</div>
+    </div>
+  )
+}
+
 /* ---------- 3. 기회 사분면 스캐터 ---------- */
 export type QuadItem = { tech: string; demand: number; owned: boolean; count: number }
 export function OpportunityQuadrant({ items, onPick }: { items: QuadItem[]; onPick?: (t: string) => void }) {
@@ -254,6 +329,14 @@ const TECH: Record<string, [string, string]> = {
   'Next.js': ['Nx', '#2b2b2b'], Express: ['Ex', '#4b5563'], MariaDB: ['Ma', '#5a4b3c'], Oracle: ['Or', '#C74634'],
   Jira: ['Ji', '#2684FF'], Slack: ['Sl', '#4A154B'],
 }
+// 매칭% → 채도 그라데이션. 100%=진한 accent, 낮을수록 채도가 빠짐.
+export function matchGrad(pct: number): string {
+  const p = Math.max(0, Math.min(100, pct)) / 100
+  const sat = 26 + p * 33 // 26% ~ 59%(accent)
+  const lig = 52 - p * 7 // 52% ~ 45%(accent)
+  return `linear-gradient(90deg, hsl(217 ${Math.round(sat * 0.72)}% ${Math.round(lig + 8)}%), hsl(217 ${Math.round(sat)}% ${Math.round(lig)}%))`
+}
+
 function techLabel(t: string) { return TECH[t]?.[0] ?? (t.replace(/[^A-Za-z0-9]/g, '').slice(0, 2) || t.slice(0, 2)) }
 function techColor(t: string) {
   if (TECH[t]) return TECH[t][1]
@@ -441,12 +524,19 @@ export function MenuRow({
 /* ---------- 9. 바텀시트 (아래서 스프링 등장) ---------- */
 export function BottomSheet({ open, onClose, children }: { open: boolean; onClose: () => void; children: ReactNode }) {
   const [mounted, setMounted] = useState(open)
+  const [visible, setVisible] = useState(false)
   useEffect(() => {
-    if (open) setMounted(true)
+    if (!open) { setVisible(false); return }
+    setMounted(true)
+    // 마운트 직후 곧바로 show 클래스를 주면 브라우저가 "닫힘" 상태를 페인트할 기회가
+    // 없어 트랜지션이 아예 생략된다 — 더블 rAF로 한 프레임 쉬고 나서 열어야 애니메이션이 붙는다.
+    let id2 = 0
+    const id1 = requestAnimationFrame(() => { id2 = requestAnimationFrame(() => setVisible(true)) })
+    return () => { cancelAnimationFrame(id1); cancelAnimationFrame(id2) }
   }, [open])
   if (!mounted && !open) return null
   return (
-    <div className={`kit-sheet__wrap${open ? ' show' : ''}`} onTransitionEnd={() => { if (!open) setMounted(false) }}>
+    <div className={`kit-sheet__wrap${visible ? ' show' : ''}`} onTransitionEnd={() => { if (!open) setMounted(false) }}>
       <div className="kit-sheet__ov" onClick={onClose} />
       <div className="kit-sheet">
         <div className="kit-sheet__grip" />

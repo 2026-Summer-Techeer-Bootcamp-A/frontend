@@ -1,8 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Award, ChevronRight } from 'lucide-react'
-import { CareerScreen, ScreenHead, PoolToggle, AsOf, Card, HBars, TrendLines, Heatmap } from './charts'
+import { CareerScreen, ScreenHead, PoolToggle, AsOf, Card, HBars } from './charts'
 import { SectionHeader, DisclosureCard, OpportunityQuadrant, PulseCard, type QuadItem, type PulseItem } from './kit'
+import {
+  TechCoNetworkGraph, TrendPropagationGraph, TierCompareChart, GenerationTrendChart,
+  TechYearlyTrendChart, TechMoversBar,
+} from './insights'
 import market from '../data/marketData.json'
 import career from '../data/careerData.json'
 
@@ -29,10 +33,6 @@ export default function MarketScreen() {
     tech: t.tech, demand: t.count, owned: RESUME.includes(t.tech), count: t.count,
   }))
   const cooc = COOC[sel]
-  const trend = market.trend as unknown as { asOf: string; series: Record<string, number>[] }
-  const ind = market.industry as {
-    asOf: string; N: number; note: string; industries: string[]; techs: string[]; matrix: number[][]
-  }
 
   const pulse = (market.pulse as { items: PulseItem[] }).items
 
@@ -78,19 +78,28 @@ export default function MarketScreen() {
         </DisclosureCard>
       )}
 
-      <DisclosureCard title="연도별 채용 추이" summary="2019~2026 · himalayas 제외">
-        <TrendLines
-          series={trend.series}
-          keys={['hn', 'wanted', 'jumpit']}
-          colors={{ hn: '#2f61b8', wanted: '#218a58', jumpit: '#b8892b' }}
-          labels={{ hn: 'HN(글로벌)', wanted: '원티드', jumpit: '점핏' }}
-        />
-        <AsOf asOf={trend.asOf} note="hn·국내만" />
+      <DisclosureCard title="국내 기술 점유율 추이" summary="2022~2025 · 점핏 단일 소스" defaultOpen>
+        <TechYearlyTrendChart />
       </DisclosureCard>
 
-      <DisclosureCard title="산업별 요구 스택" summary={ind.note}>
-        <Heatmap rows={ind.industries} cols={ind.techs.slice(0, 6)} matrix={ind.matrix.map((r) => r.slice(0, 6))} />
-        <AsOf asOf={ind.asOf} n={ind.N} />
+      <DisclosureCard title="급상승 · 급감 Top 6" summary="같은 기간 점유율 변화폭 순">
+        <TechMoversBar />
+      </DisclosureCard>
+
+      <DisclosureCard title="기술 공동출현 네트워크" summary="함께 요구되는 기술 구조">
+        <TechCoNetworkGraph />
+      </DisclosureCard>
+
+      <DisclosureCard title="트렌드 전파 네트워크" summary="다음에 뜰 기술(글로벌)">
+        <TrendPropagationGraph />
+      </DisclosureCard>
+
+      <DisclosureCard title="레거시 → 신진 기업 스택 변화" summary="회사 설립 세대별 기술 점유율">
+        <GenerationTrendChart />
+      </DisclosureCard>
+
+      <DisclosureCard title="기업 규모별 기술 요구 차이" summary="대기업 · 중견 · 중소 실측 비교">
+        <TierCompareChart />
       </DisclosureCard>
 
       <button className="scr-linkbtn" onClick={() => navigate('/cert-gap')} style={{ marginTop: 14 }}>

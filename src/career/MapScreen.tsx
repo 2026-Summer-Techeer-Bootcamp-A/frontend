@@ -1,15 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, LocateFixed, Maximize2 } from 'lucide-react'
+import { Search, LocateFixed, Maximize2, Home, BarChart3, Map as MapIcon, User, ArrowLeft } from 'lucide-react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import 'leaflet.markercluster'
 import 'leaflet.markercluster/dist/MarkerCluster.css'
 import PhoneFrame from '../components/PhoneFrame'
 import CompanyLogo from './CompanyLogo'
-import CareerTabBar from './CareerTabBar'
 import JobSheet from './JobSheet'
-import { MiniJobCard, MiniJobSkeleton } from './kit'
+import { MiniJobCard, MiniJobSkeleton, DynamicDock } from './kit'
 import { THEME, themeVars } from './themes'
 import market from '../data/marketData.json'
 import data from '../data/careerData.json'
@@ -26,6 +25,14 @@ const B = { latMin: 37.40, latMax: 37.72, lngMin: 126.76, lngMax: 127.20 }
 const ME: [number, number] = [37.503, 127.045]
 const ZOOM_INDIV = 14
 type Job = (typeof data.postings)[number]
+const tierClass = (t: string | null) => (t === '대기업' ? 't1' : t === '중견' ? 't2' : 't3')
+
+const NAV_TABS = [
+  { key: 'home', label: '홈', icon: Home, to: '/' },
+  { key: 'market', label: '시장', icon: BarChart3, to: '/market' },
+  { key: 'map', label: '지도', icon: MapIcon, to: '/map' },
+  { key: 'resume', label: '마이', icon: User, to: '/resume' },
+] as const
 
 export default function MapScreen() {
   const t = THEME
@@ -35,7 +42,11 @@ export default function MapScreen() {
   const [sel, setSel] = useState<Job | null>(null)
   const [visible, setVisible] = useState<Pin[]>([])
   const [loading, setLoading] = useState(false)
-  const [menu, setMenu] = useState<{ x: number; y: number; pins: Pin[] } | null>(null)
+  const [menu, setMenu] = useState<{ pins: Pin[] } | null>(null)
+  // 독이 접히는 동안에도 리스트가 유지되도록 마지막 값을 붙잡아 둔다(내용이 먼저 사라지는 점프 방지).
+  const [menuShown, setMenuShown] = useState<{ pins: Pin[] } | null>(null)
+  useEffect(() => { if (menu) setMenuShown(menu) }, [menu])
+  const menuView = menu ?? menuShown
 
   // 핀 → 실제 공고 찾아 리치 시트 열기
   const openPin = (p: Pin) => {
@@ -102,8 +113,7 @@ export default function MapScreen() {
         return
       }
       const kids = cl.getAllChildMarkers() as unknown as { pin: Pin }[]
-      const pt = map.latLngToContainerPoint(cl.getLatLng())
-      setMenu({ x: pt.x, y: pt.y, pins: kids.map((k) => k.pin) })
+      setMenu({ pins: kids.map((k) => k.pin) })
     })
     map.on('movestart zoomstart', () => setMenu(null))
 
@@ -157,24 +167,8 @@ export default function MapScreen() {
             <button className="lfab primary" onClick={recenter} aria-label="내 위치"><LocateFixed size={19} /></button>
           </div>
 
-          {/* 지역 게이지 클릭 → 컨텍스트 메뉴(그 지역 회사들) */}
-          {menu && (
-            <>
-              <div className="lctxmenu__ov" onClick={() => setMenu(null)} />
-              <div className="lctxmenu" style={{ left: menu.x, top: menu.y }}>
-                <div className="lctxmenu__hd">{menu.pins[0]?.district || '지역'} · {menu.pins.length}개 공고</div>
-                <div className="lctxmenu__list kit-scroll">
-                  {[...menu.pins].sort((a, b) => b.matchPct - a.matchPct).map((p) => (
-                    <button key={p.id} className="lctxmenu__row" onClick={() => openPin(p)}>
-                      <CompanyLogo logo={p.logo} name={p.company} size={26} radius={7} />
-                      <span className="nm">{p.company}</span>
-                      <span className="mt">{p.matchPct}%</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
+          {/* 지역 클릭 → 지도 바깥(외부) 탭하면 닫기 */}
+          {menu && <div className="lctxmenu__ov" onClick={() => setMenu(null)} />}
 
           {/* 회사 마커 클릭 → 리치 시트(JobSheet) */}
           <JobSheet
@@ -182,7 +176,51 @@ export default function MapScreen() {
             onDetail={() => { if (sel) navigate(`/job/${data.postings.indexOf(sel)}`); setSel(null) }}
           />
 
-          <CareerTabBar active="map" />
+          {/* 하단 독 — 평소엔 내비게이션, 지역 클릭 시 다이나믹 아일랜드처럼
+              같은 자리에서 부드럽게 확장되어 그 지역 회사 리스트를 보여줌 */}
+          <DynamicDock
+            expanded={!!menu}
+            expandedWidth={330}
+            expandedHeight={272}
+            collapsed={
+              <>
+                {NAV_TABS.map(({ key, label, icon: Icon, to }) => (
+                  <button
+                    key={key}
+                    className={`cr-nav__item${key === 'map' ? ' on' : ''}`}
+                    onClick={() => key !== 'map' && navigate(to)}
+                    aria-label={label}
+                    aria-current={key === 'map' ? 'page' : undefined}
+                  >
+                    <Icon size={22} strokeWidth={key === 'map' ? 2.4 : 2} />
+                  </button>
+                ))}
+              </>
+            }
+          >
+            {menuView && (
+              <>
+                <div className="lctxmenu__hd">
+                  <button className="lctxmenu__back" onClick={() => setMenu(null)} aria-label="닫기">
+                    <ArrowLeft size={15} />
+                  </button>
+                  {menuView.pins[0]?.district || '지역'} · {menuView.pins.length}개 공고
+                </div>
+                <div className="lctxmenu__list kit-scroll">
+                  {[...menuView.pins].sort((a, b) => b.matchPct - a.matchPct).map((p) => (
+                    <button key={p.id} className="lctxmenu__row" onClick={() => openPin(p)}>
+                      <CompanyLogo logo={p.logo} name={p.company} size={30} radius={9} />
+                      <span className="info">
+                        <span className="nm">{p.company}</span>
+                        {p.tier && <span className={`cr-tier ${tierClass(p.tier)}`}>{p.tier}</span>}
+                      </span>
+                      <span className="mt">{p.matchPct}%</span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </DynamicDock>
         </div>
       </PhoneFrame>
     </div>

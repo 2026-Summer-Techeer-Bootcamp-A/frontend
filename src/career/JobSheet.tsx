@@ -1,5 +1,6 @@
+import { useEffect, useState } from 'react'
 import { FileText, Bookmark, MapPin, Briefcase } from 'lucide-react'
-import { BottomSheet, MenuRow, MiniScore } from './kit'
+import { BottomSheet, MenuRow, MiniScore, matchGrad } from './kit'
 import CompanyLogo from './CompanyLogo'
 import data from '../data/careerData.json'
 
@@ -16,29 +17,34 @@ function careerText(min: number | null, max: number | null) {
 export default function JobSheet({
   job, open, onClose, onDetail,
 }: { job: Job | null; open: boolean; onClose: () => void; onDetail: () => void }) {
-  const held = job ? job.techs.filter((x) => RESUME.includes(x)).slice(0, 4) : []
-  const gap = job ? job.gap.slice(0, 3) : []
+  // 닫히는 애니메이션 도중에도 내용이 유지되도록 마지막 값을 붙잡아 둔다.
+  // job을 바로 null로 지우면 시트가 내려가는 동안 내용이 먼저 사라져 "순간이동"처럼 보인다.
+  const [shown, setShown] = useState(job)
+  useEffect(() => { if (job) setShown(job) }, [job])
+  const j = job ?? shown
+  const held = j ? j.techs.filter((x) => RESUME.includes(x)).slice(0, 4) : []
+  const gap = j ? j.gap.slice(0, 3) : []
   return (
     <BottomSheet open={open} onClose={onClose}>
-      {job && (
+      {j && (
         <>
           <div className="lsheet__hd">
-            <CompanyLogo logo={job.logo} name={job.company} size={46} radius={13} />
+            <CompanyLogo logo={j.logo} name={j.company} size={46} radius={13} />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="lsheet__name cr-ellip">{job.company}</div>
-              <div className="lsheet__role cr-ellip">{job.title}</div>
+              <div className="lsheet__name cr-ellip">{j.company}</div>
+              <div className="lsheet__role cr-ellip">{j.title}</div>
             </div>
-            <MiniScore pct={job.matchPct} size={52} />
+            <MiniScore pct={j.matchPct} size={52} />
           </div>
 
           <div className="lsheet__tags">
-            {job.tier && <span className={`cr-tier ${tierClass(job.tier)}`}>{job.tier}</span>}
-            <span className="lsheet__tag"><MapPin size={13} /> {job.region || 'Remote'}</span>
-            <span className="lsheet__tag"><Briefcase size={13} /> {careerText(job.careerMin, job.careerMax)}</span>
+            {j.tier && <span className={`cr-tier ${tierClass(j.tier)}`}>{j.tier}</span>}
+            <span className="lsheet__tag"><MapPin size={13} /> {j.region || 'Remote'}</span>
+            <span className="lsheet__tag"><Briefcase size={13} /> {careerText(j.careerMin, j.careerMax)}</span>
           </div>
 
-          <div className="lsheet__bar" style={{ marginTop: 12 }}><i style={{ width: `${job.matchPct}%` }} /></div>
-          <div className="lsheet__barlbl">요구 {job.matchTotal}개 중 {job.matchHeld}개 보유</div>
+          <div className="lsheet__bar" style={{ marginTop: 12 }}><i style={{ width: `${j.matchPct}%`, background: matchGrad(j.matchPct) }} /></div>
+          <div className="lsheet__barlbl">요구 {j.matchTotal}개 중 {j.matchHeld}개 보유</div>
 
           <div className="cr-chips" style={{ marginTop: 8 }}>
             {held.map((s) => <span key={s} className="cr-chip held">{s}</span>)}
