@@ -1,0 +1,159 @@
+{
+  "pearl": "x-role-stack-fit",
+  "as_of": "2026-07-07",
+  "pool": "both",
+  "sample_size": 11545,
+  "sample_note": "직군(fact_posting_category) 기준 · 상위 20개 기술 벡터의 가중 자카드 유사도(Ruzicka)",
+  "data": {
+    "categories": [
+      {
+        "name": "Developer",
+        "n": 6897
+      },
+      {
+        "name": "Data Science",
+        "n": 2127
+      },
+      {
+        "name": "Product",
+        "n": 1590
+      },
+      {
+        "name": "Design",
+        "n": 931
+      }
+    ],
+    "matrix": [
+      [
+        100,
+        44,
+        17,
+        13
+      ],
+      [
+        44,
+        100,
+        16,
+        6
+      ],
+      [
+        17,
+        16,
+        100,
+        23
+      ],
+      [
+        13,
+        6,
+        23,
+        100
+      ]
+    ],
+    "top_tech": {
+      "Developer": [
+        {
+          "tech": "AWS",
+          "pct": 28
+        },
+        {
+          "tech": "Python",
+          "pct": 27
+        },
+        {
+          "tech": "Git",
+          "pct": 24
+        },
+        {
+          "tech": "JavaScript",
+          "pct": 23
+        },
+        {
+          "tech": "Azure",
+          "pct": 19
+        },
+        {
+          "tech": "SQL",
+          "pct": 18
+        }
+      ],
+      "Data Science": [
+        {
+          "tech": "Python",
+          "pct": 53
+        },
+        {
+          "tech": "SQL",
+          "pct": 46
+        },
+        {
+          "tech": "AWS",
+          "pct": 25
+        },
+        {
+          "tech": "Azure",
+          "pct": 20
+        },
+        {
+          "tech": "Git",
+          "pct": 16
+        },
+        {
+          "tech": "GCP",
+          "pct": 14
+        }
+      ],
+      "Product": [
+        {
+          "tech": "SQL",
+          "pct": 10
+        },
+        {
+          "tech": "Azure",
+          "pct": 7
+        },
+        {
+          "tech": "AWS",
+          "pct": 4
+        },
+        {
+          "tech": "Python",
+          "pct": 3
+        },
+        {
+          "tech": "GCP",
+          "pct": 2
+        },
+        {
+          "tech": "Git",
+          "pct": 2
+        }
+      ],
+      "Design": [
+        {
+          "tech": "CSS",
+          "pct": 11
+        },
+        {
+          "tech": "HTML",
+          "pct": 11
+        },
+        {
+          "tech": "JavaScript",
+          "pct": 6
+        },
+        {
+          "tech": "Blender",
+          "pct": 5
+        },
+        {
+          "tech": "iOS",
+          "pct": 4
+        },
+        {
+          "tech": "Unreal Engine",
+          "pct": 3
+        }
+      ]
+    }
+  }
+}

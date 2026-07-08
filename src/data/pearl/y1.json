@@ -1,0 +1,64 @@
+{
+  "pearl": "y1-learning-path",
+  "as_of": "2026-07-07",
+  "pool": "domestic",
+  "sample_size": 4320,
+  "sample_note": "국내(점핏·원티드) 요구기술 3개+ 공고 · 커버리지 50% 이상=도달 · greedy 최적 순서",
+  "data": {
+    "start_matched": 903,
+    "total": 4320,
+    "threshold": 50,
+    "steps": [
+      {
+        "step": 1,
+        "tech": "Java",
+        "category": "language",
+        "matched_after": 1179,
+        "delta": 276,
+        "freq_pct": 27
+      },
+      {
+        "step": 2,
+        "tech": "Spring",
+        "category": "backend",
+        "matched_after": 1434,
+        "delta": 255,
+        "freq_pct": 19
+      },
+      {
+        "step": 3,
+        "tech": "Linux",
+        "category": "devops",
+        "matched_after": 1641,
+        "delta": 207,
+        "freq_pct": 16
+      },
+      {
+        "step": 4,
+        "tech": "C++",
+        "category": "language",
+        "matched_after": 1853,
+        "delta": 212,
+        "freq_pct": 13
+      },
+      {
+        "step": 5,
+        "tech": "Docker",
+        "category": "devops",
+        "matched_after": 2050,
+        "delta": 197,
+        "freq_pct": 18
+      }
+    ],
+    "resume": [
+      "Python",
+      "React",
+      "TypeScript",
+      "JavaScript",
+      "AWS",
+      "Git",
+      "MySQL",
+      "Node.js"
+    ]
+  }
+}

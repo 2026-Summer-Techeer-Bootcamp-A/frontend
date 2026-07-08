@@ -1,0 +1,347 @@
+{
+  "pearl": "r-industry-fingerprint",
+  "as_of": "2026-07-07",
+  "pool": "domestic",
+  "sample_size": 1377,
+  "sample_note": "점핏 산업 분류(text_rule) 기준 · 표본 얇음 — 참고용 · 지수=산업 내 비중÷전체 평균 비중",
+  "data": {
+    "industries": [
+      {
+        "name": "헬스케어",
+        "n": 245,
+        "signature": [
+          {
+            "tech": "MCU",
+            "index": 2.98,
+            "share_pct": 4,
+            "n": 9
+          },
+          {
+            "tech": "OpenCV",
+            "index": 2.02,
+            "share_pct": 4,
+            "n": 9
+          },
+          {
+            "tech": "Embedded",
+            "index": 1.67,
+            "share_pct": 7,
+            "n": 16
+          },
+          {
+            "tech": "C",
+            "index": 1.64,
+            "share_pct": 11,
+            "n": 28
+          },
+          {
+            "tech": "C++",
+            "index": 1.58,
+            "share_pct": 18,
+            "n": 44
+          },
+          {
+            "tech": "Swift",
+            "index": 1.53,
+            "share_pct": 5,
+            "n": 12
+          }
+        ]
+      },
+      {
+        "name": "금융IT/핀테크",
+        "n": 204,
+        "signature": [
+          {
+            "tech": "Objective-C",
+            "index": 2.7,
+            "share_pct": 4,
+            "n": 8
+          },
+          {
+            "tech": "Swift",
+            "index": 2.3,
+            "share_pct": 7,
+            "n": 15
+          },
+          {
+            "tech": "Kafka",
+            "index": 2.09,
+            "share_pct": 4,
+            "n": 9
+          },
+          {
+            "tech": "MSA",
+            "index": 1.99,
+            "share_pct": 5,
+            "n": 10
+          },
+          {
+            "tech": "Flutter",
+            "index": 1.83,
+            "share_pct": 6,
+            "n": 13
+          },
+          {
+            "tech": "Redis",
+            "index": 1.69,
+            "share_pct": 7,
+            "n": 14
+          }
+        ]
+      },
+      {
+        "name": "미디어/콘텐츠",
+        "n": 204,
+        "signature": [
+          {
+            "tech": "GraphQL",
+            "index": 2.57,
+            "share_pct": 4,
+            "n": 8
+          },
+          {
+            "tech": "Redux",
+            "index": 2.48,
+            "share_pct": 5,
+            "n": 11
+          },
+          {
+            "tech": "NestJS",
+            "index": 2.25,
+            "share_pct": 5,
+            "n": 11
+          },
+          {
+            "tech": "Next.js",
+            "index": 2.01,
+            "share_pct": 11,
+            "n": 22
+          },
+          {
+            "tech": "Unity",
+            "index": 1.56,
+            "share_pct": 4,
+            "n": 9
+          },
+          {
+            "tech": "Node.js",
+            "index": 1.47,
+            "share_pct": 17,
+            "n": 35
+          }
+        ]
+      },
+      {
+        "name": "에듀테크",
+        "n": 169,
+        "signature": [
+          {
+            "tech": "Jenkins",
+            "index": 2.63,
+            "share_pct": 6,
+            "n": 10
+          },
+          {
+            "tech": "Vue",
+            "index": 1.56,
+            "share_pct": 12,
+            "n": 21
+          },
+          {
+            "tech": "Flutter",
+            "index": 1.53,
+            "share_pct": 5,
+            "n": 9
+          },
+          {
+            "tech": "MariaDB",
+            "index": 1.44,
+            "share_pct": 5,
+            "n": 9
+          },
+          {
+            "tech": "PHP",
+            "index": 1.44,
+            "share_pct": 9,
+            "n": 15
+          },
+          {
+            "tech": "CSS",
+            "index": 1.41,
+            "share_pct": 14,
+            "n": 24
+          }
+        ]
+      },
+      {
+        "name": "커머스",
+        "n": 163,
+        "signature": [
+          {
+            "tech": "PHP",
+            "index": 2.98,
+            "share_pct": 18,
+            "n": 30
+          },
+          {
+            "tech": "MSA",
+            "index": 1.99,
+            "share_pct": 5,
+            "n": 8
+          },
+          {
+            "tech": "MySQL",
+            "index": 1.91,
+            "share_pct": 33,
+            "n": 54
+          },
+          {
+            "tech": "Node.js",
+            "index": 1.68,
+            "share_pct": 20,
+            "n": 32
+          },
+          {
+            "tech": "SQL Server",
+            "index": 1.58,
+            "share_pct": 7,
+            "n": 11
+          },
+          {
+            "tech": "HTML",
+            "index": 1.51,
+            "share_pct": 18,
+            "n": 29
+          }
+        ]
+      },
+      {
+        "name": "모빌리티/물류",
+        "n": 161,
+        "signature": [
+          {
+            "tech": "Embedded",
+            "index": 2.69,
+            "share_pct": 11,
+            "n": 17
+          },
+          {
+            "tech": "C",
+            "index": 2.32,
+            "share_pct": 16,
+            "n": 26
+          },
+          {
+            "tech": "C++",
+            "index": 1.8,
+            "share_pct": 20,
+            "n": 33
+          },
+          {
+            "tech": ".NET",
+            "index": 1.75,
+            "share_pct": 5,
+            "n": 8
+          },
+          {
+            "tech": "C#",
+            "index": 1.68,
+            "share_pct": 14,
+            "n": 22
+          },
+          {
+            "tech": "SQL Server",
+            "index": 1.59,
+            "share_pct": 7,
+            "n": 11
+          }
+        ]
+      },
+      {
+        "name": "AI/데이터",
+        "n": 134,
+        "signature": [
+          {
+            "tech": "TensorFlow",
+            "index": 3.19,
+            "share_pct": 13,
+            "n": 18
+          },
+          {
+            "tech": "PyTorch",
+            "index": 3.11,
+            "share_pct": 15,
+            "n": 20
+          },
+          {
+            "tech": "Deep Learning",
+            "index": 2.8,
+            "share_pct": 11,
+            "n": 15
+          },
+          {
+            "tech": "Machine Learning",
+            "index": 2.79,
+            "share_pct": 12,
+            "n": 16
+          },
+          {
+            "tech": "Docker",
+            "index": 1.73,
+            "share_pct": 17,
+            "n": 23
+          },
+          {
+            "tech": "PostgreSQL",
+            "index": 1.69,
+            "share_pct": 10,
+            "n": 14
+          }
+        ]
+      },
+      {
+        "name": "게임",
+        "n": 97,
+        "signature": [
+          {
+            "tech": "Unity",
+            "index": 7.28,
+            "share_pct": 21,
+            "n": 20
+          },
+          {
+            "tech": "C#",
+            "index": 2.53,
+            "share_pct": 21,
+            "n": 20
+          },
+          {
+            "tech": "Redis",
+            "index": 2.28,
+            "share_pct": 9,
+            "n": 9
+          },
+          {
+            "tech": "C",
+            "index": 1.48,
+            "share_pct": 10,
+            "n": 10
+          },
+          {
+            "tech": "MySQL",
+            "index": 1.43,
+            "share_pct": 25,
+            "n": 24
+          },
+          {
+            "tech": "C++",
+            "index": 1.36,
+            "share_pct": 15,
+            "n": 15
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,352 @@
+{
+  "pearl": "k-archetype-badge",
+  "as_of": "2026-07-07",
+  "pool": "global",
+  "sample_size": 55,
+  "sample_note": "HN Who-is-hiring 54개월 · 최근 6개월 vs 이전 48개월",
+  "data": {
+    "months": [
+      "2022-01",
+      "2026-07"
+    ],
+    "groups": {
+      "steady": [
+        {
+          "tech": "Python",
+          "types": [
+            "steady"
+          ],
+          "hn_ratio": 0.9,
+          "all_share_pct": 7.7,
+          "hn_pct": 100,
+          "job_pct": 100
+        },
+        {
+          "tech": "Android",
+          "types": [
+            "steady"
+          ],
+          "hn_ratio": 1.2,
+          "all_share_pct": 3.6,
+          "hn_pct": 99,
+          "job_pct": 92
+        },
+        {
+          "tech": "AWS",
+          "types": [
+            "steady"
+          ],
+          "hn_ratio": 0.9,
+          "all_share_pct": 3.3,
+          "hn_pct": 96,
+          "job_pct": 100
+        },
+        {
+          "tech": "iOS",
+          "types": [
+            "steady"
+          ],
+          "hn_ratio": 1.2,
+          "all_share_pct": 3.2,
+          "hn_pct": 98,
+          "job_pct": 92
+        },
+        {
+          "tech": "C++",
+          "types": [
+            "steady"
+          ],
+          "hn_ratio": 1.0,
+          "all_share_pct": 3.1,
+          "hn_pct": 97,
+          "job_pct": 93
+        },
+        {
+          "tech": "React",
+          "types": [
+            "steady"
+          ],
+          "hn_ratio": 0.9,
+          "all_share_pct": 3.0,
+          "hn_pct": 96,
+          "job_pct": 83
+        },
+        {
+          "tech": "Kubernetes",
+          "types": [
+            "steady"
+          ],
+          "hn_ratio": 1.0,
+          "all_share_pct": 2.1,
+          "hn_pct": 95,
+          "job_pct": 98
+        },
+        {
+          "tech": "TypeScript",
+          "types": [
+            "steady"
+          ],
+          "hn_ratio": 1.1,
+          "all_share_pct": 1.9,
+          "hn_pct": 95,
+          "job_pct": 99
+        }
+      ],
+      "rising": [
+        {
+          "tech": "MariaDB",
+          "types": [
+            "rising"
+          ],
+          "hn_ratio": 3.2,
+          "all_share_pct": 0.1,
+          "hn_pct": 72,
+          "job_pct": 37
+        },
+        {
+          "tech": "Bun",
+          "types": [
+            "rising",
+            "hype_only"
+          ],
+          "hn_ratio": 3.1,
+          "all_share_pct": 0.3,
+          "hn_pct": 86,
+          "job_pct": 4
+        },
+        {
+          "tech": "Playwright",
+          "types": [
+            "rising"
+          ],
+          "hn_ratio": 2.6,
+          "all_share_pct": 0.2,
+          "hn_pct": 80,
+          "job_pct": 57
+        },
+        {
+          "tech": "Bedrock",
+          "types": [
+            "rising"
+          ],
+          "hn_ratio": 2.5,
+          "all_share_pct": 0.1,
+          "hn_pct": 70,
+          "job_pct": 42
+        },
+        {
+          "tech": "Spark",
+          "types": [
+            "rising"
+          ],
+          "hn_ratio": 2.5,
+          "all_share_pct": 0.5,
+          "hn_pct": 91,
+          "job_pct": 55
+        },
+        {
+          "tech": "Supabase",
+          "types": [
+            "rising",
+            "hype_only"
+          ],
+          "hn_ratio": 2.3,
+          "all_share_pct": 0.4,
+          "hn_pct": 84,
+          "job_pct": 32
+        },
+        {
+          "tech": "ClickHouse",
+          "types": [
+            "rising"
+          ],
+          "hn_ratio": 2.2,
+          "all_share_pct": 0.7,
+          "hn_pct": 93,
+          "job_pct": 46
+        },
+        {
+          "tech": "Ollama",
+          "types": [
+            "rising",
+            "hype_only"
+          ],
+          "hn_ratio": 2.2,
+          "all_share_pct": 0.4,
+          "hn_pct": 84,
+          "job_pct": 1
+        }
+      ],
+      "falling": [
+        {
+          "tech": "Web3",
+          "types": [
+            "falling"
+          ],
+          "hn_ratio": 0.1,
+          "all_share_pct": 0.9,
+          "hn_pct": 52,
+          "job_pct": 67
+        },
+        {
+          "tech": "GraphQL",
+          "types": [
+            "falling"
+          ],
+          "hn_ratio": 0.3,
+          "all_share_pct": 0.6,
+          "hn_pct": 62,
+          "job_pct": 88
+        },
+        {
+          "tech": "Heroku",
+          "types": [
+            "falling"
+          ],
+          "hn_ratio": 0.4,
+          "all_share_pct": 0.3,
+          "hn_pct": 54,
+          "job_pct": 45
+        },
+        {
+          "tech": "Ruby",
+          "types": [
+            "falling"
+          ],
+          "hn_ratio": 0.4,
+          "all_share_pct": 1.8,
+          "hn_pct": 87,
+          "job_pct": 91
+        },
+        {
+          "tech": "ChatGPT",
+          "types": [
+            "falling"
+          ],
+          "hn_ratio": 0.5,
+          "all_share_pct": 8.0,
+          "hn_pct": 99,
+          "job_pct": 74
+        },
+        {
+          "tech": "Deno",
+          "types": [
+            "falling"
+          ],
+          "hn_ratio": 0.5,
+          "all_share_pct": 0.3,
+          "hn_pct": 63,
+          "job_pct": 2
+        },
+        {
+          "tech": "Svelte",
+          "types": [
+            "falling"
+          ],
+          "hn_ratio": 0.5,
+          "all_share_pct": 0.3,
+          "hn_pct": 64,
+          "job_pct": 26
+        },
+        {
+          "tech": "Rails",
+          "types": [
+            "falling"
+          ],
+          "hn_ratio": 0.6,
+          "all_share_pct": 1.3,
+          "hn_pct": 85,
+          "job_pct": 90
+        }
+      ],
+      "hype_only": [
+        {
+          "tech": "Ollama",
+          "types": [
+            "rising",
+            "hype_only"
+          ],
+          "hn_ratio": 2.2,
+          "all_share_pct": 0.4,
+          "hn_pct": 84,
+          "job_pct": 1
+        },
+        {
+          "tech": "Bun",
+          "types": [
+            "rising",
+            "hype_only"
+          ],
+          "hn_ratio": 3.1,
+          "all_share_pct": 0.3,
+          "hn_pct": 86,
+          "job_pct": 4
+        },
+        {
+          "tech": "Lua",
+          "types": [
+            "hype_only"
+          ],
+          "hn_ratio": 0.9,
+          "all_share_pct": 0.3,
+          "hn_pct": 74,
+          "job_pct": 5
+        },
+        {
+          "tech": "Dart",
+          "types": [
+            "rising",
+            "hype_only"
+          ],
+          "hn_ratio": 1.6,
+          "all_share_pct": 0.2,
+          "hn_pct": 73,
+          "job_pct": 17
+        },
+        {
+          "tech": "Supabase",
+          "types": [
+            "rising",
+            "hype_only"
+          ],
+          "hn_ratio": 2.3,
+          "all_share_pct": 0.4,
+          "hn_pct": 84,
+          "job_pct": 32
+        },
+        {
+          "tech": "WebGL",
+          "types": [
+            "rising",
+            "hype_only"
+          ],
+          "hn_ratio": 1.8,
+          "all_share_pct": 0.2,
+          "hn_pct": 76,
+          "job_pct": 28
+        },
+        {
+          "tech": "Atlassian",
+          "types": [
+            "rising",
+            "hype_only"
+          ],
+          "hn_ratio": 1.8,
+          "all_share_pct": 0.3,
+          "hn_pct": 78,
+          "job_pct": 34
+        },
+        {
+          "tech": "SwiftUI",
+          "types": [
+            "hype_only"
+          ],
+          "hn_ratio": 1.1,
+          "all_share_pct": 0.3,
+          "hn_pct": 74,
+          "job_pct": 33
+        }
+      ]
+    }
+  }
+}

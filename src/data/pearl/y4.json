@@ -1,0 +1,139 @@
+{
+  "pearl": "y4-trend-propagation",
+  "as_of": "2026-07-07",
+  "pool": "global",
+  "sample_size": 55,
+  "sample_note": "HN 54개월 언급 share z-score · 기술쌍 교차상관(lag 1~6달) · 선행지표 후보",
+  "data": {
+    "edges": [
+      {
+        "leader": "OpenAI",
+        "follower": "Gemini",
+        "lag": 3,
+        "corr": 0.72,
+        "lc": "ai_llm",
+        "fc": "ai_llm"
+      },
+      {
+        "leader": "Gemini",
+        "follower": "Ollama",
+        "lag": 2,
+        "corr": 0.69,
+        "lc": "ai_llm",
+        "fc": "ai_llm"
+      },
+      {
+        "leader": "S3",
+        "follower": "Spark",
+        "lag": 3,
+        "corr": 0.66,
+        "lc": "cloud_services",
+        "fc": "data_db"
+      },
+      {
+        "leader": "OpenAI",
+        "follower": "Ollama",
+        "lag": 5,
+        "corr": 0.63,
+        "lc": "ai_llm",
+        "fc": "ai_llm"
+      },
+      {
+        "leader": "S3",
+        "follower": "ClickHouse",
+        "lag": 3,
+        "corr": 0.63,
+        "lc": "cloud_services",
+        "fc": "data_db"
+      },
+      {
+        "leader": "Vercel",
+        "follower": "ClickHouse",
+        "lag": 3,
+        "corr": 0.62,
+        "lc": "cloud_services",
+        "fc": "data_db"
+      },
+      {
+        "leader": "Bun",
+        "follower": "Playwright",
+        "lag": 2,
+        "corr": 0.59,
+        "lc": "backend",
+        "fc": "testing"
+      },
+      {
+        "leader": "Ollama",
+        "follower": "ClickHouse",
+        "lag": 4,
+        "corr": 0.59,
+        "lc": "ai_llm",
+        "fc": "data_db"
+      },
+      {
+        "leader": "Vercel",
+        "follower": "OpenAI",
+        "lag": 1,
+        "corr": 0.59,
+        "lc": "cloud_services",
+        "fc": "ai_llm"
+      },
+      {
+        "leader": "Ollama",
+        "follower": "S3",
+        "lag": 1,
+        "corr": 0.57,
+        "lc": "ai_llm",
+        "fc": "cloud_services"
+      },
+      {
+        "leader": "GitHub Copilot",
+        "follower": "Dart",
+        "lag": 3,
+        "corr": 0.56,
+        "lc": "ai_llm",
+        "fc": "language"
+      },
+      {
+        "leader": "OpenAI",
+        "follower": "PostgreSQL",
+        "lag": 4,
+        "corr": 0.56,
+        "lc": "ai_llm",
+        "fc": "data_db"
+      },
+      {
+        "leader": "Gemini",
+        "follower": "Spark",
+        "lag": 3,
+        "corr": 0.54,
+        "lc": "ai_llm",
+        "fc": "data_db"
+      },
+      {
+        "leader": "Gemini",
+        "follower": "Vercel",
+        "lag": 2,
+        "corr": 0.54,
+        "lc": "ai_llm",
+        "fc": "cloud_services"
+      }
+    ],
+    "cat_ko": {
+      "language": "언어",
+      "frontend": "프론트",
+      "backend": "백엔드",
+      "data_db": "데이터·DB",
+      "cloud_services": "클라우드",
+      "devops": "데브옵스",
+      "ai_llm": "AI/LLM",
+      "mobile": "모바일",
+      "testing": "테스트",
+      "ide": "IDE",
+      "desktop": "데스크톱",
+      "graphics_game": "그래픽·게임",
+      "embedded": "임베디드",
+      "security": "보안"
+    }
+  }
+}

@@ -1,0 +1,261 @@
+{
+  "pearl": "y2-pivot-map",
+  "as_of": "2026-07-07",
+  "pool": "both",
+  "sample_size": 12592,
+  "sample_note": "직군(fact_posting_category)·산업(점핏 text_rule) 요구스택 상위15 대비 내 이력서 커버리지",
+  "data": {
+    "targets": [
+      {
+        "name": "미디어/콘텐츠",
+        "kind": "industry",
+        "coverage": 66,
+        "missing": [
+          {
+            "tech": "Java",
+            "pct": 25
+          },
+          {
+            "tech": "Spring",
+            "pct": 17
+          },
+          {
+            "tech": "CSS",
+            "pct": 13
+          },
+          {
+            "tech": "HTML",
+            "pct": 12
+          }
+        ],
+        "n": 204
+      },
+      {
+        "name": "커머스",
+        "kind": "industry",
+        "coverage": 64,
+        "missing": [
+          {
+            "tech": "Java",
+            "pct": 29
+          },
+          {
+            "tech": "Spring",
+            "pct": 21
+          },
+          {
+            "tech": "PHP",
+            "pct": 18
+          },
+          {
+            "tech": "HTML",
+            "pct": 18
+          }
+        ],
+        "n": 163
+      },
+      {
+        "name": "게임",
+        "kind": "industry",
+        "coverage": 61,
+        "missing": [
+          {
+            "tech": "Java",
+            "pct": 25
+          },
+          {
+            "tech": "C#",
+            "pct": 21
+          },
+          {
+            "tech": "C++",
+            "pct": 15
+          },
+          {
+            "tech": "Linux",
+            "pct": 12
+          }
+        ],
+        "n": 97
+      },
+      {
+        "name": "금융IT/핀테크",
+        "kind": "industry",
+        "coverage": 59,
+        "missing": [
+          {
+            "tech": "Java",
+            "pct": 34
+          },
+          {
+            "tech": "Spring",
+            "pct": 24
+          },
+          {
+            "tech": "Linux",
+            "pct": 17
+          },
+          {
+            "tech": "HTML",
+            "pct": 13
+          }
+        ],
+        "n": 204
+      },
+      {
+        "name": "헬스케어",
+        "kind": "industry",
+        "coverage": 55,
+        "missing": [
+          {
+            "tech": "Java",
+            "pct": 19
+          },
+          {
+            "tech": "C++",
+            "pct": 18
+          },
+          {
+            "tech": "Linux",
+            "pct": 16
+          },
+          {
+            "tech": "SQL",
+            "pct": 12
+          }
+        ],
+        "n": 245
+      },
+      {
+        "name": "Developer",
+        "kind": "role",
+        "coverage": 50,
+        "missing": [
+          {
+            "tech": "Azure",
+            "pct": 19
+          },
+          {
+            "tech": "SQL",
+            "pct": 18
+          },
+          {
+            "tech": "Kubernetes",
+            "pct": 17
+          },
+          {
+            "tech": "Docker",
+            "pct": 15
+          }
+        ],
+        "n": 6897
+      },
+      {
+        "name": "AI/데이터",
+        "kind": "industry",
+        "coverage": 48,
+        "missing": [
+          {
+            "tech": "Linux",
+            "pct": 25
+          },
+          {
+            "tech": "Java",
+            "pct": 22
+          },
+          {
+            "tech": "Docker",
+            "pct": 17
+          },
+          {
+            "tech": "C++",
+            "pct": 16
+          }
+        ],
+        "n": 134
+      },
+      {
+        "name": "Data Science",
+        "kind": "role",
+        "coverage": 37,
+        "missing": [
+          {
+            "tech": "SQL",
+            "pct": 46
+          },
+          {
+            "tech": "Azure",
+            "pct": 20
+          },
+          {
+            "tech": "GCP",
+            "pct": 14
+          },
+          {
+            "tech": "PyTorch",
+            "pct": 12
+          }
+        ],
+        "n": 2127
+      },
+      {
+        "name": "Product",
+        "kind": "role",
+        "coverage": 26,
+        "missing": [
+          {
+            "tech": "SQL",
+            "pct": 10
+          },
+          {
+            "tech": "Azure",
+            "pct": 7
+          },
+          {
+            "tech": "GCP",
+            "pct": 2
+          },
+          {
+            "tech": "ChatGPT",
+            "pct": 2
+          }
+        ],
+        "n": 1590
+      },
+      {
+        "name": "Design",
+        "kind": "role",
+        "coverage": 18,
+        "missing": [
+          {
+            "tech": "CSS",
+            "pct": 11
+          },
+          {
+            "tech": "HTML",
+            "pct": 11
+          },
+          {
+            "tech": "Blender",
+            "pct": 5
+          },
+          {
+            "tech": "iOS",
+            "pct": 4
+          }
+        ],
+        "n": 931
+      }
+    ],
+    "resume": [
+      "Python",
+      "React",
+      "TypeScript",
+      "JavaScript",
+      "AWS",
+      "Git",
+      "MySQL",
+      "Node.js"
+    ]
+  }
+}

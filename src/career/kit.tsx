@@ -1,0 +1,530 @@
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { ChevronDown, ChevronRight, Search, Plus, Check, X } from 'lucide-react'
+import {
+  siPython, siJavascript, siTypescript, siReact, siNodedotjs, siPostgresql, siGit,
+  siDocker, siHtml5, siCss, siMysql, siLinux, siKubernetes, siGooglecloud, siTerraform,
+  siSpring, siDjango, siKotlin, siSwift, siGo, siRust, siVuedotjs, siFastapi, siRedis,
+  siMongodb, siGraphql, siApachekafka, siRuby, siPhp, siNginx, siElasticsearch,
+  siFlutter, siJira, siNextdotjs, siExpress, siMariadb,
+} from 'simple-icons'
+import './kit.css'
+
+// 실제 브랜드 아이콘 (simple-icons). 상표 이슈로 없는 것은 이니셜 배지로 폴백.
+const ICONS: Record<string, { path: string; hex: string }> = {
+  Python: siPython, JavaScript: siJavascript, TypeScript: siTypescript, React: siReact,
+  'Node.js': siNodedotjs, Node: siNodedotjs, PostgreSQL: siPostgresql, Git: siGit, Docker: siDocker,
+  HTML: siHtml5, CSS: siCss, MySQL: siMysql, Linux: siLinux, Kubernetes: siKubernetes, GCP: siGooglecloud,
+  Terraform: siTerraform, Spring: siSpring, Django: siDjango, Kotlin: siKotlin, Swift: siSwift,
+  Go: siGo, Golang: siGo, Rust: siRust, Vue: siVuedotjs, FastAPI: siFastapi, Redis: siRedis,
+  MongoDB: siMongodb, GraphQL: siGraphql, Kafka: siApachekafka, Ruby: siRuby, PHP: siPhp, Nginx: siNginx,
+  Elasticsearch: siElasticsearch, Flutter: siFlutter, Jira: siJira, 'Next.js': siNextdotjs,
+  Express: siExpress, MariaDB: siMariadb,
+}
+
+/* ============================================================
+   커리어 앱 위젯 킷 — Apple 톤 + 슬레이트블루, 과장식 없음.
+   벤치마크(Glassdoor/LinkedIn/Tableau Pulse) 위계 원칙 반영.
+   ============================================================ */
+
+/* ---------- 애니메이션 게이지 (반원, stroke-dashoffset 트랜지션) ---------- */
+export function ArcGauge({ pct, size = 168, ghost }: { pct: number; size?: number; ghost?: number }) {
+  const r = 70
+  const len = Math.PI * r // 반원 길이
+  const off = (v: number) => len * (1 - Math.max(0, Math.min(100, v)) / 100)
+  return (
+    <svg viewBox="0 0 180 96" style={{ width: size, height: (size * 96) / 180 }} className="kit-arc">
+      <path d="M20 82 A70 70 0 0 1 160 82" fill="none" stroke="#e7ecf4" strokeWidth="13" strokeLinecap="round" />
+      {ghost != null && ghost > pct && (
+        <path
+          d="M20 82 A70 70 0 0 1 160 82" fill="none" stroke="var(--accent-200)" strokeWidth="13" strokeLinecap="round"
+          strokeDasharray={len} strokeDashoffset={off(ghost)} className="kit-arc__ghost"
+        />
+      )}
+      <path
+        d="M20 82 A70 70 0 0 1 160 82" fill="none" stroke="var(--c-accent)" strokeWidth="13" strokeLinecap="round"
+        strokeDasharray={len} strokeDashoffset={off(pct)} className="kit-arc__fill"
+      />
+    </svg>
+  )
+}
+
+/* ---------- 1. 포지셔닝 점수 히어로 ---------- */
+export function StatHero({
+  value, unit = '%', title, sub, tag,
+}: { value: number; unit?: string; title: string; sub?: ReactNode; tag?: string }) {
+  const n = useCountUp(value)
+  return (
+    <div className="kit-hero">
+      <div className="kit-hero__label">{title}</div>
+      <div className="kit-hero__num">
+        {n}<span className="kit-hero__unit">{unit}</span>
+        {tag && <span className="kit-hero__tag">{tag}</span>}
+      </div>
+      {sub && <div className="kit-hero__sub">{sub}</div>}
+    </div>
+  )
+}
+
+/* ---------- 2. 커버리지 What-if 시뮬레이터 ---------- */
+type Tech = { tech: string; count: number }
+export function CoverageWhatIf({
+  ownedF, totalF, gap, onOpenTech,
+}: { ownedF: number; totalF: number; gap: Tech[]; onOpenTech?: (t: string) => void }) {
+  const [added, setAdded] = useState<string[]>([])
+  const addedF = gap.filter((g) => added.includes(g.tech)).reduce((s, g) => s + g.count, 0)
+  const base = Math.round((ownedF / totalF) * 100)
+  const next = Math.round(((ownedF + addedF) / totalF) * 100)
+  const toggle = (t: string) => setAdded((a) => (a.includes(t) ? a.filter((x) => x !== t) : [...a, t]))
+  return (
+    <div className="kit-whatif">
+      <div className="kit-cbar">
+        <i className="kit-cbar__base" style={{ width: `${base}%` }} />
+        {next > base && <i className="kit-cbar__ghost" style={{ left: `${base}%`, width: `${next - base}%` }} />}
+      </div>
+      <div className="kit-cbar__cap">
+        <span>{added.length ? <>커버리지 <b>{base}% → {next}%</b> · 공고 <b>+{addedF.toLocaleString()}</b></> : '기회 기술을 탭해 배우면?'}</span>
+        {next > base && <b className="kit-cbar__delta">+{next - base}%</b>}
+      </div>
+      <div className="kit-whatif__chips">
+        {gap.map((g) => (
+          <button
+            key={g.tech}
+            className={`kit-whatif__chip${added.includes(g.tech) ? ' on' : ''}`}
+            onClick={() => (onOpenTech && added.includes(g.tech)) ? onOpenTech(g.tech) : toggle(g.tech)}
+          >
+            +{g.tech}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ---------- 2b. 커버리지 분포 히스토그램 + What-if ---------- */
+export type HistJob = { techs: string[]; held: number; total: number }
+export function CoverageHistogram({
+  postings, mySkills, gap, threshold = 50,
+}: { postings: HistJob[]; mySkills: string[]; gap: Tech[]; threshold?: number }) {
+  const [added, setAdded] = useState<string[]>([])
+  const BINS = 14
+  const pctOf = (p: HistJob) => {
+    const extra = added.filter((a) => p.techs.includes(a) && !mySkills.includes(a)).length
+    return p.total ? Math.round((100 * (p.held + extra)) / p.total) : 0
+  }
+  const hist = new Array(BINS).fill(0)
+  postings.forEach((p) => { hist[Math.min(BINS - 1, Math.floor((pctOf(p) / 100) * BINS))]++ })
+  const reached = postings.filter((p) => pctOf(p) >= threshold).length
+  const baseReached = postings.filter((p) => (p.total ? Math.round((100 * p.held) / p.total) : 0) >= threshold).length
+  const max = Math.max(...hist, 1)
+  const toggle = (t: string) => setAdded((a) => (a.includes(t) ? a.filter((x) => x !== t) : [...a, t]))
+  return (
+    <div className="kit-hist">
+      <div className="kit-hist__chart">
+        <div className="kit-hist__thr" style={{ left: `${threshold}%` }} />
+        {hist.map((h, i) => {
+          const binPct = (i / BINS) * 100
+          return (
+            <div key={i} className="kit-hist__col">
+              <i className={binPct >= threshold ? 'on' : ''} style={{ height: `${(h / max) * 100}%` }} />
+            </div>
+          )
+        })}
+      </div>
+      <div className="kit-hist__axis"><span>0%</span><span className="thr">문턱 {threshold}%</span><span>100%</span></div>
+      <div className="kit-hist__cap">
+        도달 공고 <b>{reached}개</b>
+        {reached > baseReached && <span className="kit-hist__delta">+{reached - baseReached}</span>}
+        <span className="kit-hist__sub"> · 매칭 ≥{threshold}%</span>
+      </div>
+      <div className="kit-whatif__chips" style={{ marginTop: 10 }}>
+        {gap.map((g) => (
+          <button key={g.tech} className={`kit-whatif__chip${added.includes(g.tech) ? ' on' : ''}`}
+            onClick={() => toggle(g.tech)}>
+            +{g.tech}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ---------- 스와이프 페이저 (드래그 + 방향키 + 페이지 닷) ---------- */
+export function SwipePager({ pages }: { pages: { key: string; node: ReactNode }[] }) {
+  const [idx, setIdx] = useState(0)
+  const startX = useRef<number | null>(null)
+  const rootRef = useRef<HTMLDivElement>(null)
+  const max = pages.length - 1
+  const go = (dir: number) => setIdx((s) => Math.min(max, Math.max(0, s + dir)))
+
+  useEffect(() => {
+    const root = rootRef.current
+    if (!root) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') go(-1)
+      else if (e.key === 'ArrowRight') go(1)
+    }
+    root.addEventListener('keydown', onKey)
+    return () => root.removeEventListener('keydown', onKey)
+  }, [max])
+
+  // 포인터(마우스+터치 통합) 드래그
+  const onDown = (e: React.PointerEvent) => { startX.current = e.clientX; (e.target as HTMLElement).setPointerCapture?.(e.pointerId) }
+  const onUp = (e: React.PointerEvent) => {
+    if (startX.current == null) return
+    const dx = e.clientX - startX.current
+    if (Math.abs(dx) > 40) go(dx < 0 ? 1 : -1)
+    startX.current = null
+  }
+  return (
+    <div ref={rootRef} tabIndex={0} className="kit-pager-root">
+      <div className="kit-pager" onPointerDown={onDown} onPointerUp={onUp}>
+        <div className="kit-pager__track" style={{ transform: `translateX(-${idx * 100}%)` }}>
+          {pages.map((p) => <div className="kit-pager__page" key={p.key}>{p.node}</div>)}
+        </div>
+      </div>
+      <div className="kit-pager__dots">
+        {pages.map((p, i) => (
+          <button key={p.key} className={idx === i ? 'on' : ''} onClick={() => setIdx(i)} aria-label={`페이지 ${i + 1}`} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ---------- 3. 기회 사분면 스캐터 ---------- */
+export type QuadItem = { tech: string; demand: number; owned: boolean; count: number }
+export function OpportunityQuadrant({ items, onPick }: { items: QuadItem[]; onPick?: (t: string) => void }) {
+  const W = 320, H = 200
+  const list = [...items].sort((a, b) => b.demand - a.demand).slice(0, 12)
+  const n = list.length
+  const maxC = Math.max(...list.map((i) => i.count), 1)
+  // X = 수요 랭크로 균등 분산(높을수록 오른쪽). Y = 보유 상단 / 미보유 하단.
+  const laid = list.map((it, rank) => {
+    const x = 24 + ((n - 1 - rank) / (n - 1 || 1)) * (W - 48)
+    const band = it.owned ? 0.26 : 0.72
+    const jit = (((rank * 41) % 9) - 4) * 0.02
+    const y = 12 + (band + jit) * (H - 30)
+    const opp = !it.owned
+    return { ...it, x, y, r: 5 + (it.count / maxC) * 8, opp, rank }
+  })
+  return (
+    <div className="kit-quad">
+      <svg viewBox={`0 0 ${W} ${H}`} className="kit-quad__svg">
+        <line x1={W / 2} y1="6" x2={W / 2} y2={H - 18} stroke="#e7ecf4" strokeWidth="1" />
+        <line x1="16" y1={H / 2 - 3} x2={W - 16} y2={H / 2 - 3} stroke="#e7ecf4" strokeWidth="1" />
+        <text x="20" y="15" className="kit-quad__q">보유</text>
+        <text x={W - 20} y={H - 6} textAnchor="end" className="kit-quad__q opp">미보유</text>
+        <text x={W - 18} y={H / 2 + 12} textAnchor="end" className="kit-quad__ax">수요 →</text>
+        {laid.map((p, i) => {
+          // 라벨: 기회는 항상, 강점은 상위 4개만. 위/아래 교차로 겹침 완화.
+          const showLabel = p.opp || p.rank < 4
+          const above = i % 2 === 0
+          return (
+            <g key={p.tech} onClick={() => onPick?.(p.tech)} style={{ cursor: onPick ? 'pointer' : 'default' }}>
+              <circle cx={p.x} cy={p.y} r={p.r}
+                fill={p.opp ? '#c76a2e' : 'var(--c-accent)'} fillOpacity={p.opp ? 0.9 : 0.8} />
+              {showLabel && (
+                <text x={p.x} y={above ? p.y - p.r - 3 : p.y + p.r + 9} textAnchor="middle" className="kit-quad__lbl">{p.tech}</text>
+              )}
+            </g>
+          )
+        })}
+      </svg>
+      <div className="kit-quad__legend">
+        <span><i style={{ background: 'var(--c-accent)' }} />보유</span>
+        <span><i style={{ background: '#c76a2e' }} />미보유 · 고수요</span>
+      </div>
+    </div>
+  )
+}
+
+/* ---------- 기술 스택 아이콘 (브랜드색 이니셜 배지, 무의존) ---------- */
+const TECH: Record<string, [string, string]> = {
+  Python: ['Py', '#3776AB'], JavaScript: ['JS', '#d9a400'], TypeScript: ['TS', '#3178C6'],
+  React: ['Re', '#0a9fbf'], 'Node.js': ['No', '#539E43'], Node: ['No', '#539E43'], AWS: ['aws', '#e8890c'],
+  Docker: ['Dk', '#2496ED'], Kubernetes: ['K8', '#326CE5'], PostgreSQL: ['PG', '#31648c'], MySQL: ['My', '#33637d'],
+  Git: ['Git', '#e5502e'], Java: ['Jv', '#d32f2f'], Go: ['Go', '#00889c'], Golang: ['Go', '#00889c'], Rust: ['Rs', '#b7410e'],
+  Azure: ['Az', '#0078D4'], GCP: ['GCP', '#2f6ee0'], HTML: ['H5', '#E34F26'], CSS: ['C3', '#1572B6'],
+  Linux: ['Lx', '#4b5563'], Spring: ['Sp', '#5aa62f'], Django: ['Dj', '#0C4B33'], Kotlin: ['Kt', '#7F52FF'],
+  Swift: ['Sw', '#F05138'], 'C++': ['C+', '#00599C'], 'C#': ['C#', '#68217A'], SQL: ['SQL', '#5b6470'],
+  Terraform: ['Tf', '#7B42BC'], Vue: ['Vue', '#369e6f'], FastAPI: ['Fa', '#059669'], Redis: ['Rd', '#DC382D'],
+  MongoDB: ['Mo', '#3f9a37'], GraphQL: ['GQ', '#c81f81'], Kafka: ['Kf', '#2b2b2b'], Ruby: ['Rb', '#CC342D'],
+  PHP: ['PHP', '#4F5D95'], Scala: ['Sc', '#DC322F'], Elasticsearch: ['ES', '#0b7285'], Nginx: ['Ng', '#22863a'],
+  Salesforce: ['SF', '#0d80c9'], iOS: ['iOS', '#3b4148'], Android: ['An', '#2f9e5f'], Flutter: ['Fl', '#0468D7'],
+  'Next.js': ['Nx', '#2b2b2b'], Express: ['Ex', '#4b5563'], MariaDB: ['Ma', '#5a4b3c'], Oracle: ['Or', '#C74634'],
+  Jira: ['Ji', '#2684FF'], Slack: ['Sl', '#4A154B'],
+}
+function techLabel(t: string) { return TECH[t]?.[0] ?? (t.replace(/[^A-Za-z0-9]/g, '').slice(0, 2) || t.slice(0, 2)) }
+function techColor(t: string) {
+  if (TECH[t]) return TECH[t][1]
+  let h = 0
+  for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) & 0xffff
+  return `hsl(${h % 360} 42% 42%)`
+}
+export function TechIcon({ tech, size = 26 }: { tech: string; size?: number }) {
+  const ic = ICONS[tech]
+  if (ic) {
+    return (
+      <span className="kit-ticon kit-ticon--real" style={{ width: size, height: size }}>
+        <svg viewBox="0 0 24 24" width={Math.round(size * 0.58)} height={Math.round(size * 0.58)} fill={`#${ic.hex}`} aria-hidden>
+          <path d={ic.path} />
+        </svg>
+      </span>
+    )
+  }
+  return (
+    <span className="kit-ticon" style={{ width: size, height: size, background: techColor(tech), fontSize: Math.round(size * 0.4) }}>
+      {techLabel(tech)}
+    </span>
+  )
+}
+
+/* ---------- 4. 요즘의 시장 펄스 카드 (기술 아이콘 · 근거 병기) ---------- */
+export type PulseItem = { tech: string; text: ReactNode; evidence?: string }
+export function PulseCard({ items }: { items: PulseItem[] }) {
+  return (
+    <div className="kit-pulse">
+      {items.map((it, i) => (
+        <div className="kit-pulse__row" key={i}>
+          <TechIcon tech={it.tech} size={30} />
+          <div className="kit-pulse__body">
+            <span className="kit-pulse__tx">{it.text}</span>
+            {it.evidence && <span className="kit-pulse__ev">{it.evidence}</span>}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/* ---------- 5. 섹션 헤더 (명명 그룹핑) ---------- */
+/* ---------- 지도 미니 잡카드 (가로) + 스켈레톤 ---------- */
+export function MiniJobCard({
+  logo, company, matchPct, onClick,
+}: { logo: ReactNode; company: string; matchPct: number; onClick?: () => void }) {
+  return (
+    <button className="kit-mjc" onClick={onClick}>
+      {logo}
+      <div className="kit-mjc__b">
+        <span className="kit-mjc__nm">{company}</span>
+        <span className="kit-mjc__mt">{matchPct}% 매칭</span>
+      </div>
+    </button>
+  )
+}
+export function MiniJobSkeleton() {
+  return (
+    <div className="kit-mjc kit-mjc--skel">
+      <div className="kit-sk kit-sk--logo" />
+      <div className="kit-mjc__b"><div className="kit-sk kit-sk--l1" /><div className="kit-sk kit-sk--l2" /></div>
+    </div>
+  )
+}
+
+/* ---------- 편집 가능한 스킬 칩 + 기술 검색 시트 ---------- */
+export function SkillChip({ tech, onRemove }: { tech: string; onRemove?: () => void }) {
+  return (
+    <span className="kit-schip">
+      <TechIcon tech={tech} size={18} />
+      {tech}
+      {onRemove && <button className="kit-schip__x" onClick={onRemove} aria-label="삭제"><X size={12} /></button>}
+    </span>
+  )
+}
+
+export function TechSearchSheet({
+  open, onClose, all, owned, onToggle,
+}: {
+  open: boolean; onClose: () => void
+  all: { tech: string; count: number }[]; owned: string[]; onToggle: (t: string) => void
+}) {
+  const [q, setQ] = useState('')
+  const filtered = useMemo(() => {
+    const s = q.trim().toLowerCase()
+    return all.filter((t) => !s || t.tech.toLowerCase().includes(s)).slice(0, 100)
+  }, [q, all])
+  return (
+    <BottomSheet open={open} onClose={onClose}>
+      <div className="kit-picker__hd">기술 추가 <span>{owned.length}개 보유</span></div>
+      <div className="kit-picker__search">
+        <Search size={17} />
+        <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="기술 검색 (예: React)" />
+      </div>
+      <div className="kit-picker__list">
+        {filtered.map((t) => {
+          const on = owned.includes(t.tech)
+          return (
+            <button key={t.tech} className={`kit-picker__row${on ? ' on' : ''}`} onClick={() => onToggle(t.tech)}>
+              <TechIcon tech={t.tech} size={26} />
+              <span className="nm">{t.tech}</span>
+              <span className="ct">{t.count.toLocaleString()}</span>
+              <span className="act">{on ? <Check size={16} /> : <Plus size={16} />}</span>
+            </button>
+          )
+        })}
+        {filtered.length === 0 && <div className="kit-picker__empty">검색 결과가 없어요</div>}
+      </div>
+    </BottomSheet>
+  )
+}
+
+export function SectionHeader({ title, hint, right }: { title: string; hint?: string; right?: ReactNode }) {
+  return (
+    <div className="kit-sec">
+      <div className="kit-sec__l">
+        <h2 className="kit-sec__t">{title}</h2>
+        {hint && <span className="kit-sec__h">{hint}</span>}
+      </div>
+      {right}
+    </div>
+  )
+}
+
+/* ---------- 6. 드릴다운 디스클로저 카드 ---------- */
+export function DisclosureCard({
+  title, summary, children, defaultOpen = false,
+}: { title: string; summary?: ReactNode; children: ReactNode; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <div className={`kit-disc${open ? ' open' : ''}`}>
+      <button className="kit-disc__head" onClick={() => setOpen((o) => !o)}>
+        <div className="kit-disc__l">
+          <span className="kit-disc__t">{title}</span>
+          {summary && !open && <span className="kit-disc__s">{summary}</span>}
+        </div>
+        <ChevronDown size={18} className="kit-disc__chev" />
+      </button>
+      <div className="kit-disc__body">
+        <div className="kit-disc__inner">{children}</div>
+      </div>
+    </div>
+  )
+}
+
+/* ---------- 7. 이력서 히어로 카드 ---------- */
+export function ResumeHeroCard({
+  title, position, career, coverage, skillCount, onEdit,
+}: {
+  title: string; position: string; career: string; coverage: number; skillCount?: number; onEdit?: () => void
+}) {
+  return (
+    <div className="kit-rhero">
+      <div className="kit-rhero__top">
+        <div className="kit-rhero__ring" style={{ background: `conic-gradient(var(--c-accent) 0 ${coverage}%, rgba(255,255,255,0.25) ${coverage}% 100%)` }}>
+          <div className="kit-rhero__hole"><b>{coverage}%</b><span>커버리지</span></div>
+        </div>
+        <div className="kit-rhero__info">
+          <div className="kit-rhero__title">{title}</div>
+          <div className="kit-rhero__meta">{position} · {career}</div>
+          {skillCount != null && <div className="kit-rhero__meta" style={{ marginTop: 2 }}>보유 기술 {skillCount}개</div>}
+        </div>
+      </div>
+      {onEdit && <button className="kit-rhero__edit" onClick={onEdit}>이력서 편집</button>}
+    </div>
+  )
+}
+
+/* ---------- 8. 메뉴 로우 (설정 리스트) ---------- */
+export function MenuRow({
+  icon, label, value, onClick, danger,
+}: { icon: ReactNode; label: string; value?: string; onClick?: () => void; danger?: boolean }) {
+  return (
+    <button className={`kit-menu${danger ? ' danger' : ''}`} onClick={onClick}>
+      <span className="kit-menu__ic">{icon}</span>
+      <span className="kit-menu__lb">{label}</span>
+      {value && <span className="kit-menu__v">{value}</span>}
+      {!danger && <ChevronRight size={17} className="kit-menu__chev" />}
+    </button>
+  )
+}
+
+/* ---------- 9. 바텀시트 (아래서 스프링 등장) ---------- */
+export function BottomSheet({ open, onClose, children }: { open: boolean; onClose: () => void; children: ReactNode }) {
+  const [mounted, setMounted] = useState(open)
+  useEffect(() => {
+    if (open) setMounted(true)
+  }, [open])
+  if (!mounted && !open) return null
+  return (
+    <div className={`kit-sheet__wrap${open ? ' show' : ''}`} onTransitionEnd={() => { if (!open) setMounted(false) }}>
+      <div className="kit-sheet__ov" onClick={onClose} />
+      <div className="kit-sheet">
+        <div className="kit-sheet__grip" />
+        {children}
+      </div>
+    </div>
+  )
+}
+
+/* ---------- 10. 화면 전환 래퍼 (iOS 모션) ---------- */
+export function PageTransition({ type = 'tab', keyId, children }: { type?: 'tab' | 'push' | 'fade'; keyId?: string; children: ReactNode }) {
+  return <div key={keyId} className={`kit-trans kit-trans--${type}`}>{children}</div>
+}
+
+/* ---------- 11. 미니 스코어 도넛 (컴팩트 카드용) ---------- */
+export function MiniScore({ pct, size = 46 }: { pct: number; size?: number }) {
+  return (
+    <div
+      className="kit-mini"
+      style={{ width: size, height: size, background: `conic-gradient(var(--c-accent) 0 ${pct}%, #e7ecf4 ${pct}% 100%)` }}
+    >
+      <div className="kit-mini__hole"><b>{pct}</b></div>
+    </div>
+  )
+}
+
+/* ---------- 12. 공고 카드 — 컴팩트 변형 ----------
+   전체 카드의 요구기술 막대 → 우측 미니 원형(점수). 긴 이름은 말줄임(scroll 옵션). */
+export type CompactJob = {
+  company: string; title: string; matchPct: number; region?: string
+  careerLabel?: string; source?: string
+}
+export function JobCardCompact({
+  job, logo, scroll, onOpen,
+}: { job: CompactJob; logo?: ReactNode; scroll?: boolean; onOpen?: () => void }) {
+  return (
+    <button className="kit-jc" onClick={onOpen}>
+      {logo}
+      <div className="kit-jc__body">
+        <div className={`kit-jc__title${scroll ? ' scroll' : ''}`}>
+          <span>{job.title}</span>
+        </div>
+        <div className="kit-jc__co">
+          <span className="kit-jc__coname">{job.company}</span>
+          {job.careerLabel && <span className="kit-jc__tag">{job.careerLabel}</span>}
+        </div>
+      </div>
+      <MiniScore pct={job.matchPct} />
+    </button>
+  )
+}
+
+/* ---------- 카드 모드 토글 (전체 / 컴팩트) ---------- */
+export type CardMode = 'full' | 'compact'
+export function CardModeToggle({ mode, onChange }: { mode: CardMode; onChange: (m: CardMode) => void }) {
+  return (
+    <div className="kit-cardmode">
+      {([['full', '전체'], ['compact', '컴팩트']] as [CardMode, string][]).map(([k, lb]) => (
+        <button key={k} className={mode === k ? 'on' : ''} onClick={() => onChange(k)}>{lb}</button>
+      ))}
+    </div>
+  )
+}
+
+/* ---------- 유틸: 카운트업 ---------- */
+export function useCountUp(target: number, ms = 700) {
+  const [v, setV] = useState(0)
+  const raf = useRef(0)
+  useEffect(() => {
+    const start = performance.now()
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - start) / ms)
+      const eased = 1 - Math.pow(1 - p, 3) // cubic out
+      setV(Math.round(target * eased))
+      if (p < 1) raf.current = requestAnimationFrame(tick)
+    }
+    raf.current = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf.current)
+  }, [target, ms])
+  return v
+}

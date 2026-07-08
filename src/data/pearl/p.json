@@ -1,0 +1,95 @@
+{
+  "pearl": "p-hiring-season",
+  "as_of": "2026-07-07",
+  "pool": "both",
+  "sample_size": 36578,
+  "sample_note": "2018~2025년 누적(2026 부분년도 제외, himalayas 스냅샷 제외) · 글로벌 N=33,339 국내 N=3,239 · 지수=월별건수/월평균",
+  "data": {
+    "months": [
+      {
+        "m": 1,
+        "global_idx": 1.18,
+        "domestic_idx": 0.92,
+        "global_n": 3288,
+        "domestic_n": 248
+      },
+      {
+        "m": 2,
+        "global_idx": 1.24,
+        "domestic_idx": 0.69,
+        "global_n": 3441,
+        "domestic_n": 187
+      },
+      {
+        "m": 3,
+        "global_idx": 1.21,
+        "domestic_idx": 0.69,
+        "global_n": 3368,
+        "domestic_n": 187
+      },
+      {
+        "m": 4,
+        "global_idx": 1.01,
+        "domestic_idx": 0.87,
+        "global_n": 2818,
+        "domestic_n": 234
+      },
+      {
+        "m": 5,
+        "global_idx": 0.99,
+        "domestic_idx": 1.05,
+        "global_n": 2749,
+        "domestic_n": 284
+      },
+      {
+        "m": 6,
+        "global_idx": 0.92,
+        "domestic_idx": 0.92,
+        "global_n": 2568,
+        "domestic_n": 247
+      },
+      {
+        "m": 7,
+        "global_idx": 0.84,
+        "domestic_idx": 0.86,
+        "global_n": 2342,
+        "domestic_n": 233
+      },
+      {
+        "m": 8,
+        "global_idx": 0.9,
+        "domestic_idx": 1.04,
+        "global_n": 2510,
+        "domestic_n": 281
+      },
+      {
+        "m": 9,
+        "global_idx": 0.82,
+        "domestic_idx": 1.55,
+        "global_n": 2270,
+        "domestic_n": 419
+      },
+      {
+        "m": 10,
+        "global_idx": 1.07,
+        "domestic_idx": 1.35,
+        "global_n": 2965,
+        "domestic_n": 364
+      },
+      {
+        "m": 11,
+        "global_idx": 1.02,
+        "domestic_idx": 1.06,
+        "global_n": 2835,
+        "domestic_n": 287
+      },
+      {
+        "m": 12,
+        "global_idx": 0.79,
+        "domestic_idx": 0.99,
+        "global_n": 2185,
+        "domestic_n": 268
+      }
+    ]
+  }
+}

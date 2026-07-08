@@ -1,0 +1,473 @@
+{
+  "pearl": "u-github-topics",
+  "as_of": "2026-07-07",
+  "pool": "global",
+  "sample_size": 1758,
+  "sample_note": "GitHub 일별 스냅샷 topics 태그 보유 저장소 1,758개 · taxonomy 자동 매칭(수동 매핑 없음) · A(HN)와 독립적인 2차 관심 신호",
+  "data": {
+    "items": [
+      {
+        "tech": "Python",
+        "category": "language",
+        "repo_reach": 229,
+        "reach_pct": 13.0,
+        "job_demand_pct": 23.418,
+        "owned": true,
+        "reach_pctl": 100,
+        "demand_pctl": 100
+      },
+      {
+        "tech": "React",
+        "category": "frontend",
+        "repo_reach": 208,
+        "reach_pct": 11.8,
+        "job_demand_pct": 2.584,
+        "owned": true,
+        "reach_pctl": 99,
+        "demand_pctl": 80
+      },
+      {
+        "tech": "JavaScript",
+        "category": "language",
+        "repo_reach": 202,
+        "reach_pct": 11.5,
+        "job_demand_pct": 19.263,
+        "owned": true,
+        "reach_pctl": 99,
+        "demand_pctl": 99
+      },
+      {
+        "tech": "TypeScript",
+        "category": "language",
+        "repo_reach": 189,
+        "reach_pct": 10.8,
+        "job_demand_pct": 13.723,
+        "owned": true,
+        "reach_pctl": 98,
+        "demand_pctl": 98
+      },
+      {
+        "tech": "Kubernetes",
+        "category": "devops",
+        "repo_reach": 115,
+        "reach_pct": 6.5,
+        "job_demand_pct": 10.611,
+        "owned": false,
+        "reach_pctl": 98,
+        "demand_pctl": 97
+      },
+      {
+        "tech": "Docker",
+        "category": "devops",
+        "repo_reach": 107,
+        "reach_pct": 6.1,
+        "job_demand_pct": 8.918,
+        "owned": false,
+        "reach_pctl": 97,
+        "demand_pctl": 94
+      },
+      {
+        "tech": "Node.js",
+        "category": "backend",
+        "repo_reach": 91,
+        "reach_pct": 5.2,
+        "job_demand_pct": 6.92,
+        "owned": true,
+        "reach_pctl": 97,
+        "demand_pctl": 93
+      },
+      {
+        "tech": "Java",
+        "category": "language",
+        "repo_reach": 90,
+        "reach_pct": 5.1,
+        "job_demand_pct": 8.661,
+        "owned": false,
+        "reach_pctl": 96,
+        "demand_pctl": 94
+      },
+      {
+        "tech": "PostgreSQL",
+        "category": "data_db",
+        "repo_reach": 88,
+        "reach_pct": 5.0,
+        "job_demand_pct": 10.337,
+        "owned": false,
+        "reach_pctl": 95,
+        "demand_pctl": 96
+      },
+      {
+        "tech": "AWS",
+        "category": "cloud_services",
+        "repo_reach": 74,
+        "reach_pct": 4.2,
+        "job_demand_pct": 20.571,
+        "owned": true,
+        "reach_pctl": 95,
+        "demand_pctl": 99
+      },
+      {
+        "tech": "Vue",
+        "category": "frontend",
+        "repo_reach": 69,
+        "reach_pct": 3.9,
+        "job_demand_pct": 3.454,
+        "owned": false,
+        "reach_pctl": 94,
+        "demand_pctl": 85
+      },
+      {
+        "tech": "MySQL",
+        "category": "data_db",
+        "repo_reach": 66,
+        "reach_pct": 3.8,
+        "job_demand_pct": 4.899,
+        "owned": true,
+        "reach_pctl": 94,
+        "demand_pctl": 90
+      },
+      {
+        "tech": "Android",
+        "category": "mobile",
+        "repo_reach": 65,
+        "reach_pct": 3.7,
+        "job_demand_pct": 3.914,
+        "owned": false,
+        "reach_pctl": 93,
+        "demand_pctl": 88
+      },
+      {
+        "tech": "OpenAI",
+        "category": "ai_llm",
+        "repo_reach": 64,
+        "reach_pct": 3.6,
+        "job_demand_pct": 1.933,
+        "owned": false,
+        "reach_pctl": 92,
+        "demand_pctl": 72
+      },
+      {
+        "tech": "Next.js",
+        "category": "frontend",
+        "repo_reach": 62,
+        "reach_pct": 3.5,
+        "job_demand_pct": 3.231,
+        "owned": false,
+        "reach_pctl": 92,
+        "demand_pctl": 83
+      },
+      {
+        "tech": "SQL",
+        "category": "language",
+        "repo_reach": 61,
+        "reach_pct": 3.5,
+        "job_demand_pct": 13.563,
+        "owned": false,
+        "reach_pctl": 92,
+        "demand_pctl": 97
+      },
+      {
+        "tech": "Tailwind",
+        "category": "frontend",
+        "repo_reach": 53,
+        "reach_pct": 3.0,
+        "job_demand_pct": 1.412,
+        "owned": false,
+        "reach_pctl": 91,
+        "demand_pctl": 65
+      },
+      {
+        "tech": "Linux",
+        "category": "devops",
+        "repo_reach": 52,
+        "reach_pct": 3.0,
+        "job_demand_pct": 6.823,
+        "owned": false,
+        "reach_pctl": 91,
+        "demand_pctl": 92
+      },
+      {
+        "tech": "iOS",
+        "category": "mobile",
+        "repo_reach": 51,
+        "reach_pct": 2.9,
+        "job_demand_pct": 3.942,
+        "owned": false,
+        "reach_pctl": 90,
+        "demand_pctl": 89
+      },
+      {
+        "tech": "Git",
+        "category": "devops",
+        "repo_reach": 49,
+        "reach_pct": 2.8,
+        "job_demand_pct": 15.364,
+        "owned": true,
+        "reach_pctl": 89,
+        "demand_pctl": 98
+      },
+      {
+        "tech": "PHP",
+        "category": "language",
+        "repo_reach": 45,
+        "reach_pct": 2.6,
+        "job_demand_pct": 3.555,
+        "owned": false,
+        "reach_pctl": 88,
+        "demand_pctl": 85
+      },
+      {
+        "tech": "HTML",
+        "category": "frontend",
+        "repo_reach": 43,
+        "reach_pct": 2.4,
+        "job_demand_pct": 6.448,
+        "owned": false,
+        "reach_pctl": 88,
+        "demand_pctl": 92
+      },
+      {
+        "tech": "Redis",
+        "category": "data_db",
+        "repo_reach": 43,
+        "reach_pct": 2.4,
+        "job_demand_pct": 3.841,
+        "owned": false,
+        "reach_pctl": 88,
+        "demand_pctl": 87
+      },
+      {
+        "tech": "CSS",
+        "category": "frontend",
+        "repo_reach": 41,
+        "reach_pct": 2.3,
+        "job_demand_pct": 6.129,
+        "owned": false,
+        "reach_pctl": 87,
+        "demand_pctl": 91
+      },
+      {
+        "tech": "ChatGPT",
+        "category": "ai_llm",
+        "repo_reach": 40,
+        "reach_pct": 2.3,
+        "job_demand_pct": 1.798,
+        "owned": false,
+        "reach_pctl": 87,
+        "demand_pctl": 70
+      },
+      {
+        "tech": "Spring",
+        "category": "backend",
+        "repo_reach": 40,
+        "reach_pct": 2.3,
+        "job_demand_pct": 3.174,
+        "owned": false,
+        "reach_pctl": 87,
+        "demand_pctl": 83
+      },
+      {
+        "tech": "GraphQL",
+        "category": "backend",
+        "repo_reach": 37,
+        "reach_pct": 2.1,
+        "job_demand_pct": 3.329,
+        "owned": false,
+        "reach_pctl": 85,
+        "demand_pctl": 84
+      },
+      {
+        "tech": "LangChain",
+        "category": "ai_llm",
+        "repo_reach": 35,
+        "reach_pct": 2.0,
+        "job_demand_pct": 1.11,
+        "owned": false,
+        "reach_pctl": 84,
+        "demand_pctl": 62
+      },
+      {
+        "tech": "PyTorch",
+        "category": "ai_llm",
+        "repo_reach": 34,
+        "reach_pct": 1.9,
+        "job_demand_pct": 1.998,
+        "owned": false,
+        "reach_pctl": 84,
+        "demand_pctl": 74
+      },
+      {
+        "tech": "SQLite",
+        "category": "data_db",
+        "repo_reach": 34,
+        "reach_pct": 1.9,
+        "job_demand_pct": 0.18,
+        "owned": false,
+        "reach_pctl": 84,
+        "demand_pctl": 16
+      },
+      {
+        "tech": "Terraform",
+        "category": "devops",
+        "repo_reach": 32,
+        "reach_pct": 1.8,
+        "job_demand_pct": 5.792,
+        "owned": false,
+        "reach_pctl": 83,
+        "demand_pctl": 91
+      },
+      {
+        "tech": "Gemini",
+        "category": "ai_llm",
+        "repo_reach": 31,
+        "reach_pct": 1.8,
+        "job_demand_pct": 1.039,
+        "owned": false,
+        "reach_pctl": 83,
+        "demand_pctl": 60
+      },
+      {
+        "tech": "Angular",
+        "category": "frontend",
+        "repo_reach": 31,
+        "reach_pct": 1.8,
+        "job_demand_pct": 2.83,
+        "owned": false,
+        "reach_pctl": 83,
+        "demand_pctl": 81
+      },
+      {
+        "tech": "MongoDB",
+        "category": "data_db",
+        "repo_reach": 30,
+        "reach_pct": 1.7,
+        "job_demand_pct": 2.952,
+        "owned": false,
+        "reach_pctl": 81,
+        "demand_pctl": 81
+      },
+      {
+        "tech": "Ruby",
+        "category": "language",
+        "repo_reach": 30,
+        "reach_pct": 1.7,
+        "job_demand_pct": 3.906,
+        "owned": false,
+        "reach_pctl": 81,
+        "demand_pctl": 88
+      },
+      {
+        "tech": "SQL Server",
+        "category": "data_db",
+        "repo_reach": 30,
+        "reach_pct": 1.7,
+        "job_demand_pct": 1.997,
+        "owned": false,
+        "reach_pctl": 81,
+        "demand_pctl": 73
+      },
+      {
+        "tech": "Spark",
+        "category": "data_db",
+        "repo_reach": 30,
+        "reach_pct": 1.7,
+        "job_demand_pct": 0.905,
+        "owned": false,
+        "reach_pctl": 81,
+        "demand_pctl": 53
+      },
+      {
+        "tech": "TensorFlow",
+        "category": "ai_llm",
+        "repo_reach": 29,
+        "reach_pct": 1.6,
+        "job_demand_pct": 1.269,
+        "owned": false,
+        "reach_pctl": 78,
+        "demand_pctl": 64
+      },
+      {
+        "tech": "Kotlin",
+        "category": "language",
+        "repo_reach": 28,
+        "reach_pct": 1.6,
+        "job_demand_pct": 2.358,
+        "owned": false,
+        "reach_pctl": 78,
+        "demand_pctl": 78
+      },
+      {
+        "tech": "C#",
+        "category": "language",
+        "repo_reach": 28,
+        "reach_pct": 1.6,
+        "job_demand_pct": 3.611,
+        "owned": false,
+        "reach_pctl": 78,
+        "demand_pctl": 86
+      }
+    ],
+    "opportunities": [
+      {
+        "tech": "Rails",
+        "category": "backend",
+        "repo_reach": 11,
+        "reach_pct": 0.6,
+        "job_demand_pct": 3.629,
+        "owned": false,
+        "reach_pctl": 27,
+        "demand_pctl": 87
+      },
+      {
+        "tech": "Databricks",
+        "category": "data_db",
+        "repo_reach": 9,
+        "reach_pct": 0.5,
+        "job_demand_pct": 1.779,
+        "owned": false,
+        "reach_pctl": 14,
+        "demand_pctl": 69
+      },
+      {
+        "tech": "Airflow",
+        "category": "data_db",
+        "repo_reach": 11,
+        "reach_pct": 0.6,
+        "job_demand_pct": 1.52,
+        "owned": false,
+        "reach_pctl": 27,
+        "demand_pctl": 68
+      },
+      {
+        "tech": "Web3",
+        "category": "frontend",
+        "repo_reach": 11,
+        "reach_pct": 0.6,
+        "job_demand_pct": 1.357,
+        "owned": false,
+        "reach_pctl": 27,
+        "demand_pctl": 65
+      },
+      {
+        "tech": "EC2",
+        "category": "cloud_services",
+        "repo_reach": 11,
+        "reach_pct": 0.6,
+        "job_demand_pct": 1.219,
+        "owned": false,
+        "reach_pctl": 27,
+        "demand_pctl": 63
+      },
+      {
+        "tech": "EKS",
+        "category": "cloud_services",
+        "repo_reach": 11,
+        "reach_pct": 0.6,
+        "job_demand_pct": 1.038,
+        "owned": false,
+        "reach_pctl": 27,
+        "demand_pctl": 60
+      }
+    ]
+  }
+}

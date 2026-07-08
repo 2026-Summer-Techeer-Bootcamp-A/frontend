@@ -1,0 +1,155 @@
+{
+  "pearl": "t-github-vitality",
+  "as_of": "2026-07-07",
+  "pool": "global",
+  "sample_size": 1735,
+  "sample_note": "GitHub 일별 스냅샷(2026-07-03) 2,056개 저장소 · language 필드 기준(수동 매핑 불필요) · C, Go, Jupyter Notebook, Rust, Shell, Swift는 taxonomy 미포함으로 채용수요 비교 제외",
+  "data": {
+    "languages": [
+      {
+        "lang": "Java",
+        "repo_n": 144,
+        "fork_ratio": 30.3,
+        "issue_per_1k_star": 22.2,
+        "median_days_since_push": 4,
+        "job_demand_pct": 8.661,
+        "in_taxonomy": true
+      },
+      {
+        "lang": "Jupyter Notebook",
+        "repo_n": 51,
+        "fork_ratio": 27.9,
+        "issue_per_1k_star": 4.5,
+        "median_days_since_push": 80,
+        "job_demand_pct": null,
+        "in_taxonomy": false
+      },
+      {
+        "lang": "C",
+        "repo_n": 27,
+        "fork_ratio": 23.0,
+        "issue_per_1k_star": 19.3,
+        "median_days_since_push": 2,
+        "job_demand_pct": null,
+        "in_taxonomy": false
+      },
+      {
+        "lang": "Ruby",
+        "repo_n": 32,
+        "fork_ratio": 21.9,
+        "issue_per_1k_star": 13.0,
+        "median_days_since_push": 10,
+        "job_demand_pct": 3.906,
+        "in_taxonomy": true
+      },
+      {
+        "lang": "PHP",
+        "repo_n": 51,
+        "fork_ratio": 19.7,
+        "issue_per_1k_star": 25.6,
+        "median_days_since_push": 1,
+        "job_demand_pct": 3.555,
+        "in_taxonomy": true
+      },
+      {
+        "lang": "C++",
+        "repo_n": 52,
+        "fork_ratio": 19.1,
+        "issue_per_1k_star": 29.7,
+        "median_days_since_push": 0,
+        "job_demand_pct": 4.363,
+        "in_taxonomy": true
+      },
+      {
+        "lang": "C#",
+        "repo_n": 47,
+        "fork_ratio": 18.6,
+        "issue_per_1k_star": 33.4,
+        "median_days_since_push": 233,
+        "job_demand_pct": 3.611,
+        "in_taxonomy": true
+      },
+      {
+        "lang": "JavaScript",
+        "repo_n": 246,
+        "fork_ratio": 17.2,
+        "issue_per_1k_star": 13.2,
+        "median_days_since_push": 147,
+        "job_demand_pct": 19.263,
+        "in_taxonomy": true
+      },
+      {
+        "lang": "Kotlin",
+        "repo_n": 24,
+        "fork_ratio": 17.2,
+        "issue_per_1k_star": 6.5,
+        "median_days_since_push": 6,
+        "job_demand_pct": 2.358,
+        "in_taxonomy": true
+      },
+      {
+        "lang": "Python",
+        "repo_n": 364,
+        "fork_ratio": 17.1,
+        "issue_per_1k_star": 18.9,
+        "median_days_since_push": 12,
+        "job_demand_pct": 23.418,
+        "in_taxonomy": true
+      },
+      {
+        "lang": "Shell",
+        "repo_n": 53,
+        "fork_ratio": 16.7,
+        "issue_per_1k_star": 9.7,
+        "median_days_since_push": 149,
+        "job_demand_pct": null,
+        "in_taxonomy": false
+      },
+      {
+        "lang": "HTML",
+        "repo_n": 26,
+        "fork_ratio": 14.7,
+        "issue_per_1k_star": 5.9,
+        "median_days_since_push": 41,
+        "job_demand_pct": 6.448,
+        "in_taxonomy": true
+      },
+      {
+        "lang": "Go",
+        "repo_n": 168,
+        "fork_ratio": 13.9,
+        "issue_per_1k_star": 24.6,
+        "median_days_since_push": 0,
+        "job_demand_pct": null,
+        "in_taxonomy": false
+      },
+      {
+        "lang": "TypeScript",
+        "repo_n": 375,
+        "fork_ratio": 13.7,
+        "issue_per_1k_star": 17.8,
+        "median_days_since_push": 1,
+        "job_demand_pct": 13.723,
+        "in_taxonomy": true
+      },
+      {
+        "lang": "Swift",
+        "repo_n": 28,
+        "fork_ratio": 10.2,
+        "issue_per_1k_star": 6.2,
+        "median_days_since_push": 35,
+        "job_demand_pct": null,
+        "in_taxonomy": false
+      },
+      {
+        "lang": "Rust",
+        "repo_n": 47,
+        "fork_ratio": 7.6,
+        "issue_per_1k_star": 27.8,
+        "median_days_since_push": -1,
+        "job_demand_pct": null,
+        "in_taxonomy": false
+      }
+    ]
+  }
+}

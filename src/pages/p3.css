@@ -1,0 +1,392 @@
+/* ============ 3번 이미지 (회색 · 블랙 액센트 테마) ============ */
+.p3 {
+  --ink: #17181c;
+  --muted: #8b8d94;
+  font-family: 'Poppins', sans-serif;
+  color: var(--ink);
+  padding: 6px 22px 0;
+}
+
+/* 상단 */
+.p3__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+}
+.p3__profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border-radius: 40px;
+  padding: 8px 24px 8px 8px;
+  box-shadow: 0 6px 18px rgba(40, 40, 60, 0.06);
+}
+.p3__avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: linear-gradient(135deg, #b9a48f, #6f5844);
+}
+.p3__hi small {
+  display: block;
+  font-size: 12px;
+  color: #9a9ca3;
+  line-height: 1.1;
+}
+.p3__hi b {
+  font-size: 16px;
+  font-weight: 600;
+}
+.p3__filterbtn {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 1px solid #e2e3e6;
+  background: #fbfbfc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #17181c;
+}
+
+/* 히어로 헤딩 */
+.p3__hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-top: 26px;
+}
+.p3__hero h1 {
+  font-size: 44px;
+  line-height: 1.02;
+  font-weight: 700;
+  letter-spacing: -1.2px;
+}
+.p3__searchbtn {
+  width: 96px;
+  height: 96px;
+  border-radius: 30px;
+  background: #17181c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex: none;
+  box-shadow: 0 16px 30px -10px rgba(20, 20, 25, 0.5);
+}
+
+/* 필터 칩 */
+.p3__chips {
+  display: flex;
+  gap: 14px;
+  margin-top: 30px;
+}
+.p3__chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f1f1f3;
+  border-radius: 30px;
+  padding: 13px 16px 13px 22px;
+  font-size: 15px;
+  font-weight: 500;
+}
+.p3__chip svg {
+  color: #fff;
+  background: #17181c;
+  border-radius: 50%;
+  padding: 3px;
+}
+
+/* 섹션 라벨 */
+.p3__label {
+  font-size: 17px;
+  font-weight: 600;
+  margin: 30px 0 16px;
+}
+
+/* Job matched 가로 스크롤 */
+.p3__hscroll {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  margin: 0 -22px;
+  padding: 0 22px 4px;
+}
+.p3__hscroll::-webkit-scrollbar {
+  display: none;
+}
+.p3mcard {
+  flex: none;
+  width: 176px;
+  border-radius: 22px;
+  padding: 18px;
+}
+.p3mcard__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.p3mcard__logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+}
+.p3mcard__pay {
+  text-align: right;
+}
+.p3mcard__pay b {
+  font-size: 17px;
+  font-weight: 700;
+}
+.p3mcard__pay span {
+  display: block;
+  font-size: 11px;
+  color: #8b8d94;
+  margin-top: -2px;
+}
+.p3mcard__co {
+  font-size: 20px;
+  font-weight: 700;
+  margin-top: 16px;
+}
+.p3mcard__role {
+  font-size: 14px;
+  color: #4a4c53;
+  margin-top: 2px;
+}
+.p3mcard__applied {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+.p3mcard__avatars {
+  display: flex;
+}
+.p3mcard__avatars span {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  display: inline-block;
+}
+.p3mcard__avatars > * + * {
+  margin-left: -9px;
+}
+.p3mcard__applied small {
+  font-size: 12.5px;
+  color: #5a5c63;
+  font-weight: 500;
+}
+
+/* Job categories */
+.p3cat {
+  flex: none;
+  width: 168px;
+  background: #fff;
+  border-radius: 22px;
+  padding: 18px;
+  position: relative;
+  box-shadow: 0 8px 22px rgba(40, 40, 60, 0.05);
+}
+.p3cat__icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+.p3cat__name {
+  font-size: 15px;
+  color: #4a4c53;
+  margin-top: 22px;
+}
+.p3cat__jobs {
+  font-size: 20px;
+  font-weight: 700;
+  margin-top: 2px;
+}
+.p3cat__arrow {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #f3f3f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #17181c;
+}
+
+/* ---------- P3 상세(모달 시트) ---------- */
+.p3d {
+  --ink: #17181c;
+  font-family: 'Poppins', sans-serif;
+  color: var(--ink);
+  min-height: 100%;
+  padding: 0 26px 120px;
+}
+.p3d__handle {
+  display: flex;
+  justify-content: center;
+  padding: 14px 0 22px;
+}
+.p3d__close {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #f1f1f3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.p3d__logo {
+  width: 74px;
+  height: 74px;
+  border-radius: 20px;
+  background: #f4f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.p3d__co {
+  font-size: 17px;
+  color: #4a4c53;
+  margin-top: 16px;
+}
+.p3d__role {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.8px;
+  margin-top: 6px;
+}
+.p3d__pills {
+  display: flex;
+  gap: 14px;
+  margin-top: 20px;
+}
+.p3d__pill {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: #f4f4f6;
+  border-radius: 16px;
+  padding: 14px 20px;
+  font-size: 15px;
+  color: #2c2e34;
+  white-space: nowrap;
+}
+.p3d__pill svg {
+  color: #6a6c72;
+}
+.p3d__map {
+  height: 118px;
+  border-radius: 18px;
+  margin-top: 22px;
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, #cdd8e2 0%, #b7c4d0 60%, #a9b7c4 100%);
+}
+.p3d__map-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.35) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.35) 1px, transparent 1px);
+  background-size: 26px 26px;
+}
+.p3d__map-pin {
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  transform: translate(-50%, -100%);
+  color: #17181c;
+}
+.p3d__payrow {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 24px;
+}
+.p3d__pay {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+.p3d__pay small {
+  font-size: 20px;
+  font-weight: 600;
+  color: #6a6c72;
+}
+.p3d__ago {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  color: #6a6c72;
+}
+.p3d__h {
+  font-size: 19px;
+  font-weight: 700;
+  margin: 26px 0 14px;
+}
+.p3d__li {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.p3d__li::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #b7b9bf;
+  margin-top: 9px;
+  flex: none;
+}
+.p3d__li p {
+  font-size: 15px;
+  line-height: 1.5;
+  color: #45474e;
+}
+.p3d__actions {
+  position: absolute;
+  bottom: 26px;
+  left: 26px;
+  right: 26px;
+  display: flex;
+  gap: 14px;
+  z-index: 20;
+}
+.p3d__apply {
+  flex: 1;
+  background: #17181c;
+  color: #fff;
+  border-radius: 22px;
+  padding: 20px;
+  font-size: 16px;
+  font-weight: 600;
+}
+.p3d__save {
+  flex: 1;
+  background: #eeeef0;
+  color: #17181c;
+  border-radius: 22px;
+  padding: 20px;
+  font-size: 16px;
+  font-weight: 600;
+}

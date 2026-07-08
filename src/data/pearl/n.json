@@ -1,0 +1,1761 @@
+{
+  "pearl": "n-skill-bundle",
+  "as_of": "2026-07-07",
+  "pool": "both",
+  "sample_size": 217323,
+  "sample_note": "순수 기술 스택 상위 55개(전체 소스 통합) · 노드당 최강 동시등장 4개만 표시(해어볼 방지) · N≥40 조건부확률",
+  "data": {
+    "nodes": [
+      {
+        "tech": "Python",
+        "n": 16945,
+        "owned": true,
+        "category": "language"
+      },
+      {
+        "tech": "AWS",
+        "n": 14885,
+        "owned": true,
+        "category": "cloud_services"
+      },
+      {
+        "tech": "JavaScript",
+        "n": 13938,
+        "owned": true,
+        "category": "language"
+      },
+      {
+        "tech": "Git",
+        "n": 11117,
+        "owned": true,
+        "category": "devops"
+      },
+      {
+        "tech": "TypeScript",
+        "n": 9930,
+        "owned": true,
+        "category": "language"
+      },
+      {
+        "tech": "SQL",
+        "n": 9814,
+        "owned": false,
+        "category": "language"
+      },
+      {
+        "tech": "Kubernetes",
+        "n": 7678,
+        "owned": false,
+        "category": "devops"
+      },
+      {
+        "tech": "PostgreSQL",
+        "n": 7480,
+        "owned": false,
+        "category": "data_db"
+      },
+      {
+        "tech": "Azure",
+        "n": 6984,
+        "owned": false,
+        "category": "cloud_services"
+      },
+      {
+        "tech": "GCP",
+        "n": 6480,
+        "owned": false,
+        "category": "cloud_services"
+      },
+      {
+        "tech": "Docker",
+        "n": 6453,
+        "owned": false,
+        "category": "devops"
+      },
+      {
+        "tech": "Java",
+        "n": 6267,
+        "owned": false,
+        "category": "language"
+      },
+      {
+        "tech": "Node.js",
+        "n": 5007,
+        "owned": true,
+        "category": "backend"
+      },
+      {
+        "tech": "Linux",
+        "n": 4937,
+        "owned": false,
+        "category": "devops"
+      },
+      {
+        "tech": "HTML",
+        "n": 4666,
+        "owned": false,
+        "category": "frontend"
+      },
+      {
+        "tech": "CSS",
+        "n": 4435,
+        "owned": false,
+        "category": "frontend"
+      },
+      {
+        "tech": "Terraform",
+        "n": 4191,
+        "owned": false,
+        "category": "devops"
+      },
+      {
+        "tech": "MySQL",
+        "n": 3545,
+        "owned": true,
+        "category": "data_db"
+      },
+      {
+        "tech": "C++",
+        "n": 3157,
+        "owned": false,
+        "category": "language"
+      },
+      {
+        "tech": "iOS",
+        "n": 2852,
+        "owned": false,
+        "category": "mobile"
+      },
+      {
+        "tech": "Android",
+        "n": 2832,
+        "owned": false,
+        "category": "mobile"
+      },
+      {
+        "tech": "Ruby",
+        "n": 2826,
+        "owned": false,
+        "category": "language"
+      },
+      {
+        "tech": "Redis",
+        "n": 2779,
+        "owned": false,
+        "category": "data_db"
+      },
+      {
+        "tech": "Rails",
+        "n": 2626,
+        "owned": false,
+        "category": "backend"
+      },
+      {
+        "tech": "C#",
+        "n": 2613,
+        "owned": false,
+        "category": "language"
+      },
+      {
+        "tech": "PHP",
+        "n": 2572,
+        "owned": false,
+        "category": "language"
+      },
+      {
+        "tech": "Vue",
+        "n": 2499,
+        "owned": false,
+        "category": "frontend"
+      },
+      {
+        "tech": ".NET",
+        "n": 2411,
+        "owned": false,
+        "category": "backend"
+      },
+      {
+        "tech": "GraphQL",
+        "n": 2409,
+        "owned": false,
+        "category": "backend"
+      },
+      {
+        "tech": "Next.js",
+        "n": 2338,
+        "owned": false,
+        "category": "frontend"
+      },
+      {
+        "tech": "Spring",
+        "n": 2297,
+        "owned": false,
+        "category": "backend"
+      },
+      {
+        "tech": "Kafka",
+        "n": 2234,
+        "owned": false,
+        "category": "data_db"
+      },
+      {
+        "tech": "MongoDB",
+        "n": 2136,
+        "owned": false,
+        "category": "data_db"
+      },
+      {
+        "tech": "Angular",
+        "n": 2048,
+        "owned": false,
+        "category": "frontend"
+      },
+      {
+        "tech": "React",
+        "n": 1870,
+        "owned": true,
+        "category": "frontend"
+      },
+      {
+        "tech": "React Native",
+        "n": 1858,
+        "owned": false,
+        "category": "mobile"
+      },
+      {
+        "tech": "Jenkins",
+        "n": 1737,
+        "owned": false,
+        "category": "devops"
+      },
+      {
+        "tech": "Kotlin",
+        "n": 1706,
+        "owned": false,
+        "category": "language"
+      },
+      {
+        "tech": "Snowflake",
+        "n": 1704,
+        "owned": false,
+        "category": "data_db"
+      },
+      {
+        "tech": "Django",
+        "n": 1703,
+        "owned": false,
+        "category": "backend"
+      },
+      {
+        "tech": "Bash",
+        "n": 1688,
+        "owned": false,
+        "category": "language"
+      },
+      {
+        "tech": "GitHub Actions",
+        "n": 1607,
+        "owned": false,
+        "category": "devops"
+      },
+      {
+        "tech": "S3",
+        "n": 1540,
+        "owned": false,
+        "category": "cloud_services"
+      },
+      {
+        "tech": "Express",
+        "n": 1487,
+        "owned": false,
+        "category": "backend"
+      },
+      {
+        "tech": "Grafana",
+        "n": 1463,
+        "owned": false,
+        "category": "devops"
+      },
+      {
+        "tech": "PyTorch",
+        "n": 1446,
+        "owned": false,
+        "category": "ai_llm"
+      },
+      {
+        "tech": "SQL Server",
+        "n": 1445,
+        "owned": false,
+        "category": "data_db"
+      },
+      {
+        "tech": "Lambda",
+        "n": 1421,
+        "owned": false,
+        "category": "cloud_services"
+      },
+      {
+        "tech": "OpenAI",
+        "n": 1399,
+        "owned": false,
+        "category": "ai_llm"
+      },
+      {
+        "tech": "Ansible",
+        "n": 1363,
+        "owned": false,
+        "category": "devops"
+      },
+      {
+        "tech": "Elasticsearch",
+        "n": 1346,
+        "owned": false,
+        "category": "data_db"
+      },
+      {
+        "tech": "GitHub Copilot",
+        "n": 1344,
+        "owned": false,
+        "category": "ai_llm"
+      },
+      {
+        "tech": "ChatGPT",
+        "n": 1301,
+        "owned": false,
+        "category": "ai_llm"
+      },
+      {
+        "tech": "Databricks",
+        "n": 1287,
+        "owned": false,
+        "category": "data_db"
+      },
+      {
+        "tech": "Prometheus",
+        "n": 1227,
+        "owned": false,
+        "category": "devops"
+      }
+    ],
+    "edges": [
+      {
+        "a": "Bash",
+        "b": "Python",
+        "n": 1341,
+        "strength": 0.794,
+        "p_ab": 0.079,
+        "p_ba": 0.794
+      },
+      {
+        "a": "Elasticsearch",
+        "b": "Redis",
+        "n": 590,
+        "strength": 0.438,
+        "p_ab": 0.212,
+        "p_ba": 0.438
+      },
+      {
+        "a": "Bash",
+        "b": "Linux",
+        "n": 866,
+        "strength": 0.513,
+        "p_ab": 0.175,
+        "p_ba": 0.513
+      },
+      {
+        "a": "Android",
+        "b": "JavaScript",
+        "n": 719,
+        "strength": 0.254,
+        "p_ab": 0.052,
+        "p_ba": 0.254
+      },
+      {
+        "a": "Java",
+        "b": "Python",
+        "n": 2580,
+        "strength": 0.412,
+        "p_ab": 0.152,
+        "p_ba": 0.412
+      },
+      {
+        "a": "GCP",
+        "b": "Python",
+        "n": 3035,
+        "strength": 0.468,
+        "p_ab": 0.179,
+        "p_ba": 0.468
+      },
+      {
+        "a": "Angular",
+        "b": "HTML",
+        "n": 638,
+        "strength": 0.312,
+        "p_ab": 0.137,
+        "p_ba": 0.312
+      },
+      {
+        "a": "AWS",
+        "b": "Linux",
+        "n": 1783,
+        "strength": 0.361,
+        "p_ab": 0.12,
+        "p_ba": 0.361
+      },
+      {
+        "a": "JavaScript",
+        "b": "Redis",
+        "n": 1242,
+        "strength": 0.447,
+        "p_ab": 0.089,
+        "p_ba": 0.447
+      },
+      {
+        "a": "GCP",
+        "b": "Kubernetes",
+        "n": 2323,
+        "strength": 0.358,
+        "p_ab": 0.303,
+        "p_ba": 0.358
+      },
+      {
+        "a": "AWS",
+        "b": "Kubernetes",
+        "n": 4315,
+        "strength": 0.562,
+        "p_ab": 0.29,
+        "p_ba": 0.562
+      },
+      {
+        "a": "Databricks",
+        "b": "Snowflake",
+        "n": 465,
+        "strength": 0.361,
+        "p_ab": 0.273,
+        "p_ba": 0.361
+      },
+      {
+        "a": "AWS",
+        "b": "Terraform",
+        "n": 3088,
+        "strength": 0.737,
+        "p_ab": 0.207,
+        "p_ba": 0.737
+      },
+      {
+        "a": "AWS",
+        "b": "Node.js",
+        "n": 2392,
+        "strength": 0.478,
+        "p_ab": 0.161,
+        "p_ba": 0.478
+      },
+      {
+        "a": "HTML",
+        "b": "JavaScript",
+        "n": 3293,
+        "strength": 0.706,
+        "p_ab": 0.236,
+        "p_ba": 0.706
+      },
+      {
+        "a": "JavaScript",
+        "b": "Lambda",
+        "n": 634,
+        "strength": 0.446,
+        "p_ab": 0.045,
+        "p_ba": 0.446
+      },
+      {
+        "a": "Git",
+        "b": "HTML",
+        "n": 1535,
+        "strength": 0.329,
+        "p_ab": 0.138,
+        "p_ba": 0.329
+      },
+      {
+        "a": "MongoDB",
+        "b": "Node.js",
+        "n": 810,
+        "strength": 0.379,
+        "p_ab": 0.162,
+        "p_ba": 0.379
+      },
+      {
+        "a": "OpenAI",
+        "b": "Python",
+        "n": 721,
+        "strength": 0.515,
+        "p_ab": 0.043,
+        "p_ba": 0.515
+      },
+      {
+        "a": "Git",
+        "b": "S3",
+        "n": 698,
+        "strength": 0.453,
+        "p_ab": 0.063,
+        "p_ba": 0.453
+      },
+      {
+        "a": "AWS",
+        "b": "PostgreSQL",
+        "n": 3722,
+        "strength": 0.498,
+        "p_ab": 0.25,
+        "p_ba": 0.498
+      },
+      {
+        "a": "CSS",
+        "b": "PHP",
+        "n": 740,
+        "strength": 0.288,
+        "p_ab": 0.167,
+        "p_ba": 0.288
+      },
+      {
+        "a": "Next.js",
+        "b": "PostgreSQL",
+        "n": 727,
+        "strength": 0.311,
+        "p_ab": 0.097,
+        "p_ba": 0.311
+      },
+      {
+        "a": "SQL",
+        "b": "Snowflake",
+        "n": 887,
+        "strength": 0.521,
+        "p_ab": 0.09,
+        "p_ba": 0.521
+      },
+      {
+        "a": "Lambda",
+        "b": "Python",
+        "n": 675,
+        "strength": 0.475,
+        "p_ab": 0.04,
+        "p_ba": 0.475
+      },
+      {
+        "a": "SQL",
+        "b": "SQL Server",
+        "n": 1206,
+        "strength": 0.835,
+        "p_ab": 0.123,
+        "p_ba": 0.835
+      },
+      {
+        "a": "MongoDB",
+        "b": "PostgreSQL",
+        "n": 838,
+        "strength": 0.392,
+        "p_ab": 0.112,
+        "p_ba": 0.392
+      },
+      {
+        "a": "Angular",
+        "b": "CSS",
+        "n": 674,
+        "strength": 0.329,
+        "p_ab": 0.152,
+        "p_ba": 0.329
+      },
+      {
+        "a": "AWS",
+        "b": "Redis",
+        "n": 1499,
+        "strength": 0.539,
+        "p_ab": 0.101,
+        "p_ba": 0.539
+      },
+      {
+        "a": "Angular",
+        "b": "JavaScript",
+        "n": 1321,
+        "strength": 0.645,
+        "p_ab": 0.095,
+        "p_ba": 0.645
+      },
+      {
+        "a": "Prometheus",
+        "b": "Python",
+        "n": 716,
+        "strength": 0.584,
+        "p_ab": 0.042,
+        "p_ba": 0.584
+      },
+      {
+        "a": "JavaScript",
+        "b": "Node.js",
+        "n": 4437,
+        "strength": 0.886,
+        "p_ab": 0.318,
+        "p_ba": 0.886
+      },
+      {
+        "a": "Git",
+        "b": "MySQL",
+        "n": 1481,
+        "strength": 0.418,
+        "p_ab": 0.133,
+        "p_ba": 0.418
+      },
+      {
+        "a": "JavaScript",
+        "b": "PHP",
+        "n": 1466,
+        "strength": 0.57,
+        "p_ab": 0.105,
+        "p_ba": 0.57
+      },
+      {
+        "a": "C#",
+        "b": "JavaScript",
+        "n": 964,
+        "strength": 0.369,
+        "p_ab": 0.069,
+        "p_ba": 0.369
+      },
+      {
+        "a": "Express",
+        "b": "JavaScript",
+        "n": 681,
+        "strength": 0.458,
+        "p_ab": 0.049,
+        "p_ba": 0.458
+      },
+      {
+        "a": "AWS",
+        "b": "Kafka",
+        "n": 1211,
+        "strength": 0.542,
+        "p_ab": 0.081,
+        "p_ba": 0.542
+      },
+      {
+        "a": "Bash",
+        "b": "Git",
+        "n": 778,
+        "strength": 0.461,
+        "p_ab": 0.07,
+        "p_ba": 0.461
+      },
+      {
+        "a": "Kafka",
+        "b": "PostgreSQL",
+        "n": 834,
+        "strength": 0.373,
+        "p_ab": 0.111,
+        "p_ba": 0.373
+      },
+      {
+        "a": "Azure",
+        "b": "Python",
+        "n": 2941,
+        "strength": 0.421,
+        "p_ab": 0.174,
+        "p_ba": 0.421
+      },
+      {
+        "a": "Docker",
+        "b": "PyTorch",
+        "n": 313,
+        "strength": 0.216,
+        "p_ab": 0.049,
+        "p_ba": 0.216
+      },
+      {
+        "a": "AWS",
+        "b": "Azure",
+        "n": 4511,
+        "strength": 0.646,
+        "p_ab": 0.303,
+        "p_ba": 0.646
+      },
+      {
+        "a": "Python",
+        "b": "Terraform",
+        "n": 2276,
+        "strength": 0.543,
+        "p_ab": 0.134,
+        "p_ba": 0.543
+      },
+      {
+        "a": "AWS",
+        "b": "React Native",
+        "n": 595,
+        "strength": 0.32,
+        "p_ab": 0.04,
+        "p_ba": 0.32
+      },
+      {
+        "a": "AWS",
+        "b": "Docker",
+        "n": 3908,
+        "strength": 0.606,
+        "p_ab": 0.263,
+        "p_ba": 0.606
+      },
+      {
+        "a": "AWS",
+        "b": "Lambda",
+        "n": 1343,
+        "strength": 0.945,
+        "p_ab": 0.09,
+        "p_ba": 0.945
+      },
+      {
+        "a": "JavaScript",
+        "b": "TypeScript",
+        "n": 5289,
+        "strength": 0.533,
+        "p_ab": 0.379,
+        "p_ba": 0.533
+      },
+      {
+        "a": "Node.js",
+        "b": "TypeScript",
+        "n": 2472,
+        "strength": 0.494,
+        "p_ab": 0.249,
+        "p_ba": 0.494
+      },
+      {
+        "a": "Git",
+        "b": "Kotlin",
+        "n": 475,
+        "strength": 0.278,
+        "p_ab": 0.043,
+        "p_ba": 0.278
+      },
+      {
+        "a": "Azure",
+        "b": "SQL Server",
+        "n": 608,
+        "strength": 0.421,
+        "p_ab": 0.087,
+        "p_ba": 0.421
+      },
+      {
+        "a": "PyTorch",
+        "b": "Python",
+        "n": 1178,
+        "strength": 0.815,
+        "p_ab": 0.07,
+        "p_ba": 0.815
+      },
+      {
+        "a": "Django",
+        "b": "Python",
+        "n": 1474,
+        "strength": 0.866,
+        "p_ab": 0.087,
+        "p_ba": 0.866
+      },
+      {
+        "a": ".NET",
+        "b": "Azure",
+        "n": 932,
+        "strength": 0.387,
+        "p_ab": 0.133,
+        "p_ba": 0.387
+      },
+      {
+        "a": "AWS",
+        "b": "Snowflake",
+        "n": 783,
+        "strength": 0.46,
+        "p_ab": 0.053,
+        "p_ba": 0.46
+      },
+      {
+        "a": "Python",
+        "b": "SQL",
+        "n": 4374,
+        "strength": 0.446,
+        "p_ab": 0.258,
+        "p_ba": 0.446
+      },
+      {
+        "a": "Docker",
+        "b": "Jenkins",
+        "n": 849,
+        "strength": 0.489,
+        "p_ab": 0.132,
+        "p_ba": 0.489
+      },
+      {
+        "a": "CSS",
+        "b": "Git",
+        "n": 1622,
+        "strength": 0.366,
+        "p_ab": 0.146,
+        "p_ba": 0.366
+      },
+      {
+        "a": "Git",
+        "b": "Vue",
+        "n": 885,
+        "strength": 0.354,
+        "p_ab": 0.08,
+        "p_ba": 0.354
+      },
+      {
+        "a": "GraphQL",
+        "b": "JavaScript",
+        "n": 1306,
+        "strength": 0.542,
+        "p_ab": 0.094,
+        "p_ba": 0.542
+      },
+      {
+        "a": "AWS",
+        "b": "Grafana",
+        "n": 921,
+        "strength": 0.63,
+        "p_ab": 0.062,
+        "p_ba": 0.63
+      },
+      {
+        "a": "AWS",
+        "b": "Ruby",
+        "n": 1085,
+        "strength": 0.384,
+        "p_ab": 0.073,
+        "p_ba": 0.384
+      },
+      {
+        "a": "React",
+        "b": "TypeScript",
+        "n": 766,
+        "strength": 0.41,
+        "p_ab": 0.077,
+        "p_ba": 0.41
+      },
+      {
+        "a": ".NET",
+        "b": "SQL Server",
+        "n": 583,
+        "strength": 0.403,
+        "p_ab": 0.242,
+        "p_ba": 0.403
+      },
+      {
+        "a": "JavaScript",
+        "b": "React Native",
+        "n": 875,
+        "strength": 0.471,
+        "p_ab": 0.063,
+        "p_ba": 0.471
+      },
+      {
+        "a": "Git",
+        "b": "Spring",
+        "n": 706,
+        "strength": 0.307,
+        "p_ab": 0.064,
+        "p_ba": 0.307
+      },
+      {
+        "a": "Django",
+        "b": "JavaScript",
+        "n": 607,
+        "strength": 0.356,
+        "p_ab": 0.044,
+        "p_ba": 0.356
+      },
+      {
+        "a": "Docker",
+        "b": "Prometheus",
+        "n": 603,
+        "strength": 0.491,
+        "p_ab": 0.093,
+        "p_ba": 0.491
+      },
+      {
+        "a": "AWS",
+        "b": "Rails",
+        "n": 873,
+        "strength": 0.332,
+        "p_ab": 0.059,
+        "p_ba": 0.332
+      },
+      {
+        "a": "Ansible",
+        "b": "Python",
+        "n": 813,
+        "strength": 0.596,
+        "p_ab": 0.048,
+        "p_ba": 0.596
+      },
+      {
+        "a": "Ansible",
+        "b": "Linux",
+        "n": 668,
+        "strength": 0.49,
+        "p_ab": 0.135,
+        "p_ba": 0.49
+      },
+      {
+        "a": "C#",
+        "b": "SQL",
+        "n": 974,
+        "strength": 0.373,
+        "p_ab": 0.099,
+        "p_ba": 0.373
+      },
+      {
+        "a": "Django",
+        "b": "PostgreSQL",
+        "n": 729,
+        "strength": 0.428,
+        "p_ab": 0.097,
+        "p_ba": 0.428
+      },
+      {
+        "a": "Ansible",
+        "b": "Kubernetes",
+        "n": 778,
+        "strength": 0.571,
+        "p_ab": 0.101,
+        "p_ba": 0.571
+      },
+      {
+        "a": "Azure",
+        "b": "GCP",
+        "n": 3163,
+        "strength": 0.488,
+        "p_ab": 0.453,
+        "p_ba": 0.488
+      },
+      {
+        "a": "C++",
+        "b": "Linux",
+        "n": 778,
+        "strength": 0.246,
+        "p_ab": 0.158,
+        "p_ba": 0.246
+      },
+      {
+        "a": "AWS",
+        "b": "Java",
+        "n": 2498,
+        "strength": 0.399,
+        "p_ab": 0.168,
+        "p_ba": 0.399
+      },
+      {
+        "a": "React Native",
+        "b": "TypeScript",
+        "n": 922,
+        "strength": 0.496,
+        "p_ab": 0.093,
+        "p_ba": 0.496
+      },
+      {
+        "a": "PostgreSQL",
+        "b": "Redis",
+        "n": 1626,
+        "strength": 0.585,
+        "p_ab": 0.217,
+        "p_ba": 0.585
+      },
+      {
+        "a": "React Native",
+        "b": "iOS",
+        "n": 488,
+        "strength": 0.263,
+        "p_ab": 0.171,
+        "p_ba": 0.263
+      },
+      {
+        "a": "JavaScript",
+        "b": "Ruby",
+        "n": 1228,
+        "strength": 0.435,
+        "p_ab": 0.088,
+        "p_ba": 0.435
+      },
+      {
+        "a": "AWS",
+        "b": "GCP",
+        "n": 4190,
+        "strength": 0.647,
+        "p_ab": 0.281,
+        "p_ba": 0.647
+      },
+      {
+        "a": "Grafana",
+        "b": "Prometheus",
+        "n": 993,
+        "strength": 0.809,
+        "p_ab": 0.679,
+        "p_ba": 0.809
+      },
+      {
+        "a": "Ansible",
+        "b": "Terraform",
+        "n": 956,
+        "strength": 0.701,
+        "p_ab": 0.228,
+        "p_ba": 0.701
+      },
+      {
+        "a": "Git",
+        "b": "React",
+        "n": 691,
+        "strength": 0.37,
+        "p_ab": 0.062,
+        "p_ba": 0.37
+      },
+      {
+        "a": "Kubernetes",
+        "b": "PyTorch",
+        "n": 315,
+        "strength": 0.218,
+        "p_ab": 0.041,
+        "p_ba": 0.218
+      },
+      {
+        "a": "Android",
+        "b": "iOS",
+        "n": 2017,
+        "strength": 0.712,
+        "p_ab": 0.707,
+        "p_ba": 0.712
+      },
+      {
+        "a": "Python",
+        "b": "Snowflake",
+        "n": 879,
+        "strength": 0.516,
+        "p_ab": 0.052,
+        "p_ba": 0.516
+      },
+      {
+        "a": "AWS",
+        "b": "Django",
+        "n": 867,
+        "strength": 0.509,
+        "p_ab": 0.058,
+        "p_ba": 0.509
+      },
+      {
+        "a": "JavaScript",
+        "b": "Rails",
+        "n": 1054,
+        "strength": 0.401,
+        "p_ab": 0.076,
+        "p_ba": 0.401
+      },
+      {
+        "a": "Jenkins",
+        "b": "Python",
+        "n": 803,
+        "strength": 0.462,
+        "p_ab": 0.047,
+        "p_ba": 0.462
+      },
+      {
+        "a": "Git",
+        "b": "GitHub Copilot",
+        "n": 625,
+        "strength": 0.465,
+        "p_ab": 0.056,
+        "p_ba": 0.465
+      },
+      {
+        "a": "Azure",
+        "b": "Databricks",
+        "n": 628,
+        "strength": 0.488,
+        "p_ab": 0.09,
+        "p_ba": 0.488
+      },
+      {
+        "a": "Angular",
+        "b": "Git",
+        "n": 803,
+        "strength": 0.392,
+        "p_ab": 0.072,
+        "p_ba": 0.392
+      },
+      {
+        "a": "ChatGPT",
+        "b": "GitHub Copilot",
+        "n": 277,
+        "strength": 0.213,
+        "p_ab": 0.206,
+        "p_ba": 0.213
+      },
+      {
+        "a": "AWS",
+        "b": "Next.js",
+        "n": 846,
+        "strength": 0.362,
+        "p_ab": 0.057,
+        "p_ba": 0.362
+      },
+      {
+        "a": "AWS",
+        "b": "S3",
+        "n": 1391,
+        "strength": 0.903,
+        "p_ab": 0.093,
+        "p_ba": 0.903
+      },
+      {
+        "a": "TypeScript",
+        "b": "Vue",
+        "n": 801,
+        "strength": 0.321,
+        "p_ab": 0.081,
+        "p_ba": 0.321
+      },
+      {
+        "a": "Docker",
+        "b": "Python",
+        "n": 3306,
+        "strength": 0.512,
+        "p_ab": 0.195,
+        "p_ba": 0.512
+      },
+      {
+        "a": "AWS",
+        "b": "Databricks",
+        "n": 584,
+        "strength": 0.454,
+        "p_ab": 0.039,
+        "p_ba": 0.454
+      },
+      {
+        "a": "Git",
+        "b": "MongoDB",
+        "n": 828,
+        "strength": 0.388,
+        "p_ab": 0.074,
+        "p_ba": 0.388
+      },
+      {
+        "a": "CSS",
+        "b": "HTML",
+        "n": 3575,
+        "strength": 0.806,
+        "p_ab": 0.766,
+        "p_ba": 0.806
+      },
+      {
+        "a": "Android",
+        "b": "React Native",
+        "n": 507,
+        "strength": 0.273,
+        "p_ab": 0.179,
+        "p_ba": 0.273
+      },
+      {
+        "a": "Docker",
+        "b": "Kubernetes",
+        "n": 3592,
+        "strength": 0.557,
+        "p_ab": 0.468,
+        "p_ba": 0.557
+      },
+      {
+        "a": "JavaScript",
+        "b": "Vue",
+        "n": 1989,
+        "strength": 0.796,
+        "p_ab": 0.143,
+        "p_ba": 0.796
+      },
+      {
+        "a": "ChatGPT",
+        "b": "JavaScript",
+        "n": 190,
+        "strength": 0.146,
+        "p_ab": 0.014,
+        "p_ba": 0.146
+      },
+      {
+        "a": "C#",
+        "b": "SQL Server",
+        "n": 586,
+        "strength": 0.406,
+        "p_ab": 0.224,
+        "p_ba": 0.406
+      },
+      {
+        "a": "Kotlin",
+        "b": "iOS",
+        "n": 448,
+        "strength": 0.263,
+        "p_ab": 0.157,
+        "p_ba": 0.263
+      },
+      {
+        "a": "AWS",
+        "b": "MySQL",
+        "n": 1846,
+        "strength": 0.521,
+        "p_ab": 0.124,
+        "p_ba": 0.521
+      },
+      {
+        "a": "PostgreSQL",
+        "b": "Ruby",
+        "n": 1036,
+        "strength": 0.367,
+        "p_ab": 0.139,
+        "p_ba": 0.367
+      },
+      {
+        "a": "Kubernetes",
+        "b": "Prometheus",
+        "n": 979,
+        "strength": 0.798,
+        "p_ab": 0.128,
+        "p_ba": 0.798
+      },
+      {
+        "a": "JavaScript",
+        "b": "Spring",
+        "n": 747,
+        "strength": 0.325,
+        "p_ab": 0.054,
+        "p_ba": 0.325
+      },
+      {
+        "a": "AWS",
+        "b": "Elasticsearch",
+        "n": 805,
+        "strength": 0.598,
+        "p_ab": 0.054,
+        "p_ba": 0.598
+      },
+      {
+        "a": "Docker",
+        "b": "GitHub Actions",
+        "n": 750,
+        "strength": 0.467,
+        "p_ab": 0.116,
+        "p_ba": 0.467
+      },
+      {
+        "a": "JavaScript",
+        "b": "Next.js",
+        "n": 2046,
+        "strength": 0.875,
+        "p_ab": 0.147,
+        "p_ba": 0.875
+      },
+      {
+        "a": "Express",
+        "b": "Node.js",
+        "n": 518,
+        "strength": 0.348,
+        "p_ab": 0.103,
+        "p_ba": 0.348
+      },
+      {
+        "a": "AWS",
+        "b": "GitHub Copilot",
+        "n": 451,
+        "strength": 0.336,
+        "p_ab": 0.03,
+        "p_ba": 0.336
+      },
+      {
+        "a": "AWS",
+        "b": "Ansible",
+        "n": 818,
+        "strength": 0.6,
+        "p_ab": 0.055,
+        "p_ba": 0.6
+      },
+      {
+        "a": "Git",
+        "b": "Jenkins",
+        "n": 1311,
+        "strength": 0.755,
+        "p_ab": 0.118,
+        "p_ba": 0.755
+      },
+      {
+        "a": "Java",
+        "b": "Kotlin",
+        "n": 897,
+        "strength": 0.526,
+        "p_ab": 0.143,
+        "p_ba": 0.526
+      },
+      {
+        "a": "GitHub Copilot",
+        "b": "Python",
+        "n": 487,
+        "strength": 0.362,
+        "p_ab": 0.029,
+        "p_ba": 0.362
+      },
+      {
+        "a": "PostgreSQL",
+        "b": "Rails",
+        "n": 1027,
+        "strength": 0.391,
+        "p_ab": 0.137,
+        "p_ba": 0.391
+      },
+      {
+        "a": "Angular",
+        "b": "TypeScript",
+        "n": 745,
+        "strength": 0.364,
+        "p_ab": 0.075,
+        "p_ba": 0.364
+      },
+      {
+        "a": "AWS",
+        "b": "Kotlin",
+        "n": 542,
+        "strength": 0.318,
+        "p_ab": 0.036,
+        "p_ba": 0.318
+      },
+      {
+        "a": "Lambda",
+        "b": "S3",
+        "n": 642,
+        "strength": 0.452,
+        "p_ab": 0.417,
+        "p_ba": 0.452
+      },
+      {
+        "a": "AWS",
+        "b": "MongoDB",
+        "n": 1186,
+        "strength": 0.555,
+        "p_ab": 0.08,
+        "p_ba": 0.555
+      },
+      {
+        "a": "C++",
+        "b": "Git",
+        "n": 655,
+        "strength": 0.207,
+        "p_ab": 0.059,
+        "p_ba": 0.207
+      },
+      {
+        "a": "C++",
+        "b": "Python",
+        "n": 1620,
+        "strength": 0.513,
+        "p_ab": 0.096,
+        "p_ba": 0.513
+      },
+      {
+        "a": ".NET",
+        "b": "C#",
+        "n": 1364,
+        "strength": 0.566,
+        "p_ab": 0.522,
+        "p_ba": 0.566
+      },
+      {
+        "a": "JavaScript",
+        "b": "MySQL",
+        "n": 1659,
+        "strength": 0.468,
+        "p_ab": 0.119,
+        "p_ba": 0.468
+      },
+      {
+        "a": "Git",
+        "b": "GitHub Actions",
+        "n": 1607,
+        "strength": 1.0,
+        "p_ab": 0.145,
+        "p_ba": 1.0
+      },
+      {
+        "a": "Android",
+        "b": "Kotlin",
+        "n": 750,
+        "strength": 0.44,
+        "p_ab": 0.265,
+        "p_ba": 0.44
+      },
+      {
+        "a": "Git",
+        "b": "PHP",
+        "n": 901,
+        "strength": 0.35,
+        "p_ab": 0.081,
+        "p_ba": 0.35
+      },
+      {
+        "a": "Python",
+        "b": "S3",
+        "n": 741,
+        "strength": 0.481,
+        "p_ab": 0.044,
+        "p_ba": 0.481
+      },
+      {
+        "a": "Express",
+        "b": "TypeScript",
+        "n": 409,
+        "strength": 0.275,
+        "p_ab": 0.041,
+        "p_ba": 0.275
+      },
+      {
+        "a": "CSS",
+        "b": "JavaScript",
+        "n": 3531,
+        "strength": 0.796,
+        "p_ab": 0.253,
+        "p_ba": 0.796
+      },
+      {
+        "a": "AWS",
+        "b": "Vue",
+        "n": 826,
+        "strength": 0.331,
+        "p_ab": 0.055,
+        "p_ba": 0.331
+      },
+      {
+        "a": "AWS",
+        "b": "Bash",
+        "n": 925,
+        "strength": 0.548,
+        "p_ab": 0.062,
+        "p_ba": 0.548
+      },
+      {
+        "a": "AWS",
+        "b": "PyTorch",
+        "n": 509,
+        "strength": 0.352,
+        "p_ab": 0.034,
+        "p_ba": 0.352
+      },
+      {
+        "a": "Git",
+        "b": "Prometheus",
+        "n": 630,
+        "strength": 0.513,
+        "p_ab": 0.057,
+        "p_ba": 0.513
+      },
+      {
+        "a": "Java",
+        "b": "Spring",
+        "n": 1763,
+        "strength": 0.768,
+        "p_ab": 0.281,
+        "p_ba": 0.768
+      },
+      {
+        "a": "ChatGPT",
+        "b": "SQL",
+        "n": 184,
+        "strength": 0.141,
+        "p_ab": 0.019,
+        "p_ba": 0.141
+      },
+      {
+        "a": "AWS",
+        "b": "Spring",
+        "n": 972,
+        "strength": 0.423,
+        "p_ab": 0.065,
+        "p_ba": 0.423
+      },
+      {
+        "a": "Git",
+        "b": "iOS",
+        "n": 703,
+        "strength": 0.246,
+        "p_ab": 0.063,
+        "p_ba": 0.246
+      },
+      {
+        "a": "JavaScript",
+        "b": "MongoDB",
+        "n": 1173,
+        "strength": 0.549,
+        "p_ab": 0.084,
+        "p_ba": 0.549
+      },
+      {
+        "a": "AWS",
+        "b": "GraphQL",
+        "n": 1037,
+        "strength": 0.43,
+        "p_ab": 0.07,
+        "p_ba": 0.43
+      },
+      {
+        "a": "AWS",
+        "b": "Jenkins",
+        "n": 1073,
+        "strength": 0.618,
+        "p_ab": 0.072,
+        "p_ba": 0.618
+      },
+      {
+        "a": "Databricks",
+        "b": "Python",
+        "n": 738,
+        "strength": 0.573,
+        "p_ab": 0.044,
+        "p_ba": 0.573
+      },
+      {
+        "a": "GraphQL",
+        "b": "PostgreSQL",
+        "n": 931,
+        "strength": 0.386,
+        "p_ab": 0.124,
+        "p_ba": 0.386
+      },
+      {
+        "a": "GitHub Actions",
+        "b": "Python",
+        "n": 759,
+        "strength": 0.472,
+        "p_ab": 0.045,
+        "p_ba": 0.472
+      },
+      {
+        "a": "Elasticsearch",
+        "b": "Python",
+        "n": 626,
+        "strength": 0.465,
+        "p_ab": 0.037,
+        "p_ba": 0.465
+      },
+      {
+        "a": "Kubernetes",
+        "b": "Terraform",
+        "n": 2330,
+        "strength": 0.556,
+        "p_ab": 0.303,
+        "p_ba": 0.556
+      },
+      {
+        "a": "GraphQL",
+        "b": "TypeScript",
+        "n": 1272,
+        "strength": 0.528,
+        "p_ab": 0.128,
+        "p_ba": 0.528
+      },
+      {
+        "a": "Azure",
+        "b": "OpenAI",
+        "n": 366,
+        "strength": 0.262,
+        "p_ab": 0.052,
+        "p_ba": 0.262
+      },
+      {
+        "a": "AWS",
+        "b": "GitHub Actions",
+        "n": 1041,
+        "strength": 0.648,
+        "p_ab": 0.07,
+        "p_ba": 0.648
+      },
+      {
+        "a": "C++",
+        "b": "Java",
+        "n": 744,
+        "strength": 0.236,
+        "p_ab": 0.119,
+        "p_ba": 0.236
+      },
+      {
+        "a": "Rails",
+        "b": "Ruby",
+        "n": 2081,
+        "strength": 0.792,
+        "p_ab": 0.736,
+        "p_ba": 0.792
+      },
+      {
+        "a": "Kafka",
+        "b": "Python",
+        "n": 1123,
+        "strength": 0.503,
+        "p_ab": 0.066,
+        "p_ba": 0.503
+      },
+      {
+        "a": "AWS",
+        "b": "Prometheus",
+        "n": 814,
+        "strength": 0.663,
+        "p_ab": 0.055,
+        "p_ba": 0.663
+      },
+      {
+        "a": "Grafana",
+        "b": "Python",
+        "n": 780,
+        "strength": 0.533,
+        "p_ab": 0.046,
+        "p_ba": 0.533
+      },
+      {
+        "a": "AWS",
+        "b": "OpenAI",
+        "n": 433,
+        "strength": 0.31,
+        "p_ab": 0.029,
+        "p_ba": 0.31
+      },
+      {
+        "a": "Azure",
+        "b": "GitHub Copilot",
+        "n": 352,
+        "strength": 0.262,
+        "p_ab": 0.05,
+        "p_ba": 0.262
+      },
+      {
+        "a": "Linux",
+        "b": "Python",
+        "n": 2308,
+        "strength": 0.467,
+        "p_ab": 0.136,
+        "p_ba": 0.467
+      },
+      {
+        "a": "Kafka",
+        "b": "Kubernetes",
+        "n": 1097,
+        "strength": 0.491,
+        "p_ab": 0.143,
+        "p_ba": 0.491
+      },
+      {
+        "a": "Grafana",
+        "b": "Kubernetes",
+        "n": 1036,
+        "strength": 0.708,
+        "p_ab": 0.135,
+        "p_ba": 0.708
+      },
+      {
+        "a": "ChatGPT",
+        "b": "Git",
+        "n": 200,
+        "strength": 0.154,
+        "p_ab": 0.018,
+        "p_ba": 0.154
+      },
+      {
+        "a": "Databricks",
+        "b": "SQL",
+        "n": 685,
+        "strength": 0.532,
+        "p_ab": 0.07,
+        "p_ba": 0.532
+      },
+      {
+        "a": "AWS",
+        "b": "Angular",
+        "n": 791,
+        "strength": 0.386,
+        "p_ab": 0.053,
+        "p_ba": 0.386
+      },
+      {
+        "a": "Node.js",
+        "b": "React",
+        "n": 640,
+        "strength": 0.342,
+        "p_ab": 0.128,
+        "p_ba": 0.342
+      },
+      {
+        "a": ".NET",
+        "b": "SQL",
+        "n": 978,
+        "strength": 0.406,
+        "p_ab": 0.1,
+        "p_ba": 0.406
+      },
+      {
+        "a": "Next.js",
+        "b": "TypeScript",
+        "n": 1468,
+        "strength": 0.628,
+        "p_ab": 0.148,
+        "p_ba": 0.628
+      },
+      {
+        "a": "Elasticsearch",
+        "b": "PostgreSQL",
+        "n": 647,
+        "strength": 0.481,
+        "p_ab": 0.086,
+        "p_ba": 0.481
+      },
+      {
+        "a": "Git",
+        "b": "Grafana",
+        "n": 714,
+        "strength": 0.488,
+        "p_ab": 0.064,
+        "p_ba": 0.488
+      },
+      {
+        "a": "MySQL",
+        "b": "PHP",
+        "n": 962,
+        "strength": 0.374,
+        "p_ab": 0.271,
+        "p_ba": 0.374
+      },
+      {
+        "a": "AWS",
+        "b": "Express",
+        "n": 464,
+        "strength": 0.312,
+        "p_ab": 0.031,
+        "p_ba": 0.312
+      },
+      {
+        "a": "JavaScript",
+        "b": "React",
+        "n": 1539,
+        "strength": 0.823,
+        "p_ab": 0.11,
+        "p_ba": 0.823
+      },
+      {
+        "a": "JavaScript",
+        "b": "OpenAI",
+        "n": 412,
+        "strength": 0.294,
+        "p_ab": 0.03,
+        "p_ba": 0.294
+      }
+    ],
+    "categories": [
+      "ai_llm",
+      "backend",
+      "cloud_services",
+      "data_db",
+      "devops",
+      "frontend",
+      "language",
+      "mobile"
+    ]
+  }
+}

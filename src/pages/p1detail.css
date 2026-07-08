@@ -1,0 +1,173 @@
+/* ============ 1번 이미지 · 잡 상세 화면 ============ */
+.p1d {
+  --purple: #6a6cf0;
+  --ink: #20242e;
+  font-family: 'Poppins', sans-serif;
+  color: var(--ink);
+  position: relative;
+}
+
+/* 상단 라벤더 그라데이션 */
+.p1d__topglow {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 340px;
+  background: linear-gradient(180deg, #dcdcf5 0%, rgba(255, 255, 255, 0) 100%);
+  z-index: 0;
+}
+
+.p1d__inner {
+  position: relative;
+  z-index: 1;
+  padding: 6px 22px 40px;
+}
+
+.p1d__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0 10px;
+}
+.p1d__hicon {
+  width: 22px;
+  display: flex;
+  align-items: center;
+  color: #20242e;
+}
+.p1d__htitle {
+  font-size: 18px;
+  font-weight: 600;
+}
+.p1d__hright {
+  display: flex;
+  gap: 16px;
+  color: #20242e;
+}
+
+.p1d__brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 14px;
+}
+.p1d__logo {
+  width: 84px;
+  height: 84px;
+  border-radius: 22px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 12px 28px rgba(60, 60, 110, 0.14);
+}
+.p1d__role {
+  font-size: 21px;
+  font-weight: 600;
+  margin-top: 16px;
+}
+.p1d__co {
+  font-size: 14px;
+  color: #7a7f8c;
+  margin-top: 2px;
+}
+
+/* 정보 pill 바 */
+.p1d__pills {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  border-radius: 16px;
+  padding: 15px 10px;
+  margin-top: 22px;
+  box-shadow: 0 8px 24px rgba(60, 60, 110, 0.08);
+}
+.p1d__pill {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-size: 13px;
+  color: #3a3f4a;
+}
+.p1d__pill svg {
+  color: var(--purple);
+}
+.p1d__pill + .p1d__pill {
+  border-left: 1px solid #eceef2;
+}
+
+/* 탭 */
+.p1d__tabs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 24px;
+  padding: 0 4px;
+}
+.p1d__tab {
+  font-size: 14px;
+  color: #9a9fac;
+  padding-bottom: 10px;
+}
+.p1d__tab--active {
+  color: #20242e;
+  font-weight: 600;
+  border-bottom: 3px solid var(--purple);
+}
+
+/* 리뷰 카드 */
+.p1d__review {
+  background: #fff;
+  border-radius: 22px;
+  margin-top: 20px;
+  padding: 24px 20px 30px;
+  box-shadow: 0 10px 30px rgba(60, 60, 110, 0.08);
+  text-align: center;
+}
+.p1d__review h3 {
+  font-size: 17px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.p1d__gauge {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  margin: 6px auto 8px;
+}
+.p1d__gauge-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.p1d__gauge-pct {
+  font-size: 46px;
+  font-weight: 700;
+  letter-spacing: -1px;
+}
+.p1d__gauge-lbl {
+  font-size: 13px;
+  color: #7a7f8c;
+  margin-top: -2px;
+}
+.p1d__stars {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 6px;
+}
+.p1d__rating {
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 10px;
+}
+.p1d__based {
+  font-size: 12.5px;
+  color: #9a9fac;
+  margin-top: 2px;
+}

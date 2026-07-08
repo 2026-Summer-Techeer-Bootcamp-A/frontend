@@ -1,0 +1,118 @@
+/* ============ 1번 이미지 · 잡 리스트 화면 ============ */
+.p1l {
+  --purple: #6a6cf0;
+  --ink: #20242e;
+  font-family: 'Poppins', sans-serif;
+  color: var(--ink);
+  padding: 6px 20px 0;
+}
+
+.p1l__search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border: 1px solid #eef0f4;
+  border-radius: 16px;
+  padding: 14px 14px 14px 18px;
+  box-shadow: 0 8px 22px rgba(40, 40, 90, 0.06);
+  margin-top: 4px;
+}
+.p1l__search-input {
+  flex: 1;
+  color: #9a9fac;
+  font-size: 14.5px;
+}
+.p1l__search-filter {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #f4f4f8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6a6cf0;
+}
+
+.p1l__count {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 22px 0 14px;
+}
+
+.p1lcard {
+  position: relative;
+  background: #fff;
+  border-radius: 20px;
+  padding: 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 8px 26px rgba(50, 50, 100, 0.07);
+}
+.p1lcard__top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.p1lcard__logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+}
+.p1lcard__role {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+}
+.p1lcard__co {
+  font-size: 13.5px;
+  color: #7a7f8c;
+  margin-top: 1px;
+}
+.p1lcard__bm {
+  margin-left: auto;
+  color: #c3c6d0;
+  align-self: flex-start;
+}
+.p1lcard__tags {
+  display: flex;
+  gap: 9px;
+  margin: 15px 0;
+  flex-wrap: nowrap;
+}
+.p1lcard__tag {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #565b66;
+  background: #f3f3f8;
+  border-radius: 9px;
+  padding: 8px 14px;
+  white-space: nowrap;
+}
+.p1lcard__divider {
+  border-top: 1px solid #f0f0f4;
+  margin: 4px 0 14px;
+}
+.p1lcard__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.p1lcard__loc {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  color: #7a7f8c;
+}
+.p1lcard__salary b {
+  font-size: 16px;
+  font-weight: 600;
+}
+.p1lcard__salary span {
+  font-size: 11.5px;
+  color: #9a9fac;
+}

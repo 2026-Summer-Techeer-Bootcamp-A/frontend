@@ -1,0 +1,566 @@
+/* ================= ORBIT PC 대시보드 ================= */
+.orbit-stage {
+  --blue: #7f9fd6;
+  --blue-dark: #6f90cf;
+  --blue-light: #c3d2ee;
+  --coral: #f27c7c;
+  --coral-light: #f8c2c2;
+  --ink: #191b20;
+  --muted: #8b8e98;
+  --ui: #e8e9ef;
+  --card: #ffffff;
+  font-family: 'Poppins', sans-serif;
+  color: var(--ink);
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  background: linear-gradient(
+    120deg,
+    #f6907e 0%,
+    #f7a985 16%,
+    #f4c98e 30%,
+    #efe3a2 46%,
+    #cfe1bd 60%,
+    #a9cbdf 78%,
+    #83aed4 100%
+  );
+}
+
+.orbit-device {
+  position: relative;
+  width: 1500px;
+  max-width: 100%;
+  background: #0c0c0e;
+  border-radius: 44px;
+  padding: 14px;
+  box-shadow: 0 40px 90px -30px rgba(20, 20, 40, 0.55);
+}
+/* 상단 노치 탭 2개 (이미지 참고: 좌측-중앙, 위로 살짝 돌출) */
+.orbit-device::before,
+.orbit-device::after {
+  content: '';
+  position: absolute;
+  top: -11px;
+  height: 24px;
+  background: #0c0c0e;
+  border-radius: 7px 7px 0 0;
+  z-index: 0;
+}
+.orbit-device::before {
+  left: 150px;
+  width: 34px;
+}
+.orbit-device::after {
+  left: 192px;
+  width: 58px;
+}
+.orbit-ui {
+  background: var(--ui);
+  border-radius: 32px;
+  padding: 22px 26px 26px;
+  overflow: hidden;
+}
+
+/* ---------- 헤더 ---------- */
+.ob-header {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+}
+.ob-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+.ob-logo svg {
+  color: #191b20;
+}
+.ob-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 auto;
+}
+.ob-nav a {
+  font-size: 14.5px;
+  color: #6a6d77;
+  padding: 10px 16px;
+  border-radius: 22px;
+  font-weight: 500;
+}
+.ob-nav a.active {
+  background: #fff;
+  color: #191b20;
+  box-shadow: 0 6px 16px rgba(40, 40, 70, 0.1);
+}
+.ob-header__right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ob-iconbtn {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #191b20;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(40, 40, 70, 0.06);
+}
+.ob-iconbtn .dot {
+  position: absolute;
+  top: 11px;
+  right: 13px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f04a4a;
+  border: 1.5px solid #fff;
+}
+.ob-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8a7461, #5c4a3b);
+  object-fit: cover;
+}
+
+/* ---------- 본문 (레일 + 메인) ---------- */
+.ob-body {
+  display: flex;
+  gap: 18px;
+  margin-top: 18px;
+}
+.ob-rail {
+  width: 52px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding-top: 4px;
+}
+.ob-rail__btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4a4d57;
+  box-shadow: 0 3px 8px rgba(40, 40, 70, 0.05);
+}
+.ob-rail__btn--active {
+  background: #17181c;
+  color: #fff;
+}
+.ob-rail__sp {
+  flex: 1;
+}
+
+.ob-main {
+  flex: 1;
+  min-width: 0;
+}
+.ob-title {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.6px;
+  margin-bottom: 18px;
+}
+
+/* Performance Overview 바 */
+.ob-perf {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 18px;
+}
+.ob-perf__title b {
+  font-size: 18px;
+  font-weight: 600;
+}
+.ob-perf__title p {
+  font-size: 13px;
+  color: #82858f;
+  margin-top: 2px;
+}
+.ob-avatars {
+  display: flex;
+  align-items: center;
+  padding-left: 6px;
+}
+.ob-av {
+  position: relative;
+  margin-left: -12px;
+}
+.ob-av:first-child {
+  margin-left: 0;
+}
+.ob-av__img {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 3px solid var(--ui);
+  display: block;
+}
+.ob-av__badge {
+  position: absolute;
+  bottom: -3px;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--ui);
+}
+.ob-perf__actions {
+  margin-left: auto;
+  display: flex;
+  gap: 10px;
+}
+.ob-perf__actions .ob-iconbtn {
+  width: 44px;
+  height: 44px;
+  background: #fff;
+  color: #4a4d57;
+}
+
+/* ---------- 카드 그리드 ---------- */
+.ob-grid-top {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr 1fr;
+  gap: 16px;
+}
+.ob-grid-bottom {
+  display: grid;
+  grid-template-columns: 1.1fr 1.35fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+.ob-card {
+  background: var(--card);
+  border-radius: 22px;
+  padding: 20px;
+}
+.ob-card--soft {
+  background: #e3e4ea;
+}
+.ob-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.ob-card__head h3 {
+  font-size: 17px;
+  font-weight: 600;
+}
+.ob-arrow {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid #e3e4e8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #33353c;
+}
+.ob-drop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid #e6e7eb;
+  border-radius: 12px;
+  padding: 9px 14px;
+  color: #33353c;
+}
+
+/* ---------- Statistic 막대차트 ---------- */
+.ob-chart {
+  position: relative;
+  height: 232px;
+  padding-top: 30px;
+}
+.ob-chart__grid {
+  position: absolute;
+  inset: 30px 0 22px 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.ob-chart__grid span {
+  border-top: 1px solid #eeeef1;
+  height: 0;
+}
+.ob-bars {
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  z-index: 1;
+}
+.ob-bar {
+  flex: 1;
+  background: #1a1b1f;
+  border-radius: 3px;
+  min-height: 4px;
+}
+.ob-marker {
+  position: absolute;
+  z-index: 3;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.ob-marker__label {
+  background: #17181c;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 9px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+.ob-marker__line {
+  width: 2px;
+  flex: 1;
+}
+.ob-marker__dot {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+/* ---------- Sales 게이지 ---------- */
+.ob-gauge {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.ob-gauge__num {
+  position: absolute;
+  top: 92px;
+  left: 0;
+  right: 0;
+  text-align: center;
+}
+.ob-gauge__num b {
+  font-size: 42px;
+  font-weight: 700;
+  letter-spacing: -1px;
+}
+.ob-gauge__num span {
+  display: block;
+  font-size: 13px;
+  color: #82858f;
+  margin-top: -2px;
+}
+.ob-gauge__foot {
+  border-top: 1px solid #eeeef1;
+  margin-top: 8px;
+  padding-top: 14px;
+  width: 100%;
+}
+.ob-gauge__foot b {
+  font-size: 15px;
+  font-weight: 600;
+}
+.ob-gauge__foot p {
+  font-size: 12.5px;
+  color: #85888f;
+  margin-top: 4px;
+  line-height: 1.45;
+}
+
+/* ---------- Sales 와플 ---------- */
+.ob-waffle-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ob-waffle-top b {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -1px;
+}
+.ob-chip {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4a4d57;
+  background: #eef0f3;
+  border-radius: 8px;
+  padding: 3px 8px;
+}
+.ob-waffle-sub {
+  font-size: 13px;
+  color: #85888f;
+  margin: 2px 0 16px;
+}
+.ob-waffles {
+  display: flex;
+  gap: 22px;
+}
+.ob-waffle {
+  flex: 1;
+}
+.ob-waffle__grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+}
+.ob-waffle__cell {
+  aspect-ratio: 1;
+  border-radius: 5px;
+}
+.ob-waffle__legend {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  font-size: 13px;
+}
+.ob-waffle__legend b {
+  font-weight: 600;
+}
+.ob-waffle__legend span {
+  color: #85888f;
+}
+
+/* ---------- Employment 도넛 ---------- */
+.ob-donuts {
+  display: flex;
+  gap: 10px;
+  justify-content: space-around;
+}
+.ob-donut {
+  position: relative;
+  width: 210px;
+  height: 210px;
+}
+.ob-donut__center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.ob-donut__center b {
+  font-size: 34px;
+  font-weight: 700;
+  color: #2a2c33;
+}
+.ob-donut__center span {
+  font-size: 14px;
+  color: #5a5d66;
+  margin-top: -4px;
+}
+.ob-donut__lbl {
+  position: absolute;
+  font-size: 13px;
+  font-weight: 600;
+  color: #33353c;
+}
+.ob-donut__seglbl {
+  position: absolute;
+  font-size: 13px;
+  color: #fff;
+  font-weight: 500;
+}
+.ob-bubble {
+  position: absolute;
+  background: #fff;
+  border-radius: 12px;
+  padding: 3px 9px;
+  font-size: 12.5px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(40, 40, 70, 0.1);
+}
+
+/* ---------- 테이블 ---------- */
+.ob-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid #e6e7eb;
+  border-radius: 12px;
+  padding: 9px 14px;
+  color: #9a9da5;
+  font-size: 14px;
+  width: 230px;
+}
+.ob-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.ob-table th {
+  text-align: left;
+  font-size: 13px;
+  font-weight: 500;
+  color: #8b8e98;
+  padding: 12px 8px;
+  border-bottom: 1px solid #ebecef;
+}
+.ob-table th:last-child,
+.ob-table td:last-child {
+  text-align: right;
+}
+.ob-table td {
+  padding: 14px 8px;
+  font-size: 14px;
+  border-bottom: 1px solid #f1f2f4;
+}
+.ob-table tr:last-child td {
+  border-bottom: none;
+}
+.ob-td-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
+}
+.ob-td-name .av {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+}
+.ob-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.ob-status .d {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.ob-more {
+  color: #a6a9b0;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
