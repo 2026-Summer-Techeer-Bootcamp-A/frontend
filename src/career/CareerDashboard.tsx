@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { MapPin, Calendar, SlidersHorizontal, Check } from 'lucide-react'
 import PhoneFrame from '../components/PhoneFrame'
 import CompanyLogo from './CompanyLogo'
 import CareerTabBar from './CareerTabBar'
-import { PageTransition, StatHero, CoverageHistogram, PulseCard, SwipePager, SectionHeader, JobCardCompact, CardModeToggle, ActivityRings, RingLegend, matchGrad, type CardMode, type PulseItem, type RingMetric } from './kit'
+import { PageTransition, StatHero, CoverageHistogram, PulseCard, SwipePager, SectionHeader, JobCardCompact, CardModeToggle, ActivityRings, RingLegend, ResumeEmptyCard, matchGrad, type CardMode, type PulseItem, type RingMetric } from './kit'
 import { IndustryFitRadar, TechChainRoadmap } from './insights'
 import { THEME, themeVars } from './themes'
 import data from '../data/careerData.json'
@@ -106,6 +106,34 @@ export function JobCard({ p, onOpen }: { p: (typeof data.postings)[number]; onOp
   )
 }
 
+export function JobCardGeneric({ p, onOpen }: { p: (typeof data.postings)[number]; onOpen: () => void }) {
+  const dd = ddayInfo(p.closeDate)
+  return (
+    <div className="cr-card" onClick={onOpen}>
+      <div className="cr-card__top">
+        <CompanyLogo logo={p.logo} name={p.company} size={44} radius={12} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="cr-card__role">{p.title}</div>
+          <div className="cr-card__co">
+            <span className="cr-card__coname">{p.company}</span>
+            {p.tier && <span className={`cr-tier ${p.tier === '대기업' ? 't1' : p.tier === '중견' ? 't2' : 't3'}`}>{p.tier}</span>}
+            <span className="cr-tag exp">{careerLabel(p.careerMin, p.careerMax)}</span>
+          </div>
+        </div>
+      </div>
+      <div className="cr-card__foot">
+        <span style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>
+          <MapPin size={14} /> <span className="cr-ellip">{p.region || 'Remote'}</span>
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 5, flex: 'none' }}>
+          <Calendar size={14} /> {p.postDate}
+          {dd && <span className="cr-dday">{dd.label} D-{dd.d}</span>}
+        </span>
+      </div>
+    </div>
+  )
+}
+
 const SORTS: { key: Sort; label: string }[] = [
   { key: 'match', label: '최적순 (매칭도)' },
   { key: 'tier', label: '기업 규모순 (대기업 우선)' },
@@ -116,6 +144,8 @@ const SORTS: { key: Sort; label: string }[] = [
 export default function CareerDashboard() {
   const t = THEME
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const hasResume = !searchParams.get('empty')
   const [pool, setPool] = useState<Pool>('국내')
   const [sort, setSort] = useState<Sort>('match')
   const [hideExp, setHideExp] = useState(false)
@@ -135,6 +165,11 @@ export default function CareerDashboard() {
     return arr
   }, [pool, sort, hideExp])
 
+  const genericList = useMemo(
+    () => [...data.postings.filter((p) => p.pool === pool)].sort((a, b) => (b.postDate || '').localeCompare(a.postDate || '')),
+    [pool],
+  )
+
   const cov = data.resume.coveragePct
   const RINGS: RingMetric[] = [
     { key: 'cov', label: '커버리지', pct: cov, color: 'var(--c-accent)' },
@@ -153,62 +188,74 @@ export default function CareerDashboard() {
           <PageTransition type="fade">
             {/* 1막 — 히어로: 포지셔닝 점수 */}
             <div className="cr-greet-line">좋은 아침이에요 👋 <b>리버</b>님</div>
-            <StatHero
-              value={cov} title="시장 커버리지"
-              rings={<ActivityRings metrics={RINGS} />}
-              legend={<RingLegend metrics={RINGS} />}
-            />
+            <div className={hasResume ? undefined : 'cr-lockwrap'}>
+              <div className={hasResume ? undefined : 'cr-lockwrap__blur'} aria-hidden={hasResume ? undefined : true}>
+                <StatHero
+                  value={cov} title="시장 커버리지"
+                  rings={<ActivityRings metrics={RINGS} />}
+                  legend={<RingLegend metrics={RINGS} />}
+                />
 
-            {/* 2막 — 포지셔닝 인사이트 (스와이프 5페이지) */}
-            <div className="cr-widget" style={{ marginTop: 12, padding: '15px 16px', marginBottom: 14 }}>
-              <SwipePager pages={[
-                {
-                  key: 'cov',
-                  node: (
-                    <>
-                      <div className="scr-card__title" style={{ marginBottom: 6 }}>커버리지 분포 · 배우면?</div>
-                      <CoverageHistogram postings={histJobs} mySkills={RESUME} gap={WHATIF} />
-                    </>
-                  ),
-                },
-                {
-                  key: 'pulse',
-                  node: (
-                    <>
-                      <div className="scr-card__title" style={{ marginBottom: 12 }}>요즘의 시장 <span style={{ fontSize: 11, color: 'var(--c-muted)', fontWeight: 500 }}>국내 데이터 근거</span></div>
-                      <PulseCard items={PULSE} />
-                    </>
-                  ),
-                },
-                {
-                  key: 'radar',
-                  node: (
-                    <>
-                      <div className="scr-card__title" style={{ marginBottom: 6 }}>업종 적합도 <span style={{ fontSize: 11, color: 'var(--c-muted)', fontWeight: 500 }}>보유 기술 기준 실측</span></div>
-                      <IndustryFitRadar />
-                    </>
-                  ),
-                },
-                {
-                  key: 'roadmap',
-                  node: (
-                    <>
-                      <div className="scr-card__title" style={{ marginBottom: 6 }}>다음 스텝 로드맵 <span style={{ fontSize: 11, color: 'var(--c-muted)', fontWeight: 500 }}>내 스택과 강하게 얽힌 순</span></div>
-                      <TechChainRoadmap />
-                    </>
-                  ),
-                },
-              ]} />
+                {/* 2막 — 포지셔닝 인사이트 (스와이프 5페이지) */}
+                <div className="cr-widget" style={{ marginTop: 12, padding: '15px 16px', marginBottom: 14 }}>
+                  <SwipePager pages={[
+                    {
+                      key: 'cov',
+                      node: (
+                        <>
+                          <div className="scr-card__title" style={{ marginBottom: 6 }}>매칭 분포</div>
+                          <CoverageHistogram
+                            postings={histJobs} mySkills={RESUME} gap={WHATIF}
+                            poolLabel={pool === '국내' ? '국내' : '글로벌'}
+                          />
+                        </>
+                      ),
+                    },
+                    {
+                      key: 'pulse',
+                      node: (
+                        <>
+                          <div className="scr-card__title" style={{ marginBottom: 12 }}>요즘의 시장 <span style={{ fontSize: 11, color: 'var(--c-muted)', fontWeight: 500 }}>국내 데이터 근거</span></div>
+                          <PulseCard items={PULSE} />
+                        </>
+                      ),
+                    },
+                    {
+                      key: 'radar',
+                      node: (
+                        <>
+                          <div className="scr-card__title" style={{ marginBottom: 6 }}>업종 적합도 <span style={{ fontSize: 11, color: 'var(--c-muted)', fontWeight: 500 }}>보유 기술 기준 실측</span></div>
+                          <IndustryFitRadar />
+                        </>
+                      ),
+                    },
+                    {
+                      key: 'roadmap',
+                      node: (
+                        <>
+                          <div className="scr-card__title" style={{ marginBottom: 6 }}>다음 스텝 로드맵 <span style={{ fontSize: 11, color: 'var(--c-muted)', fontWeight: 500 }}>내 스택과 강하게 얽힌 순</span></div>
+                          <TechChainRoadmap />
+                        </>
+                      ),
+                    },
+                  ]} />
+                </div>
+
+                {/* 공고 현황 2열 컴팩트 */}
+                <div className="cr-minstat">
+                  <div><b>{mk.open.toLocaleString()}</b><span>전체 공고</span></div>
+                  <div><b className="warn">{mk.soon.toLocaleString()}</b><span>곧 마감</span></div>
+                </div>
+              </div>
+              {!hasResume && (
+                <div className="cr-lockwrap__cta">
+                  <ResumeEmptyCard totalPostings={data.meta.totalPostings} onSubmit={() => navigate('/resume/submit')} />
+                </div>
+              )}
             </div>
 
-            {/* 공고 현황 2열 컴팩트 */}
-            <div className="cr-minstat">
-              <div><b>{mk.open.toLocaleString()}</b><span>전체 공고</span></div>
-              <div><b className="warn">{mk.soon.toLocaleString()}</b><span>곧 마감</span></div>
-            </div>
-
-            {/* 맞춤 공고 */}
-            <SectionHeader title="맞춤 공고" />
+            {/* 맞춤 공고 / 채용 공고 */}
+            <SectionHeader title={hasResume ? '맞춤 공고' : '채용 공고'} />
             <div className="cr-secbar" style={{ margin: '0 0 14px' }}>
               <div className="cr-pooltoggle cr-pooltoggle--slim">
                 {(['국내', '국외'] as Pool[]).map((pv) => (
@@ -218,12 +265,22 @@ export default function CareerDashboard() {
                 ))}
               </div>
               <button className="cr-morebtn" onClick={() => navigate('/jobs')}>더 보기 ›</button>
-              <button className="cr-filterbtn" onClick={() => setFilterOpen(true)}>
-                <SlidersHorizontal size={16} /> 필터
-              </button>
+              {hasResume && (
+                <button className="cr-filterbtn" onClick={() => setFilterOpen(true)}>
+                  <SlidersHorizontal size={16} /> 필터
+                </button>
+              )}
             </div>
 
-            {list.length === 0 ? (
+            {!hasResume ? (
+              genericList.length === 0 ? (
+                <div className="cr-empty">공고가 없어요.</div>
+              ) : (
+                genericList.slice(0, visible).map((p) => (
+                  <JobCardGeneric key={p.id} p={p} onOpen={() => navigate(`/job/${data.postings.indexOf(p)}`)} />
+                ))
+              )
+            ) : list.length === 0 ? (
               <div className="cr-empty">신입 가능(경력 무관) 공고가 이 조건엔 없어요.</div>
             ) : cardMode === 'compact' ? (
               list.slice(0, visible).map((p) => (

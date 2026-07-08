@@ -119,6 +119,19 @@ export function RingLegend({ metrics }: { metrics: RingMetric[] }) {
   )
 }
 
+/* ---------- 1b. 이력서 없음 Empty State ---------- */
+export function ResumeEmptyCard({ totalPostings, onSubmit }: { totalPostings: number; onSubmit: () => void }) {
+  return (
+    <div className="kit-hero kit-hero--empty">
+      <div className="kit-hero__label">아직 점수가 없어요</div>
+      <div className="kit-hero__sub" style={{ marginTop: 6, maxWidth: '100%' }}>
+        이력서를 등록하면 <b>{totalPostings.toLocaleString()}건</b> 공고 중 내 위치를 계산해드려요
+      </div>
+      <button className="kit-hero__cta" onClick={onSubmit}>이력서 등록하기</button>
+    </div>
+  )
+}
+
 /* ---------- 2. 커버리지 What-if 시뮬레이터 ---------- */
 type Tech = { tech: string; count: number }
 export function CoverageWhatIf({
@@ -157,8 +170,8 @@ export function CoverageWhatIf({
 /* ---------- 2b. 커버리지 분포 히스토그램 + What-if ---------- */
 export type HistJob = { techs: string[]; held: number; total: number }
 export function CoverageHistogram({
-  postings, mySkills, gap, threshold = 50,
-}: { postings: HistJob[]; mySkills: string[]; gap: Tech[]; threshold?: number }) {
+  postings, mySkills, gap, poolLabel, threshold = 50,
+}: { postings: HistJob[]; mySkills: string[]; gap: Tech[]; poolLabel: string; threshold?: number }) {
   const [added, setAdded] = useState<string[]>([])
   const BINS = 14
   const pctOf = (p: HistJob) => {
@@ -167,12 +180,18 @@ export function CoverageHistogram({
   }
   const hist = new Array(BINS).fill(0)
   postings.forEach((p) => { hist[Math.min(BINS - 1, Math.floor((pctOf(p) / 100) * BINS))]++ })
+  const total = postings.length
   const reached = postings.filter((p) => pctOf(p) >= threshold).length
   const baseReached = postings.filter((p) => (p.total ? Math.round((100 * p.held) / p.total) : 0) >= threshold).length
   const max = Math.max(...hist, 1)
   const toggle = (t: string) => setAdded((a) => (a.includes(t) ? a.filter((x) => x !== t) : [...a, t]))
   return (
     <div className="kit-hist">
+      <div className="kit-hist__headline">
+        {poolLabel} 공고 {total}건 중 <b>{reached}건</b>에 지원 가능해요
+        {reached > baseReached && <span className="kit-hist__delta">+{reached - baseReached}</span>}
+        {total < 50 && <div className="kit-hist__sample">표본 {total}건 — 참고용</div>}
+      </div>
       <div className="kit-hist__chart">
         <div className="kit-hist__thr" style={{ left: `${threshold}%` }} />
         {hist.map((h, i) => {
@@ -185,12 +204,8 @@ export function CoverageHistogram({
         })}
       </div>
       <div className="kit-hist__axis"><span>0%</span><span className="thr">문턱 {threshold}%</span><span>100%</span></div>
-      <div className="kit-hist__cap">
-        도달 공고 <b>{reached}개</b>
-        {reached > baseReached && <span className="kit-hist__delta">+{reached - baseReached}</span>}
-        <span className="kit-hist__sub"> · 매칭 ≥{threshold}%</span>
-      </div>
-      <div className="kit-whatif__chips" style={{ marginTop: 10 }}>
+      <div className="kit-hist__whatif-label">이 기술을 배우면?</div>
+      <div className="kit-whatif__chips" style={{ marginTop: 6 }}>
         {gap.map((g) => (
           <button key={g.tech} className={`kit-whatif__chip${added.includes(g.tech) ? ' on' : ''}`}
             onClick={() => toggle(g.tech)}>

@@ -56,7 +56,7 @@ export default function KitShowcase() {
       </Demo>
 
       <Demo label="커버리지 분포 히스토그램 — 기회기술 탭하면 분포 이동 (50% 문턱)">
-        <CoverageHistogram postings={HIST} mySkills={RESUME} gap={gap} />
+        <CoverageHistogram postings={HIST} mySkills={RESUME} gap={gap} poolLabel="국내" />
       </Demo>
 
       <Demo label="기술 스택 아이콘 (TechIcon) — 브랜드색 이니셜 배지">

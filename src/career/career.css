@@ -643,6 +643,23 @@
   filter: brightness(0.94);
 }
 
+/* 이력서 없음 — 개인화 섹션 블러 잠금 */
+.cr-lockwrap { position: relative; }
+.cr-lockwrap__blur {
+  filter: blur(7px);
+  opacity: 0.5;
+  pointer-events: none;
+  user-select: none;
+}
+.cr-lockwrap__cta {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 18px;
+}
+
 /* 공고 카드 (시안 B) */
 .cr-card {
   background: var(--c-card);

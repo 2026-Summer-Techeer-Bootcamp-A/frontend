@@ -4,6 +4,7 @@ import { LayoutGrid, X } from 'lucide-react'
 
 const ROUTES = [
   { to: '/', label: '홈' },
+  { to: '/?empty=1', label: '홈 (이력서 없음)' },
   { to: '/market', label: '시장' },
   { to: '/map', label: '지도' },
   { to: '/resume', label: '마이' },

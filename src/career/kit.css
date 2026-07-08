@@ -101,6 +101,26 @@
   color: var(--c-ink);
   font-weight: 700;
 }
+.kit-hero--empty {
+  background: var(--c-card);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: var(--e2);
+  padding: 22px 20px;
+  text-align: center;
+}
+.kit-hero--empty .kit-hero__sub { max-width: 100%; margin-left: auto; margin-right: auto; }
+.kit-hero__cta {
+  margin-top: 16px;
+  width: 100%;
+  background: var(--c-accent);
+  color: #fff;
+  border-radius: 14px;
+  padding: 14px;
+  font-weight: 700;
+  font-size: 15px;
+}
+.kit-hero__cta:active { transform: scale(0.98); }
 
 /* ---- 2. CoverageWhatIf ---- */
 .kit-whatif {
@@ -564,10 +584,11 @@
 .kit-hist__thr { position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px dashed #9aa4b4; z-index: 2; }
 .kit-hist__axis { display: flex; justify-content: space-between; font-size: 10px; color: var(--c-muted); margin-top: 5px; }
 .kit-hist__axis .thr { font-weight: 600; }
-.kit-hist__cap { font-size: 13px; color: var(--c-muted); margin-top: 9px; }
-.kit-hist__cap b { color: var(--c-ink); font-weight: 800; font-size: 15px; font-variant-numeric: tabular-nums; }
+.kit-hist__headline { font-size: 14px; color: var(--c-ink); line-height: 1.45; margin-bottom: 10px; }
+.kit-hist__headline b { font-weight: 800; font-size: 15px; font-variant-numeric: tabular-nums; }
 .kit-hist__delta { color: #218a58; font-weight: 800; margin-left: 5px; font-size: 12px; }
-.kit-hist__sub { font-size: 11px; }
+.kit-hist__sample { font-size: 11px; color: var(--c-muted); margin-top: 3px; }
+.kit-hist__whatif-label { font-size: 12px; color: var(--c-muted); font-weight: 600; margin-top: 12px; }
 
 /* ---- SwipePager ---- */
 .kit-pager { overflow: hidden; touch-action: pan-y; }
