@@ -3,7 +3,7 @@ import { FileText, Bookmark, MapPin, Briefcase } from 'lucide-react'
 import { BottomSheet, MenuRow, MiniScore, matchGrad } from './kit'
 import CompanyLogo from './CompanyLogo'
 import data from '../data/careerData.json'
-import { useResumesState } from './state'
+import { useResumesState, useSavedJobs, jobKey } from './state'
 
 type Job = (typeof data.postings)[number]
 const tierClass = (t: string | null) => (t === '대기업' ? 't1' : t === '중견' ? 't2' : 't3')
@@ -19,6 +19,7 @@ export default function JobSheet({
 }: { job: Job | null; open: boolean; onClose: () => void; onDetail: () => void }) {
   const { activeResume } = useResumesState()
   const activeSkills = activeResume ? activeResume.skills : []
+  const { savedKeys, toggle } = useSavedJobs()
 
   // 닫히는 애니메이션 도중에도 내용이 유지되도록 마지막 값을 붙잡아 둔다.
   // job을 바로 null로 지우면 시트가 내려가는 동안 내용이 먼저 사라져 "순간이동"처럼 보인다.
@@ -61,7 +62,11 @@ export default function JobSheet({
 
           <div className="kit-menulist" style={{ marginTop: 14 }}>
             <MenuRow icon={<FileText size={18} />} label="공고 상세 전체보기" onClick={onDetail} />
-            <MenuRow icon={<Bookmark size={18} />} label="저장" />
+            <MenuRow
+              icon={<Bookmark size={18} fill={savedKeys.has(jobKey(j)) ? 'currentColor' : 'none'} />}
+              label={savedKeys.has(jobKey(j)) ? '저장됨 · 해제하기' : '저장'}
+              onClick={() => toggle(jobKey(j))}
+            />
           </div>
         </>
       )}

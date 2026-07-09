@@ -1,8 +1,8 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Award, Bookmark, Bell, Shield, Settings, LogOut, Plus, X } from 'lucide-react'
+import { Award, Bookmark, Bell, Shield, Settings, LogOut, Plus, X, Briefcase, User, FileText, ChevronRight } from 'lucide-react'
 import { CareerScreen, ScreenHead } from './charts'
-import { ResumeHeroCard, MenuRow, SectionHeader, SkillChip, TechSearchSheet } from './kit'
+import { MenuRow, SectionHeader, SkillChip, TechSearchSheet } from './kit'
 import { useResumesState, calculateCoverage, type Resume } from './state'
 import techs from '../data/techs.json'
 
@@ -74,11 +74,39 @@ export default function ResumeScreen() {
         <button className="kit-schip add" onClick={handleAddResume}><Plus size={14} /> 추가</button>
       </div>
 
-      {/* 이력서 히어로 카드 */}
-      <ResumeHeroCard
-        title={activeResume.title} position={activeResume.position} career={careerText(activeResume.careerMin, activeResume.careerMax)}
-        coverage={calculateCoverage(activeResume.skills, '국내')} skillCount={activeResume.skills.length} onEdit={() => navigate('/resume/submit')}
-      />
+      {/* 계정 카드 — 담백하게: 아바타 이니셜 + 이름/이메일 + 정보수정, 아래 목표직무·경력 2단 */}
+      <div className="cr-profile">
+        <div className="cr-profile__top">
+          <span className="cr-profile__avatar">RV</span>
+          <div className="cr-profile__id">
+            <span className="nm">리버</span>
+            <span className="em">bootcamp@example.com</span>
+          </div>
+          <button className="cr-profile__edit" onClick={() => navigate('/resume/submit')}>내 정보 수정</button>
+        </div>
+        <div className="cr-profile__stats">
+          <div className="cr-profile__stat">
+            <Briefcase size={15} />
+            <div><span className="lb">목표 직무</span><span className="v">{activeResume.position}</span></div>
+          </div>
+          <div className="cr-profile__stat">
+            <User size={15} />
+            <div><span className="lb">경력</span><span className="v">{careerText(activeResume.careerMin, activeResume.careerMax)}</span></div>
+          </div>
+        </div>
+      </div>
+
+      {/* 활성 이력서 카드 */}
+      <SectionHeader title="활성 이력서" />
+      <button className="cr-activeresume" onClick={() => navigate('/resume/submit')}>
+        <span className="cr-activeresume__ic"><FileText size={18} /></span>
+        <span className="cr-activeresume__body">
+          <span className="t">{activeResume.title}</span>
+          <span className="s">{activeResume.position} · 보유 기술 {activeResume.skills.length}개</span>
+        </span>
+        <span className="cr-analysisbadge">분석 기준</span>
+        <ChevronRight size={17} className="cr-activeresume__chev" />
+      </button>
 
       {/* 보유 기술 — 편집 가능 토큰 칩 + 추가 */}
       <SectionHeader title="보유 기술" hint={`${activeResume.skills.length}개`} />

@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom'
 import DemoRemote from './career/DemoRemote'
+import DemoMode from './career/DemoMode'
 import Gallery from './pages/Gallery'
 import P1Home from './pages/P1Home'
 import P1List from './pages/P1List'
@@ -28,6 +29,7 @@ export default function App() {
   return (
     <>
     <DemoRemote />
+    <DemoMode />
     <Routes>
       <Route path="/" element={<CareerDashboard />} />
       <Route path="/job/:id" element={<JobDetail />} />

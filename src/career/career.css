@@ -986,6 +986,52 @@
 .cr-tier.t2 { background: #f7efd9; color: #8a6a1e; }
 .cr-tier.t3 { background: #eef0f4; color: #5b5e66; }
 
+/* ---- 마이 탭 — 담백한 계정 카드 ---- */
+.cr-profile {
+  background: var(--c-card); border: 1px solid var(--line); border-radius: 20px;
+  box-shadow: var(--e2); padding: 16px 17px; margin-top: 14px;
+}
+.cr-profile__top { display: flex; align-items: center; gap: 12px; }
+.cr-profile__avatar {
+  flex: none; width: 44px; height: 44px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--accent-50); color: var(--accent-700); font-size: 14px; font-weight: 800;
+}
+.cr-profile__id { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.cr-profile__id .nm { font-size: 16px; font-weight: 700; color: var(--c-ink); }
+.cr-profile__id .em { font-size: 12px; color: var(--c-muted); }
+.cr-profile__edit {
+  flex: none; font-size: 12px; font-weight: 700; color: var(--accent-700);
+  border: 1px solid var(--accent-200); border-radius: 10px; padding: 7px 11px;
+  transition: transform 0.12s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.cr-profile__edit:active { transform: scale(0.95); }
+.cr-profile__stats { display: flex; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line2); }
+.cr-profile__stat { flex: 1; display: flex; align-items: center; gap: 9px; color: var(--c-muted); }
+.cr-profile__stat:first-child { border-right: 1px solid var(--line2); }
+.cr-profile__stat div { display: flex; flex-direction: column; gap: 1px; }
+.cr-profile__stat .lb { font-size: 11px; color: var(--c-muted); }
+.cr-profile__stat .v { font-size: 13px; font-weight: 700; color: var(--c-ink); }
+
+/* 활성 이력서 카드 */
+.cr-activeresume {
+  width: 100%; display: flex; align-items: center; gap: 12px;
+  background: var(--c-card); border: 1px solid var(--line); border-radius: 16px;
+  box-shadow: var(--e1); padding: 14px 15px; text-align: left;
+  transition: transform 0.12s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.cr-activeresume:active { transform: scale(0.98); }
+.cr-activeresume__ic {
+  flex: none; width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--accent-50); color: var(--accent-700);
+}
+.cr-activeresume__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.cr-activeresume__body .t { font-size: 14px; font-weight: 700; color: var(--c-ink); }
+.cr-activeresume__body .s { font-size: 12px; color: var(--c-muted); }
+.cr-analysisbadge { flex: none; font-size: 10px; font-weight: 700; color: var(--accent-700); background: var(--accent-50); border-radius: 6px; padding: 3px 7px; white-space: nowrap; }
+.cr-activeresume__chev { flex: none; color: var(--c-muted); }
+
 /* 히어로(커버리지) 존과 맞춤 위젯 캐러셀 존을 옅은 선으로만 구분 — 위젯을 카드로
    띄우지 않고 페이지에 바로 얹어서 붕 뜨는 느낌을 없앤다 */
 .cr-widgetzone {

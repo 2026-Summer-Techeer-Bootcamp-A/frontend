@@ -32,7 +32,10 @@ export default function JobDetail() {
   const { activeResume } = useResumesState()
   const activeSkills = activeResume ? activeResume.skills : []
 
-  const p = data.postings[Number(id)]
+  // 이전엔 배열 인덱스(data.postings.indexOf(dynamicCopy))로 찾았는데, 매칭 배지가 붙은
+  // 동적 복사본은 원본 배열과 참조가 달라 indexOf가 항상 -1이 나오는 버그가 있었다 —
+  // 안정적인 id로 직접 찾도록 수정.
+  const p = data.postings.find((x) => x.id === decodeURIComponent(id ?? ''))
 
   if (!p) {
     return (

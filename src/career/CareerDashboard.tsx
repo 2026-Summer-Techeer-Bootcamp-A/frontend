@@ -1,15 +1,135 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { MapPin, Calendar, SlidersHorizontal, Check } from 'lucide-react'
+import { MapPin, Calendar, SlidersHorizontal, Check, Settings, Briefcase, Clock, TrendingUp, ChevronRight } from 'lucide-react'
 import PhoneFrame from '../components/PhoneFrame'
 import CompanyLogo from './CompanyLogo'
 import CareerTabBar from './CareerTabBar'
-import { PageTransition, StatHero, SectionHeader, JobCardCompact, CardModeToggle, ActivityRings, RingLegend, ResumeEmptyCard, SwipePager, matchGrad, type CardMode, type RingMetric } from './kit'
-import { DeadlineMatchWidget, RoadmapTeaserWidget, TrendAlertWidget, CompanyFitWidget, ResponseRateWidget, CompanyMatchWidget, type DeadlinePosting } from './homeWidgets'
+import { PageTransition, StatHero, SectionHeader, JobCardCompact, CardModeToggle, ActivityRings, RingLegend, ResumeEmptyCard, SegmentedControl, BottomSheet, matchGrad, type CardMode, type RingMetric } from './kit'
+import { RoadmapTeaserWidget, BigCoGapWidget, TechTemperatureWidget, type DeadlinePosting } from './homeWidgets'
 import { THEME, themeVars } from './themes'
 import data from '../data/careerData.json'
-import { useResumesState, getDynamicPostings, calculateCoverage, ddayInfo } from './state'
+import { useResumesState, getDynamicPostings, calculateCoverage, ddayInfo, useHeroMode, useSavedJobs, jobKey, HERO_MODES, type HeroMode } from './state'
 import './career.css'
+
+const HERO_MODE_LABEL: Record<HeroMode, string> = {
+  briefing: '브리핑', default: '기본', nextstep: '빠른 다음 스텝', roadmap: '다음 배울 기술', fit: '대기업 인기 기술 갭', temp: '기술 트렌드 온도',
+}
+
+/* 위젯 선택 시트용 미니 미리보기 — 실데이터 렌더링은 무겁고 지저분해서, 레이아웃 실루엣만
+   보여주는 CSS 목업으로 대체(iOS 알림 설정의 Lock Screen/Notification Center 카드 참고). */
+const HERO_PREVIEW: Record<HeroMode, ReactNode> = {
+  briefing: (
+    <div className="cr-hpv cr-hpv--briefing">
+      <span className="hpv-row"><i className="hpv-dot" /><i className="hpv-bar" /></span>
+      <span className="hpv-row"><i className="hpv-dot" /><i className="hpv-bar short" /></span>
+    </div>
+  ),
+  default: (
+    <div className="cr-hpv cr-hpv--rings">
+      <span className="hpv-ring outer" /><span className="hpv-ring inner" />
+    </div>
+  ),
+  nextstep: (
+    <div className="cr-hpv cr-hpv--stat">
+      <span className="hpv-num" /><span className="hpv-track"><i /></span>
+    </div>
+  ),
+  roadmap: (
+    <div className="cr-hpv cr-hpv--chain">
+      <span className="hpv-chip" /><span className="hpv-arrow" /><span className="hpv-chip alt" />
+    </div>
+  ),
+  fit: (
+    <div className="cr-hpv cr-hpv--gap">
+      <span className="hpv-gapchip" /><span className="hpv-gapchip short" /><span className="hpv-gapchip shorter" />
+    </div>
+  ),
+  temp: (
+    <div className="cr-hpv cr-hpv--temp">
+      <span className="hpv-pill" /><span className="hpv-pill" /><span className="hpv-pill short" />
+    </div>
+  ),
+}
+
+/* ---------- 홈 히어로 변형 — 빠른 다음 스텝(평균 충족률 + 가장 근접한 미보유 기술) ----------
+   "추천" 대신, 이미 매칭도가 높은 공고들 기준으로 "이 기술을 보유하면 몇 건에서 매칭이 오르는지"
+   라는 객관적 사실만 제시 — 학습 여부 판단은 사용자 몫으로 남긴다. */
+function NextStepHero({
+  avgFitPct, topGap,
+}: { avgFitPct: number; topGap: { tech: string; count: number; nearBased: boolean } | null }) {
+  return (
+    <div className="kit-jobsum">
+      <div className="kit-jobsum__label">빠른 다음 스텝</div>
+      <div className="kit-jobsum__statrow">
+        <div className="kit-jobsum__statbare">
+          <b>{avgFitPct}%</b>
+          <span>평균 매칭률</span>
+        </div>
+        <div
+          className="kit-jobsum__ring"
+          style={{ background: `conic-gradient(var(--c-accent) 0 ${avgFitPct}%, var(--accent-100) ${avgFitPct}% 100%)` }}
+        />
+      </div>
+      <div className="kit-jobsum__pick">
+        {topGap
+          ? <><b>{topGap.tech}</b> 보유 시 {topGap.nearBased ? '지원 가능한 공고' : '전체 공고'} 중 {topGap.count}건에서 매칭이 올라가요</>
+          : '지금 필요한 기술은 이미 다 보유하고 있어요'}
+      </div>
+    </div>
+  )
+}
+
+/* ---------- 홈 히어로 커스텀 변형 1 — 브리핑(오늘 할 일 + 마감임박 통합, 중복 제거) ---------- */
+function BriefingHero({
+  newCount, newTechHint, savedSoon, topPick, reachedCount, onOpenNew, onOpenDeadline,
+}: {
+  newCount: number; newTechHint: string; savedSoon: { company: string; dday: number } | null
+  topPick: DeadlinePosting | null; reachedCount: number
+  onOpenNew: () => void; onOpenDeadline: () => void
+}) {
+  // 마감일(closeDate)이 비어있는 공고가 많아 "마감임박"은 자주 비어있다 — 둘 다 없을 때도
+  // 최소 2개는 보이도록, 항상 계산 가능한 "지원 가능 공고 수"를 마지막 안전망으로 둔다.
+  const items = [
+    { key: 'new', icon: <Briefcase size={17} />, title: `새 맞춤 공고 ${newCount}개 확인`, sub: newTechHint, onOpen: onOpenNew },
+    ...(savedSoon
+      ? [{ key: 'saved', icon: <Clock size={17} />, title: `저장한 공고 D-${savedSoon.dday} 확인`, sub: '마감 전 지원 여부 결정', onOpen: onOpenDeadline }]
+      : topPick
+      ? [{ key: 'pick', icon: <Clock size={17} />, title: `가장 급한 마감 공고 D-${topPick.dday} 확인`, sub: `${topPick.company} · ${topPick.title}`, onOpen: onOpenDeadline }]
+      : reachedCount > 0
+      ? [{ key: 'reach', icon: <TrendingUp size={17} />, title: `지원 가능한 공고 ${reachedCount}개 확인`, sub: '기술 매칭 50%+ · 경력 조건도 맞는 공고', onOpen: onOpenNew }]
+      : []),
+  ]
+  const [done, setDone] = useState<Set<string>>(new Set())
+  const toggle = (k: string) => setDone((s) => { const n = new Set(s); if (n.has(k)) n.delete(k); else n.add(k); return n })
+  const pct = items.length ? Math.round((done.size / items.length) * 100) : 0
+  return (
+    <div className="kit-todo">
+      <div className="kit-todo__label">오늘 브리핑</div>
+      <div className="kit-todo__sub">{items.length ? '5분이면 오늘 확인 끝나요' : '오늘은 새로 확인할 소식이 없어요'}</div>
+      {items.length > 0 && (
+        <div className="kit-todo__card">
+          {items.map((it) => (
+            <div className="kit-todo__row" key={it.key}>
+              <button className={`kit-todo__check${done.has(it.key) ? ' on' : ''}`} onClick={() => toggle(it.key)} aria-label="완료 체크">
+                {done.has(it.key) && <Check size={12} strokeWidth={3} />}
+              </button>
+              <span className="kit-todo__ic">{it.icon}</span>
+              <button className="kit-todo__body" onClick={it.onOpen}>
+                <span className="t">{it.title}</span>
+                <span className="s">{it.sub}</span>
+              </button>
+              <ChevronRight size={16} className="kit-todo__chev" />
+            </div>
+          ))}
+          <div className="kit-todo__foot">
+            <span>{done.size}/{items.length} 완료</span>
+            <span className="kit-todo__bar"><i style={{ width: `${pct}%` }} /></span>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 type Pool = '국내' | '국외'
 type Sort = 'latest' | 'match' | 'deadline' | 'tier'
@@ -131,13 +251,62 @@ export default function CareerDashboard() {
   const poolPostings = useMemo(() => dynamicPostings.filter((p) => p.pool === pool), [dynamicPostings, pool])
 
   const totalPostings = poolPostings.length
-  const reachedPostings = poolPostings.filter((p) => p.matchPct >= 50).length
+  // "지원 가능"의 기준: 기술 매칭 50%+ 만으로는 비현실적이다(요구 기술 2개 중 1개만 맞아도
+  // 통과되고, 10~19년차 시니어 공고까지 포함됨). 공고의 최소 경력(careerMin)이 내 이력서
+  // 경력 상한(careerMax)을 넘지 않는 경우만 실제로 지원 가능한 공고로 센다.
+  const myCareerMax = hasResume ? activeResume.careerMax : null
+  const isReachable = (p: (typeof poolPostings)[number]) =>
+    p.matchPct >= 50 && (!p.careerMin || (myCareerMax != null && p.careerMin <= myCareerMax))
+  const reachedPostings = poolPostings.filter(isReachable).length
   const reachRate = totalPostings ? Math.round((reachedPostings / totalPostings) * 100) : 0
   const coveragePct = calculateCoverage(activeSkills, pool)
 
+  // 홈 상단 히어로 커스텀(오늘 할 일 / 기본 / 요약) — 설정은 로컬 저장, 백엔드 미연동 항목은
+  // 정직하게 명시(예: "진단 업데이트"는 실제 변경 이력 추적이 없어 대표 예시로만 노출)
+  const { mode: heroMode, setMode: setHeroMode } = useHeroMode()
+  const [heroSheetOpen, setHeroSheetOpen] = useState(false)
+  const { savedKeys } = useSavedJobs()
+
+  const latestPostDate = useMemo(() => poolPostings.reduce((m, p) => (p.postDate > m ? p.postDate : m), ''), [poolPostings])
+  const newPostings = useMemo(
+    () => poolPostings.filter((p) => p.postDate === latestPostDate && p.matchPct >= 50),
+    [poolPostings, latestPostDate],
+  )
+  const newTechHint = useMemo(() => {
+    const techCount: Record<string, number> = {}
+    newPostings.forEach((p) => p.techs.filter((x) => activeSkills.includes(x)).forEach((x) => { techCount[x] = (techCount[x] ?? 0) + 1 }))
+    const top = Object.entries(techCount).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([t]) => t)
+    return top.length ? `${top.join(' · ')} 일치 공고 포함` : '보유 기술 일치 공고 포함'
+  }, [newPostings, activeSkills])
+  const savedSoon = useMemo(() => {
+    const cands = poolPostings
+      .filter((p) => savedKeys.has(jobKey(p)))
+      .map((p) => ({ p, dd: ddayInfo(p.closeDate, AS_OF) }))
+      .filter((x) => x.dd)
+      .sort((a, b) => a.dd!.d - b.dd!.d)
+    const first = cands[0]
+    if (!first) return null
+    return { company: first.p.company, dday: first.dd!.d, id: first.p.id, onOpen: () => navigate(`/job/${encodeURIComponent(first.p.id)}`) }
+  }, [poolPostings, savedKeys, navigate])
+  const avgFitPct = useMemo(() => (poolPostings.length ? Math.round(poolPostings.reduce((s, p) => s + p.matchPct, 0) / poolPostings.length) : 0), [poolPostings])
+
+  // 빠른 다음 스텝: 이미 매칭 50%+인 공고들(근접 공고) 기준으로 가장 많이 빠진 기술 1개를 찾는다.
+  // "시장에서 인기있는 기술"이 아니라 "내가 이미 근접한 공고에서 빠진 기술"이라 무관한 추천이 안 나온다.
+  const topGap = useMemo(() => {
+    const near = poolPostings.filter((p) => isReachable(p) && p.gap.length)
+    const nearBased = near.length > 0
+    const basePool = nearBased ? near : poolPostings.filter((p) => p.gap.length)
+    if (!basePool.length) return null
+    const tally: Record<string, number> = {}
+    basePool.forEach((p) => p.gap.forEach((g: string) => { tally[g] = (tally[g] ?? 0) + 1 }))
+    const ranked = Object.entries(tally).sort((a, b) => b[1] - a[1])
+    if (!ranked.length) return null
+    return { tech: ranked[0][0], count: ranked[0][1], nearBased }
+  }, [poolPostings, myCareerMax])
+
   const RINGS: RingMetric[] = [
-    { key: 'cov', label: '커버리지', pct: coveragePct, color: 'var(--c-accent)' },
-    { key: 'reach', label: '도달률', pct: reachRate, color: 'var(--accent-700)', note: `${reachedPostings}개 공고` },
+    { key: 'cov', label: '기술 보유율', pct: coveragePct, color: 'var(--c-accent)' },
+    { key: 'reach', label: '지원 가능 비율', pct: reachRate, color: 'var(--accent-700)', note: `${reachedPostings}개 공고` },
   ]
 
   const list = useMemo(() => {
@@ -165,44 +334,78 @@ export default function CareerDashboard() {
     const out: DeadlinePosting[] = []
     for (const p of base) {
       const dd = ddayInfo(p.closeDate, AS_OF)
-      if (dd && dd.d <= 7) out.push({ company: p.company, title: p.title, matchPct: hasResume ? p.matchPct : undefined, dday: dd.d })
+      if (dd && dd.d <= 7) out.push({ id: p.id, company: p.company, title: p.title, matchPct: hasResume ? p.matchPct : undefined, dday: dd.d })
     }
     out.sort((a, b) => a.dday - b.dday)
     return out
   }, [poolPostings, hasResume])
 
-  const widgetPages = useMemo(() => [
-    { key: 'deadline', node: <DeadlineMatchWidget items={deadlineItems} count={deadlineItems.length} hasResume={hasResume} onOpen={() => navigate('/jobs')} /> },
-    { key: 'roadmap', node: <RoadmapTeaserWidget skills={activeSkills} onOpen={() => navigate('/market')} /> },
-    { key: 'trend', node: <TrendAlertWidget skills={activeSkills} onOpen={() => navigate('/market')} /> },
-    { key: 'archetype', node: <CompanyFitWidget skills={activeSkills} onOpen={() => navigate('/market')} /> },
-    { key: 'response', node: <ResponseRateWidget onOpen={() => navigate('/market')} /> },
-    { key: 'company', node: <CompanyMatchWidget skills={activeSkills} onOpen={() => navigate('/market')} /> },
-  ], [deadlineItems, hasResume, activeSkills, navigate])
 
   return (
     <div className="stage" style={{ background: t.stageBg }}>
       <PhoneFrame stage="purple" bare screenBg={t.screenBg} statusTheme={t.statusTheme} homeIndicator="none">
         <div className="career" style={themeVars(t)}>
           <PageTransition type="fade">
-            {/* Greeting */}
-            <div className="cr-greet-line">좋은 아침이에요 👋 <b>리버</b>님</div>
+            {/* Greeting — 설정 버튼은 히어로 카드 위가 아니라 이 짧은 인사말 줄 옆 여백에 띄운다.
+                카드 위에 얹으면 카드 폭을 줄여야 해서 아래 미니스탯/공고 카드들과 폭이 안 맞았음. */}
+            <div style={{ position: 'relative' }}>
+              {hasResume && (
+                <button className="cr-herosettings" onClick={() => setHeroSheetOpen(true)} aria-label="홈 상단 커스텀">
+                  <Settings size={15} />
+                </button>
+              )}
+              <div className="cr-greet-line">좋은 아침이에요 👋 <b>리버</b>님</div>
+            </div>
 
             {/* 상단 위젯존(~40%): 히어로(또는 이력서 유도) + 위젯 캐러셀 6종 — 이력서 없어도 잠그지 않고
                 일반 시장 지표 모드로 그대로 보여준다(각 위젯이 skills=[]일 때 일반 모드로 전환) */}
-            {hasResume ? (
-              <StatHero
-                value={coveragePct} title="시장 커버리지"
-                rings={<ActivityRings metrics={RINGS} />}
-                legend={<RingLegend metrics={RINGS} />}
-              />
-            ) : (
-              <ResumeEmptyCard totalPostings={data.meta.totalPostings} onSubmit={() => navigate('/resume/submit')} />
-            )}
-
-            <div className="cr-widgetzone">
-              <SwipePager pages={widgetPages} />
+            <div>
+              {!hasResume ? (
+                <ResumeEmptyCard totalPostings={data.meta.totalPostings} onSubmit={() => navigate('/resume/submit')} />
+              ) : heroMode === 'briefing' ? (
+                <BriefingHero
+                  newCount={newPostings.length}
+                  newTechHint={newTechHint}
+                  savedSoon={savedSoon}
+                  topPick={deadlineItems[0] ?? null}
+                  reachedCount={reachedPostings}
+                  onOpenNew={() => navigate('/jobs')}
+                  onOpenDeadline={() => {
+                    if (savedSoon) navigate(`/job/${encodeURIComponent(savedSoon.id)}`)
+                    else if (deadlineItems[0]) navigate(`/job/${encodeURIComponent(deadlineItems[0].id)}`)
+                  }}
+                />
+              ) : heroMode === 'nextstep' ? (
+                <NextStepHero avgFitPct={avgFitPct} topGap={topGap} />
+              ) : heroMode === 'roadmap' ? (
+                <RoadmapTeaserWidget skills={activeSkills} onOpen={() => navigate('/market')} />
+              ) : heroMode === 'fit' ? (
+                <BigCoGapWidget skills={activeSkills} onOpen={() => navigate('/market')} />
+              ) : heroMode === 'temp' ? (
+                <TechTemperatureWidget skills={activeSkills} onOpen={() => navigate('/market')} />
+              ) : (
+                <StatHero
+                  value={coveragePct} title="기술 보유율"
+                  rings={<ActivityRings metrics={RINGS} />}
+                  legend={<RingLegend metrics={RINGS} />}
+                />
+              )}
             </div>
+
+            <BottomSheet open={heroSheetOpen} onClose={() => setHeroSheetOpen(false)}>
+              <div className="cr-sheet__label" style={{ marginTop: 0 }}>홈 상단 커스텀</div>
+              <div className="cr-heropick">
+                {HERO_MODES.map((m) => (
+                  <button key={m} className={`cr-heropick__cell ${heroMode === m ? 'on' : ''}`} onClick={() => { setHeroMode(m); setHeroSheetOpen(false) }}>
+                    <div className="cr-heropick__phone">
+                      {HERO_PREVIEW[m]}
+                      {heroMode === m && <span className="cr-heropick__check"><Check size={11} strokeWidth={3} /></span>}
+                    </div>
+                    <span className="cr-heropick__label">{HERO_MODE_LABEL[m]}</span>
+                  </button>
+                ))}
+              </div>
+            </BottomSheet>
 
             {/* 공고 현황 2열 컴팩트 */}
             <div className="cr-minstat" style={{ marginBottom: 14 }}>
@@ -213,13 +416,12 @@ export default function CareerDashboard() {
             {/* 맞춤 공고 / 채용 공고 */}
             <SectionHeader title={hasResume ? '맞춤 공고' : '채용 공고'} />
             <div className="cr-secbar" style={{ margin: '0 0 14px' }}>
-              <div className="cr-pooltoggle cr-pooltoggle--slim">
-                {(['국내', '국외'] as Pool[]).map((pv) => (
-                  <button key={pv} className={pool === pv ? 'on' : ''} onClick={() => { setPool(pv); setVisible(3) }}>
-                    {pv === '국내' ? '국내' : '글로벌'}
-                  </button>
-                ))}
-              </div>
+              <SegmentedControl
+                size="sm"
+                value={pool}
+                onChange={(v) => { setPool(v as Pool); setVisible(3) }}
+                options={[{ key: '국내', label: '국내' }, { key: '국외', label: '글로벌' }]}
+              />
               <button className="cr-morebtn" onClick={() => navigate('/jobs')}>더 보기 ›</button>
               {hasResume && (
                 <button className="cr-filterbtn" onClick={() => setFilterOpen(true)}>
@@ -233,7 +435,7 @@ export default function CareerDashboard() {
                 <div className="cr-empty">공고가 없어요.</div>
               ) : (
                 genericList.slice(0, visible).map((p) => (
-                  <JobCardGeneric key={p.id} p={p} onOpen={() => navigate(`/job/${data.postings.indexOf(p)}`)} />
+                  <JobCardGeneric key={p.id} p={p} onOpen={() => navigate(`/job/${encodeURIComponent(p.id)}`)} />
                 ))
               )
             ) : list.length === 0 ? (
@@ -244,12 +446,12 @@ export default function CareerDashboard() {
                   key={p.id}
                   job={{ company: p.company, title: p.title, matchPct: p.matchPct, careerLabel: careerLabel(p.careerMin, p.careerMax) }}
                   logo={<CompanyLogo logo={p.logo} name={p.company} size={40} radius={11} />}
-                  onOpen={() => navigate(`/job/${data.postings.indexOf(p)}`)}
+                  onOpen={() => navigate(`/job/${encodeURIComponent(p.id)}`)}
                 />
               ))
             ) : (
               list.slice(0, visible).map((p) => (
-                <JobCard key={p.id} p={p} mySkills={activeSkills} onOpen={() => navigate(`/job/${data.postings.indexOf(p)}`)} />
+                <JobCard key={p.id} p={p} mySkills={activeSkills} onOpen={() => navigate(`/job/${encodeURIComponent(p.id)}`)} />
               ))
             )}
           </PageTransition>

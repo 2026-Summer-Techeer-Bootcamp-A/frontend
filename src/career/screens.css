@@ -660,6 +660,50 @@
 .lfab:active { transform: scale(0.92); }
 .lfab.primary { background: var(--c-primary); color: #fff; border-color: transparent; box-shadow: 0 6px 16px -4px rgba(47, 97, 184, 0.6); }
 
+/* ---- 검색 입력 + 자동완성 드롭다운 ---- */
+.lmap__search input {
+  flex: 1; border: none; outline: none; background: none; font: inherit; color: var(--c-ink);
+}
+.lmap__search input::placeholder { color: var(--c-muted); }
+.lmap__filterbtn {
+  flex: none; width: 32px; height: 32px; border-radius: 10px; border: none;
+  background: var(--accent-50); color: var(--accent-700);
+  display: flex; align-items: center; justify-content: center;
+}
+.lmap__filterbtn.on { background: var(--c-accent); color: #fff; }
+.lmap__drop {
+  position: absolute; top: 60px; left: 16px; right: 16px; z-index: 6;
+  background: #fff; border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--e3);
+  overflow: hidden; max-height: 260px; overflow-y: auto;
+}
+.lmap__drop-row {
+  width: 100%; display: flex; align-items: center; gap: 9px; padding: 10px 14px; text-align: left;
+  font-size: 13px; color: var(--c-ink); border-bottom: 1px solid var(--line2);
+}
+.lmap__drop-row:last-child { border-bottom: none; }
+.lmap__drop-row:active { background: var(--accent-50); }
+.lmap__drop-tag { flex: none; font-size: 10.5px; font-weight: 700; color: var(--c-muted); background: #f2f4f8; border-radius: 6px; padding: 3px 6px; }
+.lmap__drop-empty { padding: 16px; text-align: center; font-size: 12.5px; color: var(--c-muted); }
+
+/* ---- 범례 — 좌하단, 카드 없이 텍스트만(지도 위 배경과 자연스럽게 겹침) ---- */
+.lmap__legend {
+  position: absolute; left: 16px; bottom: 104px; z-index: 5;
+  font-size: 10.5px; font-weight: 600; color: var(--c-muted);
+  text-shadow: 0 1px 3px rgba(255, 255, 255, 0.9), 0 0 6px rgba(255, 255, 255, 0.7);
+}
+
+/* ---- 저장(찜) 배지 ---- */
+.lpincard { position: relative; }
+.lpincard--saved::after {
+  content: ''; position: absolute; top: -4px; right: -4px; width: 9px; height: 9px; border-radius: 50%;
+  background: var(--c-accent); border: 1.5px solid #fff;
+}
+.lclus--saved { box-shadow: 0 4px 12px -2px rgba(20, 30, 60, 0.35), 0 0 0 3px #fff, 0 0 0 5px var(--c-accent); }
+
+/* ---- 컨텍스트 메뉴 정렬 토글 + 거리 표기 ---- */
+.lctxmenu__sort { display: flex; padding: 0 2px 8px; }
+.lctxmenu__row .dist { flex: none; font-size: 10.5px; color: var(--c-muted); margin-left: 6px; }
+
 /* 마커 시트 */
 .lsheet__hd { display: flex; align-items: center; gap: 12px; }
 .lsheet__name { font-size: 16px; font-weight: 700; color: var(--c-ink); }
@@ -675,6 +719,12 @@
 .lsheet__barlbl { font-size: 11px; color: var(--c-muted); margin-top: 6px; font-variant-numeric: tabular-nums; }
 
 /* ---- 지도 지역 클러스터 (공고수 + 평균매칭 링) ---- */
+/* 줌에 따라 클러스터↔개별 핀이 바뀔 때(매번 새로 그려짐) 살짝 튀어 들어오는 느낌 —
+   기존 모션(스와이프 페이저 0.38s 등)보다 빠르게 잡아서 줌 조작을 방해하지 않는다 */
+@keyframes lmap-marker-in { from { opacity: 0; transform: scale(0.7); } to { opacity: 1; transform: scale(1); } }
+.lclus, .lpincard {
+  animation: lmap-marker-in 0.16s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
 .lclus {
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
@@ -734,6 +784,20 @@
   padding: 9px 10px; font-size: 13px; color: #1c1d21; border-radius: 8px;
 }
 .demo-remote__menu button:hover { background: #eef3fb; }
+
+/* 데모 모드(오토플레이) — 프레임 밖 뷰포트 우하단 고정 */
+.demo-mode-fab {
+  position: fixed; right: 18px; bottom: 18px; z-index: 200;
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 40px; padding: 0 16px; border-radius: 20px;
+  background: #1c1d21; color: #fff; font-size: 13px; font-weight: 700; border: none;
+  box-shadow: 0 8px 20px -6px rgba(20, 30, 60, 0.45);
+  transition: transform 0.12s cubic-bezier(0.25, 0.1, 0.25, 1), background 0.2s;
+}
+.demo-mode-fab:active { transform: scale(0.95); }
+.demo-mode-fab.on { background: var(--c-accent, #2f61b8); }
+.demo-mode-fab.on svg { animation: demo-fab-pulse 1.4s ease-in-out infinite; }
+@keyframes demo-fab-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
 
 /* 지도 상단 보이는 회사 스트립 */
 .lmap__strip {
