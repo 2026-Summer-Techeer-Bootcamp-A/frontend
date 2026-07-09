@@ -251,6 +251,79 @@
 .kit-pulse__tx { font-size: 13px; line-height: 1.5; color: var(--c-ink); }
 .kit-pulse__tx b { font-weight: 700; }
 
+/* ---- 4b. WidgetCard (홈 위젯 캐러셀) ----
+   히어로(StatHero)처럼 카드 박스 없이 페이지에 바로 얹는다 — 스와이프 페이저 안에서
+   개별 카드가 붕 떠 보이는 것을 피하고, 위/아래 구분은 .cr-widgetzone 옅은 선에 맡긴다. */
+.kit-wcard {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 2px 2px 4px;
+  font: inherit;
+  color: inherit;
+  cursor: default;
+  transition: opacity 0.18s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+button.kit-wcard { cursor: pointer; }
+button.kit-wcard:active { opacity: 0.6; }
+.kit-wcard__label {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 12.5px; font-weight: 700; color: var(--c-muted); margin-bottom: 10px;
+}
+.kit-wcard__chev { color: var(--c-muted); flex: none; }
+.kit-wcard__num {
+  font-size: 30px; font-weight: 800; letter-spacing: -1px; color: var(--c-ink);
+  font-variant-numeric: tabular-nums; display: flex; align-items: baseline; gap: 3px;
+}
+.kit-wcard__num span { font-size: 14px; font-weight: 700; color: var(--c-muted); }
+.kit-wcard__chain { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; color: var(--c-ink); }
+.kit-wcard__sub { font-size: 12.5px; line-height: 1.5; color: var(--c-muted); margin-top: 8px; }
+.kit-wcard__sub b { color: var(--c-ink); font-weight: 700; }
+.kit-wcard__row {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 13.5px; padding: 7px 0; border-bottom: 1px solid var(--line);
+}
+.kit-wcard__row:last-of-type { border-bottom: none; }
+.kit-wcard__row b { color: var(--accent-700); font-variant-numeric: tabular-nums; }
+
+/* 2개 이상 랭크형 스텝 (로드맵 티저) */
+.kit-wcard__step { display: flex; gap: 10px; align-items: flex-start; }
+.kit-wcard__step + .kit-wcard__step { margin-top: 12px; }
+.kit-wcard__stepnum {
+  flex: none; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--accent-50); color: var(--accent-700);
+  font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center;
+  margin-top: 1px;
+}
+
+/* 미니 바 차트 섹션 캡션 (도넛 위 소제목) */
+.kit-wcard__barlabel { font-size: 11px; font-weight: 700; color: var(--c-muted); margin-bottom: 4px; }
+
+/* 도넛 + 범례(2분류 비교) */
+.kit-wcard__donutblock { flex: 1; min-width: 150px; }
+.kit-wcard__donutrow { display: flex; align-items: center; gap: 8px; }
+.kit-wcard__donutwrap { position: relative; flex: none; width: 62px; height: 62px; }
+.kit-wcard__donutcenter {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800; color: var(--c-ink); pointer-events: none;
+}
+.kit-wcard__donutlegend { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
+.kit-wcard__donutlegend .row { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--c-muted); white-space: nowrap; }
+.kit-wcard__donutlegend .row i { width: 7px; height: 7px; border-radius: 2px; flex: none; }
+.kit-wcard__donutlegend .row b { color: var(--c-ink); font-weight: 700; font-variant-numeric: tabular-nums; margin-left: 4px; }
+
+/* 도넛 아래 예시 기술 뱃지(사각, 근거 노출용) */
+.kit-wcard__exlabel { font-size: 10.5px; color: var(--c-muted); margin-top: 8px; }
+.kit-wcard__exlabel b { color: var(--c-ink); font-weight: 700; }
+.kit-wcard__exrow { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+.kit-wcard__exchip {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: var(--accent-50); color: var(--accent-700);
+  font-size: 10.5px; font-weight: 700; border-radius: 7px; padding: 3px 7px 3px 5px;
+}
+
 /* ---- 5. SectionHeader ---- */
 .kit-sec {
   display: flex;
@@ -593,7 +666,7 @@
 /* ---- SwipePager ---- */
 .kit-pager { overflow: hidden; touch-action: pan-y; }
 .kit-pager__track { display: flex; transition: transform 0.38s cubic-bezier(0.25, 0.1, 0.25, 1); }
-.kit-pager__page { flex: 0 0 100%; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+.kit-pager__page { flex: 0 0 100%; min-width: 0; display: flex; flex-direction: column; justify-content: flex-start; }
 .kit-pager__dots { display: flex; justify-content: center; gap: 6px; margin-top: 12px; }
 .kit-pager__dots button { width: 6px; height: 6px; border-radius: 999px; background: #cdd2db; transition: width 0.25s, background 0.25s; }
 .kit-pager__dots button.on { width: 18px; background: var(--c-accent); }

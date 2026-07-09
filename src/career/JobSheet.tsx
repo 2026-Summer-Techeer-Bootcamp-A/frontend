@@ -3,9 +3,9 @@ import { FileText, Bookmark, MapPin, Briefcase } from 'lucide-react'
 import { BottomSheet, MenuRow, MiniScore, matchGrad } from './kit'
 import CompanyLogo from './CompanyLogo'
 import data from '../data/careerData.json'
+import { useResumesState } from './state'
 
 type Job = (typeof data.postings)[number]
-const RESUME: string[] = data.resume.skills
 const tierClass = (t: string | null) => (t === '대기업' ? 't1' : t === '중견' ? 't2' : 't3')
 
 function careerText(min: number | null, max: number | null) {
@@ -17,13 +17,21 @@ function careerText(min: number | null, max: number | null) {
 export default function JobSheet({
   job, open, onClose, onDetail,
 }: { job: Job | null; open: boolean; onClose: () => void; onDetail: () => void }) {
+  const { activeResume } = useResumesState()
+  const activeSkills = activeResume ? activeResume.skills : []
+
   // 닫히는 애니메이션 도중에도 내용이 유지되도록 마지막 값을 붙잡아 둔다.
   // job을 바로 null로 지우면 시트가 내려가는 동안 내용이 먼저 사라져 "순간이동"처럼 보인다.
   const [shown, setShown] = useState(job)
   useEffect(() => { if (job) setShown(job) }, [job])
   const j = job ?? shown
-  const held = j ? j.techs.filter((x) => RESUME.includes(x)).slice(0, 4) : []
-  const gap = j ? j.gap.slice(0, 3) : []
+
+  const held = j ? j.techs.filter((x) => activeSkills.includes(x)).slice(0, 4) : []
+  const gap = j ? j.techs.filter((x) => !activeSkills.includes(x)).slice(0, 3) : []
+  const matchHeld = j ? j.techs.filter((x) => activeSkills.includes(x)).length : 0
+  const matchTotal = j ? j.techs.length : 0
+  const matchPct = matchTotal ? Math.round((matchHeld / matchTotal) * 100) : 100
+
   return (
     <BottomSheet open={open} onClose={onClose}>
       {j && (
@@ -34,7 +42,7 @@ export default function JobSheet({
               <div className="lsheet__name cr-ellip">{j.company}</div>
               <div className="lsheet__role cr-ellip">{j.title}</div>
             </div>
-            <MiniScore pct={j.matchPct} size={52} />
+            <MiniScore pct={matchPct} size={52} />
           </div>
 
           <div className="lsheet__tags">
@@ -43,8 +51,8 @@ export default function JobSheet({
             <span className="lsheet__tag"><Briefcase size={13} /> {careerText(j.careerMin, j.careerMax)}</span>
           </div>
 
-          <div className="lsheet__bar" style={{ marginTop: 12 }}><i style={{ width: `${j.matchPct}%`, background: matchGrad(j.matchPct) }} /></div>
-          <div className="lsheet__barlbl">요구 {j.matchTotal}개 중 {j.matchHeld}개 보유</div>
+          <div className="lsheet__bar" style={{ marginTop: 12 }}><i style={{ width: `${matchPct}%`, background: matchGrad(matchPct) }} /></div>
+          <div className="lsheet__barlbl">요구 {matchTotal}개 중 {matchHeld}개 보유</div>
 
           <div className="cr-chips" style={{ marginTop: 8 }}>
             {held.map((s) => <span key={s} className="cr-chip held">{s}</span>)}

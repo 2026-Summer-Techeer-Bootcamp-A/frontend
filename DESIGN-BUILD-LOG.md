@@ -73,3 +73,12 @@
 ### 검증
 - `npm run build`(tsc -b + vite) 통과. dev 9화면 브라우저 렌더·콘솔 에러 0 확인.
 - 라우트: `src/App.tsx`. 갤러리 인덱스: `src/pages/Gallery.tsx`.
+
+## 완료 5 — 홈 위젯 캐러셀 6종 + 이력서 유무 분기 ✅
+
+**신규**: `career/homeWidgets.tsx` — 마감임박×매칭 / 다음 배울 기술(로드맵) / 다음에 뜰 기술(트렌드전파·글로벌) / 기술 아키타입 / 응답 잘 오는 회사 / 나와 닮은 회사. 전부 `skills:string[]`로 개인화·일반 모드 겸용(빈 배열이면 자동으로 일반 시장 지표).
+
+- `CareerDashboard.tsx`: 정적 `PulseCard` 제거 → 죽어있던 `SwipePager`를 실사용. 이력서 없어도 위젯·미니스탯을 블러 처리하지 않고 `ResumeEmptyCard`(유도 카드)만 히어로 자리에 대신 노출, 나머지는 그대로 일반 모드로 보여줌(`cr-lockwrap` 방식 폐기). 공고 피드는 5→3개로 압축.
+- `insights.tsx`에 `computeTechChain()` 분리(로드맵 로직 재사용), `state.ts`의 `ddayInfo` export.
+- `S 응답률` 위젯은 원래 "매칭×응답률 교집합"으로 기획했으나 데이터 구조상(examples.matched가 고정 레퍼런스 이력서 기준) 임의 이력서와 교차 불가라 "응답 잘 오는 회사" 일반 지표로 정직하게 재정의.
+- 검증: `npm run build` 통과, 이력서 있음/없음(`?empty=true`) 양쪽 6위젯 전부 브라우저 스크린샷 확인.

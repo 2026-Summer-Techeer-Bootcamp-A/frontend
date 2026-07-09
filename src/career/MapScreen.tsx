@@ -10,6 +10,7 @@ import CompanyLogo from './CompanyLogo'
 import JobSheet from './JobSheet'
 import { MiniJobCard, MiniJobSkeleton, DynamicDock } from './kit'
 import { THEME, themeVars } from './themes'
+import { useResumesState, getDynamicPostings } from './state'
 import market from '../data/marketData.json'
 import data from '../data/careerData.json'
 import './career.css'
@@ -48,13 +49,27 @@ export default function MapScreen() {
   useEffect(() => { if (menu) setMenuShown(menu) }, [menu])
   const menuView = menu ?? menuShown
 
+  const { activeResume } = useResumesState()
+  const activeSkills = activeResume ? activeResume.skills : []
+  const dynamicPostings = useMemo(() => getDynamicPostings(activeSkills), [activeSkills])
+
   // 핀 → 실제 공고 찾아 리치 시트 열기
   const openPin = (p: Pin) => {
-    setSel(data.postings.find((x) => x.company === p.company && x.title === p.title) ?? null)
+    setSel(dynamicPostings.find((x) => x.company === p.company && x.title === p.title) ?? null)
     setMenu(null)
   }
 
-  const pins = useMemo(() => MAP.pins.filter((p) => p.lat >= B.latMin && p.lat <= B.latMax && p.lng >= B.lngMin && p.lng <= B.lngMax), [])
+  const pins = useMemo(() => {
+    return MAP.pins.filter((p) => p.lat >= B.latMin && p.lat <= B.latMax && p.lng >= B.lngMin && p.lng <= B.lngMax)
+      .map((p) => {
+        const post = dynamicPostings.find((x) => x.company === p.company && x.title === p.title)
+        if (post) {
+          return { ...p, matchPct: post.matchPct }
+        }
+        return p
+      })
+  }, [dynamicPostings])
+
   const clusters = useMemo(() => MAP.clusters.filter((c) => c.lat >= B.latMin && c.lat <= B.latMax), [])
 
   useEffect(() => {

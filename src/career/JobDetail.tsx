@@ -6,9 +6,8 @@ import CompanyLogo from './CompanyLogo'
 import { matchGrad } from './kit'
 import { THEME, themeVars } from './themes'
 import data from '../data/careerData.json'
+import { useResumesState } from './state'
 import './career.css'
-
-const RESUME: string[] = data.resume.skills
 
 function careerText(min: number | null, max: number | null) {
   if (min == null && max == null) return '경력 무관'
@@ -29,6 +28,10 @@ export default function JobDetail() {
   const t = THEME
   const navigate = useNavigate()
   const [tab, setTab] = useState<'desc' | 'company'>('desc')
+  const [bookmarked, setBookmarked] = useState(false)
+  const { activeResume } = useResumesState()
+  const activeSkills = activeResume ? activeResume.skills : []
+
   const p = data.postings[Number(id)]
 
   if (!p) {
@@ -41,7 +44,12 @@ export default function JobDetail() {
     )
   }
 
-  const held = p.techs.filter((x) => RESUME.includes(x))
+  const held = p.techs.filter((x) => activeSkills.includes(x))
+  const gap = p.techs.filter((x) => !activeSkills.includes(x))
+  const matchHeld = held.length
+  const matchTotal = p.techs.length
+  const matchPct = matchTotal ? Math.round((matchHeld / matchTotal) * 100) : 100
+
   const ci = p.companyInfo ?? { industry: '', homepage: '', established: '', location: '', tags: [] as string[] }
   return (
     <div className="stage" style={{ background: t.stageBg }}>
@@ -52,7 +60,16 @@ export default function JobDetail() {
               <ChevronLeft size={24} />
             </span>
             <span style={{ fontSize: 16, fontWeight: 600, margin: '0 auto' }}>채용 상세</span>
-            <Bookmark size={21} />
+            <Bookmark
+              size={21}
+              style={{
+                cursor: 'pointer',
+                color: bookmarked ? 'var(--c-accent)' : 'var(--c-muted)',
+                fill: bookmarked ? 'var(--c-accent)' : 'none',
+                transition: 'all 0.2s ease',
+              }}
+              onClick={() => setBookmarked(!bookmarked)}
+            />
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10 }}>
@@ -83,17 +100,17 @@ export default function JobDetail() {
           {/* 항상 보이는 매칭 섹션 */}
           <div className="crd__match">
             <h4>
-              <span>내 매칭 (요구 {p.matchTotal}개 중 {p.matchHeld}개 보유)</span>
-              <b>{p.matchPct}%</b>
+              <span>내 매칭 (요구 {matchTotal}개 중 {matchHeld}개 보유)</span>
+              <b>{matchPct}%</b>
             </h4>
             <div className="cr-track">
-              <i style={{ width: `${p.matchPct}%`, background: matchGrad(p.matchPct) }} />
+              <i style={{ width: `${matchPct}%`, background: matchGrad(matchPct) }} />
             </div>
             <div className="cr-chips">
               {held.map((s) => (
                 <span key={s} className="cr-chip held">{s}</span>
               ))}
-              {p.gap.map((s) => (
+              {gap.map((s) => (
                 <span key={s} className="cr-chip gap">+{s}</span>
               ))}
             </div>
@@ -149,7 +166,6 @@ export default function JobDetail() {
 
           <div className="crd__actions">
             <button className="crd__apply">지원하기</button>
-            <button className="crd__save">저장</button>
           </div>
         </div>
       </PhoneFrame>
