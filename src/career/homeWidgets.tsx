@@ -1,13 +1,13 @@
 import { type ReactNode, useMemo } from 'react'
 import { ChevronRight } from 'lucide-react'
-import ReactECharts from 'echarts-for-react'
 import { TechIcon } from './kit'
-import { computeTechChain, computeTierAffinity, computeGenerationAffinity, computeIndustryFit, computeTierTopTechs, computeGenerationTopTechs } from './insights'
-import { C, tooltipStyle } from '../pages/widgets/base'
+import { computeTechChain } from './insights'
 import market from '../data/marketData.json'
+import career from '../data/careerData.json'
 import nRaw from '../data/pearl/n.json'
 import y4Raw from '../data/pearl/y4.json'
 import sRaw from '../data/pearl/s.json'
+import kRaw from '../data/pearl/k.json'
 
 /* ============================================================
    홈 위젯 캐러셀 — 히어로 아래 스와이프 카드 6종.
@@ -28,54 +28,9 @@ function WidgetCard({ label, onOpen, children }: { label: string; onOpen?: () =>
   )
 }
 
-/* 3분류 구성비를 한눈에 — 도넛(비중) + 범례(정확한 수치)를 나란히.
-   막대 3줄을 눈으로 비교하는 것보다 면적으로 비교하는 편이 더 빠르다. */
-const DONUT_SHADES = [C.accent700, C.accent, C.accent300]
-function MiniDonut({ title, items, examples }: { title: string; items: { label: string; pct: number }[]; examples?: string[] }) {
-  const option = useMemo(() => ({
-    tooltip: { ...tooltipStyle, formatter: (p: { name: string; value: number }) => `${p.name} ${p.value}%` },
-    series: [{
-      type: 'pie', radius: ['58%', '86%'], avoidLabelOverlap: false,
-      label: { show: false }, labelLine: { show: false }, silent: false,
-      itemStyle: { borderColor: '#fff', borderWidth: 2 },
-      data: items.map((it, i) => ({ name: it.label, value: it.pct, itemStyle: { color: DONUT_SHADES[i % DONUT_SHADES.length] } })),
-    }],
-  }), [items])
-  const top = [...items].sort((a, b) => b.pct - a.pct)[0]
-  return (
-    <div className="kit-wcard__donutblock">
-      <div className="kit-wcard__barlabel">{title}</div>
-      <div className="kit-wcard__donutrow">
-        <div className="kit-wcard__donutwrap">
-          <ReactECharts option={option} style={{ width: 62, height: 62 }} opts={{ renderer: 'svg' }} />
-          <div className="kit-wcard__donutcenter"><b>{top.pct}%</b></div>
-        </div>
-        <div className="kit-wcard__donutlegend">
-          {items.map((it, i) => (
-            <div key={it.label} className="row">
-              <i style={{ background: DONUT_SHADES[i % DONUT_SHADES.length] }} />
-              <span>{it.label}</span>
-              <b>{it.pct}%</b>
-            </div>
-          ))}
-        </div>
-      </div>
-      {examples && examples.length > 0 && (
-        <div className="kit-wcard__exwrap">
-          <div className="kit-wcard__exlabel"><b>{top.label}</b>에서 많이 쓰는 기술</div>
-          <div className="kit-wcard__exrow">
-          {examples.map((t) => (
-            <span key={t} className="kit-wcard__exchip"><TechIcon tech={t} size={14} />{t}</span>
-          ))}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
 
 /* ---------- 1. 마감임박 × 매칭도 ---------- */
-export type DeadlinePosting = { company: string; title: string; matchPct?: number; dday: number }
+export type DeadlinePosting = { id: string; company: string; title: string; matchPct?: number; dday: number }
 export function DeadlineMatchWidget({
   items, count, hasResume, onOpen,
 }: { items: DeadlinePosting[]; count: number; hasResume: boolean; onOpen?: () => void }) {
@@ -100,16 +55,20 @@ export function DeadlineMatchWidget({
 /* ---------- 2. 다음 배울 기술 로드맵 ---------- */
 type NEdgeN = { a: string; b: string; n: number; strength: number }
 const N_DATA = nRaw as unknown as { data: { edges: NEdgeN[] } }
+/* 반드시 "보유 기술과 실제로 함께 쓰이는" 기술만 보여준다 — 시장 전체에서 인기 있다는
+   이유만으로 무관한 기술(예: 프론트엔드 보유자에게 뜬금없는 백엔드 유행)을 보여주면 안 된다는
+   피드백 반영. computeTechChain은 이미 보유 기술 중 하나와 실측 co-occurrence가 있는 경우만
+   반환하므로, 보유 기술이 있는데도 연결이 없으면(chain.length===0) 무관한 인기 조합으로
+   대체하지 않고 정직하게 "데이터 부족"으로 표시한다. 이력서가 아예 없을 때만 시장 전체
+   통계(가치중립적 사실)를 보여준다. */
 export function RoadmapTeaserWidget({ skills, onOpen }: { skills: string[]; onOpen?: () => void }) {
   const steps = useMemo(() => {
     if (skills.length) {
       const chain = computeTechChain(skills, 2)
-      if (chain.length) {
-        return chain.map((c) => ({
-          from: c.from, to: c.to,
-          evidence: `${c.from} 보유자의 ${Math.round(c.strength * 100)}%가 함께 요구 · ${c.n.toLocaleString()}건`,
-        }))
-      }
+      return chain.map((c) => ({
+        from: c.from, to: c.to,
+        evidence: `${c.from} 요구 공고의 ${Math.round(c.strength * 100)}%가 ${c.to}도 함께 요구 · ${c.n.toLocaleString()}건`,
+      }))
     }
     return [...N_DATA.data.edges]
       .sort((a, b) => b.n - a.n)
@@ -117,7 +76,7 @@ export function RoadmapTeaserWidget({ skills, onOpen }: { skills: string[]; onOp
       .map((e) => ({ from: e.a, to: e.b, evidence: `가장 많이 함께 요구되는 기술 조합 · ${e.n.toLocaleString()}건` }))
   }, [skills])
   return (
-    <WidgetCard label={skills.length ? '다음 배울 기술 · 추천순' : '가장 인기있는 기술 조합'} onOpen={onOpen}>
+    <WidgetCard label={skills.length ? '다음 배울 기술' : '가장 많이 함께 쓰이는 기술 조합'} onOpen={onOpen}>
       {steps.length ? steps.map((s, i) => (
         <div className="kit-wcard__step" key={s.to}>
           <span className="kit-wcard__stepnum">{i + 1}</span>
@@ -128,7 +87,11 @@ export function RoadmapTeaserWidget({ skills, onOpen }: { skills: string[]; onOp
             <div className="kit-wcard__sub">{s.evidence}</div>
           </div>
         </div>
-      )) : <div className="kit-wcard__sub">데이터가 부족해요</div>}
+      )) : (
+        <div className="kit-wcard__sub">
+          {skills.length ? '보유 기술과 강하게 연결된 다음 기술 데이터가 부족해요' : '데이터가 부족해요'}
+        </div>
+      )}
     </WidgetCard>
   )
 }
@@ -156,32 +119,34 @@ export function TrendAlertWidget({ skills, onOpen }: { skills: string[]; onOpen?
   )
 }
 
-/* ---------- 4. 내 기술을 원하는 곳 (기업 규모 × 설립 세대 — 2개 실측 축, 도넛 2개) ----------
-   "나와 어울리는 회사/아키타입" 같은 "찾음·매칭" 표현은 은연중에 "대기업=좋은 것"같은
-   가치판단을 얹기 쉬워서 피드백으로 교체. 대신 "이 기술을 요구하는 공고 비율이 얼마인가"라는
-   가치중립적 수요 통계만 보여준다. 3줄 막대 대신 도넛(면적 비교)+범례(정확한 수치)로 한눈에. */
-const GEN_SHORT = ['레거시', '성장기', '신생']
-export function CompanyFitWidget({ skills, onOpen }: { skills: string[]; onOpen?: () => void }) {
-  const tierFit = useMemo(() => computeTierAffinity(skills), [skills])
-  const genFit = useMemo(() => computeGenerationAffinity(skills), [skills])
-  const indFit = useMemo(() => computeIndustryFit(skills), [skills])
-  const bestInd = useMemo(() => [...indFit].sort((a, b) => b.pct - a.pct)[0], [indFit])
-  const genItems = useMemo(() => GEN_SHORT.map((label, i) => ({ label, pct: genFit[i] })), [genFit])
-  const bestTierName = useMemo(() => [...tierFit].sort((a, b) => b.pct - a.pct)[0].tier, [tierFit])
-  const bestGenIdx = useMemo(() => genFit.indexOf(Math.max(...genFit)), [genFit])
-  const tierExamples = useMemo(() => computeTierTopTechs(bestTierName, skills), [bestTierName, skills])
-  const genExamples = useMemo(() => computeGenerationTopTechs(bestGenIdx, skills), [bestGenIdx, skills])
+/* ---------- 4. 대기업 인기 기술 갭 ----------
+   "적합도"라는 애매한 지표 대신 훨씬 직설적인 걸로 교체 — 다들 대기업을 노리니까, 실제 대기업
+   공고 원본에서 가장 많이 요구되는데 아직 안 배운 기술 3~4개를 그대로 보여준다. 해석 여지 없는
+   원본 집계라 "적합도" 같은 애매한 점수화보다 훨씬 실행 가능하다. */
+const BIGCO_POSTINGS = career.postings.filter((p) => p.tier === '대기업')
+export function BigCoGapWidget({ skills, onOpen }: { skills: string[]; onOpen?: () => void }) {
+  const ranked = useMemo(() => {
+    const owned = new Set(skills)
+    const tally = new Map<string, number>()
+    BIGCO_POSTINGS.forEach((p) => p.techs.forEach((t) => {
+      if (!owned.has(t)) tally.set(t, (tally.get(t) ?? 0) + 1)
+    }))
+    return [...tally.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4)
+  }, [skills])
   return (
-    <WidgetCard label={skills.length ? '내 기술을 요구하는 공고 비율' : '시장 전체 공고 비율'} onOpen={onOpen}>
-      <div className="kit-wcard__sub">
-        {skills.length
-          ? <>업종별로는 <b>{bestInd.name}</b> 공고에서 이 기술 조합이 가장 많이 나와요 ({bestInd.pct}%)</>
-          : '보유 기술을 등록하면 업종별 요구 비율도 계산돼요'}
-      </div>
-      <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
-        <MiniDonut title="기업 규모별" items={tierFit.map((t) => ({ label: t.tier, pct: t.pct }))} examples={tierExamples} />
-        <MiniDonut title="설립 연도별" items={genItems} examples={genExamples} />
-      </div>
+    <WidgetCard label={skills.length ? '대기업에서 많이 쓰지만 안 배운 기술' : '대기업에서 많이 쓰는 기술'} onOpen={onOpen}>
+      <div className="kit-wcard__sub">대기업 공고 {BIGCO_POSTINGS.length}건 기준</div>
+      {ranked.length ? (
+        <div className="kit-wcard__gaprow">
+          {ranked.map(([tech, count]) => (
+            <span key={tech} className="kit-wcard__gapchip">
+              <TechIcon tech={tech} size={16} /> {tech} <em>{count}건</em>
+            </span>
+          ))}
+        </div>
+      ) : (
+        <div className="kit-wcard__sub">대기업 공고에 나오는 기술은 이미 다 보유하고 있어요</div>
+      )}
     </WidgetCard>
   )
 }
@@ -227,6 +192,59 @@ export function CompanyMatchWidget({ skills, onOpen }: { skills: string[]; onOpe
       <div className="kit-wcard__num" style={{ fontSize: 24 }}>{info.top[0]}</div>
       <div className="kit-wcard__sub">
         {info.personal ? `보유 기술 ${info.keys.join(', ')} 기준 최근 채용 ${info.top[1]}건` : `${info.keys.join(', ')} 등 인기 기술 기준 최근 채용 ${info.top[1]}건`}
+      </div>
+    </WidgetCard>
+  )
+}
+
+/* ---------- 7. 내 기술 트렌드 온도 ----------
+   HN 언급량 6개월 추이 기준 아키타입(스테디셀러/뜨는 중/식는 중/하입 온리) 분류.
+   29개 기술만 커버하는 좁은 데이터셋이라, 보유 기술 중 하나도 안 걸리면 "온도 없음"을
+   정직하게 밝히고 시장 예시로 대체한다(과대표시 금지 원칙). */
+type KBadge = { tech: string; types: string[] }
+const K_DATA = kRaw as unknown as { data: { groups: Record<string, KBadge[]> } }
+const K_META: Record<string, { icon: string; label: string }> = {
+  steady: { icon: '🪨', label: '스테디셀러' },
+  rising: { icon: '📈', label: '뜨는 중' },
+  hype_only: { icon: '🔥', label: '화제성만 높음' },
+  falling: { icon: '📉', label: '식는 중' },
+}
+const K_ORDER = ['steady', 'rising', 'hype_only', 'falling']
+const TECH_TYPES = new Map<string, string[]>()
+Object.values(K_DATA.data.groups).forEach((arr) => arr.forEach((b) => { if (!TECH_TYPES.has(b.tech)) TECH_TYPES.set(b.tech, b.types) }))
+
+export function TechTemperatureWidget({ skills, onOpen }: { skills: string[]; onOpen?: () => void }) {
+  const info = useMemo(() => {
+    const owned = skills.filter((s) => TECH_TYPES.has(s))
+    const byType: Record<string, string[]> = {}
+    owned.forEach((s) => TECH_TYPES.get(s)!.forEach((t) => { (byType[t] ??= []).push(s) }))
+    return { owned, byType, hasSignal: owned.length > 0 }
+  }, [skills])
+
+  if (!info.hasSignal) {
+    const example = K_ORDER.map((g) => ({ g, techs: (K_DATA.data.groups[g] ?? []).slice(0, 2).map((b) => b.tech) }))
+    return (
+      <WidgetCard label="기술 트렌드 온도 · 시장 예시" onOpen={onOpen}>
+        <div className="kit-wcard__sub">
+          {skills.length ? '보유 기술 중 최근 6개월 개발자 커뮤니티 트렌드 데이터가 있는 항목이 없어요' : '이력서를 등록하면 내 기술 기준으로 바뀌어요'}
+        </div>
+        <div className="kit-wcard__temprow">
+          {example.map(({ g, techs }) => (
+            <span key={g} className="kit-wcard__tempchip">{K_META[g].icon} {K_META[g].label} <em>{techs.join(', ')}</em></span>
+          ))}
+        </div>
+      </WidgetCard>
+    )
+  }
+  return (
+    <WidgetCard label="내 기술 트렌드 온도" onOpen={onOpen}>
+      <div className="kit-wcard__sub">보유 기술 {skills.length}개 중 {info.owned.length}개에 최근 6개월 개발자 커뮤니티 언급 추이 데이터가 있어요</div>
+      <div className="kit-wcard__temprow">
+        {K_ORDER.filter((g) => info.byType[g]?.length).map((g) => (
+          <span key={g} className="kit-wcard__tempchip">
+            {K_META[g].icon} {K_META[g].label} {info.byType[g].length}개 <em>{info.byType[g].join(', ')}</em>
+          </span>
+        ))}
       </div>
     </WidgetCard>
   )

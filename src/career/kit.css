@@ -10,6 +10,57 @@
 }
 
 /* ---- 1. StatHero ---- */
+/* ---- 홈 상단 커스텀 설정 버튼(우상단 원형) ---- */
+.cr-herosettings {
+  position: absolute; top: 6px; right: 0; z-index: 2;
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--c-card); border: 1px solid var(--line); color: var(--c-muted);
+  box-shadow: var(--e1);
+  transition: transform 0.12s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.cr-herosettings:active { transform: scale(0.9); }
+
+/* ---- 오늘 할 일 체크리스트(홈 히어로 변형) ---- */
+.kit-todo__label { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: var(--c-ink); margin-top: 8px; }
+.kit-todo__sub { font-size: 13px; color: var(--c-muted); margin-top: 4px; }
+.kit-todo__card {
+  margin-top: 14px; background: var(--c-card); border: 1px solid var(--line); border-radius: 20px;
+  box-shadow: var(--e2); padding: 6px 16px;
+}
+.kit-todo__row { display: flex; align-items: center; gap: 11px; padding: 13px 0; border-bottom: 1px solid var(--line2); }
+.kit-todo__row:last-of-type { border-bottom: none; }
+.kit-todo__check {
+  flex: none; width: 22px; height: 22px; border-radius: 50%; border: 1.6px solid var(--line);
+  display: flex; align-items: center; justify-content: center; color: #fff;
+  transition: background 0.15s, border-color 0.15s;
+}
+.kit-todo__check.on { background: var(--c-accent); border-color: var(--c-accent); }
+.kit-todo__ic { flex: none; color: var(--c-accent); display: flex; }
+.kit-todo__body { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; }
+.kit-todo__body .t { font-size: 14px; font-weight: 700; color: var(--c-ink); }
+.kit-todo__body .s { font-size: 12px; color: var(--c-muted); }
+.kit-todo__chev { flex: none; color: var(--c-muted); }
+.kit-todo__foot { display: flex; align-items: center; gap: 10px; padding: 12px 0 10px; font-size: 12px; font-weight: 700; color: var(--c-muted); }
+.kit-todo__bar { flex: 1; height: 5px; border-radius: 3px; background: var(--accent-50); overflow: hidden; }
+.kit-todo__bar i { display: block; height: 100%; border-radius: 3px; background: var(--c-accent); transition: width 0.3s cubic-bezier(0.25, 0.1, 0.25, 1); }
+
+/* ---- 공고 요약(홈 히어로 변형) ---- */
+.kit-jobsum__label { font-size: 14px; font-weight: 600; color: var(--c-muted); margin-top: 8px; }
+.kit-jobsum__pick {
+  margin-top: 10px; font-size: 12.5px; color: var(--c-muted);
+  background: var(--accent-50); border-radius: 12px; padding: 10px 13px;
+}
+.kit-jobsum__pick b { color: var(--c-ink); font-weight: 700; }
+.kit-jobsum__statrow { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 12px; }
+.kit-jobsum__statbare b { font-size: 34px; font-weight: 800; letter-spacing: -1px; color: var(--c-ink); font-variant-numeric: tabular-nums; display: block; line-height: 1.1; }
+.kit-jobsum__statbare span { font-size: 12px; color: var(--c-muted); }
+.kit-jobsum__ring {
+  flex: none; width: 46px; height: 46px; border-radius: 50%;
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 7px), #000 calc(100% - 7px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 7px), #000 calc(100% - 7px));
+}
+
 .kit-hero {
   padding: 8px 2px 4px;
 }
@@ -324,6 +375,70 @@ button.kit-wcard:active { opacity: 0.6; }
   font-size: 10.5px; font-weight: 700; border-radius: 7px; padding: 3px 7px 3px 5px;
 }
 
+/* 기술 트렌드 온도 칩(내 기술 온도 위젯) */
+.kit-wcard__temprow { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.kit-wcard__tempchip {
+  display: flex; align-items: baseline; gap: 6px;
+  background: var(--accent-50); color: var(--c-ink);
+  font-size: 12px; font-weight: 700; border-radius: 10px; padding: 8px 11px;
+}
+.kit-wcard__tempchip em { font-style: normal; font-weight: 500; color: var(--c-muted); font-size: 11px; }
+
+/* 대기업 인기 기술 갭 칩 */
+.kit-wcard__gaprow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.kit-wcard__gapchip {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--accent-50); color: var(--c-ink);
+  font-size: 12px; font-weight: 700; border-radius: 9px; padding: 7px 10px 7px 8px;
+}
+.kit-wcard__gapchip em { font-style: normal; font-weight: 700; color: var(--accent-700); font-size: 11px; }
+
+/* ---- 홈 상단 커스텀 선택 시트 — 폰 미리보기 그리드(iOS 알림 설정 스타일) ---- */
+.cr-heropick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 4px 0 4px; }
+.cr-heropick__cell { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.cr-heropick__phone {
+  position: relative; width: 100%; aspect-ratio: 1 / 1; border-radius: 13px;
+  background: var(--c-card); border: 1.4px solid var(--line);
+  display: flex; align-items: center; justify-content: center; padding: 8px;
+  transition: border-color 0.15s, transform 0.12s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.cr-heropick__cell:active .cr-heropick__phone { transform: scale(0.96); }
+.cr-heropick__cell.on .cr-heropick__phone { border-color: var(--c-accent); border-width: 2px; }
+.cr-heropick__label { font-size: 10.5px; font-weight: 600; color: var(--c-ink); text-align: center; line-height: 1.25; }
+.cr-heropick__cell.on .cr-heropick__label { color: var(--c-accent); font-weight: 700; }
+.cr-heropick__check {
+  position: absolute; top: -5px; right: -5px; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--c-accent); color: #fff; display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--e1);
+}
+
+/* 미리보기 목업 — 실데이터가 아닌 레이아웃 실루엣. 단일 액센트 색만 사용(DS 규칙 준수) */
+.cr-hpv { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+.cr-hpv--briefing { align-items: stretch; gap: 5px; }
+.hpv-row { display: flex; align-items: center; gap: 4px; }
+.hpv-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; border: 1.3px solid var(--accent-300); }
+.hpv-bar { flex: 1; height: 5px; border-radius: 3px; background: var(--accent-100); }
+.hpv-bar.short { flex: 0.55; }
+.cr-hpv--rings { position: relative; }
+.hpv-ring { position: absolute; border-radius: 50%; border: 3px solid var(--accent-200); }
+.hpv-ring.outer { width: 30px; height: 30px; border-top-color: var(--c-accent); border-right-color: var(--c-accent); }
+.hpv-ring.inner { width: 18px; height: 18px; border-top-color: var(--accent-700); }
+.cr-hpv--stat { align-items: stretch; gap: 5px; padding: 0 3px; }
+.hpv-num { height: 14px; border-radius: 4px; background: var(--accent-200); width: 60%; }
+.hpv-track { height: 5px; border-radius: 3px; background: var(--accent-100); overflow: hidden; }
+.hpv-track i { display: block; height: 100%; width: 65%; background: var(--c-accent); border-radius: 3px; }
+.cr-hpv--chain { flex-direction: row; }
+.hpv-chip { width: 15px; height: 15px; border-radius: 5px; background: var(--c-accent); }
+.hpv-chip.alt { background: var(--accent-300); }
+.hpv-arrow { width: 9px; height: 2px; background: var(--accent-300); }
+.cr-hpv--gap { align-items: stretch; gap: 4px; padding: 0 4px; }
+.hpv-gapchip { height: 10px; border-radius: 5px; background: var(--c-accent); width: 100%; }
+.hpv-gapchip.short { width: 74%; background: var(--accent-300); }
+.hpv-gapchip.shorter { width: 50%; background: var(--accent-200); }
+.cr-hpv--temp { align-items: stretch; gap: 4px; padding: 0 5px; }
+.hpv-pill { height: 8px; border-radius: 4px; background: var(--accent-200); width: 100%; }
+.hpv-pill.short { width: 62%; background: var(--accent-100); }
+
 /* ---- 5. SectionHeader ---- */
 .kit-sec {
   display: flex;
@@ -565,25 +680,27 @@ button.kit-wcard:active { opacity: 0.6; }
   flex: none;
 }
 
-/* ---- 카드 모드 토글 ---- */
-.kit-cardmode {
-  display: inline-flex;
-  background: #eceef3;
-  border-radius: 12px;
-  padding: 3px;
+/* ---- 슬라이딩 세그먼트(공통 탭 셀렉터) — toss-details.css .td-seg와 동일한 스프링 이징 ---- */
+.kit-segctl {
+  position: relative; display: inline-flex;
+  background: #eceef3; border-radius: 12px; padding: 3px;
 }
-.kit-cardmode button {
-  padding: 6px 12px;
-  border-radius: 9px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--c-muted);
+.kit-segctl.sm { padding: 2px; border-radius: 10px; }
+.kit-segctl__pill {
+  position: absolute; top: 3px; bottom: 3px; border-radius: 9px;
+  background: var(--c-card); box-shadow: var(--e1);
+  transition: left 0.34s cubic-bezier(0.175, 0.885, 0.32, 1.275), width 0.34s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
-.kit-cardmode button.on {
-  background: var(--c-card);
+.kit-segctl.sm .kit-segctl__pill { top: 2px; bottom: 2px; border-radius: 8px; }
+.kit-segctl button {
+  position: relative; z-index: 1; flex: 1; padding: 6px 12px;
+  font-size: 12px; font-weight: 600; color: var(--c-muted);
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+.kit-segctl button.on {
   color: var(--accent-700);
   font-weight: 700;
-  box-shadow: var(--e1);
 }
 
 /* ---- DS 쇼케이스 데모 래퍼 ---- */

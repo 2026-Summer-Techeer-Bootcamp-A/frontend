@@ -3,7 +3,7 @@ import { ChevronLeft } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import PhoneFrame from '../components/PhoneFrame'
 import CareerTabBar, { type CareerTab } from './CareerTabBar'
-import { PageTransition } from './kit'
+import { PageTransition, SegmentedControl } from './kit'
 import { THEME, themeVars } from './themes'
 import './career.css'
 import './screens.css'
@@ -61,13 +61,11 @@ export function ScreenHead({ title, sub }: { title: string; sub?: string }) {
 
 export function PoolToggle({ pool, onChange }: { pool: string; onChange: (p: '국내' | '국외') => void }) {
   return (
-    <div className="cr-pooltoggle" style={{ display: 'flex' }}>
-      {(['국내', '국외'] as const).map((p) => (
-        <button key={p} className={pool === p ? 'on' : ''} onClick={() => onChange(p)}>
-          {p === '국외' ? '글로벌' : '국내'}
-        </button>
-      ))}
-    </div>
+    <SegmentedControl
+      value={pool}
+      onChange={(v) => onChange(v as '국내' | '국외')}
+      options={[{ key: '국내', label: '국내' }, { key: '국외', label: '글로벌' }]}
+    />
   )
 }
 

@@ -290,31 +290,29 @@ function buildTierRows() {
     })
     .filter((r) => r.maxCount >= 3)
   rows.sort((a, b) => b.spread - a.spread)
-  return { rows: rows.slice(0, 8), totalByTier, byTier }
+  return { rows, totalByTier, byTier }
 }
 const TIER_DATA = buildTierRows()
 const TIER_HEAT_TECHS = TIER_DATA.rows.slice(0, 6).map((r) => r.tech)
 const TIER_HEAT_MATRIX = TIER_LIST.map((_, ti) => TIER_HEAT_TECHS.map((_, techi) => TIER_DATA.rows[techi].shares[ti]))
 
-/** 보유 기술 기준 기업 규모(대기업/중견/중소) 궁합 — 홈 위젯용. GenerationTrendChart의
- * affinity 계산과 같은 패턴(보유 기술의 평균 점유율을 100%로 정규화). */
-export function computeTierAffinity(skills: string[]) {
-  const shareOf = (tier: string, tech: string) => (TIER_DATA.totalByTier[tier] ? (TIER_DATA.byTier[tier][tech] ?? 0) / TIER_DATA.totalByTier[tier] : 0)
-  const relevant = skills.filter((t) => TIER_LIST.some((tier) => TIER_DATA.byTier[tier][t]))
-  const allTechs = [...new Set(TIER_LIST.flatMap((tier) => Object.keys(TIER_DATA.byTier[tier])))]
-  const techs = relevant.length ? relevant : allTechs
-  const sums = TIER_LIST.map((tier) => techs.reduce((s, t) => s + shareOf(tier, t), 0) / (techs.length || 1))
+/** 보유 기술 중 "기업 규모에 따라 요구율이 뚜렷이 갈리는" 기술만 추려 신호로 삼는다.
+ * Python/AWS/Git 같은 흔한 기술은 티어 간 편차가 5%p 안팎이라 전부 평균 내면 항상
+ * 30~36% 근처로 밋밋하게 나오는 문제가 있었음(사용자 피드백) — 편차 15%p 이상인
+ * 기술이 하나도 없으면 "차이 없음"을 정직하게 반환한다. */
+const TIER_SIGNAL_THRESHOLD = 15
+export function computeTierSignal(skills: string[], threshold = TIER_SIGNAL_THRESHOLD) {
+  const signalRows = TIER_DATA.rows.filter((r) => r.spread >= threshold)
+  const pool = skills.length ? signalRows.filter((r) => skills.includes(r.tech)) : signalRows.slice(0, 5)
+  if (!pool.length) return { hasSignal: false as const }
+  const picked = [...pool].sort((a, b) => b.spread - a.spread).slice(0, 5)
+  const sums = TIER_LIST.map((_, i) => picked.reduce((s, r) => s + r.shares[i], 0) / picked.length)
   const tot = sums.reduce((a, b) => a + b, 0) || 1
-  return TIER_LIST.map((tier, i) => ({ tier, pct: Math.round((sums[i] / tot) * 100) }))
-}
-
-/** 특정 규모에서 가장 많이 요구되는 예시 기술 — 보유 기술 중 있으면 그것을 우선(근거 노출),
- * 없으면 시장 전체 상위로 대체. */
-export function computeTierTopTechs(tier: string, skills: string[], limit = 3) {
-  const byTech = TIER_DATA.byTier[tier] ?? {}
-  const owned = skills.filter((t) => byTech[t])
-  const pool = owned.length ? owned : Object.keys(byTech)
-  return [...pool].sort((a, b) => (byTech[b] ?? 0) - (byTech[a] ?? 0)).slice(0, limit)
+  return {
+    hasSignal: true as const,
+    items: TIER_LIST.map((tier, i) => ({ tier, pct: Math.round((sums[i] / tot) * 100) })),
+    examples: picked.slice(0, 3).map((r) => r.tech),
+  }
 }
 
 /** 한눈에 보는 티어×기술 요구율 히트맵. 대기업·중견·중소는 실제 매출·인원 데이터가 아니라
@@ -350,11 +348,22 @@ export function computeGenerationAffinity(skills: string[]) {
   return sums.map((s) => Math.round((s / tot) * 100))
 }
 
-/** 특정 설립 세대에서 점유율이 가장 높은 예시 기술 — 보유 기술 우선, 없으면 시장 전체로 대체. */
-export function computeGenerationTopTechs(genIdx: number, skills: string[], limit = 3) {
-  const owned = G_DATA.data.matrix.filter((m) => skills.includes(m.tech))
-  const pool = owned.length ? owned : G_DATA.data.matrix
-  return [...pool].sort((a, b) => b.shares[genIdx] - a.shares[genIdx]).slice(0, limit).map((m) => m.tech)
+/** computeTierSignal과 같은 원칙 — 설립 세대 간 점유율 편차가 뚜렷한(15%p 이상) 기술만
+ * 신호로 삼는다. 없으면 "차이 없음"을 정직하게 반환. */
+const GEN_SIGNAL_THRESHOLD = 15
+export function computeGenerationSignal(skills: string[], threshold = GEN_SIGNAL_THRESHOLD) {
+  const withSpread = G_DATA.data.matrix.map((m) => ({ ...m, spread: Math.max(...m.shares) - Math.min(...m.shares) }))
+  const signalRows = withSpread.filter((m) => m.spread >= threshold)
+  const pool = skills.length ? signalRows.filter((m) => skills.includes(m.tech)) : [...signalRows].sort((a, b) => b.spread - a.spread).slice(0, 5)
+  if (!pool.length) return { hasSignal: false as const }
+  const picked = [...pool].sort((a, b) => b.spread - a.spread).slice(0, 5)
+  const sums = [0, 1, 2].map((g) => picked.reduce((s, m) => s + m.shares[g], 0) / picked.length)
+  const tot = sums.reduce((a, b) => a + b, 0) || 1
+  return {
+    hasSignal: true as const,
+    pcts: sums.map((s) => Math.round((s / tot) * 100)),
+    examples: picked.slice(0, 3).map((m) => m.tech),
+  }
 }
 
 export function GenerationTrendChart({ skills = RESUME }: { skills?: string[] }) {
