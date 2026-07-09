@@ -174,15 +174,31 @@ export function CoverageHistogram({
 }: { postings: HistJob[]; mySkills: string[]; gap: Tech[]; poolLabel: string; threshold?: number }) {
   const [added, setAdded] = useState<string[]>([])
   const BINS = 14
+  const total = postings.length
+  const baseReached = useMemo(() => {
+    return postings.filter((p) => (p.total ? Math.round((100 * p.held) / p.total) : 0) >= threshold).length
+  }, [postings, threshold])
+
+  const sortedGap = useMemo(() => {
+    return [...gap].map((g) => {
+      const reachedWithTech = postings.filter((p) => {
+        const extra = (p.techs.includes(g.tech) && !mySkills.includes(g.tech)) ? 1 : 0
+        const pct = p.total ? Math.round((100 * (p.held + extra)) / p.total) : 0
+        return pct >= threshold
+      }).length
+      const increase = reachedWithTech - baseReached
+      const pctIncrease = total ? Number(((reachedWithTech - baseReached) / total * 100).toFixed(1)) : 0
+      return { ...g, increase, pctIncrease }
+    }).sort((a, b) => b.increase - a.increase)
+  }, [gap, postings, mySkills, baseReached, threshold, total])
+
   const pctOf = (p: HistJob) => {
     const extra = added.filter((a) => p.techs.includes(a) && !mySkills.includes(a)).length
     return p.total ? Math.round((100 * (p.held + extra)) / p.total) : 0
   }
   const hist = new Array(BINS).fill(0)
   postings.forEach((p) => { hist[Math.min(BINS - 1, Math.floor((pctOf(p) / 100) * BINS))]++ })
-  const total = postings.length
   const reached = postings.filter((p) => pctOf(p) >= threshold).length
-  const baseReached = postings.filter((p) => (p.total ? Math.round((100 * p.held) / p.total) : 0) >= threshold).length
   const max = Math.max(...hist, 1)
   const toggle = (t: string) => setAdded((a) => (a.includes(t) ? a.filter((x) => x !== t) : [...a, t]))
   return (
@@ -204,12 +220,12 @@ export function CoverageHistogram({
         })}
       </div>
       <div className="kit-hist__axis"><span>0%</span><span className="thr">문턱 {threshold}%</span><span>100%</span></div>
-      <div className="kit-hist__whatif-label">이 기술을 배우면?</div>
+      <div className="kit-hist__whatif-label">이 기술을 배우면? (커버리지 상승순)</div>
       <div className="kit-whatif__chips" style={{ marginTop: 6 }}>
-        {gap.map((g) => (
+        {sortedGap.map((g) => (
           <button key={g.tech} className={`kit-whatif__chip${added.includes(g.tech) ? ' on' : ''}`}
             onClick={() => toggle(g.tech)}>
-            +{g.tech}
+            +{g.tech} (+{g.pctIncrease}%)
           </button>
         ))}
       </div>

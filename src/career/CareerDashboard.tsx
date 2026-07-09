@@ -4,11 +4,11 @@ import { MapPin, Calendar, SlidersHorizontal, Check } from 'lucide-react'
 import PhoneFrame from '../components/PhoneFrame'
 import CompanyLogo from './CompanyLogo'
 import CareerTabBar from './CareerTabBar'
-import { PageTransition, StatHero, CoverageHistogram, PulseCard, SwipePager, SectionHeader, JobCardCompact, CardModeToggle, ActivityRings, RingLegend, ResumeEmptyCard, matchGrad, type CardMode, type PulseItem, type RingMetric } from './kit'
-import { IndustryFitRadar, TechChainRoadmap } from './insights'
+import { PageTransition, StatHero, SectionHeader, JobCardCompact, CardModeToggle, ActivityRings, RingLegend, ResumeEmptyCard, SwipePager, matchGrad, type CardMode, type RingMetric } from './kit'
+import { DeadlineMatchWidget, RoadmapTeaserWidget, TrendAlertWidget, CompanyFitWidget, ResponseRateWidget, CompanyMatchWidget, type DeadlinePosting } from './homeWidgets'
 import { THEME, themeVars } from './themes'
 import data from '../data/careerData.json'
-import market from '../data/marketData.json'
+import { useResumesState, getDynamicPostings, calculateCoverage, ddayInfo } from './state'
 import './career.css'
 
 type Pool = '국내' | '국외'
@@ -17,41 +17,8 @@ type Sort = 'latest' | 'match' | 'deadline' | 'tier'
 const TIER_RANK: Record<string, number> = { 대기업: 0, 중견: 1, 중소: 2 }
 const tierRank = (t: string | null) => (t && t in TIER_RANK ? TIER_RANK[t] : 3)
 
-const RESUME: string[] = data.resume.skills
 const AS_OF = data.meta.asOf
 const MARKET: Record<string, { open: number; soon: number }> = data.meta.market
-
-const YEARLY = market.techYearly as { years: string[]; series: { tech: string; shares: number[]; delta: number; owned: boolean }[] }
-const PULSE_BASE = (market.pulse as { items: PulseItem[] }).items
-const PULSE_BASE_TECHS = new Set(PULSE_BASE.map((it) => it.tech))
-const YEARLY_DECLINE = [...YEARLY.series]
-  .filter((r) => !r.owned && r.delta < 0 && !PULSE_BASE_TECHS.has(r.tech))
-  .sort((a, b) => a.delta - b.delta)[0]
-const PULSE: PulseItem[] = [
-  ...PULSE_BASE,
-  ...(YEARLY_DECLINE ? [{
-    tech: YEARLY_DECLINE.tech,
-    text: <>{YEARLY_DECLINE.tech} · 국내 수요 감소</>,
-    evidence: `국내 점유율 ${YEARLY.years[0]} ${YEARLY_DECLINE.shares[0]}% → ${YEARLY.years[YEARLY.years.length - 1]} ${YEARLY_DECLINE.shares[YEARLY_DECLINE.shares.length - 1]}%`,
-  }] : []),
-]
-
-// "배우면" 칩 = 국내 채용시장 기준 미보유 상위 5 (Java·Spring·C++·Kubernetes·Next.js …)
-const WHATIF = (market.skillShare as never as Record<string, { items: { tech: string; count: number; owned: boolean }[] }>)['국내']
-  .items.filter((i) => !i.owned).slice(0, 5).map((i) => ({ tech: i.tech, count: i.count }))
-
-// 운동 링 2지표: 기술 커버리지 · 조건(매칭 50%+) 만족 공고 도달률
-const DOM_POSTINGS = data.postings.filter((p) => p.pool === '국내')
-const REACH_LIST = DOM_POSTINGS.filter((p) => p.matchPct >= 50)
-const REACH_PCT = Math.round((REACH_LIST.length / DOM_POSTINGS.length) * 100)
-
-function ddayInfo(close: string) {
-  if (!close) return null
-  const d = Math.round((new Date(close).getTime() - new Date(AS_OF).getTime()) / 86400000)
-  if (d < 0) return null
-  const [, m, dd] = close.split('-')
-  return { d, label: `~${Number(m)}/${Number(dd)}` }
-}
 
 function careerLabel(min: number | null, max: number | null) {
   if (!min) return '신입·무관'
@@ -59,10 +26,10 @@ function careerLabel(min: number | null, max: number | null) {
   return `경력 ${min}년+`
 }
 
-export function JobCard({ p, onOpen }: { p: (typeof data.postings)[number]; onOpen: () => void }) {
-  const held = p.techs.filter((x) => RESUME.includes(x)).slice(0, 3)
+export function JobCard({ p, mySkills, onOpen }: { p: any; mySkills: string[]; onOpen: () => void }) {
+  const held = p.techs.filter((x: string) => mySkills.includes(x)).slice(0, 3)
   const gap = p.gap.slice(0, 2)
-  const dd = ddayInfo(p.closeDate)
+  const dd = ddayInfo(p.closeDate, AS_OF)
   return (
     <div className="cr-card" onClick={onOpen}>
       <div className="cr-card__top">
@@ -86,10 +53,10 @@ export function JobCard({ p, onOpen }: { p: (typeof data.postings)[number]; onOp
         </div>
       </div>
       <div className="cr-chips">
-        {held.map((s) => (
+        {held.map((s: string) => (
           <span key={s} className="cr-chip held">{s}</span>
         ))}
-        {gap.map((s) => (
+        {gap.map((s: string) => (
           <span key={s} className="cr-chip gap">{s}</span>
         ))}
       </div>
@@ -107,7 +74,7 @@ export function JobCard({ p, onOpen }: { p: (typeof data.postings)[number]; onOp
 }
 
 export function JobCardGeneric({ p, onOpen }: { p: (typeof data.postings)[number]; onOpen: () => void }) {
-  const dd = ddayInfo(p.closeDate)
+  const dd = ddayInfo(p.closeDate, AS_OF)
   return (
     <div className="cr-card" onClick={onOpen}>
       <div className="cr-card__top">
@@ -145,16 +112,36 @@ export default function CareerDashboard() {
   const t = THEME
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const hasResume = !searchParams.get('empty')
+  const emptyParam = searchParams.get('empty') === 'true'
+
+  const { resumes, activeResume } = useResumesState()
+  const hasResume = !emptyParam && resumes.length > 0
+
+  const activeSkills = useMemo(() => hasResume ? activeResume.skills : [], [hasResume, activeResume])
+
   const [pool, setPool] = useState<Pool>('국내')
   const [sort, setSort] = useState<Sort>('match')
   const [hideExp, setHideExp] = useState(false)
-  const [visible, setVisible] = useState(5)
+  const [visible, setVisible] = useState(3)
   const [filterOpen, setFilterOpen] = useState(false)
   const [cardMode, setCardMode] = useState<CardMode>('full')
 
+  // Dynamic calculations based on active resume skills
+  const dynamicPostings = useMemo(() => getDynamicPostings(activeSkills), [activeSkills])
+  const poolPostings = useMemo(() => dynamicPostings.filter((p) => p.pool === pool), [dynamicPostings, pool])
+
+  const totalPostings = poolPostings.length
+  const reachedPostings = poolPostings.filter((p) => p.matchPct >= 50).length
+  const reachRate = totalPostings ? Math.round((reachedPostings / totalPostings) * 100) : 0
+  const coveragePct = calculateCoverage(activeSkills, pool)
+
+  const RINGS: RingMetric[] = [
+    { key: 'cov', label: '커버리지', pct: coveragePct, color: 'var(--c-accent)' },
+    { key: 'reach', label: '도달률', pct: reachRate, color: 'var(--accent-700)', note: `${reachedPostings}개 공고` },
+  ]
+
   const list = useMemo(() => {
-    let arr = data.postings.filter((p) => p.pool === pool)
+    let arr = poolPostings
     if (hideExp) arr = arr.filter((p) => !p.careerMin)
     arr = [...arr].sort((a, b) => {
       if (sort === 'match') return b.matchPct - a.matchPct
@@ -163,95 +150,64 @@ export default function CareerDashboard() {
       return (b.postDate || '').localeCompare(a.postDate || '')
     })
     return arr
-  }, [pool, sort, hideExp])
+  }, [poolPostings, sort, hideExp])
 
   const genericList = useMemo(
     () => [...data.postings.filter((p) => p.pool === pool)].sort((a, b) => (b.postDate || '').localeCompare(a.postDate || '')),
     [pool],
   )
 
-  const cov = data.resume.coveragePct
-  const RINGS: RingMetric[] = [
-    { key: 'cov', label: '커버리지', pct: cov, color: 'var(--c-accent)' },
-    { key: 'reach', label: '도달률', pct: REACH_PCT, color: 'var(--accent-700)', note: `${REACH_LIST.length}개 공고` },
-  ]
   const mk = MARKET[pool]
-  const histJobs = useMemo(
-    () => data.postings.filter((p) => p.pool === pool).map((p) => ({ techs: p.techs, held: p.matchHeld, total: p.matchTotal })),
-    [pool],
-  )
+
+  // 상단 위젯존: 마감임박×매칭 위젯용 데이터(이력서 없으면 매칭 필터 없이 전체 기준)
+  const deadlineItems = useMemo(() => {
+    const base = hasResume ? poolPostings.filter((p) => p.matchPct >= 50) : poolPostings
+    const out: DeadlinePosting[] = []
+    for (const p of base) {
+      const dd = ddayInfo(p.closeDate, AS_OF)
+      if (dd && dd.d <= 7) out.push({ company: p.company, title: p.title, matchPct: hasResume ? p.matchPct : undefined, dday: dd.d })
+    }
+    out.sort((a, b) => a.dday - b.dday)
+    return out
+  }, [poolPostings, hasResume])
+
+  const widgetPages = useMemo(() => [
+    { key: 'deadline', node: <DeadlineMatchWidget items={deadlineItems} count={deadlineItems.length} hasResume={hasResume} onOpen={() => navigate('/jobs')} /> },
+    { key: 'roadmap', node: <RoadmapTeaserWidget skills={activeSkills} onOpen={() => navigate('/market')} /> },
+    { key: 'trend', node: <TrendAlertWidget skills={activeSkills} onOpen={() => navigate('/market')} /> },
+    { key: 'archetype', node: <CompanyFitWidget skills={activeSkills} onOpen={() => navigate('/market')} /> },
+    { key: 'response', node: <ResponseRateWidget onOpen={() => navigate('/market')} /> },
+    { key: 'company', node: <CompanyMatchWidget skills={activeSkills} onOpen={() => navigate('/market')} /> },
+  ], [deadlineItems, hasResume, activeSkills, navigate])
 
   return (
     <div className="stage" style={{ background: t.stageBg }}>
       <PhoneFrame stage="purple" bare screenBg={t.screenBg} statusTheme={t.statusTheme} homeIndicator="none">
         <div className="career" style={themeVars(t)}>
           <PageTransition type="fade">
-            {/* 1막 — 히어로: 포지셔닝 점수 */}
+            {/* Greeting */}
             <div className="cr-greet-line">좋은 아침이에요 👋 <b>리버</b>님</div>
-            <div className={hasResume ? undefined : 'cr-lockwrap'}>
-              <div className={hasResume ? undefined : 'cr-lockwrap__blur'} aria-hidden={hasResume ? undefined : true}>
-                <StatHero
-                  value={cov} title="시장 커버리지"
-                  rings={<ActivityRings metrics={RINGS} />}
-                  legend={<RingLegend metrics={RINGS} />}
-                />
 
-                {/* 2막 — 포지셔닝 인사이트 (스와이프 5페이지) */}
-                <div className="cr-widget" style={{ marginTop: 12, padding: '16px', marginBottom: 14 }}>
-                  <SwipePager pages={[
-                    {
-                      key: 'cov',
-                      node: (
-                        <>
-                          <div className="scr-card__title" style={{ marginBottom: 6 }}>매칭 분포</div>
-                          <CoverageHistogram
-                            postings={histJobs} mySkills={RESUME} gap={WHATIF}
-                            poolLabel={pool === '국내' ? '국내' : '글로벌'}
-                          />
-                        </>
-                      ),
-                    },
-                    {
-                      key: 'pulse',
-                      node: (
-                        <>
-                          <div className="scr-card__title" style={{ marginBottom: 6 }}>요즘의 시장 <span style={{ fontSize: 11, color: 'var(--c-muted)', fontWeight: 500 }}>국내 데이터 근거</span></div>
-                          <PulseCard items={PULSE} />
-                        </>
-                      ),
-                    },
-                    {
-                      key: 'radar',
-                      node: (
-                        <>
-                          <div className="scr-card__title" style={{ marginBottom: 6 }}>업종 적합도 <span style={{ fontSize: 11, color: 'var(--c-muted)', fontWeight: 500 }}>보유 기술 기준 실측</span></div>
-                          <IndustryFitRadar />
-                        </>
-                      ),
-                    },
-                    {
-                      key: 'roadmap',
-                      node: (
-                        <>
-                          <div className="scr-card__title" style={{ marginBottom: 6 }}>다음 스텝 로드맵 <span style={{ fontSize: 11, color: 'var(--c-muted)', fontWeight: 500 }}>내 스택과 강하게 얽힌 순</span></div>
-                          <TechChainRoadmap />
-                        </>
-                      ),
-                    },
-                  ]} />
-                </div>
+            {/* 상단 위젯존(~40%): 히어로(또는 이력서 유도) + 위젯 캐러셀 6종 — 이력서 없어도 잠그지 않고
+                일반 시장 지표 모드로 그대로 보여준다(각 위젯이 skills=[]일 때 일반 모드로 전환) */}
+            {hasResume ? (
+              <StatHero
+                value={coveragePct} title="시장 커버리지"
+                rings={<ActivityRings metrics={RINGS} />}
+                legend={<RingLegend metrics={RINGS} />}
+              />
+            ) : (
+              <ResumeEmptyCard totalPostings={data.meta.totalPostings} onSubmit={() => navigate('/resume/submit')} />
+            )}
 
-                {/* 공고 현황 2열 컴팩트 */}
-                <div className="cr-minstat">
-                  <div><b>{mk.open.toLocaleString()}</b><span>전체 공고</span></div>
-                  <div><b className="warn">{mk.soon.toLocaleString()}</b><span>곧 마감</span></div>
-                </div>
-              </div>
-              {!hasResume && (
-                <div className="cr-lockwrap__cta">
-                  <ResumeEmptyCard totalPostings={data.meta.totalPostings} onSubmit={() => navigate('/resume/submit')} />
-                </div>
-              )}
+            <div className="cr-widgetzone">
+              <SwipePager pages={widgetPages} />
+            </div>
+
+            {/* 공고 현황 2열 컴팩트 */}
+            <div className="cr-minstat" style={{ marginBottom: 14 }}>
+              <div><b>{mk.open.toLocaleString()}</b><span>전체 공고</span></div>
+              <div><b className="warn">{mk.soon.toLocaleString()}</b><span>곧 마감</span></div>
             </div>
 
             {/* 맞춤 공고 / 채용 공고 */}
@@ -259,7 +215,7 @@ export default function CareerDashboard() {
             <div className="cr-secbar" style={{ margin: '0 0 14px' }}>
               <div className="cr-pooltoggle cr-pooltoggle--slim">
                 {(['국내', '국외'] as Pool[]).map((pv) => (
-                  <button key={pv} className={pool === pv ? 'on' : ''} onClick={() => { setPool(pv); setVisible(5) }}>
+                  <button key={pv} className={pool === pv ? 'on' : ''} onClick={() => { setPool(pv); setVisible(3) }}>
                     {pv === '국내' ? '국내' : '글로벌'}
                   </button>
                 ))}
@@ -293,13 +249,12 @@ export default function CareerDashboard() {
               ))
             ) : (
               list.slice(0, visible).map((p) => (
-                <JobCard key={p.id} p={p} onOpen={() => navigate(`/job/${data.postings.indexOf(p)}`)} />
+                <JobCard key={p.id} p={p} mySkills={activeSkills} onOpen={() => navigate(`/job/${data.postings.indexOf(p)}`)} />
               ))
             )}
           </PageTransition>
 
           <CareerTabBar active="home" />
-
 
           {/* 필터 바텀시트 */}
           {filterOpen && (
@@ -317,7 +272,7 @@ export default function CareerDashboard() {
                   </button>
                 ))}
                 <div className="cr-sheet__label">필터</div>
-                <button className={`cr-check ${hideExp ? 'on' : ''}`} onClick={() => { setHideExp((v) => !v); setVisible(5) }}>
+                <button className={`cr-check ${hideExp ? 'on' : ''}`} onClick={() => { setHideExp((v) => !v); setVisible(3) }}>
                   <span className="box">{hideExp && <Check size={14} strokeWidth={3} />}</span>
                   경력직 채용 보지 않기 <span style={{ color: 'var(--c-muted)', fontSize: 12 }}>(신입)</span>
                 </button>

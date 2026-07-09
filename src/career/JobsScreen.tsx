@@ -6,6 +6,7 @@ import { CardModeToggle, JobCardCompact, type CardMode } from './kit'
 import { JobCard } from './CareerDashboard'
 import CompanyLogo from './CompanyLogo'
 import data from '../data/careerData.json'
+import { useResumesState, getDynamicPostings } from './state'
 
 type Pool = '국내' | '국외'
 type Sort = 'match' | 'tier' | 'latest'
@@ -30,16 +31,20 @@ export default function JobsScreen() {
   const [mode, setMode] = useState<CardMode>('full')
   const [sort, setSort] = useState<Sort>('match')
 
+  const { activeResume } = useResumesState()
+  const activeSkills = activeResume ? activeResume.skills : []
+  const dynamicPostings = useMemo(() => getDynamicPostings(activeSkills), [activeSkills])
+
   const list = useMemo(() => {
     const s = q.trim().toLowerCase()
-    let arr = data.postings.filter((p) => p.pool === pool)
+    let arr = dynamicPostings.filter((p) => p.pool === pool)
     if (s) arr = arr.filter((p) => (p.company + ' ' + p.title).toLowerCase().includes(s))
     return [...arr].sort((a, b) => {
       if (sort === 'tier') return tierRank(a.tier) - tierRank(b.tier) || b.matchPct - a.matchPct
       if (sort === 'latest') return (b.postDate || '').localeCompare(a.postDate || '')
       return b.matchPct - a.matchPct
     })
-  }, [q, pool, sort])
+  }, [dynamicPostings, q, pool, sort])
 
   return (
     <SubScreen title="채용 공고">
@@ -64,16 +69,29 @@ export default function JobsScreen() {
         {list.length === 0 ? (
           <div className="cr-empty">검색 결과가 없어요.</div>
         ) : mode === 'compact' ? (
-          list.map((p) => (
-            <JobCardCompact
-              key={p.id}
-              job={{ company: p.company, title: p.title, matchPct: p.matchPct, careerLabel: careerLabel(p.careerMin, p.careerMax) }}
-              logo={<CompanyLogo logo={p.logo} name={p.company} size={40} radius={11} />}
-              onOpen={() => navigate(`/job/${data.postings.indexOf(p)}`)}
-            />
-          ))
+          list.map((p) => {
+            const originalIndex = data.postings.findIndex((x) => x.id === p.id)
+            return (
+              <JobCardCompact
+                key={p.id}
+                job={{ company: p.company, title: p.title, matchPct: p.matchPct, careerLabel: careerLabel(p.careerMin, p.careerMax) }}
+                logo={<CompanyLogo logo={p.logo} name={p.company} size={40} radius={11} />}
+                onOpen={() => navigate(`/job/${originalIndex}`)}
+              />
+            )
+          })
         ) : (
-          list.map((p) => <JobCard key={p.id} p={p} onOpen={() => navigate(`/job/${data.postings.indexOf(p)}`)} />)
+          list.map((p) => {
+            const originalIndex = data.postings.findIndex((x) => x.id === p.id)
+            return (
+              <JobCard
+                key={p.id}
+                p={p}
+                mySkills={activeSkills}
+                onOpen={() => navigate(`/job/${originalIndex}`)}
+              />
+            )
+          })
         )}
       </div>
       <div style={{ height: 20 }} />

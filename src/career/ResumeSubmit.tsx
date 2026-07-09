@@ -2,15 +2,37 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { UploadCloud, Check } from 'lucide-react'
 import { SubScreen } from './charts'
+import { useResumesState, calculateCoverage } from './state'
 
 type Mode = 'form' | 'pdf'
 
 export default function ResumeSubmit() {
   const navigate = useNavigate()
+  const { resumes, activeId, updateResumes } = useResumesState()
   const [mode, setMode] = useState<Mode>('form')
   const [position, setPosition] = useState('Backend Engineer')
   const [career2, setCareer] = useState('3')
   const [parsed, setParsed] = useState(false)
+
+  const handleSubmit = () => {
+    const parsedSkills = ['Java', 'Spring', 'MySQL', 'Git', 'Linux', 'Docker']
+    const updated = resumes.map((x) => {
+      if (x.id === activeId) {
+        const nextSkills = parsed ? parsedSkills : x.skills
+        return {
+          ...x,
+          position,
+          careerMin: Number(career2) || 0,
+          careerMax: (Number(career2) || 0) + 3,
+          skills: nextSkills,
+          coveragePct: calculateCoverage(nextSkills, '국내'),
+        }
+      }
+      return x
+    })
+    updateResumes(updated)
+    navigate('/resume')
+  }
 
   return (
     <SubScreen title="이력서 제출">
@@ -50,7 +72,7 @@ export default function ResumeSubmit() {
             🔒 이력서 원문은 서버에 저장하지 않아요. 매칭에 필요한 기술셋·포지션·연차만 사용해요.
           </div>
 
-          <button className="scr-primary" onClick={() => navigate('/resume')}>확인하고 마이로</button>
+          <button className="scr-primary" onClick={handleSubmit}>확인하고 마이로</button>
         </>
       )}
       <div style={{ height: 20 }} />

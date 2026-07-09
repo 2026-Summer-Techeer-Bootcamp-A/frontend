@@ -12,7 +12,6 @@ import gRaw from '../data/pearl/g.json'
 import './insights.css'
 
 const RESUME: string[] = career.resume.skills
-const RESUME_SET = new Set(RESUME)
 
 /* ============================================================
    홈 위젯 1 — 업종 적합도 레이더
@@ -22,30 +21,37 @@ const RESUME_SET = new Set(RESUME)
 const IND = market.industry as {
   asOf: string; N: number; industries: string[]; techs: string[]; matrix: number[][]
 }
-const INDUSTRY_FIT = IND.industries.map((name, i) => {
-  const row = IND.matrix[i]
-  const total = row.reduce((a, b) => a + b, 0)
-  const owned = row.reduce((s, v, j) => s + (RESUME_SET.has(IND.techs[j]) ? v : 0), 0)
-  const gaps = IND.techs
-    .map((t, j) => ({ t, v: row[j] }))
-    .filter((x) => !RESUME_SET.has(x.t))
-    .sort((a, b) => b.v - a.v)
-  return { name, pct: total ? Math.round((owned / total) * 100) : 0, topGap: gaps[0]?.t }
-})
-const WORST_FIT = [...INDUSTRY_FIT].sort((a, b) => a.pct - b.pct)[0]
-const BEST_FIT = [...INDUSTRY_FIT].sort((a, b) => b.pct - a.pct)[0]
 
-export function IndustryFitRadar() {
+export function computeIndustryFit(skills: string[]) {
+  const resumeSet = new Set(skills)
+  return IND.industries.map((name, i) => {
+    const row = IND.matrix[i]
+    const total = row.reduce((a, b) => a + b, 0)
+    const owned = row.reduce((s, v, j) => s + (resumeSet.has(IND.techs[j]) ? v : 0), 0)
+    const gaps = IND.techs
+      .map((t, j) => ({ t, v: row[j] }))
+      .filter((x) => !resumeSet.has(x.t))
+      .sort((a, b) => b.v - a.v)
+    return { name, pct: total ? Math.round((owned / total) * 100) : 0, topGap: gaps[0]?.t }
+  })
+}
+
+export function IndustryFitRadar({ skills = RESUME }: { skills?: string[] }) {
+  const industryFit = useMemo(() => computeIndustryFit(skills), [skills])
+
+  const worstFit = useMemo(() => [...industryFit].sort((a, b) => a.pct - b.pct)[0], [industryFit])
+  const bestFit = useMemo(() => [...industryFit].sort((a, b) => b.pct - a.pct)[0], [industryFit])
+
   const option = useMemo(() => ({
     tooltip: {
       ...tooltipStyle,
       formatter: (p: { data: { value: number[] } }) => {
         const idx = p.data.value
-        return INDUSTRY_FIT.map((d, i) => `${d.name} <b>${idx[i]}%</b>`).join('<br/>')
+        return industryFit.map((d, i) => `${d.name} <b>${idx[i]}%</b>`).join('<br/>')
       },
     },
     radar: {
-      indicator: INDUSTRY_FIT.map((d) => ({ name: d.name, max: 100 })),
+      indicator: industryFit.map((d) => ({ name: d.name, max: 100 })),
       shape: 'polygon',
       radius: '68%',
       splitNumber: 4,
@@ -57,20 +63,21 @@ export function IndustryFitRadar() {
     series: [{
       type: 'radar',
       data: [{
-        value: INDUSTRY_FIT.map((d) => d.pct), name: '내 적합도',
+        value: industryFit.map((d) => d.pct), name: '내 적합도',
         areaStyle: { color: 'rgba(47,97,184,0.22)' },
         lineStyle: { color: '#2f61b8', width: 2.5 },
         itemStyle: { color: '#2f61b8', borderColor: '#fff', borderWidth: 1.5 },
         symbolSize: 5,
       }],
     }],
-  }), [])
+  }), [industryFit])
+
   return (
     <div>
       <ReactECharts option={option} style={{ height: 232 }} notMerge />
       <div className="ins-radar__cap">
-        가장 잘 맞는 업종은 <b>{BEST_FIT.name}</b>({BEST_FIT.pct}%) · 가장 낮은 업종은{' '}
-        <b>{WORST_FIT.name}</b>({WORST_FIT.pct}%) — <TechIcon tech={WORST_FIT.topGap ?? ''} size={14} /> <b>{WORST_FIT.topGap}</b> 미보유 영향이 커요
+        가장 잘 맞는 업종은 <b>{bestFit.name}</b>({bestFit.pct}%) · 가장 낮은 업종은{' '}
+        <b>{worstFit.name}</b>({worstFit.pct}%) — <TechIcon tech={worstFit.topGap ?? ''} size={14} /> <b>{worstFit.topGap}</b> 미보유 영향이 커요
       </div>
       <AsOf asOf={IND.asOf} n={IND.N} note="국내 분류 가능 공고" />
     </div>
@@ -88,11 +95,12 @@ type NEdge = { a: string; b: string; n: number; strength: number }
 const N_DATA = (nRaw as unknown as { as_of: string; sample_size: number; sample_note: string; data: { nodes: NNode[]; edges: NEdge[] } })
 const NODE_MAP = new Map(N_DATA.data.nodes.map((x) => [x.tech, x]))
 
-function buildChain() {
+export function computeTechChain(skills: string[], limit = 4) {
+  const resumeSet = new Set(skills)
   const cands: { from: string; to: string; strength: number; n: number }[] = []
   for (const e of N_DATA.data.edges) {
-    const aOwned = RESUME_SET.has(e.a)
-    const bOwned = RESUME_SET.has(e.b)
+    const aOwned = resumeSet.has(e.a)
+    const bOwned = resumeSet.has(e.b)
     if (aOwned && !bOwned) cands.push({ from: e.a, to: e.b, strength: e.strength, n: NODE_MAP.get(e.b)?.n ?? 0 })
     else if (bOwned && !aOwned) cands.push({ from: e.b, to: e.a, strength: e.strength, n: NODE_MAP.get(e.a)?.n ?? 0 })
   }
@@ -103,16 +111,17 @@ function buildChain() {
     if (seen.has(c.to)) continue
     seen.add(c.to)
     out.push(c)
-    if (out.length >= 4) break
+    if (out.length >= limit) break
   }
   return out
 }
-const CHAIN = buildChain()
 
-export function TechChainRoadmap() {
+export function TechChainRoadmap({ skills = RESUME, limit = 4 }: { skills?: string[]; limit?: number }) {
+  const chain = useMemo(() => computeTechChain(skills, limit), [skills, limit])
+
   return (
     <div className="ins-chain">
-      {CHAIN.map((c, i) => (
+      {chain.map((c, i) => (
         <div className="ins-chain__step" key={c.to}>
           <div className="ins-chain__badge">{i + 1}</div>
           <div className="ins-chain__body">
@@ -143,7 +152,8 @@ const CAT_LABEL: Record<string, string> = {
 }
 const OWNED_RING = '#21447c'
 
-export function TechCoNetworkGraph() {
+export function TechCoNetworkGraph({ skills = RESUME }: { skills?: string[] }) {
+  const resumeSet = useMemo(() => new Set(skills), [skills])
   const nodes = N_DATA.data.nodes
   const maxN = Math.max(...nodes.map((n) => n.n))
   const categories = [...new Set(nodes.map((n) => n.category))]
@@ -157,7 +167,8 @@ export function TechCoNetworkGraph() {
           return `<b>${e.a} × ${e.b}</b><br/>같이 요구되는 공고 ${e.n.toLocaleString()}건`
         }
         const n = p.data.raw as NNode
-        return `<b>${n.tech}</b> <span style="color:${CAT_COLOR[n.category]}">· ${CAT_LABEL[n.category]}</span>${n.owned ? ' <span style="color:#21447c">· 보유</span>' : ''}<br/>공고 ${n.n.toLocaleString()}건`
+        const isOwned = resumeSet.has(n.tech)
+        return `<b>${n.tech}</b> <span style="color:${CAT_COLOR[n.category]}">· ${CAT_LABEL[n.category]}</span>${isOwned ? ' <span style="color:#21447c">· 보유</span>' : ''}<br/>공고 ${n.n.toLocaleString()}건`
       },
     },
     series: [{
@@ -168,19 +179,22 @@ export function TechCoNetworkGraph() {
       labelLayout: { hideOverlap: true },
       emphasis: { focus: 'adjacency', lineStyle: { width: 3 }, label: { fontWeight: 800 } },
       blur: { itemStyle: { opacity: 0.12 }, lineStyle: { opacity: 0.04 }, label: { opacity: 0.2 } },
-      data: nodes.map((n) => ({
-        name: n.tech, raw: n,
-        itemStyle: {
-          color: CAT_COLOR[n.category], borderColor: n.owned ? OWNED_RING : '#fff',
-          borderWidth: n.owned ? 3 : 1.2, shadowBlur: n.owned ? 6 : 0, shadowColor: 'rgba(33,68,124,0.4)',
-        },
-      })),
+      data: nodes.map((n) => {
+        const isOwned = resumeSet.has(n.tech)
+        return {
+          name: n.tech, raw: n,
+          itemStyle: {
+            color: CAT_COLOR[n.category], borderColor: isOwned ? OWNED_RING : '#fff',
+            borderWidth: isOwned ? 3 : 1.2, shadowBlur: isOwned ? 6 : 0, shadowColor: 'rgba(33,68,124,0.4)',
+          },
+        }
+      }),
       links: N_DATA.data.edges.map((e) => ({
         source: e.a, target: e.b, raw: e,
         lineStyle: { width: 0.6 + e.strength * 3.2, color: 'rgba(90,100,120,0.28)', curveness: 0.1 },
       })),
     }],
-  }), [nodes, maxN])
+  }), [nodes, maxN, resumeSet])
   return (
     <div>
       <ReactECharts option={option} style={{ height: 300 }} notMerge />
@@ -276,11 +290,32 @@ function buildTierRows() {
     })
     .filter((r) => r.maxCount >= 3)
   rows.sort((a, b) => b.spread - a.spread)
-  return { rows: rows.slice(0, 8), totalByTier }
+  return { rows: rows.slice(0, 8), totalByTier, byTier }
 }
 const TIER_DATA = buildTierRows()
 const TIER_HEAT_TECHS = TIER_DATA.rows.slice(0, 6).map((r) => r.tech)
 const TIER_HEAT_MATRIX = TIER_LIST.map((_, ti) => TIER_HEAT_TECHS.map((_, techi) => TIER_DATA.rows[techi].shares[ti]))
+
+/** 보유 기술 기준 기업 규모(대기업/중견/중소) 궁합 — 홈 위젯용. GenerationTrendChart의
+ * affinity 계산과 같은 패턴(보유 기술의 평균 점유율을 100%로 정규화). */
+export function computeTierAffinity(skills: string[]) {
+  const shareOf = (tier: string, tech: string) => (TIER_DATA.totalByTier[tier] ? (TIER_DATA.byTier[tier][tech] ?? 0) / TIER_DATA.totalByTier[tier] : 0)
+  const relevant = skills.filter((t) => TIER_LIST.some((tier) => TIER_DATA.byTier[tier][t]))
+  const allTechs = [...new Set(TIER_LIST.flatMap((tier) => Object.keys(TIER_DATA.byTier[tier])))]
+  const techs = relevant.length ? relevant : allTechs
+  const sums = TIER_LIST.map((tier) => techs.reduce((s, t) => s + shareOf(tier, t), 0) / (techs.length || 1))
+  const tot = sums.reduce((a, b) => a + b, 0) || 1
+  return TIER_LIST.map((tier, i) => ({ tier, pct: Math.round((sums[i] / tot) * 100) }))
+}
+
+/** 특정 규모에서 가장 많이 요구되는 예시 기술 — 보유 기술 중 있으면 그것을 우선(근거 노출),
+ * 없으면 시장 전체 상위로 대체. */
+export function computeTierTopTechs(tier: string, skills: string[], limit = 3) {
+  const byTech = TIER_DATA.byTier[tier] ?? {}
+  const owned = skills.filter((t) => byTech[t])
+  const pool = owned.length ? owned : Object.keys(byTech)
+  return [...pool].sort((a, b) => (byTech[b] ?? 0) - (byTech[a] ?? 0)).slice(0, limit)
+}
 
 /** 한눈에 보는 티어×기술 요구율 히트맵. 대기업·중견·중소는 실제 매출·인원 데이터가 아니라
  * 잘 알려진 국내 기업 20개씩을 수동으로 분류한 것 — "레거시→신진"의 진짜 시계열 근거는
@@ -305,15 +340,27 @@ type GGen = { key: string; label: string; n: number }
 type GRow = { tech: string; shares: number[]; trend: number }
 const G_DATA = gRaw as unknown as { as_of: string; sample_size: number; sample_note: string; data: { generations: GGen[]; matrix: GRow[] } }
 
-export function GenerationTrendChart() {
+export function computeGenerationAffinity(skills: string[]) {
+  const resumeSet = new Set(skills)
   const D = G_DATA.data
-  const affinity = useMemo(() => {
-    const mine = D.matrix.filter((m) => RESUME_SET.has(m.tech))
-    const base = mine.length ? mine : D.matrix
-    const sums = [0, 1, 2].map((g) => base.reduce((a, m) => a + m.shares[g], 0) / base.length)
-    const tot = sums.reduce((a, b) => a + b, 0) || 1
-    return sums.map((s) => Math.round((s / tot) * 100))
-  }, [D.matrix])
+  const mine = D.matrix.filter((m) => resumeSet.has(m.tech))
+  const base = mine.length ? mine : D.matrix
+  const sums = [0, 1, 2].map((g) => base.reduce((a, m) => a + m.shares[g], 0) / base.length)
+  const tot = sums.reduce((a, b) => a + b, 0) || 1
+  return sums.map((s) => Math.round((s / tot) * 100))
+}
+
+/** 특정 설립 세대에서 점유율이 가장 높은 예시 기술 — 보유 기술 우선, 없으면 시장 전체로 대체. */
+export function computeGenerationTopTechs(genIdx: number, skills: string[], limit = 3) {
+  const owned = G_DATA.data.matrix.filter((m) => skills.includes(m.tech))
+  const pool = owned.length ? owned : G_DATA.data.matrix
+  return [...pool].sort((a, b) => b.shares[genIdx] - a.shares[genIdx]).slice(0, limit).map((m) => m.tech)
+}
+
+export function GenerationTrendChart({ skills = RESUME }: { skills?: string[] }) {
+  const resumeSet = useMemo(() => new Set(skills), [skills])
+  const D = G_DATA.data
+  const affinity = useMemo(() => computeGenerationAffinity(skills), [skills])
   const domIdx = affinity.indexOf(Math.max(...affinity))
   const genShort = ['레거시', '성장기', '신생']
   const option = useMemo(() => ({
@@ -323,7 +370,7 @@ export function GenerationTrendChart() {
       ...tooltipStyle, trigger: 'item',
       formatter: (p: { seriesName: string }) => {
         const m = D.matrix.find((x) => x.tech === p.seriesName)!
-        return `<b>${m.tech}</b> ${RESUME_SET.has(m.tech) ? '<span style="color:#2f61b8">· 보유</span>' : ''}<br/>${D.generations.map((g, i) => `${g.label.replace('\n', ' ')} <b>${m.shares[i]}%</b>`).join('<br/>')}`
+        return `<b>${m.tech}</b> ${resumeSet.has(m.tech) ? '<span style="color:#2f61b8">· 보유</span>' : ''}<br/>${D.generations.map((g, i) => `${g.label.replace('\n', ' ')} <b>${m.shares[i]}%</b>`).join('<br/>')}`
       },
     },
     xAxis: {
@@ -338,7 +385,7 @@ export function GenerationTrendChart() {
     series: D.matrix.map((m) => {
       const rising = m.trend >= 0
       const col = rising ? '#2f61b8' : '#c8382d'
-      const isMine = RESUME_SET.has(m.tech)
+      const isMine = resumeSet.has(m.tech)
       return {
         name: m.tech, type: 'line', data: m.shares, smooth: false,
         symbol: 'circle', symbolSize: isMine ? 7 : 5,
@@ -349,7 +396,7 @@ export function GenerationTrendChart() {
         z: isMine ? 5 : 2,
       }
     }),
-  }), [D])
+  }), [D, resumeSet])
   return (
     <div className="ins-gen">
       <ReactECharts option={option} style={{ height: 260 }} notMerge />
@@ -379,8 +426,15 @@ export function GenerationTrendChart() {
 type YearlyRow = { tech: string; owned: boolean; shares: number[]; delta: number }
 const YEARLY = market.techYearly as { asOf: string; source: string; N: number; years: string[]; series: YearlyRow[] }
 
-export function TechYearlyTrendChart() {
-  const rows = YEARLY.series.slice(0, 6)
+export function TechYearlyTrendChart({ skills = RESUME }: { skills?: string[] }) {
+  const resumeSet = useMemo(() => new Set(skills), [skills])
+  const rows = useMemo(() => {
+    return YEARLY.series.map(row => ({
+      ...row,
+      owned: resumeSet.has(row.tech)
+    })).slice(0, 6)
+  }, [resumeSet])
+
   const option = useMemo(() => ({
     animationDuration: 700, animationEasing: 'cubicOut',
     grid: { left: 8, right: 68, top: 16, bottom: 26, containLabel: true },
@@ -414,7 +468,7 @@ export function TechYearlyTrendChart() {
         z: m.owned ? 5 : 2,
       }
     }),
-  }), [])
+  }), [rows])
   return (
     <div>
       <ReactECharts option={option} style={{ height: 260 }} notMerge />

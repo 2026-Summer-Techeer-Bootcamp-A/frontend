@@ -3,41 +3,58 @@ import { useNavigate } from 'react-router-dom'
 import { Award, Bookmark, Bell, Shield, Settings, LogOut, Plus, X } from 'lucide-react'
 import { CareerScreen, ScreenHead } from './charts'
 import { ResumeHeroCard, MenuRow, SectionHeader, SkillChip, TechSearchSheet } from './kit'
-import career from '../data/careerData.json'
+import { useResumesState, calculateCoverage, type Resume } from './state'
 import techs from '../data/techs.json'
 
-type Resume = {
-  id: string; title: string; skills: string[]; position: string
-  careerMin: number; careerMax: number; coveragePct: number
-}
 const TECHS = techs as { tech: string; count: number }[]
 
-function careerText(min: number, max: number) {
-  if (!min) return '신입·무관'
+function careerText(min: number | null, max: number | null) {
+  if (min === null && max === null) return '신입·무관'
   return max && max !== min ? `경력 ${min}~${max}년` : `경력 ${min}년+`
 }
 
 export default function ResumeScreen() {
   const navigate = useNavigate()
-  const [resumes, setResumes] = useState<Resume[]>(career.resumes as Resume[])
-  const [rid, setRid] = useState(resumes[0].id)
+  const { resumes, activeId, activeResume, updateResumes, selectResume, addResume } = useResumesState()
   const [pickerOpen, setPickerOpen] = useState(false)
-  const uid = useRef(10)
-  const r = resumes.find((x) => x.id === rid) ?? resumes[0]
+  const uid = useRef(Date.now())
 
-  const toggleSkill = (t: string) => setResumes((rs) =>
-    rs.map((x) => x.id === r.id ? { ...x, skills: x.skills.includes(t) ? x.skills.filter((s) => s !== t) : [...x.skills, t] } : x))
+  const toggleSkill = (t: string) => {
+    const updated = resumes.map((x) => {
+      if (x.id === activeResume.id) {
+        const nextSkills = x.skills.includes(t) ? x.skills.filter((s) => s !== t) : [...x.skills, t]
+        return {
+          ...x,
+          skills: nextSkills,
+          coveragePct: calculateCoverage(nextSkills, '국내'),
+        }
+      }
+      return x
+    })
+    updateResumes(updated)
+  }
 
   const delResume = (id: string) => {
     if (resumes.length <= 1) return
     const nl = resumes.filter((x) => x.id !== id)
-    setResumes(nl)
-    if (rid === id) setRid(nl[0].id)
+    updateResumes(nl)
+    if (activeId === id) {
+      selectResume(nl[0].id)
+    }
   }
-  const addResume = () => {
+
+  const handleAddResume = () => {
     const id = `rx${uid.current++}`
-    setResumes((rs) => [...rs, { id, title: '새 이력서', skills: [], position: '직무 미정', careerMin: 0, careerMax: 0, coveragePct: 0 }])
-    setRid(id)
+    const newResume: Resume = {
+      id,
+      title: '새 이력서',
+      skills: [],
+      position: '직무 미정',
+      careerMin: 0,
+      careerMax: 0,
+      coveragePct: 0,
+    }
+    addResume(newResume)
   }
 
   return (
@@ -47,27 +64,27 @@ export default function ResumeScreen() {
       {/* 이력서 전환 · 추가/삭제 (토큰 칩) */}
       <div className="scr-rchips">
         {resumes.map((x, i) => (
-          <span key={x.id} className={`kit-schip rchip${rid === x.id ? ' on' : ''}`} onClick={() => setRid(x.id)}>
+          <span key={x.id} className={`kit-schip rchip${activeId === x.id ? ' on' : ''}`} onClick={() => selectResume(x.id)}>
             이력서 {i + 1}
             {resumes.length > 1 && (
               <button className="kit-schip__x" onClick={(e) => { e.stopPropagation(); delResume(x.id) }} aria-label="삭제"><X size={12} /></button>
             )}
           </span>
         ))}
-        <button className="kit-schip add" onClick={addResume}><Plus size={14} /> 추가</button>
+        <button className="kit-schip add" onClick={handleAddResume}><Plus size={14} /> 추가</button>
       </div>
 
       {/* 이력서 히어로 카드 */}
       <ResumeHeroCard
-        title={r.title} position={r.position} career={careerText(r.careerMin, r.careerMax)}
-        coverage={r.coveragePct} skillCount={r.skills.length} onEdit={() => navigate('/resume/submit')}
+        title={activeResume.title} position={activeResume.position} career={careerText(activeResume.careerMin, activeResume.careerMax)}
+        coverage={calculateCoverage(activeResume.skills, '국내')} skillCount={activeResume.skills.length} onEdit={() => navigate('/resume/submit')}
       />
 
       {/* 보유 기술 — 편집 가능 토큰 칩 + 추가 */}
-      <SectionHeader title="보유 기술" hint={`${r.skills.length}개`} />
+      <SectionHeader title="보유 기술" hint={`${activeResume.skills.length}개`} />
       <div className="scr-card" style={{ marginTop: 0 }}>
         <div className="scr-skillbox" style={{ marginTop: 0 }}>
-          {r.skills.map((s) => <SkillChip key={s} tech={s} onRemove={() => toggleSkill(s)} />)}
+          {activeResume.skills.map((s) => <SkillChip key={s} tech={s} onRemove={() => toggleSkill(s)} />)}
           <button className="kit-schip add" onClick={() => setPickerOpen(true)}><Plus size={14} /> 추가</button>
         </div>
       </div>
@@ -89,7 +106,7 @@ export default function ResumeScreen() {
       </div>
       <div style={{ height: 18 }} />
 
-      <TechSearchSheet open={pickerOpen} onClose={() => setPickerOpen(false)} all={TECHS} owned={r.skills} onToggle={toggleSkill} />
+      <TechSearchSheet open={pickerOpen} onClose={() => setPickerOpen(false)} all={TECHS} owned={activeResume.skills} onToggle={toggleSkill} />
     </CareerScreen>
   )
 }
