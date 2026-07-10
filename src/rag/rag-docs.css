@@ -1,0 +1,35 @@
+.rd { display: grid; grid-template-columns: 240px minmax(0, 1fr) 200px; gap: 24px; max-width: 1200px;
+  margin: 0 auto; padding: 32px 24px; font-family: 'Pretendard', -apple-system, sans-serif; color: #1c1d21; }
+@media (max-width: 900px) { .rd { grid-template-columns: 1fr; } .rd__toc { display: none; } }
+.rd__side { position: sticky; top: 24px; align-self: start; }
+.rd__brand { font-size: 13px; font-weight: 800; letter-spacing: -0.3px; margin-bottom: 16px; color: #2f61b8; }
+.rd__track { margin-bottom: 18px; }
+.rd__track-h { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700;
+  color: #7c7f88; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px; }
+.rd__link { display: block; width: 100%; text-align: left; font-size: 13px; color: #43454c;
+  background: none; border: none; padding: 5px 8px; border-radius: 7px; cursor: pointer; }
+.rd__link:hover { background: #f6f8fc; }
+.rd__link.on { background: #eef3fb; color: #2f61b8; font-weight: 600; }
+.rd__empty { font-size: 12px; color: #a2a6b0; padding: 4px 8px; }
+.rd__empty--big { padding: 60px; text-align: center; }
+.rd__doc { font-size: 15px; line-height: 1.7; }
+.rd__doc h1 { font-size: 28px; font-weight: 800; letter-spacing: -1px; margin: 0 0 20px; }
+.rd__doc h2 { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; margin: 32px 0 12px;
+  padding-top: 8px; border-top: 1px solid #eef1f6; }
+.rd__doc h3 { font-size: 16px; font-weight: 700; margin: 24px 0 8px; }
+.rd__doc p { margin: 0 0 14px; }
+.rd__doc code { font-family: 'SF Mono', ui-monospace, monospace; font-size: 13px;
+  background: #f6f8fc; padding: 1px 5px; border-radius: 5px; color: #28539c; }
+.rd__doc pre.doc-code { background: #f6f8fc; border: 1px solid #e2e5ec; border-radius: 10px;
+  padding: 14px 16px; overflow-x: auto; margin: 0 0 16px; }
+.rd__doc pre.doc-code code { background: none; padding: 0; color: inherit; font-size: 12.5px; line-height: 1.6; }
+.rd__doc ul, .rd__doc ol { margin: 0 0 14px; padding-left: 22px; }
+.rd__doc li { margin-bottom: 5px; }
+.rd__doc blockquote { border-left: 3px solid #bcd0f0; margin: 0 0 14px; padding: 4px 14px; color: #5b5e66; }
+.rd__doc table { border-collapse: collapse; width: 100%; margin: 0 0 16px; font-size: 13px; }
+.rd__doc th, .rd__doc td { border: 1px solid #e2e5ec; padding: 7px 10px; text-align: left; }
+.rd__doc th { background: #f6f8fc; font-weight: 700; }
+.rd__toc { position: sticky; top: 24px; align-self: start; display: flex; flex-direction: column; gap: 4px; }
+.rd__toc-link { font-size: 12px; color: #7c7f88; text-decoration: none; padding: 2px 0; }
+.rd__toc-link:hover { color: #2f61b8; }
+.rd__toc-link--l3 { padding-left: 12px; font-size: 11px; }
