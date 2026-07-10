@@ -58,3 +58,20 @@
 .tl-bigstat b { font-size: 28px; font-weight: 800; color: #1c1d21; letter-spacing: -1px; }
 .tl-bigstat__meta { display: flex; flex-direction: column; margin-top: 2px; }
 .tl-bigstat__meta .muted { color: #a2a6b0; font-size: 12px; }
+
+/* === 근거 원장 === */
+.cl { border-top: 1px solid #e2e5ec; margin-top: 12px; padding-top: 12px; }
+.cl__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.cl__conf { font-size: 12px; color: #5b5e66; display: inline-flex; align-items: center; gap: 6px; }
+.cl__conf b { color: #1c1d21; }
+.cl__dots { display: inline-flex; gap: 3px; }
+.cl__dots i { width: 6px; height: 6px; border-radius: 999px; background: #e2e5ec; }
+.cl__dots i.on { background: #2f61b8; }
+.cl__flag { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600;
+  padding: 3px 8px; border-radius: 999px; }
+.cl__flag--ok { color: #218a58; background: #e6f5ed; }
+.cl__flag--degraded { color: #c76a2e; background: #fbeee2; }
+.cl__list { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.cl__item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #5b5e66; }
+.cl__ref { font-family: 'SF Mono', ui-monospace, monospace; color: #28539c; }
+.cl__label { color: #7c7f88; }
