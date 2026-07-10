@@ -171,6 +171,76 @@
   color: var(--accent-700);
 }
 
+/* ---------- 2단 레이아웃(컴포넌트/레퍼런스 탭): 좌측 그룹 사이드바 + 메인 ---------- */
+.ds__body2 {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  align-items: start;
+}
+.ds__side2 {
+  position: sticky;
+  top: 97px; /* 상단 톱바(브랜드 행 + 4탭 행) 높이에 맞춤 */
+  height: calc(100vh - 97px);
+  overflow-y: auto;
+  padding: 26px 16px 40px;
+  border-right: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px);
+}
+.ds__navgroup + .ds__navgroup {
+  margin-top: 18px;
+}
+.ds__navgroup-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0 10px 8px;
+}
+.ds__navlink {
+  display: block;
+  padding: 9px 10px;
+  border-radius: 9px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--muted);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.ds__navlink:hover {
+  background: var(--accent-50);
+  color: var(--accent-700);
+}
+.ds__navlink.on {
+  background: var(--accent-100);
+  color: var(--accent-700);
+  font-weight: 700;
+}
+.ds__main2 {
+  padding: 36px 48px 120px;
+  min-width: 0;
+}
+@media (max-width: 900px) {
+  .ds__body2 {
+    grid-template-columns: 1fr;
+  }
+  .ds__side2 {
+    position: static;
+    height: auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+  }
+  .ds__navgroup + .ds__navgroup {
+    margin-top: 0;
+  }
+  .ds__main2 {
+    padding: 28px 24px 100px;
+  }
+}
+
 .ds-sec {
   margin-top: 64px;
   scroll-margin-top: 24px;
