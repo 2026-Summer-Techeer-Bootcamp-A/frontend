@@ -8,13 +8,14 @@ const KIND_ICON: Record<StepKind, typeof Cpu> = {
   synth: GitBranch,
 }
 
-/** steps[]를 세로 레일로. activeIndex까지 점등, retry 단계는 루프 표식을 단다.
- *  "유리 파이프라인" — 신호가 위→아래로 흐르며 각 단계의 실제 작업(detail)을 담담히 드러낸다. */
+/** steps[]를 세로 사고 트레이스로. 지금까지 도달한(activeIndex 이하) 단계만 렌더하고,
+ *  새로 드러나는 단계는 아래에서 위로 부드럽게 떠오른다(사고 모델이 과정을 흘리듯).
+ *  마지막(activeIndex)이 현재 처리 중, 그 앞은 완료. retry 단계는 재검색 표식을 단다. */
 export default function PipelineRail({ steps, activeIndex }: { steps: ChatStep[]; activeIndex: number }) {
   return (
     <ol className="pl-rail" aria-label="RAG 파이프라인 진행">
-      {steps.map((s, i) => {
-        const state = i < activeIndex ? 'done' : i === activeIndex ? 'active' : 'pending'
+      {steps.slice(0, activeIndex + 1).map((s, i) => {
+        const state = i === activeIndex ? 'active' : 'done'
         const Icon = KIND_ICON[s.kind]
         const retry = s.status === 'retry'
         return (

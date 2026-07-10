@@ -8,9 +8,8 @@ import './rag-console.css'
 
 export default function RagConsole() {
   const [idx, setIdx] = useState(0)
-  const [stepIndex, setStepIndex] = useState(0)   // 파이프라인 진행
-  const [charIdx, setCharIdx] = useState(0)       // 답변 스트리밍
-  const [segIdx, setSegIdx] = useState(0)
+  const [stepIndex, setStepIndex] = useState(0)   // 사고 트레이스 진행
+  const [segIdx, setSegIdx] = useState(0)         // 답변 세그먼트 진행
   const [dissect, setDissect] = useState(false)   // 해부 모드
   const [runId, setRunId] = useState(0)
   const timers = useRef<number[]>([])
@@ -19,38 +18,35 @@ export default function RagConsole() {
   const res = scn.response
   const streaming = stepIndex >= res.steps.length
   const done = streaming && segIdx >= res.answer.length
+  // 근거 카드는 tool 단계가 드러난 뒤부터 노출하고, 그 뒤로는 memo로 고정돼 다시 안 그려진다.
+  const showTools = res.steps.slice(0, stepIndex + 1).some((s) => s.kind === 'tool')
 
   const play = (i: number) => { setIdx(i); setRunId((n) => n + 1) }
 
   useEffect(() => {
-    setStepIndex(0); setSegIdx(0); setCharIdx(0)
+    setStepIndex(0); setSegIdx(0)
     timers.current.forEach(clearTimeout)
     timers.current = []
     return () => timers.current.forEach(clearTimeout)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runId])
 
-  // 파이프라인 단계 순차 점등
+  // 사고 트레이스: 단계가 하나씩 떠오른다
   useEffect(() => {
     if (stepIndex >= res.steps.length) return
-    const t = window.setTimeout(() => setStepIndex((n) => n + 1), 620)
+    const t = window.setTimeout(() => setStepIndex((n) => n + 1), 560)
     timers.current.push(t)
     return () => clearTimeout(t)
   }, [stepIndex, res.steps.length])
 
-  // 답변 char 스트리밍
+  // 답변: 세그먼트가 하나씩 왼쪽부터 페이드로 나타난다(타이핑 아님)
   useEffect(() => {
     if (!streaming) return
-    const seg = res.answer[segIdx]
-    if (!seg) return
-    const chars = Array.from(seg.text)
-    if (charIdx < chars.length) {
-      const t = window.setTimeout(() => setCharIdx((n) => n + 1), 26)
-      timers.current.push(t); return () => clearTimeout(t)
-    }
-    const t = window.setTimeout(() => { setSegIdx((n) => n + 1); setCharIdx(0) }, 260)
-    timers.current.push(t); return () => clearTimeout(t)
-  }, [streaming, segIdx, charIdx, res.answer])
+    if (segIdx >= res.answer.length) return
+    const t = window.setTimeout(() => setSegIdx((n) => n + 1), 720)
+    timers.current.push(t)
+    return () => clearTimeout(t)
+  }, [streaming, segIdx, res.answer.length])
 
   return (
     <div className={`rc${dissect ? ' rc--dissect' : ''}`}>
@@ -65,35 +61,34 @@ export default function RagConsole() {
       </div>
 
       <div className="rc__body">
-        <div className="rc__col rc__col--pipe">
-          <div className="rc__q">{scn.userQ}</div>
-          {dissect && (
-            <pre className="rc__plan">{JSON.stringify(res.plan, null, 2)}</pre>
-          )}
-          <PipelineRail steps={res.steps} activeIndex={Math.min(stepIndex, res.steps.length - 1)} />
-        </div>
+        <div className="rc__q">{scn.userQ}</div>
 
-        <div className="rc__col rc__col--out">
-          {stepIndex > 0 && <ToolLane results={res.tool_results} />}
-          {streaming && (
-            <div className="rc__answer">
-              {res.answer.map((seg, i) => {
-                if (i > segIdx) return null
-                const chars = Array.from(seg.text)
-                const cur = i === segIdx
-                const shown = cur ? chars.slice(0, charIdx) : chars
-                return (
-                  <span className="rc__seg" key={i}>
-                    {shown.join('')}
-                    {cur && charIdx < chars.length && <span className="rc__caret" />}
-                    {(i < segIdx) && <span className="rc__cite"><span className="dot" />{seg.cite}</span>}
-                  </span>
-                )
-              })}
-            </div>
-          )}
-          {done && <CitationLedger citations={res.citations} confidence={res.confidence} degraded={res.degraded} />}
-        </div>
+        {dissect && (
+          <pre className="rc__plan">{JSON.stringify(res.plan, null, 2)}</pre>
+        )}
+
+        <PipelineRail steps={res.steps} activeIndex={Math.min(stepIndex, res.steps.length - 1)} />
+
+        {showTools && <ToolLane results={res.tool_results} />}
+
+        {streaming && (
+          <div className="rc__answer">
+            {res.answer.map((seg, i) => {
+              if (i > segIdx) return null
+              const words = seg.text.split(' ')
+              return (
+                <p className="rc__seg" key={i}>
+                  {words.map((w, wi) => (
+                    <span className="rc__w" key={wi} style={{ animationDelay: `${wi * 26}ms` }}>{w}</span>
+                  ))}
+                  {i < segIdx && <span className="rc__cite"><span className="dot" />{seg.cite}</span>}
+                </p>
+              )
+            })}
+          </div>
+        )}
+
+        {done && <CitationLedger citations={res.citations} confidence={res.confidence} degraded={res.degraded} />}
       </div>
 
       <div className="rc__composer">
