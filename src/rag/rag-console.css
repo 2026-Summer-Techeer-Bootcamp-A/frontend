@@ -33,7 +33,7 @@
 .rc__think-line .rc__think-dot { width: 5px; height: 5px; border-radius: 999px; background: #cdd2db; flex: none; }
 .rc__think-line.is-active { color: #5b5e66; }
 .rc__think-line.is-active .rc__think-dot { background: #2f61b8; animation: rc-pulse 1.1s ease-in-out infinite; }
-.rc__think-text { flex: 1; min-width: 0; }
+.rc__think-text { flex: 0 1 auto; min-width: 0; }
 .rc__think-res { flex: none; font-family: 'SF Mono', ui-monospace, monospace; font-size: 11px; font-weight: 600;
   color: #28539c; background: #eef3fb; border-radius: 6px; padding: 1px 7px; }
 
