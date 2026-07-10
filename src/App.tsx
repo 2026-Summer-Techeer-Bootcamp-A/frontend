@@ -58,6 +58,7 @@ import WidgetT from './pages/widgets/WidgetT'
 import WidgetU from './pages/widgets/WidgetU'
 import WidgetY4 from './pages/widgets/WidgetY4'
 import WidgetX from './pages/widgets/WidgetX'
+import RagDocs from './rag/RagDocs'
 
 export default function App() {
   return (
@@ -74,6 +75,7 @@ export default function App() {
       <Route path="/resume/submit" element={<ResumeSubmit />} />
       <Route path="/tech/:name" element={<TechDetail />} />
       <Route path="/cert-gap" element={<CertGap />} />
+      <Route path="/rag-docs" element={<RagDocs />} />
       <Route path="/gallery" element={<Gallery />} />
       <Route path="/design-system" element={<DesignSystemLayout />}>
         <Route index element={<Navigate to="colors" replace />} />
