@@ -2588,36 +2588,56 @@
 }
 
 /* ============ AI 인사이트 전용 — Apple Intelligence 글로우 ============ */
-/* 팔레트는 Apple Intelligence 실제 톤(블러·회전으로만 표현, 채도 높은 단색 채움 금지) */
+/* 팔레트는 Apple Intelligence 실제 톤(그라디언트 위치만 흐르게, 채도 높은 단색 채움 금지).
+   요소 자체를 rotate()하지 않는다 — 큰 카드에 회전을 걸면 대각선만큼 바운딩 박스가 부풀어
+   카드 밖 화면 전체를 뒤덮는 버그가 났었다(사각형 회전의 축정렬 바운딩박스는 최대 diag(W,H)).
+   대신 background-position만 흘려서 테두리 안에서만 얇게 반짝이게 한다. */
 .ax-card { position: relative; isolation: isolate; }
 .ax-card__halo {
   position: absolute;
-  inset: -16px;
-  border-radius: 32px;
-  background: conic-gradient(from 0deg, #bc82f3, #8d9fff, #ff6778, #ffba71, #c686ff, #f5b9ea, #bc82f3);
-  filter: blur(22px);
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: linear-gradient(115deg, #1c3866, #2f61b8, #5a86cf, #8fb0e2, #2f61b8, #21447c, #5a86cf);
+  background-size: 300% 300%;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
   opacity: 0;
-  z-index: -1;
+  pointer-events: none;
   transition: opacity 0.7s ease;
-  animation: ax-halo-spin 9s linear infinite;
+  animation: ax-halo-shimmer 7s ease infinite;
 }
-.ax-card.generating .ax-card__halo { opacity: 0.5; }
-@keyframes ax-halo-spin { to { transform: rotate(360deg); } }
+/* 테두리 바로 바깥으로만 은은하게 번지는 간접 라이팅 — inset이 작아 카드 크기와 무관하게 항상 좁게 유지 */
+.ax-card__halo::before {
+  content: '';
+  position: absolute;
+  inset: -7px;
+  border-radius: inherit;
+  background: linear-gradient(115deg, #1c3866, #2f61b8, #5a86cf, #8fb0e2, #2f61b8, #21447c, #5a86cf);
+  background-size: 300% 300%;
+  filter: blur(11px);
+  opacity: 0.55;
+  z-index: -1;
+  animation: ax-halo-shimmer 7s ease infinite;
+}
+.ax-card.generating .ax-card__halo { opacity: 0.4; }
+@keyframes ax-halo-shimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
 
+/* 아바타 오브 자체는 react-ai-orb 패키지가 렌더링(블루 커스텀 팔레트). 여기서는 34px 프레임 클리핑만 담당. */
 .ax-avatar--orb {
   background: none;
   overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.ax-avatar__orb {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  background: conic-gradient(from 0deg, #bc82f3, #8d9fff, #ff6778, #ffba71, #c686ff, #f5b9ea, #bc82f3);
-  filter: saturate(1.05);
-  box-shadow: 0 0 9px rgba(188, 130, 243, 0.4);
-  animation: ax-orb-spin 6s linear infinite;
-}
-@keyframes ax-orb-spin { to { transform: rotate(360deg); } }
 .ax-head .nm { font-size: 13.5px; font-weight: 800; }
 .ax-head .st { font-size: 11px; color: var(--muted); font-weight: 600; }
 
@@ -2937,6 +2957,216 @@
 }
 .ax-feedback button:hover { border-color: var(--a200); color: var(--accent-700); background: var(--a050); }
 .ax-feedback button.on { border-color: transparent; background: var(--accent); color: #fff; }
+
+/* ============ RAG 어시스턴트 플로우 (인사이트·AI 플래그십 데모) ============ */
+.rag-shell {
+  padding: 28px 30px 26px;
+  max-width: 720px;
+}
+
+@keyframes rag-fade-up {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.rag-followthrough {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 4px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  animation: rag-fade-up 0.4s ease both;
+}
+
+/* 처리 중 세부 문구 티커 — 질문에 따라 다른 짧은 문장이 촥촥 스냅 전환되며 순환 */
+.rag-ticker {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+  min-height: 18px;
+}
+.rag-ticker__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex: none;
+  animation: rag-ticker-pulse 0.9s ease-in-out infinite;
+}
+.rag-ticker__text {
+  animation: rag-ticker-snap 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes rag-ticker-snap {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes rag-ticker-pulse {
+  0%, 100% { opacity: 0.4; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+/* 조회 결과 카드 — Claude Code의 툴콜 출력처럼, 실제 조회된 데이터를 그대로 미니 시각화 */
+.rag-tool {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--a050);
+  border: 1px solid var(--a100);
+  max-width: 420px;
+  animation: rag-fade-up 0.3s ease both;
+}
+.rag-tool__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--accent-700);
+}
+.rag-tool__stat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.rag-tool__stat b { font-size: 16px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+.rag-tool__stat span { color: var(--muted); font-size: 11px; }
+.rag-tool__delta { color: #1a7a4c; font-weight: 800; font-size: 11.5px; margin-left: auto; }
+.rag-tool__list { display: flex; flex-direction: column; gap: 7px; }
+.rag-tool__row { display: flex; align-items: center; gap: 8px; }
+.rag-tool__row .co { font-weight: 800; font-size: 12px; flex: none; }
+.rag-tool__row .role {
+  color: var(--muted);
+  font-size: 11.5px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rag-tool__bar { height: 4px; border-radius: 2px; background: var(--a100); overflow: hidden; flex: none; width: 56px; }
+.rag-tool__bar > span { display: block; height: 100%; background: var(--accent); border-radius: 2px; }
+.rag-tool__row .pct { font-weight: 800; font-size: 11.5px; color: var(--accent-700); flex: none; width: 74px; text-align: right; white-space: nowrap; }
+.rag-tool__rank {
+  flex: none;
+  width: 16px; height: 16px;
+  border-radius: 5px;
+  background: var(--a100);
+  color: var(--accent-700);
+  font-size: 10px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 비교(before/after) — 카운트업되는 큰 숫자 두 개 */
+.rag-tool__compare {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.rag-tool__compare-side { display: flex; flex-direction: column; gap: 2px; }
+.rag-tool__compare-side .lbl { font-size: 10.5px; color: var(--muted); font-weight: 700; }
+.rag-tool__compare-side b { font-size: 17px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+.rag-tool__compare-arrow { color: var(--accent); flex: none; }
+
+/* 단일 큰 통계 — 카운트업 */
+.rag-tool__bigstat { display: flex; align-items: baseline; gap: 12px; }
+.rag-tool__bigstat > b { font-size: 24px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; letter-spacing: -0.5px; }
+.rag-tool__bigstat-meta { display: flex; flex-direction: column; gap: 1px; }
+.rag-tool__bigstat-meta span { font-size: 11px; color: var(--muted); }
+.rag-tool__bigstat-meta .muted { color: #a7abb5; }
+
+.rag-composer-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 18px;
+}
+.rag-prompts .ax-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.rag-prompts .ax-chip.active {
+  border-color: var(--accent);
+  background: var(--a050);
+  color: var(--accent-700);
+}
+
+
+/* RAG 적합/부적합 가이드 — 좋다/나쁘다 두 열 비교 */
+.rag-guide {
+  margin-top: 40px;
+  max-width: 1080px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px 28px;
+}
+.rag-guide__head {
+  grid-column: 1 / -1;
+}
+.rag-guide__head h3 {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+}
+.rag-guide__head p {
+  margin-top: 4px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.rag-guide__col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.rag-guide__label {
+  font-size: 12.5px;
+  font-weight: 800;
+  padding-bottom: 4px;
+}
+.rag-guide__label--good { color: #1a7a4c; }
+.rag-guide__label--bad { color: #b3423a; }
+.rag-guide__item {
+  border-radius: 14px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  background: #fff;
+  box-shadow: var(--e1);
+}
+.rag-guide__item--good { border-left: 3px solid #2f9e6a; }
+.rag-guide__item--bad { border-left: 3px solid #d1554a; }
+.rag-guide__title {
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+}
+.rag-guide__item p {
+  margin-top: 6px;
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.65;
+}
+.rag-guide__ref {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--line);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-700);
+  font-family: 'SF Mono', ui-monospace, monospace;
+}
+@media (max-width: 860px) {
+  .rag-guide { grid-template-columns: 1fr; }
+}
 
 /* ---------- 애플식 슬라이더 스트레치 ---------- */
 .ios-slider { touch-action: none; user-select: none; }
