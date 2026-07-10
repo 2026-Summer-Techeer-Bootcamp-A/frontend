@@ -1,0 +1,230 @@
+/* 애플 모션 쇼케이스 — 공용 스타일(카드/세그/스테이지/티어배지) + 전역 스프링 변수. */
+
+.am {
+  --spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* 그룹 헤더 */
+.am-group {
+  margin-top: 40px;
+}
+.am-group__head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.am-group__kicker {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+.am-group__title {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+}
+.am-group__count {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.am-badge {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  color: var(--accent-700);
+  background: var(--accent-100);
+  padding: 3px 9px;
+  border-radius: 999px;
+  vertical-align: middle;
+  margin-left: 8px;
+}
+
+/* 상단 그룹 점프 내비 (스티키) */
+.am-nav {
+  position: sticky;
+  top: 92px;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
+  padding: 10px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  border: 1px solid var(--line);
+  box-shadow: var(--e1);
+}
+.am-nav__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  border-radius: 11px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--muted);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.am-nav__pill:hover { color: var(--accent-700); background: var(--accent-50); }
+.am-nav__pill.on { color: var(--accent-700); background: var(--accent-100); }
+.am-nav__k {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #fff;
+  background: var(--accent);
+}
+.am-nav__n {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.am-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.am-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: var(--e2);
+}
+.am-card--wide {
+  grid-column: 1 / -1;
+}
+.am-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 4px;
+}
+.am-card__title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.am-card__desc {
+  margin-top: 4px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--muted);
+  max-width: 40ch;
+}
+
+/* 티어 배지 */
+.am-tier {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  flex: none;
+}
+.am-tier--1 { color: #0f7b4f; background: #d9f4e6; }
+.am-tier--2 { color: #8a5a00; background: #fdeecb; }
+.am-tier--3 { color: #8a3b3b; background: #f7dcdc; }
+
+/* 미니 세그먼트 */
+.am-seg {
+  flex: none;
+  display: flex;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--accent-50);
+}
+.am-seg button {
+  padding: 6px 11px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+.am-seg button:hover {
+  color: var(--accent-700);
+}
+.am-seg button.on {
+  background: #fff;
+  color: var(--accent-700);
+  box-shadow: var(--e1);
+}
+
+/* 공용 스테이지 — 데모가 노는 무대. 배경은 잠금화면 벽지 톤. */
+.am-stage {
+  position: relative;
+  margin-top: 16px;
+  border-radius: 18px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+.am-stage--dark {
+  background: radial-gradient(120% 90% at 30% 10%, #3a4a7a 0%, #1c2340 55%, #0c0f1e 100%);
+}
+.am-stage--light {
+  background: linear-gradient(160deg, #eef3fb, #dbe6f7);
+}
+.am-stage--photo {
+  background:
+    radial-gradient(80% 60% at 70% 20%, #ffd08a 0%, transparent 60%),
+    radial-gradient(70% 70% at 20% 80%, #b98cff 0%, transparent 55%),
+    linear-gradient(160deg, #6a86d6, #2b3566);
+}
+.am-stage__hint {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.55);
+  pointer-events: none;
+}
+
+.am-replay {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  color: var(--accent-700);
+  background: var(--accent-50);
+  transition: transform 0.12s ease, background 0.15s ease;
+}
+.am-replay:hover { background: var(--accent-100); }
+.am-replay:active { transform: scale(0.9); }
+
+@media (prefers-reduced-motion: reduce) {
+  .am-card *,
+  .am-stage * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

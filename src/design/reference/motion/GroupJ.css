@@ -1,0 +1,59 @@
+/* J. macOS Tahoe 26. */
+
+/* #51 독 */
+.j-dock-stage { height: 180px; align-items: flex-end; padding-bottom: 16px; }
+.j-dock {
+  display: flex; align-items: flex-end; gap: 8px; padding: 8px 14px; border-radius: 22px;
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(16px) saturate(1.7); -webkit-backdrop-filter: blur(16px) saturate(1.7);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.j-dock__ic {
+  display: grid; place-items: center; width: 44px; height: 44px; border-radius: 13px; color: #fff; transform-origin: bottom;
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1));
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  transition: transform 0.2s var(--spring);
+}
+
+/* #52 사이드바 */
+.j-side-stage { height: 190px; }
+.j-side__win { width: 90%; height: 150px; border-radius: 16px; overflow: hidden; display: flex; background: #fff; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3); }
+.j-side__bar {
+  width: 54px; flex: none; padding: 14px 8px; display: flex; flex-direction: column; gap: 6px; overflow: hidden;
+  background: rgba(120, 140, 200, 0.22);
+  backdrop-filter: blur(14px) saturate(1.5); -webkit-backdrop-filter: blur(14px) saturate(1.5);
+  border-right: 1px solid rgba(255, 255, 255, 0.3);
+  transition: width 0.35s var(--spring);
+}
+.j-side__bar.wide { width: 150px; }
+.j-side__item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 10px; font-size: 12.5px; font-weight: 700; color: #33436e; white-space: nowrap; }
+.j-side__item em { font-style: normal; }
+.j-side__item.on { background: rgba(255, 255, 255, 0.6); }
+.j-side__content { flex: 1; background: linear-gradient(160deg, #f6f8fc, #e9eef7); }
+
+/* #53 투명 메뉴바 */
+.j-menu-stage { height: 180px; align-items: stretch; padding: 0; }
+.j-menu__bar {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 2; display: flex; align-items: center; gap: 16px;
+  padding: 8px 16px; font-size: 12.5px; font-weight: 700; color: rgba(255, 255, 255, 0.9);
+}
+.j-menu__bar span:first-child { width: 14px; height: 14px; border-radius: 50%; background: #fff; opacity: 0.9; }
+.j-menu__sp { flex: 1; }
+.j-menu__wall { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 16px; }
+.j-menu__wall span { width: 56px; height: 56px; border-radius: 16px; background: rgba(255, 255, 255, 0.28); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+
+/* #54 툴바 morph */
+.j-tool-stage { height: 180px; }
+.j-tool {
+  display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 20px; overflow: hidden;
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(16px) saturate(1.6); -webkit-backdrop-filter: blur(16px) saturate(1.6);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.26);
+  transition: gap 0.35s var(--spring);
+}
+.j-tool__btn, .j-tool__extra { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 13px; color: #fff; background: rgba(255, 255, 255, 0.2); flex: none; }
+.j-tool__add { background: rgba(255, 255, 255, 0.35); }
+.j-tool__extra { width: 0; opacity: 0; margin: 0; padding: 0; transform: scale(0.5); transition: width 0.35s var(--spring), opacity 0.25s ease, transform 0.35s var(--spring); }
+.j-tool.more .j-tool__extra { width: 40px; opacity: 1; transform: none; }

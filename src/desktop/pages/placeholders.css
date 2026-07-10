@@ -1,0 +1,68 @@
+/* Phase 1 플레이스홀더 스타일. 점선 슬롯은 "미구현" 신호이며 최종 화면엔 남지 않는다. */
+
+.dph {
+  max-width: 1360px;
+}
+
+.dph__head {
+  margin-bottom: 22px;
+}
+.dph__title {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+}
+.dph__desc {
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--c-muted);
+}
+
+.dph__grid {
+  display: grid;
+  gap: 18px;
+}
+.dph__grid--overview {
+  grid-template-columns: repeat(3, 1fr);
+}
+.dph__grid--jobs {
+  grid-template-columns: 260px 1fr 360px;
+}
+.dph__grid--market {
+  grid-template-columns: repeat(3, 1fr);
+}
+.dph__grid--map {
+  grid-template-columns: 1.6fr 1fr;
+}
+.dph__grid--my {
+  grid-template-columns: 1.4fr 1fr;
+}
+
+.dph__slot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 132px;
+  padding: 18px;
+  border-radius: var(--c-radius);
+  border: 1.5px dashed #cdd2db;
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--c-muted);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+.dph__slot.tall {
+  min-height: 300px;
+}
+.dph__slot-tag {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: var(--c-accent);
+  opacity: 0.7;
+}
