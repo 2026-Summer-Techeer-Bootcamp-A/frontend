@@ -1,0 +1,85 @@
+/* F. 앱 아이콘 — 멀티 레이어 유리 렌더 + 틸트/지글/런치. */
+
+.f-icon {
+  display: grid; place-items: center; width: 66px; height: 66px; border-radius: 18px; color: #fff;
+  background: linear-gradient(150deg, #5b8cff, #7b5bff);
+  box-shadow: 0 8px 20px rgba(60, 80, 160, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+.f-icon--sm { width: 50px; height: 50px; border-radius: 14px; }
+
+/* ---- #28 모드 ---- */
+.f-modes-stage { height: 180px; transition: background 0.3s ease; }
+.f-mode--default { background: linear-gradient(160deg, #eef3fb, #dbe6f7); }
+.f-mode--dark { background: #0c1020; }
+.f-mode--clear { background: radial-gradient(circle at 50% 40%, #2a3350, #0c1020); }
+.f-mode--tinted { background: #101a2e; }
+.f-mode--default .f-icon { background: linear-gradient(150deg, #5b8cff, #7b5bff); }
+.f-mode--dark .f-icon { background: linear-gradient(150deg, #2a3358, #1a2140); border: 1px solid rgba(255, 255, 255, 0.12); }
+.f-mode--clear .f-icon {
+  background: rgba(255, 255, 255, 0.12); color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px) saturate(1.4); -webkit-backdrop-filter: blur(10px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.3); box-shadow: inset 0 0 16px rgba(255, 255, 255, 0.25), 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+.f-mode--tinted .f-icon { background: linear-gradient(150deg, #6a86d6, #4a5aa0); color: #dfe8ff; }
+
+/* ---- #29 틸트 패럴럭스 ---- */
+.f-tilt-stage { height: 180px; background: radial-gradient(circle at 50% 30%, #33406e, #0c1020); perspective: 500px; }
+.f-tilt {
+  position: relative; width: 88px; height: 88px; transform-style: preserve-3d;
+  transform: rotateY(calc(var(--dx, 0) * 10deg)) rotateX(calc(var(--dy, 0) * -10deg));
+  transition: transform 0.12s ease-out;
+}
+.f-tilt__l1 {
+  position: absolute; inset: 0; border-radius: 22px;
+  background: linear-gradient(150deg, #5b8cff, #9b5bff);
+  transform: translateZ(0); box-shadow: 0 12px 30px rgba(40, 60, 160, 0.5);
+}
+.f-tilt__l2 {
+  position: absolute; inset: 0; display: grid; place-items: center; color: #fff;
+  transform: translate(calc(var(--dx, 0) * 5px), calc(var(--dy, 0) * 5px)) translateZ(18px);
+}
+.f-tilt__spec {
+  position: absolute; inset: 0; border-radius: 22px; pointer-events: none; mix-blend-mode: screen;
+  background: radial-gradient(closest-side, rgba(255, 255, 255, 0.9), transparent 70%);
+  width: 60%; height: 60%;
+  left: calc(30% + var(--dx, 0) * 26%); top: calc(10% + var(--dy, 0) * 20%);
+  transform: translateZ(24px);
+}
+
+/* ---- #30 지글 ---- */
+.f-jiggle-stage { height: 180px; }
+.f-jiggle { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.f-jiggle__icon { position: relative; }
+.f-jiggle.on .f-jiggle__icon { animation: f-jiggle 0.28s ease-in-out infinite; animation-delay: calc(var(--i) * -0.07s); }
+.f-jiggle.on .f-jiggle__icon:nth-child(even) { animation-duration: 0.3s; }
+@keyframes f-jiggle {
+  0%, 100% { transform: rotate(-2.5deg); }
+  50% { transform: rotate(2.5deg); }
+}
+.f-jiggle__badge {
+  position: absolute; top: -6px; left: -6px; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; color: #333;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.8); box-shadow: 0 3px 8px rgba(30, 45, 90, 0.25);
+  opacity: 0; transform: scale(0.4); transition: opacity 0.2s ease, transform 0.3s var(--spring);
+}
+.f-jiggle.on .f-jiggle__badge { opacity: 1; transform: scale(1); }
+
+/* ---- #31 런치 줌 ---- */
+.f-launch-stage { height: 200px; }
+.f-launch {
+  position: relative; width: 66px; height: 66px; cursor: pointer;
+  transition: width 0.45s var(--spring), height 0.45s var(--spring), border-radius 0.45s var(--spring);
+  border-radius: 18px;
+}
+.f-launch:active { transform: scale(0.95); }
+.f-launch.open { width: 240px; height: 172px; border-radius: 22px; }
+.f-launch__icon { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: inherit; transition: opacity 0.2s ease; }
+.f-launch.open .f-launch__icon { opacity: 0; }
+.f-launch__app {
+  position: absolute; inset: 0; border-radius: inherit; overflow: hidden; background: #fff; box-shadow: 0 14px 36px rgba(30, 45, 90, 0.28);
+  display: flex; flex-direction: column; opacity: 0; transform: scale(0.9); pointer-events: none; transition: opacity 0.2s ease, transform 0.4s var(--spring);
+}
+.f-launch.open .f-launch__app { opacity: 1; transform: none; }
+.f-launch__bar { height: 40px; background: linear-gradient(90deg, #5b8cff, #7b5bff); }
+.f-launch__body { flex: 1; display: grid; place-items: center; font-size: 13px; font-weight: 700; color: #345; }
