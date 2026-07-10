@@ -1,0 +1,29 @@
+/* === 파이프라인 레일 === */
+.pl-rail { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.pl-node { display: grid; grid-template-columns: 22px 1fr; gap: 10px; min-height: 44px; }
+.pl-node__rail { position: relative; display: flex; justify-content: center; }
+.pl-node__rail::before { /* 세로 연결선 */
+  content: ''; position: absolute; top: 0; bottom: 0; width: 2px;
+  background: var(--n200, #e2e5ec);
+}
+.pl-node:first-child .pl-node__rail::before { top: 11px; }
+.pl-node:last-child .pl-node__rail::before { bottom: calc(100% - 22px); }
+.pl-node__dot {
+  position: relative; z-index: 1; width: 22px; height: 22px; border-radius: 999px;
+  display: grid; place-items: center; background: #fff; color: #a2a6b0;
+  border: 2px solid var(--n200, #e2e5ec); transition: all .2s cubic-bezier(0.25,0.1,0.25,1);
+}
+.pl-node--done .pl-node__dot { color: #2f61b8; border-color: #bcd0f0; }
+.pl-node--active .pl-node__dot {
+  color: #fff; background: #2f61b8; border-color: #2f61b8;
+  box-shadow: 0 0 0 4px rgba(47,97,184,0.14); /* 유일한 신호광 */
+}
+.pl-node--active .pl-node__rail::before { background: linear-gradient(#2f61b8, #e2e5ec); }
+.pl-node__body { display: flex; flex-direction: column; gap: 1px; padding-bottom: 12px; }
+.pl-node__label { font-size: 13px; font-weight: 600; color: #1c1d21; letter-spacing: -0.2px; }
+.pl-node--pending .pl-node__label { color: #a2a6b0; }
+.pl-node__detail { font-family: 'SF Mono', ui-monospace, monospace; font-size: 11px; color: #7c7f88; }
+.pl-node__loop {
+  margin-top: 4px; display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; color: #c76a2e; /* warning 톤 — 재검색은 정직성의 신호 */
+}
