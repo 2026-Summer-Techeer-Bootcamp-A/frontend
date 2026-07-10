@@ -29,6 +29,11 @@
 .rd__doc table { border-collapse: collapse; width: 100%; margin: 0 0 16px; font-size: 13px; }
 .rd__doc th, .rd__doc td { border: 1px solid #e2e5ec; padding: 7px 10px; text-align: left; }
 .rd__doc th { background: #f6f8fc; font-weight: 700; }
+.rd__doc figure { margin: 18px 0 24px; }
+.rd__doc figure svg { width: 100%; height: auto; display: block; }
+.rd__doc figcaption { font-size: 12px; line-height: 1.5; color: #5b5e66; margin-top: 10px; text-align: center; }
+.rd__doc figcaption b { color: #2f61b8; font-weight: 700; }
+
 .rd__toc { position: sticky; top: 24px; align-self: start; display: flex; flex-direction: column; gap: 4px; }
 .rd__toc-link { font-size: 12px; color: #7c7f88; text-decoration: none; padding: 2px 0; }
 .rd__toc-link:hover { color: #2f61b8; }
