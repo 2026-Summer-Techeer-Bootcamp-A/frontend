@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { memo, useEffect, useState } from 'react'
 import ReactECharts from 'echarts-for-react'
 import { BarChart3, Network } from 'lucide-react'
 import type { ToolResult } from './chatContract'
@@ -65,13 +65,17 @@ function GraphCard({ r }: { r: Extract<ToolResult, { kind: 'graph' }> }) {
   )
 }
 
-export default function ToolLane({ results }: { results: ToolResult[] }) {
+/** 답변 생성 중 RagConsole이 여러 번 re-render돼도 근거 카드(특히 echarts force 그래프)가
+ *  재초기화되지 않도록 memo로 고정한다. results 참조는 시나리오당 안정적이라 한 번만 그려진다. */
+function ToolLane({ results }: { results: ToolResult[] }) {
   return (
     <div className={`tl-lanes${results.length > 1 ? ' tl-lanes--multi' : ''}`}>
       {results.map((r, i) => <ToolCard key={i} r={r} />)}
     </div>
   )
 }
+
+export default memo(ToolLane)
 
 function ToolCard({ r }: { r: ToolResult }) {
   const before = useCountUp(r.kind === 'compare' ? r.before : 0)
