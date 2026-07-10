@@ -69,20 +69,24 @@ export default function RagConsole() {
 
         {/* 생각 — 부드럽게 떠오르는 사고 문장들 */}
         <div className="rc__think">
-          {scn.thinking.slice(0, ti).map((line, i) => {
+          {scn.thinking.slice(0, ti).map((step, i) => {
             const active = !thinkingDone && i === ti - 1
             return (
               <div className={`rc__think-line${active ? ' is-active' : ''}`} key={i}>
-                <span className="rc__think-dot" />{line}
+                <span className="rc__think-dot" />
+                <span className="rc__think-text">{step.text}</span>
+                <span className="rc__think-res">{step.result}</span>
               </div>
             )
           })}
         </div>
 
-        {/* 쿼리 — 실제로 도는 조회 한 줄 */}
+        {/* 쿼리 — 실제로 도는 조회 한 줄 (어떤 도구로 라우팅됐는지 함께) */}
         {queried && (
           <div className="rc__query">
-            <Terminal size={12} /><code>{scn.query}</code>
+            <Terminal size={12} />
+            <span className={`rc__route rc__route--${scn.route}`}>{scn.route}</span>
+            <code>{scn.query}</code>
           </div>
         )}
 

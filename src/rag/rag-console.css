@@ -33,6 +33,9 @@
 .rc__think-line .rc__think-dot { width: 5px; height: 5px; border-radius: 999px; background: #cdd2db; flex: none; }
 .rc__think-line.is-active { color: #5b5e66; }
 .rc__think-line.is-active .rc__think-dot { background: #2f61b8; animation: rc-pulse 1.1s ease-in-out infinite; }
+.rc__think-text { flex: 1; min-width: 0; }
+.rc__think-res { flex: none; font-family: 'SF Mono', ui-monospace, monospace; font-size: 11px; font-weight: 600;
+  color: #28539c; background: #eef3fb; border-radius: 6px; padding: 1px 7px; }
 
 /* 쿼리 — 실제 조회 한 줄 */
 @keyframes rc-fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
@@ -40,6 +43,11 @@
   background: #f6f8fc; border: 1px solid #e2e5ec; border-radius: 8px; padding: 5px 10px; color: #5b5e66;
   animation: rc-fade .34s ease both; }
 .rc__query code { font-family: 'SF Mono', ui-monospace, monospace; font-size: 11.5px; color: #28539c; }
+.rc__route { font-size: 10px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase;
+  padding: 1px 6px; border-radius: 5px; }
+.rc__route--sql { color: #5b5e66; background: #eef1f6; }
+.rc__route--vector { color: #21447c; background: #dde8f9; }
+.rc__route--graph { color: #21447c; background: #cddffb; }
 
 /* 답변 + 시각화 */
 .rc__out { display: flex; flex-direction: column; gap: 12px; animation: rc-fade .4s ease both; }
