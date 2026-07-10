@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { CATEGORIES, DONT_DO_ITEMS } from './dontDoItems'
 import Stage from './Stage'
 import './design-system.css'
@@ -12,35 +11,7 @@ export default function DoDont() {
   )
 
   return (
-    <div className="ds">
-      <div className="ds__shell">
-        <aside className="ds__side">
-          <div className="ds__brand">
-            <span className="dot" /> Career DS
-          </div>
-          <Link to="/design-system" className="ds__back">← 디자인 시스템으로</Link>
-          <nav className="ds__nav">
-            <a
-              href="#"
-              onClick={(e) => { e.preventDefault(); setActive('전체') }}
-              style={active === '전체' ? { background: 'var(--accent-50)', color: 'var(--accent-700)' } : undefined}
-            >
-              전체 ({DONT_DO_ITEMS.length})
-            </a>
-            {CATEGORIES.map((c) => (
-              <a
-                key={c}
-                href="#"
-                onClick={(e) => { e.preventDefault(); setActive(c) }}
-                style={active === c ? { background: 'var(--accent-50)', color: 'var(--accent-700)' } : undefined}
-              >
-                {c} ({DONT_DO_ITEMS.filter((i) => i.category === c).length})
-              </a>
-            ))}
-          </nav>
-        </aside>
-
-        <main className="ds__main">
+    <>
           <div className="ds__hero guide__head">
             <span className="ds__eyebrow">Career · Design System</span>
             <h1>Do &amp; Don&apos;t 가이드</h1>
@@ -93,8 +64,6 @@ export default function DoDont() {
               </div>
             ))}
           </div>
-        </main>
-      </div>
-    </div>
+    </>
   )
 }

@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom'
 import {
   Home, Search, Heart, User, Settings, MessageCircle, Phone, Camera, Bell,
   Mail, Trash2, Share2, Pencil, Star, ChevronRight, Plus,
@@ -23,21 +22,7 @@ const NAV = [
 
 export default function LikeApple() {
   return (
-    <div className="ds ag">
-      <div className="ds__shell">
-        <aside className="ds__side">
-          <div className="ds__brand">
-            <span className="dot" /> Career DS
-          </div>
-          <Link to="/design-system" className="ds__back">← 디자인 시스템으로</Link>
-          <nav className="ds__nav">
-            {NAV.map((n) => (
-              <a key={n.id} href={`#${n.id}`}>{n.label}</a>
-            ))}
-          </nav>
-        </aside>
-
-        <main className="ds__main">
+    <div className="ag">
           <div className="ds__hero">
             <span className="ds__eyebrow">Career · Design System</span>
             <h1>Like Apple</h1>
@@ -46,6 +31,12 @@ export default function LikeApple() {
               <b> Liquid Glass(블러)는 제거</b>하고 솔리드 + 절제된 그림자로 입체감만 남겼어요.
             </p>
           </div>
+
+          <nav className="ds__subtabs">
+            {NAV.map((n) => (
+              <a key={n.id} href={`#${n.id}`}>{n.label}</a>
+            ))}
+          </nav>
 
           {/* ---------- 버튼 · 컨트롤 ---------- */}
           <section className="ds-sec" id="controls">
@@ -353,8 +344,6 @@ export default function LikeApple() {
               </div>
             </div>
           </section>
-        </main>
-      </div>
     </div>
   )
 }
