@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
 import { Bell, Search, Settings, Heart, Star, Check, Home, BarChart3, Map as MapIcon, User } from 'lucide-react'
 import { THEME, themeVars } from '../career/themes'
 import { DynamicDock } from '../career/kit'
@@ -567,35 +566,7 @@ export default function TossDetails() {
   )
 
   return (
-    <div className="ds">
-      <div className="ds__shell">
-        <aside className="ds__side">
-          <div className="ds__brand">
-            <span className="dot" /> Career DS
-          </div>
-          <Link to="/design-system" className="ds__back">← 디자인 시스템으로</Link>
-          <nav className="ds__nav">
-            <a
-              href="#"
-              onClick={(e) => { e.preventDefault(); setActive('전체') }}
-              style={active === '전체' ? { background: 'var(--accent-50)', color: 'var(--accent-700)' } : undefined}
-            >
-              전체 ({TOSS_ITEMS.length})
-            </a>
-            {CATEGORIES.map((c) => (
-              <a
-                key={c}
-                href="#"
-                onClick={(e) => { e.preventDefault(); setActive(c) }}
-                style={active === c ? { background: 'var(--accent-50)', color: 'var(--accent-700)' } : undefined}
-              >
-                {c} ({TOSS_ITEMS.filter((i) => i.category === c).length})
-              </a>
-            ))}
-          </nav>
-        </aside>
-
-        <main className="ds__main">
+    <>
           <div className="ds__hero guide__head">
             <span className="ds__eyebrow">Career · Design System</span>
             <h1>기타 디테일</h1>
@@ -626,8 +597,6 @@ export default function TossDetails() {
               </Demo>
             ))}
           </div>
-        </main>
-      </div>
-    </div>
+    </>
   )
 }

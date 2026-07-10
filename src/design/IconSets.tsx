@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom'
 import {
   Home, Search, User, Settings, Bell, Heart, Calendar, Mail, Trash2, Pencil,
   Check, X, ChevronRight, Upload, Star, Filter,
@@ -48,14 +47,7 @@ const FAMILIES = [
 
 export default function IconSets() {
   return (
-    <div className="ds">
-      <div className="ds__shell">
-        <aside className="ds__side">
-          <div className="ds__brand"><span className="dot" /> Career DS</div>
-          <Link to="/design-system" className="ds__back">← 디자인 시스템으로</Link>
-        </aside>
-
-        <main className="ds__main">
+    <>
           <div className="ds__hero">
             <span className="ds__eyebrow">Career · Design System</span>
             <h1>아이콘 세트</h1>
@@ -118,8 +110,6 @@ export default function IconSets() {
               </ul>
             </div>
           </section>
-        </main>
-      </div>
-    </div>
+    </>
   )
 }
