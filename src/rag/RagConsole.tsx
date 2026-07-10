@@ -4,6 +4,7 @@ import { SCENARIOS } from './fixtures'
 import PipelineRail from './PipelineRail'
 import ToolLane from './ToolLane'
 import CitationLedger from './CitationLedger'
+import './rag-console.css'
 
 export default function RagConsole() {
   const [idx, setIdx] = useState(0)

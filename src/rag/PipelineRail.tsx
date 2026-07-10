@@ -1,4 +1,4 @@
-import { Cpu, Database, GitBranch, ScanSearch, Sparkle } from 'lucide-react'
+import { Cpu, Database, GitBranch, RotateCcw, ScanSearch } from 'lucide-react'
 import type { ChatStep, StepKind } from './chatContract'
 
 const KIND_ICON: Record<StepKind, typeof Cpu> = {
@@ -26,7 +26,7 @@ export default function PipelineRail({ steps, activeIndex }: { steps: ChatStep[]
               <span className="pl-node__label">{s.label}</span>
               <span className="pl-node__detail">{s.detail}</span>
               {retry && (
-                <span className="pl-node__loop"><Sparkle size={11} /> 근거 부족 → 재검색</span>
+                <span className="pl-node__loop"><RotateCcw size={11} /> 근거 부족 → 재검색</span>
               )}
             </span>
           </li>
