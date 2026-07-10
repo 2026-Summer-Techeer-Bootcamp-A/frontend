@@ -1,4 +1,4 @@
-import RagAssistantDemo from '../ragAssistant'
+import RagConsole from '../../rag/RagConsole'
 
 const GOOD: { title: string; reason: string; ref: string }[] = [
   {
@@ -65,10 +65,10 @@ export default function InsightsSection() {
     <section className="ds-sec ds-page">
       <div className="ds-sec__head">
         <h2>인사이트·AI</h2>
-        <span className="ds-sub">실제 채용 데이터에 근거해 답하는 어시스턴트 — 보라·핑크·Sparkles 없이, 답변마다 근거를 자연스럽게 남겨요</span>
+        <span className="ds-sub">실제 채용 데이터로 답하는 어시스턴트 — 답이 아니라, 답을 만드는 과정을 보여줘요</span>
       </div>
 
-      <RagAssistantDemo />
+      <RagConsole />
 
       <div className="rag-guide">
         <div className="rag-guide__head">
