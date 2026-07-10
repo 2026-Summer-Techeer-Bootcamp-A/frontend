@@ -27,3 +27,34 @@
   margin-top: 4px; display: inline-flex; align-items: center; gap: 4px;
   font-size: 11px; color: #c76a2e; /* warning 톤 — 재검색은 정직성의 신호 */
 }
+
+/* === 툴 레인 === */
+.tl-lanes { display: flex; flex-direction: column; gap: 10px; }
+.tl-lanes--multi { /* 병렬 강조: 카드가 나란히 */ display: grid; grid-template-columns: 1fr; gap: 10px; }
+@media (min-width: 720px) { .tl-lanes--multi { grid-template-columns: 1fr 1fr; align-items: start; } }
+.tl-card { background: #f6f8fc; border: 1px solid #e2e5ec; border-radius: 12px; padding: 12px 14px; }
+.tl-card--graph { grid-column: 1 / -1; }
+.tl-card__head { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700;
+  letter-spacing: 0.2px; color: #5b5e66; text-transform: none; margin-bottom: 8px; }
+.tl-card__cap { margin-top: 6px; font-family: 'SF Mono', ui-monospace, monospace; font-size: 10px; color: #a2a6b0; }
+.tl-stat { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.tl-stat b { font-size: 24px; font-weight: 800; color: #1c1d21; letter-spacing: -0.8px; }
+.tl-stat span { font-size: 12px; color: #7c7f88; }
+.tl-delta { font-size: 12px; font-weight: 700; color: #218a58; }
+.tl-list { display: flex; flex-direction: column; gap: 6px; }
+.tl-row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.tl-row .co { font-weight: 600; color: #1c1d21; }
+.tl-row .role { color: #7c7f88; font-size: 12px; }
+.tl-rank { width: 18px; height: 18px; border-radius: 5px; background: #eef3fb; color: #2f61b8;
+  font-size: 11px; font-weight: 700; display: grid; place-items: center; }
+.tl-bar { flex: 1; height: 6px; border-radius: 999px; background: #e2e5ec; overflow: hidden; }
+.tl-bar > span { display: block; height: 100%; background: #2f61b8; border-radius: 999px; }
+.tl-row .pct { font-family: 'SF Mono', ui-monospace, monospace; font-size: 12px; font-weight: 600; color: #28539c; }
+.tl-compare { display: flex; align-items: center; gap: 12px; }
+.tl-compare__side { display: flex; flex-direction: column; }
+.tl-compare__side .lbl { font-size: 11px; color: #7c7f88; }
+.tl-compare__side b { font-size: 20px; font-weight: 800; color: #1c1d21; }
+.tl-compare__arrow { color: #a2a6b0; font-size: 18px; }
+.tl-bigstat b { font-size: 28px; font-weight: 800; color: #1c1d21; letter-spacing: -1px; }
+.tl-bigstat__meta { display: flex; flex-direction: column; margin-top: 2px; }
+.tl-bigstat__meta .muted { color: #a2a6b0; font-size: 12px; }
