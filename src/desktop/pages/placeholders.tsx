@@ -88,7 +88,7 @@ export function DesktopJobs() {
     let arr = byPool
     const s = q.trim().toLowerCase()
     if (s) arr = arr.filter((p) => (p.company + ' ' + p.title).toLowerCase().includes(s))
-    if (techFilter.size > 0) arr = arr.filter((p) => [...techFilter].every((t) => p.techs.includes(t)))
+    if (techFilter.size > 0) arr = arr.filter((p) => [...techFilter].some((t) => p.techs.includes(t)))
     if (region) arr = arr.filter((p) => p.region === region)
     if (careerMin != null) arr = arr.filter((p) => (p.careerMax ?? Infinity) >= careerMin)
     if (careerMax != null) arr = arr.filter((p) => (p.careerMin ?? 0) <= careerMax)
