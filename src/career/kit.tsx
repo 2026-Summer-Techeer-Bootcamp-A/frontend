@@ -538,13 +538,15 @@ export function ResumeHeroCard({
   )
 }
 
-/* ---------- 8. 메뉴 로우 (설정 리스트) ---------- */
+/* ---------- 8. 메뉴 로우 (설정 리스트) ----------
+   tint: 데스크톱(macOS 설정 문법)에서 행 아이콘 스쿼클 색으로 쓰는 CSS 변수.
+   모바일 CSS는 이 변수를 참조하지 않으므로 모바일 렌더 결과는 불변이다. */
 export function MenuRow({
-  icon, label, value, onClick, danger,
-}: { icon: ReactNode; label: string; value?: string; onClick?: () => void; danger?: boolean }) {
+  icon, label, value, onClick, danger, tint,
+}: { icon: ReactNode; label: string; value?: string; onClick?: () => void; danger?: boolean; tint?: string }) {
   return (
     <button className={`kit-menu${danger ? ' danger' : ''}`} onClick={onClick}>
-      <span className="kit-menu__ic">{icon}</span>
+      <span className="kit-menu__ic" style={tint ? ({ '--menu-tint': tint } as React.CSSProperties) : undefined}>{icon}</span>
       <span className="kit-menu__lb">{label}</span>
       {value && <span className="kit-menu__v">{value}</span>}
       {!danger && <ChevronRight size={17} className="kit-menu__chev" />}

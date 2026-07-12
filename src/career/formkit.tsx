@@ -67,13 +67,15 @@ export function Switch({ checked, onChange, label }: { checked: boolean; onChang
   )
 }
 
-/* 설정에서 쓰는 스위치 행(제목 + 설명 + 토글). */
+/* 설정에서 쓰는 스위치 행(제목 + 설명 + 토글).
+   tint: 데스크톱(macOS 설정 문법)에서 아이콘 스쿼클 색으로 쓰는 CSS 변수 —
+   모바일 CSS는 참조하지 않아 모바일 렌더 결과는 불변이다. */
 export function SwitchRow({
-  title, desc, checked, onChange, icon,
-}: { title: string; desc?: string; checked: boolean; onChange: (v: boolean) => void; icon?: ReactNode }) {
+  title, desc, checked, onChange, icon, tint,
+}: { title: string; desc?: string; checked: boolean; onChange: (v: boolean) => void; icon?: ReactNode; tint?: string }) {
   return (
     <div className="ss-swrow">
-      {icon && <span className="ss-swrow__ic">{icon}</span>}
+      {icon && <span className="ss-swrow__ic" style={tint ? ({ '--menu-tint': tint } as React.CSSProperties) : undefined}>{icon}</span>}
       <span className="ss-swrow__body">
         <span className="ss-swrow__t">{title}</span>
         {desc && <span className="ss-swrow__d">{desc}</span>}

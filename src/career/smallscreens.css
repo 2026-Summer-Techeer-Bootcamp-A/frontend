@@ -607,6 +607,102 @@
   max-width: 100%;
 }
 
+/* ---------- macOS 시스템 설정 문법 (데스크톱 한정) ----------
+   그룹 카드 + 행마다 컬러 스쿼클 아이콘 + 우측 값/셰브론/스위치.
+   재질·형태만 macOS에서 가져오고 색은 우리 팔레트(tokens.ts)로 틴트한다.
+   전부 .dshell 스코프 — 모바일 렌더에는 영향이 없다. */
+
+/* 그룹 라벨 — 카드 위 muted 캡션 */
+.dshell .dsub .kit-sec {
+  margin: 20px 4px 8px;
+}
+.dshell .dsub .kit-sec__t {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--c-muted);
+}
+
+/* 그룹 카드 */
+.dshell .dsub .kit-menulist,
+.dshell .dsub .ss-card {
+  border-radius: 13px;
+  border: 1px solid #eef1f6;
+  padding: 5px 6px;
+}
+
+/* 메뉴 행 — hover 배경 + 좌측 스쿼클 아이콘 */
+.dshell .dsub .kit-menu {
+  padding: 10px;
+  border-radius: 9px;
+  border-bottom: none;
+  font-size: 13.5px;
+}
+.dshell .dsub .kit-menu + .kit-menu {
+  box-shadow: 0 -1px 0 #eef1f6;
+}
+.dshell .dsub .kit-menu:hover {
+  background: #f6f8fc;
+}
+.dshell .dsub .kit-menu__ic {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  align-items: center;
+  justify-content: center;
+  background: var(--menu-tint, var(--c-accent));
+  color: #fff;
+}
+.dshell .dsub .kit-menu__ic svg {
+  width: 15px;
+  height: 15px;
+}
+.dshell .dsub .kit-menu.danger .kit-menu__ic {
+  background: #c8382d;
+  color: #fff;
+}
+
+/* 스위치 행 — 알림 설정 등 */
+.dshell .dsub .ss-swrow {
+  padding: 11px 10px;
+  border-radius: 9px;
+}
+.dshell .dsub .ss-swrow + .ss-swrow {
+  border-top: none;
+  box-shadow: 0 -1px 0 #eef1f6;
+}
+.dshell .dsub .ss-swrow:hover {
+  background: #f6f8fc;
+}
+.dshell .dsub .ss-swrow__ic {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--menu-tint, var(--c-accent));
+  color: #fff;
+}
+.dshell .dsub .ss-swrow__ic svg {
+  width: 15px;
+  height: 15px;
+}
+.dshell .dsub .ss-swrow__t {
+  font-size: 13.5px;
+}
+
+/* macOS 스위치 — 40x24 캡슐 트랙 + 흰 노브, 200ms standard */
+.dshell .ss-switch {
+  width: 40px;
+  height: 24px;
+  transition: background 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.dshell .ss-switch__knob {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.dshell .ss-switch.on .ss-switch__knob {
+  transform: translateX(16px);
+}
+
 /* ---------- 상태 갤러리 (데모 프레임) ---------- */
 .ss-gallery__note {
   font-size: 12.5px;
