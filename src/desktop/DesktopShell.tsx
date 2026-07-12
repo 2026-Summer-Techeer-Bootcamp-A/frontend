@@ -18,9 +18,10 @@ import { useAuth } from '../career/authStore'
 import MacMenu, { type MacMenuEntry } from './MacMenu'
 import './DesktopShell.css'
 
-/* 데스크톱 셸 — Phase 2: 아이콘 레일 + 개폐형 세부 메뉴 패널.
-   오른쪽 콘텐츠 영역만 라운드 카드로 처리하고, 왼쪽 레일은 아이콘만 노출한다.
-   활성 섹션은 URL에서 파생하고, 같은 아이콘 재클릭이 패널을 토글한다. */
+/* 데스크톱 셸 — Phase 3: 아이콘+라벨 레일 + 톱바 필 탭.
+   개폐형 패널은 섹션마다 있다 없다 해 콘텐츠 폭이 출렁였다 — 패널을 없애고
+   하위 메뉴가 2개 이상인 섹션은 톱바의 필 탭 셀렉터로 노출한다.
+   활성 섹션은 URL에서 파생한다. */
 
 type SubItem = { to: string; label: string; end?: boolean }
 type Section = {
@@ -107,24 +108,9 @@ function sectionOf(pathname: string): Section {
 export default function DesktopShell({ children }: { children: ReactNode }) {
   const location = useLocation()
   const navigate = useNavigate()
-  const [userOpen, setUserOpen] = useState(true)
   const [accountOpen, setAccountOpen] = useState(false)
   const { user, isAuthed, logout } = useAuth()
   const active = sectionOf(location.pathname)
-
-  // 하위 메뉴가 1개뿐인 섹션은 패널이 레일과 중복이라 아예 열지 않는다
-  const hasSub = active.items.length > 1
-  const open = userOpen && hasSub
-
-  // 같은 아이콘 재클릭 = 패널 토글(하위 메뉴 있을 때만), 다른 아이콘 = 섹션 이동(+패널 열기)
-  const onRailClick = (s: Section) => {
-    if (s.key === active.key) {
-      if (hasSub) setUserOpen((v) => !v)
-      return
-    }
-    setUserOpen(true)
-    navigate(s.home)
-  }
 
   const accountItems: MacMenuEntry[] = [
     { header: { name: isAuthed ? (user?.nickname ?? '사용자') : '게스트', email: user?.email ?? '로그인하고 맞춤 정보를 받아보세요' } },
@@ -152,12 +138,11 @@ export default function DesktopShell({ children }: { children: ReactNode }) {
               <button
                 key={s.key}
                 type="button"
-                aria-label={s.label}
-                data-label={s.label}
                 className={`dshell__railbtn${s.key === active.key ? ' on' : ''}`}
-                onClick={() => onRailClick(s)}
+                onClick={() => navigate(s.home)}
               >
-                <Icon size={21} strokeWidth={2} />
+                <Icon size={20} strokeWidth={2} />
+                <span className="dshell__raillabel">{s.label}</span>
               </button>
             )
           })}
@@ -171,55 +156,43 @@ export default function DesktopShell({ children }: { children: ReactNode }) {
               <button
                 key={s.key}
                 type="button"
-                aria-label={s.label}
-                data-label={s.label}
                 className={`dshell__railbtn${s.key === active.key ? ' on' : ''}`}
-                onClick={() => onRailClick(s)}
+                onClick={() => navigate(s.home)}
               >
-                <Icon size={21} strokeWidth={2} />
+                <Icon size={20} strokeWidth={2} />
+                <span className="dshell__raillabel">{s.label}</span>
               </button>
             )
           })}
           <button
             type="button"
-            aria-label="RAG 문서"
-            data-label="RAG 문서"
             className="dshell__railbtn"
             onClick={() => navigate('/rag-docs')}
           >
-            <BookOpen size={21} strokeWidth={2} />
+            <BookOpen size={20} strokeWidth={2} />
+            <span className="dshell__raillabel">RAG 문서</span>
           </button>
-        </div>
-      </aside>
-
-      <aside
-        className={`dshell__panel${open ? ' open' : ''}`}
-        aria-hidden={!open}
-      >
-        <div className="dshell__panelinner">
-          <div className="dshell__paneltitle">{active.label}</div>
-          <nav className="dshell__panelnav" aria-label={`${active.label} 세부 메뉴`}>
-            {active.items.map((it) => (
-              <NavLink
-                key={it.to}
-                to={it.to}
-                end={it.end}
-                tabIndex={open ? 0 : -1}
-                className={({ isActive }) =>
-                  `dshell__navitem${isActive ? ' on' : ''}`
-                }
-              >
-                {it.label}
-              </NavLink>
-            ))}
-          </nav>
         </div>
       </aside>
 
       <div className="dshell__main">
         <header className="dshell__topbar">
-          {/* 패널이 열려 있으면 패널 제목과 중복이라 브레드크럼을 숨긴다 */}
-          {!open && <span className="dshell__crumb">{active.label}</span>}
+          <span className="dshell__crumb">{active.label}</span>
+          {/* 하위 메뉴가 2개 이상인 섹션은 필 탭 셀렉터로 노출 */}
+          {active.items.length > 1 && (
+            <nav className="dshell__tabs" aria-label={`${active.label} 탭`}>
+              {active.items.map((it) => (
+                <NavLink
+                  key={it.to}
+                  to={it.to}
+                  end={it.end}
+                  className={({ isActive }) => `dshell__tab${isActive ? ' on' : ''}`}
+                >
+                  {it.label}
+                </NavLink>
+              ))}
+            </nav>
+          )}
           <div className="dshell__topright">
             <div className="dshell__accountwrap">
               <button
