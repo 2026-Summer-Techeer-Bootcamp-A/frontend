@@ -592,6 +592,21 @@
   line-height: 1;
 }
 
+/* 데스크톱 셸에서는 화면 전체를 채우는 대신 중앙의 컴팩트 카드로 보여준다(로그인 게이트 등).
+   모바일 렌더에는 영향 없도록 .dshell 스코프로 한정. */
+.dshell .ss-state {
+  max-width: 360px;
+  margin: 48px auto 0;
+  padding: 32px 24px;
+  border: 1px solid #eef1f6;
+  border-radius: 20px;
+  background: var(--c-card);
+  min-height: 0;
+}
+.dshell .ss-state__actions {
+  max-width: 100%;
+}
+
 /* ---------- 상태 갤러리 (데모 프레임) ---------- */
 .ss-gallery__note {
   font-size: 12.5px;

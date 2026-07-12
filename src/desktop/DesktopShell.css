@@ -84,6 +84,15 @@
   opacity: 1;
 }
 
+/* 키보드 포커스 — 마우스 호버와 동일하게 툴팁을 보여주고 포커스 링을 추가한다 */
+.dshell__railbtn:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+}
+.dshell__railbtn:focus-visible::after {
+  opacity: 1;
+}
+
 /* ---------- 세부 메뉴 패널 (개폐) ---------- */
 .dshell__panel {
   flex: none;
