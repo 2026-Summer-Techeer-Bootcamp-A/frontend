@@ -56,7 +56,7 @@ export default function MapSection() {
                 <div className="ds-demo-stage" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 10 }}>
                   <div className="mx-choro">
                     {([['강남', 1842, 1], ['구로', 861, 0.55], ['마포', 642, 0.42], ['성동', 588, 0.38], ['영등포', 512, 0.34], ['분당', 447, 0.3], ['종로', 388, 0.26], ['용산', 214, 0.16]] as [string, number, number][]).map(([nm, v, o]) => (
-                      <div className="d" key={nm} style={{ background: `rgba(47,97,184,${0.1 + o * 0.8})`, color: o > 0.45 ? '#fff' : '#1c1d21' }}>
+                      <div className="d" key={nm} style={{ background: `rgba(11, 11, 12,${0.1 + o * 0.8})`, color: o > 0.45 ? '#fff' : '#1c1d21' }}>
                         <span className="nm">{nm}</span>
                         <span className="v">{v.toLocaleString()}</span>
                       </div>

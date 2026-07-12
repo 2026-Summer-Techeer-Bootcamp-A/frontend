@@ -7,10 +7,10 @@
 .td-box {
   height: 190px; overflow-y: auto; position: relative;
   background: var(--c-card); border: 1px solid var(--line); border-radius: 14px;
-  scrollbar-width: thin; scrollbar-color: rgba(47, 97, 184, 0.3) transparent;
+  scrollbar-width: thin; scrollbar-color: rgba(11, 11, 12, 0.3) transparent;
 }
 .td-box::-webkit-scrollbar { width: 5px; }
-.td-box::-webkit-scrollbar-thumb { background: rgba(47, 97, 184, 0.3); border-radius: 5px; }
+.td-box::-webkit-scrollbar-thumb { background: rgba(11, 11, 12, 0.3); border-radius: 5px; }
 
 .td-listrow {
   display: flex; align-items: center; gap: 9px;
@@ -158,7 +158,7 @@
 .td-btn {
   align-self: flex-start; padding: 9px 15px; border-radius: 12px;
   background: var(--c-accent); color: #fff; font-size: 13px; font-weight: 700;
-  box-shadow: 0 4px 12px -4px rgba(47, 97, 184, 0.5);
+  box-shadow: 0 4px 12px -4px rgba(11, 11, 12, 0.5);
   transition: transform 0.12s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 .td-btn:active { transform: scale(0.94); }

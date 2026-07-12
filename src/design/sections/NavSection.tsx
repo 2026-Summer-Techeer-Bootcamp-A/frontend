@@ -34,7 +34,7 @@ export default function NavSection() {
                 <div className="ds-demo-stage" style={{ alignItems: 'stretch' }}>
                   <div className="grouped-list">
                     <div className="row">
-                      <span className="icon" style={{ background: '#2f61b8' }}><Bell size={15} /></span>
+                      <span className="icon" style={{ background: '#0b0b0c' }}><Bell size={15} /></span>
                       <span className="label">알림</span>
                       <ChevronRight size={16} className="chev" />
                     </div>

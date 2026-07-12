@@ -10,7 +10,7 @@ import './signalFeed.css'
    새 공고가 위로 올라오는 스트리밍 피드(데모). viz = ECharts.
    ================================================================ */
 
-const BLUE = '#2f61b8'
+const BLUE = '#0b0b0c'
 const BLUE_ON = '#5a86cf'
 const ON = '#f4f6fb'
 const PBORDER = '#262a34'

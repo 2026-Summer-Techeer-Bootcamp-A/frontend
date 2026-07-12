@@ -248,7 +248,7 @@ export function Heatmap({
           {cols.map((c, ci) => {
             const v = matrix[ri][ci]
             return (
-              <div key={c} className="scr-heat__cell" style={{ background: `rgba(47,97,184,${(v / max).toFixed(2)})` }}>
+              <div key={c} className="scr-heat__cell" style={{ background: `rgba(11, 11, 12,${(v / max).toFixed(2)})` }}>
                 <span style={{ color: v / max > 0.5 ? '#fff' : 'var(--c-muted)' }}>{v}</span>
               </div>
             )

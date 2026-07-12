@@ -51,7 +51,7 @@
 /* #46 리프트 */
 .h-lift {
   display: flex; align-items: center; gap: 7px; padding: 12px 22px; border-radius: 16px; font-size: 14px; font-weight: 800; color: #fff;
-  background: var(--accent); box-shadow: 0 4px 12px rgba(47, 97, 184, 0.3);
+  background: var(--accent); box-shadow: 0 4px 12px rgba(11, 11, 12, 0.3);
   transition: transform 0.2s var(--spring), background 0.2s ease, box-shadow 0.2s ease, backdrop-filter 0.2s ease;
 }
 .h-lift.up {

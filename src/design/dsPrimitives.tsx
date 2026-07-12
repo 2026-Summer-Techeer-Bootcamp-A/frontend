@@ -25,7 +25,7 @@ export function ScaleBar({ label, sub, entries }: { label: string; sub: string; 
 /** 동심원 활동 링 3겹 — 커버리지/지원현황/마감임박을 한 데이터 오브젝트로 */
 export function ActivityRings() {
   const rings = [
-    { r: 50, pct: 73, color: '#2f61b8' },
+    { r: 50, pct: 73, color: '#0b0b0c' },
     { r: 38, pct: 55, color: '#5a86cf' },
     { r: 26, pct: 40, color: '#a2a6b0' },
   ]
@@ -54,7 +54,7 @@ export function Sparkline() {
     <svg viewBox="0 0 70 24" width="70" height="24">
       <polyline
         points="0,20 10,15 20,18 30,8 40,12 50,4 60,10 70,2"
-        fill="none" stroke="#2f61b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+        fill="none" stroke="#0b0b0c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
       />
     </svg>
   )

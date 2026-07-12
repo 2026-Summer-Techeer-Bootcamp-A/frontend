@@ -248,13 +248,13 @@ export default function SignalConcept() {
               <defs>
                 <radialGradient id="scmStrong" cx="38%" cy="34%" r="72%">
                   <stop offset="0%" stopColor="#7ba0dd" />
-                  <stop offset="52%" stopColor="#2f61b8" />
+                  <stop offset="52%" stopColor="#0b0b0c" />
                   <stop offset="100%" stopColor="#254c92" />
                 </radialGradient>
                 <radialGradient id="scmHot" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="#2f61b8" stopOpacity="0.20" />
-                  <stop offset="55%" stopColor="#2f61b8" stopOpacity="0.07" />
-                  <stop offset="100%" stopColor="#2f61b8" stopOpacity="0" />
+                  <stop offset="0%" stopColor="#0b0b0c" stopOpacity="0.20" />
+                  <stop offset="55%" stopColor="#0b0b0c" stopOpacity="0.07" />
+                  <stop offset="100%" stopColor="#0b0b0c" stopOpacity="0" />
                 </radialGradient>
                 <filter id="scmGlow" x="-80%" y="-80%" width="260%" height="260%">
                   <feGaussianBlur stdDeviation="7" />
@@ -338,7 +338,7 @@ export default function SignalConcept() {
                 <g key={p.key} className="scm-bub scm-strong"
                   onMouseEnter={() => setHover(p.key)} onMouseLeave={() => setHover(null)}
                   style={{ animationDelay: `${220 + i * 46}ms`, opacity: hover && hover !== p.key ? 0.5 : 1 }}>
-                  <circle cx={p.x} cy={p.y} r={p.r + 6} fill="#2f61b8" opacity="0.5" filter="url(#scmGlow)" />
+                  <circle cx={p.x} cy={p.y} r={p.r + 6} fill="#0b0b0c" opacity="0.5" filter="url(#scmGlow)" />
                   <circle cx={p.x} cy={p.y} r={p.r} fill="url(#scmStrong)" stroke="#eef3fb" strokeWidth="1.6" />
                 </g>
               ))}
