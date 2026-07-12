@@ -13,6 +13,9 @@ import {
   TechMoversBar, TierCompareChart, GenerationTrendChart,
   getNetworkTopConnections, getPropagationTopLeaders,
 } from '../../career/insights'
+import {
+  HypeVsHireWidget, CompetencyWidget, ResponseRateWidget, ConceptSignalWidget,
+} from '../../career/wowWidgets'
 import { useWidgetData } from '../../career/useWidgetData'
 import CompanyLogo from '../../career/CompanyLogo'
 import { useResumesState, getDynamicPostings, calculateCoverage, ddayInfo } from '../../career/state'
@@ -635,6 +638,13 @@ export function DesktopMarket() {
           </section>
         )}
 
+        {/* 와우포인트: Hype vs Hire — 관심 vs 수요 산점도 */}
+        {!isWidgetHidden('market', 'hype-vs-hire') && (
+          <div className={`wcell wcell--${widgetSize('hype-vs-hire')}`}>
+            <HypeVsHireWidget size={widgetSize('hype-vs-hire')} />
+          </div>
+        )}
+
         {/* 2. 기술 공동출현 네트워크 */}
         {!isWidgetHidden('market', 'network') && (
           <section className="dcard wcell wcell--2x2 dmkt2__netcell">
@@ -673,6 +683,27 @@ export function DesktopMarket() {
               </aside>
             </div>
           </section>
+        )}
+
+        {/* 와우포인트: 회사가 원하는 역량 */}
+        {!isWidgetHidden('market', 'competency') && (
+          <div className={`wcell wcell--${widgetSize('competency')}`}>
+            <CompetencyWidget size={widgetSize('competency')} />
+          </div>
+        )}
+
+        {/* 와우포인트: 응답 잘 오는 회사 */}
+        {!isWidgetHidden('market', 'response-rate') && (
+          <div className={`wcell wcell--${widgetSize('response-rate')}`}>
+            <ResponseRateWidget size={widgetSize('response-rate')} />
+          </div>
+        )}
+
+        {/* 와우포인트: 개념 → 기술 시그니처 */}
+        {!isWidgetHidden('market', 'concept-signal') && (
+          <div className={`wcell wcell--${widgetSize('concept-signal')}`}>
+            <ConceptSignalWidget size={widgetSize('concept-signal')} />
+          </div>
         )}
 
         {/* 4. 연도별 점유율 추이 */}
