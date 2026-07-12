@@ -1,74 +1,190 @@
+import { useState } from 'react'
 import type { ReactNode } from 'react'
-import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, Briefcase, BarChart3, Map, User, MessageSquare, Search } from 'lucide-react'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
+import {
+  LayoutDashboard,
+  Briefcase,
+  ChartNoAxesColumn,
+  MapPin,
+  CircleUser,
+  MessageSquare,
+  Search,
+} from 'lucide-react'
 import { THEME, themeVars } from '../career/themes'
 import './DesktopShell.css'
 
-/* 데스크톱 셸 — Phase 1 골격.
-   비주얼 디테일(간격/타이포/컬러 뉘앙스)은 팀 논의 + 레퍼런스 후 확정. 지금은 위계와
-   내비게이션 배선만 세운다. 토큰(themeVars)을 루트에 주입해 kit/위젯을 나중에 그대로 얹는다. */
+/* 데스크톱 셸 — Phase 2: 아이콘 레일 + 개폐형 세부 메뉴 패널.
+   앱 전체를 라운드 프레임 카드에 담고, 왼쪽 레일은 아이콘만 노출한다.
+   활성 섹션은 URL에서 파생하고, 같은 아이콘 재클릭이 패널을 토글한다. */
 
-type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; end?: boolean }
+type SubItem = { to: string; label: string; end?: boolean }
+type Section = {
+  key: string
+  label: string
+  icon: typeof LayoutDashboard
+  home: string // 아이콘 클릭 시 이동할 대표 라우트
+  match: string[] // 이 섹션 소속으로 판정할 경로 프리픽스
+  items: SubItem[]
+}
 
-// 모바일 4탭(홈/시장/지도/마이)을 계승하되 PC 밀도로 분화: 대시보드 ↔ 맞춤공고를 분리한다.
-const NAV: NavItem[] = [
-  { to: '/', label: '대시보드', icon: LayoutDashboard, end: true },
-  { to: '/jobs', label: '맞춤 공고', icon: Briefcase },
-  { to: '/market', label: '채용 시장', icon: BarChart3 },
-  { to: '/map', label: '지도', icon: Map },
-  { to: '/resume', label: '마이', icon: User },
+// 모바일 4탭을 계승한 5섹션. 셸 밖에 떠돌던 설정·자격증 갭·이력서 제출을 하위 메뉴로 흡수.
+const SECTIONS: Section[] = [
+  {
+    key: 'dash',
+    label: '대시보드',
+    icon: LayoutDashboard,
+    home: '/',
+    match: ['/'],
+    items: [{ to: '/', label: '개요', end: true }],
+  },
+  {
+    key: 'jobs',
+    label: '맞춤 공고',
+    icon: Briefcase,
+    home: '/jobs',
+    match: ['/jobs', '/job/'],
+    items: [{ to: '/jobs', label: '공고 목록' }],
+  },
+  {
+    key: 'market',
+    label: '채용 시장',
+    icon: ChartNoAxesColumn,
+    home: '/market',
+    match: ['/market', '/cert-gap', '/tech/'],
+    items: [
+      { to: '/market', label: '시장 개요' },
+      { to: '/cert-gap', label: '자격증 갭' },
+    ],
+  },
+  {
+    key: 'map',
+    label: '지도',
+    icon: MapPin,
+    home: '/map',
+    match: ['/map'],
+    items: [{ to: '/map', label: '지도 보기' }],
+  },
+  {
+    key: 'my',
+    label: '마이',
+    icon: CircleUser,
+    home: '/resume',
+    match: ['/resume', '/settings'],
+    items: [
+      { to: '/resume', label: '이력서', end: true },
+      { to: '/resume/submit', label: '이력서 제출' },
+      { to: '/settings/account', label: '계정' },
+      { to: '/settings/notifications', label: '알림' },
+    ],
+  },
 ]
 
+// 현재 경로가 속한 섹션. '/'는 정확히 일치할 때만 대시보드로 본다.
+function sectionOf(pathname: string): Section {
+  if (pathname === '/') return SECTIONS[0]
+  const hit = SECTIONS.find((s) =>
+    s.match.some((m) => m !== '/' && pathname.startsWith(m)),
+  )
+  return hit ?? SECTIONS[0]
+}
+
 export default function DesktopShell({ children }: { children: ReactNode }) {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [open, setOpen] = useState(true)
+  const active = sectionOf(location.pathname)
+
+  // 같은 아이콘 재클릭 = 패널 토글, 다른 아이콘 = 섹션 이동(+패널 열기)
+  const onRailClick = (s: Section) => {
+    if (s.key === active.key) {
+      setOpen((v) => !v)
+      return
+    }
+    setOpen(true)
+    navigate(s.home)
+  }
+
   return (
     <div className="dshell" style={themeVars(THEME)}>
-      <aside className="dshell__side">
-        {/* 브랜드 워드마크 자리 — 실제 로고 확정 전 플레이스홀더 */}
-        <div className="dshell__brand">
-          <span className="dshell__brand-dot" />
-          커리어
-        </div>
+      <div className="dshell__frame">
+        <aside className="dshell__rail">
+          {/* 브랜드 도트 — 실제 로고 확정 전 플레이스홀더 */}
+          <div className="dshell__brand-dot" aria-hidden />
 
-        <nav className="dshell__nav" aria-label="주요 메뉴">
-          {NAV.map(({ to, label, icon: Icon, end }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={end}
-              className={({ isActive }) => `dshell__navitem${isActive ? ' on' : ''}`}
+          <nav className="dshell__railnav" aria-label="주요 메뉴">
+            {SECTIONS.map((s) => {
+              const Icon = s.icon
+              return (
+                <button
+                  key={s.key}
+                  type="button"
+                  aria-label={s.label}
+                  data-label={s.label}
+                  className={`dshell__railbtn${s.key === active.key ? ' on' : ''}`}
+                  onClick={() => onRailClick(s)}
+                >
+                  <Icon size={21} strokeWidth={2} />
+                </button>
+              )
+            })}
+          </nav>
+
+          {/* AI는 서브 — 레일 하단 분리 배치. 셸 밖 라우트로 이동한다. */}
+          <div className="dshell__railfoot">
+            <button
+              type="button"
+              aria-label="AI 채팅"
+              data-label="AI 채팅"
+              className="dshell__railbtn"
+              onClick={() => navigate('/rag-docs')}
             >
-              <Icon size={20} strokeWidth={2} />
-              <span>{label}</span>
-            </NavLink>
-          ))}
-        </nav>
-
-        {/* AI는 서브 — 사이드바 하단에 분리 배치 */}
-        <div className="dshell__navfoot">
-          <NavLink to="/rag-docs" className="dshell__navitem sub">
-            <MessageSquare size={20} strokeWidth={2} />
-            <span>AI 채팅</span>
-          </NavLink>
-        </div>
-      </aside>
-
-      <div className="dshell__main">
-        <header className="dshell__topbar">
-          <button className="dshell__search" type="button">
-            <Search size={16} />
-            <span>공고 · 기술 검색</span>
-          </button>
-          <div className="dshell__topright">
-            {/* 국내/글로벌 풀 토글 자리 — 실제 상태 연동은 Phase 3 */}
-            <div className="dshell__pool" role="group" aria-label="채용 풀">
-              <button type="button" className="on">국내</button>
-              <button type="button">글로벌</button>
-            </div>
-            <div className="dshell__avatar" aria-label="프로필">리버</div>
+              <MessageSquare size={21} strokeWidth={2} />
+            </button>
           </div>
-        </header>
+        </aside>
 
-        <main className="dshell__content">{children}</main>
+        <aside
+          className={`dshell__panel${open ? ' open' : ''}`}
+          aria-hidden={!open}
+        >
+          <div className="dshell__panelinner">
+            <div className="dshell__paneltitle">{active.label}</div>
+            <nav className="dshell__panelnav" aria-label={`${active.label} 세부 메뉴`}>
+              {active.items.map((it) => (
+                <NavLink
+                  key={it.to}
+                  to={it.to}
+                  end={it.end}
+                  tabIndex={open ? 0 : -1}
+                  className={({ isActive }) =>
+                    `dshell__navitem${isActive ? ' on' : ''}`
+                  }
+                >
+                  {it.label}
+                </NavLink>
+              ))}
+            </nav>
+          </div>
+        </aside>
+
+        <div className="dshell__main">
+          <header className="dshell__topbar">
+            <button className="dshell__search" type="button">
+              <Search size={16} />
+              <span>공고 · 기술 검색</span>
+            </button>
+            <div className="dshell__topright">
+              {/* 국내/글로벌 풀 토글 자리 — 실제 상태 연동은 Phase 3 */}
+              <div className="dshell__pool" role="group" aria-label="채용 풀">
+                <button type="button" className="on">국내</button>
+                <button type="button">글로벌</button>
+              </div>
+              <div className="dshell__avatar" aria-label="프로필">리버</div>
+            </div>
+          </header>
+
+          <main className="dshell__content">{children}</main>
+        </div>
       </div>
     </div>
   )
