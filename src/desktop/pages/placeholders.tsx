@@ -97,6 +97,8 @@ export function DesktopJobs() {
   const navigate = useNavigate()
   const { resumes, activeId, activeResume } = useResumesState()
   const skills = activeResume?.skills ?? []
+  // 내 직무 카테고리 — 이력서 보유 기술만으로 derivePosition을 태워 파생(title 없이 techs 폴백).
+  const myCategory = activeResume ? derivePosition('', activeResume.skills) : null
 
   const [pool, setPool] = useState<'국내' | '국외'>('국내')
   const [q, setQ] = useState('')
@@ -110,6 +112,8 @@ export function DesktopJobs() {
   const [tierFilter, setTierFilter] = useState<Set<string>>(new Set(TIERS))
   const [positionFilter, setPositionFilter] = useState<PositionCat | ''>('')
   const [pvTab, setPvTab] = useState<'desc' | 'company'>('desc')
+  // 이력서 있으면 "내 직무" 탭이 기본값 — 이력서 없으면 항상 전체.
+  const [scope, setScope] = useState<'mine' | 'all'>(activeResume ? 'mine' : 'all')
 
   // 이력서 셀렉터 → 필터 자동주입(헤드라인 기능). 이력서를 "선택"할 때 1회만 초기값을
   // 채워 넣고, 그 뒤로는 사용자가 자유롭게 덮어쓸 수 있어야 하므로 activeId(선택 이벤트)에만
@@ -147,12 +151,32 @@ export function DesktopJobs() {
       })
     }
     arr = arr.filter((p) => tierFilter.has(p.tier || '중소'))
-    if (positionFilter) arr = arr.filter((p) => derivePosition(p.title, p.techs) === positionFilter)
+    // scope='mine'이면 이력서 기반 직무로 강제(빠른 토글) — 수동 select(positionFilter)보다 우선한다.
+    if (scope === 'mine' && myCategory) arr = arr.filter((p) => derivePosition(p.title, p.techs) === myCategory)
+    else if (positionFilter) arr = arr.filter((p) => derivePosition(p.title, p.techs) === positionFilter)
     return [...arr].sort((a, b) =>
       sort === 'tier' ? tierRank(a.tier) - tierRank(b.tier) || b.matchPct - a.matchPct
         : sort === 'latest' ? (b.postDate || '').localeCompare(a.postDate || '')
           : b.matchPct - a.matchPct)
-  }, [byPool, q, techFilter, region, careerMin, careerMax, deadlineOnly, tierFilter, positionFilter, sort])
+  }, [byPool, q, techFilter, region, careerMin, careerMax, deadlineOnly, tierFilter, positionFilter, sort, scope, myCategory])
+
+  // facet 카운트 요약(사람인/링크드인 패턴) — 현재 필터된 list 기준 기업 규모 분포 + 상위 직무 3개.
+  const tierFacets = useMemo(() => {
+    const counts: Record<string, number> = { 대기업: 0, 중견: 0, 중소: 0 }
+    list.forEach((p) => {
+      const t = p.tier || '중소'
+      if (t in counts) counts[t] += 1
+    })
+    return counts
+  }, [list])
+  const positionFacets = useMemo(() => {
+    const counts = new Map<PositionCat, number>()
+    list.forEach((p) => {
+      const cat = derivePosition(p.title, p.techs)
+      counts.set(cat, (counts.get(cat) ?? 0) + 1)
+    })
+    return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3)
+  }, [list])
 
   const sel = list.find((p) => p.id === selId) ?? list[0]
   const activePresetKey = CAREER_PRESETS.find((c) => c.min === careerMin && c.max === careerMax)?.key ?? null
@@ -169,6 +193,23 @@ export function DesktopJobs() {
     if (next.has(t)) next.delete(t); else next.add(t)
     return next
   })
+
+  // 링크드인/사람인식 스킬 매치 미니 줄 — "요구 N개 중 M개 보유" + 보유(그린)/미보유(그레이) 칩.
+  const renderSkillMatch = (techs: string[]) => {
+    const held = techs.filter((t) => skills.includes(t))
+    const missing = techs.filter((t) => !skills.includes(t))
+    const heldShown = held.slice(0, 3)
+    const missingShown = missing.slice(0, 2)
+    return (
+      <span className="djobs__matchline">
+        <span className="djobs__matchline-txt">요구 {techs.length}개 중 {held.length}개 보유</span>
+        {heldShown.map((t) => <span key={`h-${t}`} className="djobs__mtech held">{t}</span>)}
+        {held.length > heldShown.length && <span className="djobs__mtech more">+{held.length - heldShown.length}</span>}
+        {missingShown.map((t) => <span key={`m-${t}`} className="djobs__mtech">{t}</span>)}
+        {missing.length > missingShown.length && <span className="djobs__mtech more">+{missing.length - missingShown.length}</span>}
+      </span>
+    )
+  }
 
   return (
     <div className="dpage djobs">
@@ -218,8 +259,13 @@ export function DesktopJobs() {
           </div>
 
           <div className="djobs__fld">
-            <span className="djobs__fld-l">직무</span>
-            <select className="djobs__select" value={positionFilter} onChange={(e) => setPositionFilter(e.target.value as PositionCat | '')}>
+            <span className="djobs__fld-l">직무{scope === 'mine' && myCategory ? ' (내 직무 탭 사용 중)' : ''}</span>
+            <select
+              className="djobs__select"
+              value={positionFilter}
+              disabled={scope === 'mine' && !!myCategory}
+              onChange={(e) => setPositionFilter(e.target.value as PositionCat | '')}
+            >
               <option value="">전체</option>
               {POSITION_CATS.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
@@ -268,6 +314,31 @@ export function DesktopJobs() {
 
         {/* 결과 리스트 */}
         <div className="dcard djobs__list">
+          <div className="djobs__listhead">
+            {myCategory && (
+              <div className="djobs__scopetabs">
+                <SegmentedControl
+                  size="sm"
+                  value={scope}
+                  onChange={(v) => setScope(v as 'mine' | 'all')}
+                  options={[{ key: 'mine', label: `내 직무 · ${myCategory}` }, { key: 'all', label: '전체' }]}
+                />
+              </div>
+            )}
+            <div className="djobs__facets">
+              <span className="djobs__facets-count">{list.length.toLocaleString()}건</span>
+              <span className="djobs__facets-sep" />
+              {TIERS.map((t) => (
+                <button key={t} className={`djobs__facet${tierFilter.has(t) ? ' on' : ''}`} onClick={() => toggleTier(t)}>
+                  {t} {tierFacets[t]}
+                </button>
+              ))}
+              <span className="djobs__facets-sep" />
+              {positionFacets.map(([cat, n]) => (
+                <span key={cat} className="djobs__facet djobs__facet--static">{cat} {n}</span>
+              ))}
+            </div>
+          </div>
           {list.length === 0 && <div className="dpage__empty">조건에 맞는 공고가 없어요.</div>}
           {list.slice(0, 40).map((p) => (
             <button
@@ -278,7 +349,11 @@ export function DesktopJobs() {
               <CompanyLogo logo={p.logo} name={p.company} size={38} radius={10} />
               <span className="djobs__row-b">
                 <span className="djobs__row-t">{p.title}</span>
-                <span className="djobs__row-c">{p.company} · {careerLabel(p.careerMin, p.careerMax)}</span>
+                <span className="djobs__row-c">
+                  {p.company} · <span className="djobs__badge djobs__badge--tier">{p.tier || '중소'}</span> · <span className="djobs__badge">{derivePosition(p.title, p.techs)}</span>
+                  {p.region && <> · {p.region}</>}
+                </span>
+                {renderSkillMatch(p.techs)}
               </span>
               <MiniScore pct={p.matchPct} size={40} />
             </button>

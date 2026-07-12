@@ -6,6 +6,14 @@
   padding-right: 2px;
 }
 
+/* 선택된 결과 행 강조 — 검은 좌측 테두리 대신 배경 대비만 사용(placeholders.css 기본값을
+   여기서 재정의; jobs.css가 뒤에 로드되어 우선한다). */
+.djobs__row.on {
+  background: var(--accent-100);
+  border-left: none;
+  padding-left: 10px;
+}
+
 .djobs__resume-cta {
   display: flex;
   flex-direction: column;
@@ -87,4 +95,110 @@
   width: 16px;
   height: 16px;
   accent-color: var(--c-ink, #0b0b0c);
+}
+
+.djobs__select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── 결과 리스트 헤더: 직무 탭 셀렉터 + facet 카운트 요약(사람인/링크드인 패턴) ── */
+.djobs__listhead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--c-card, #fff);
+  padding-bottom: 12px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--line, #e6e9ef);
+}
+.djobs__scopetabs { display: flex; }
+
+.djobs__facets {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  font-size: 12px;
+  color: var(--c-muted);
+}
+.djobs__facets-count { font-weight: 700; color: var(--c-ink); }
+.djobs__facets-sep {
+  width: 1px;
+  height: 11px;
+  background: var(--line, #e6e9ef);
+  flex-shrink: 0;
+}
+.djobs__facet {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-muted);
+  background: var(--accent-50);
+  border-radius: 999px;
+  padding: 3px 10px;
+  transition: color 0.14s ease, background 0.14s ease;
+}
+.djobs__facet--static { cursor: default; }
+.djobs__facet:not(.djobs__facet--static):hover { color: var(--c-ink); background: var(--accent-100); }
+.djobs__facet.on { color: var(--accent-700, #18181b); background: var(--accent-100); font-weight: 700; }
+
+/* ── 결과 행: 직무/기업규모 배지 + 스킬 매치 미니 줄 (리스트 전용, 지도 등 다른 페이지의
+   .djobs__row 재사용에는 영향 없도록 .djobs__list로 스코프) ── */
+.djobs__list .djobs__row { padding: 12px 10px; }
+.djobs__list .djobs__row-b { gap: 4px; }
+.djobs__list .djobs__row-c {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  flex-wrap: wrap;
+}
+
+.djobs__badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--c-ink);
+  background: var(--accent-100);
+  border-radius: 6px;
+  padding: 1px 7px;
+  line-height: 1.6;
+}
+.djobs__badge--tier { background: var(--accent-50); }
+
+.djobs__matchline {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 2px;
+}
+.djobs__matchline-txt {
+  font-size: 11.5px;
+  color: var(--c-muted);
+  margin-right: 2px;
+}
+.djobs__mtech {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--c-muted);
+  background: var(--accent-50);
+  border: 1px solid var(--line, #e6e9ef);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+.djobs__mtech.held {
+  color: #1f9d57;
+  background: rgba(31, 157, 87, 0.1);
+  border-color: rgba(31, 157, 87, 0.35);
+}
+.djobs__mtech.more {
+  color: var(--c-muted);
+  background: transparent;
+  border-style: dashed;
 }
