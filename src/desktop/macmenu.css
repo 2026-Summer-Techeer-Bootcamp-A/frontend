@@ -1,0 +1,100 @@
+/* macOS 문법(글래스·캡슐·행 구조)을 우리 팔레트로 틴트한 계정 메뉴.
+   /design-system/apple-mac 의 mg-menu/mg-glass 참고, 색은 tokens.ts 팔레트를 따른다. */
+
+.macmenu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 40;
+  min-width: 220px;
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid rgba(28, 29, 33, 0.08);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  box-shadow: 0 20px 48px rgba(20, 30, 60, 0.14), 0 6px 16px rgba(20, 30, 60, 0.08);
+  transform-origin: top right;
+  animation: macmenu-in 0.2s cubic-bezier(0, 0, 0.2, 1);
+}
+.macmenu--left {
+  right: auto;
+  left: 0;
+  transform-origin: top left;
+}
+
+@keyframes macmenu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.macmenu__header {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 8px 10px 9px;
+}
+.macmenu__header-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--c-ink, #1c1d21);
+}
+.macmenu__header-email {
+  font-size: 12px;
+  color: var(--c-muted, #7c7f88);
+}
+
+.macmenu__sep {
+  height: 1px;
+  margin: 5px 8px;
+  background: rgba(28, 29, 33, 0.1);
+}
+
+.macmenu__row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--c-ink, #1c1d21);
+  text-align: left;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.macmenu__row:hover:not(:disabled) {
+  background: var(--c-accent, #2f61b8);
+  color: #fff;
+}
+.macmenu__row:disabled {
+  color: rgba(28, 29, 33, 0.35);
+  cursor: default;
+}
+.macmenu__row.destructive {
+  color: #c8382d;
+}
+.macmenu__row.destructive:hover:not(:disabled) {
+  background: #c8382d;
+  color: #fff;
+}
+.macmenu__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  opacity: 0.9;
+}
+.macmenu__label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

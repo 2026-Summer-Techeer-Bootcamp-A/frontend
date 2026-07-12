@@ -8,9 +8,14 @@ import {
   MapPin,
   CircleUser,
   BookOpen,
-  Search,
+  Settings,
+  Bell,
+  LogOut,
+  LogIn,
 } from 'lucide-react'
 import { THEME, themeVars } from '../career/themes'
+import { useAuth } from '../career/authStore'
+import MacMenu, { type MacMenuEntry } from './MacMenu'
 import './DesktopShell.css'
 
 /* 데스크톱 셸 — Phase 2: 아이콘 레일 + 개폐형 세부 메뉴 패널.
@@ -92,6 +97,8 @@ export default function DesktopShell({ children }: { children: ReactNode }) {
   const location = useLocation()
   const navigate = useNavigate()
   const [userOpen, setUserOpen] = useState(true)
+  const [accountOpen, setAccountOpen] = useState(false)
+  const { user, isAuthed, logout } = useAuth()
   const active = sectionOf(location.pathname)
 
   // 하위 메뉴가 1개뿐인 섹션은 패널이 레일과 중복이라 아예 열지 않는다
@@ -107,6 +114,19 @@ export default function DesktopShell({ children }: { children: ReactNode }) {
     setUserOpen(true)
     navigate(s.home)
   }
+
+  const accountItems: MacMenuEntry[] = [
+    { header: { name: isAuthed ? (user?.nickname ?? '사용자') : '게스트', email: user?.email ?? '로그인하고 맞춤 정보를 받아보세요' } },
+    'sep',
+    { icon: <Settings size={16} />, label: '설정', onClick: () => navigate('/settings') },
+    { icon: <Bell size={16} />, label: '알림 설정', onClick: () => navigate('/settings/notifications') },
+    'sep',
+    isAuthed
+      ? { icon: <LogOut size={16} />, label: '로그아웃', destructive: true, onClick: () => { logout(); navigate('/login') } }
+      : { icon: <LogIn size={16} />, label: '로그인', onClick: () => navigate('/login') },
+  ]
+
+  const avatarInitial = (user?.nickname || user?.email || '리버').slice(0, 2).toUpperCase()
 
   return (
     <div className="dshell" style={themeVars(THEME)}>
@@ -172,17 +192,21 @@ export default function DesktopShell({ children }: { children: ReactNode }) {
 
       <div className="dshell__main">
         <header className="dshell__topbar">
-          <button className="dshell__search" type="button">
-            <Search size={16} />
-            <span>공고 · 기술 검색</span>
-          </button>
+          <span className="dshell__crumb">{active.label}</span>
           <div className="dshell__topright">
-            {/* 국내/글로벌 풀 토글 자리 — 실제 상태 연동은 Phase 3 */}
-            <div className="dshell__pool" role="group" aria-label="채용 풀">
-              <button type="button" className="on">국내</button>
-              <button type="button">글로벌</button>
+            <div className="dshell__accountwrap">
+              <button
+                type="button"
+                className="dshell__avatar"
+                aria-label="계정 메뉴"
+                aria-haspopup="menu"
+                aria-expanded={accountOpen}
+                onClick={() => setAccountOpen((v) => !v)}
+              >
+                {avatarInitial}
+              </button>
+              <MacMenu open={accountOpen} onClose={() => setAccountOpen(false)} items={accountItems} anchor="right" />
             </div>
-            <div className="dshell__avatar" aria-label="프로필">리버</div>
           </div>
         </header>
 

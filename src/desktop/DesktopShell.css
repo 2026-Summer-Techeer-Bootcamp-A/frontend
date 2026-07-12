@@ -159,18 +159,11 @@
   padding: 0 24px 0 12px;
 }
 
-.dshell__search {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: min(420px, 40vw);
-  padding: 9px 14px;
-  border-radius: 12px;
-  background: var(--c-card);
-  border: 1px solid #eef1f6;
-  color: var(--c-muted);
+/* 톱바 좌측 — 검색·풀 토글 등 장식 UI를 걷어내고 현재 섹션명만 가볍게 표시 */
+.dshell__crumb {
   font-size: 13.5px;
-  text-align: left;
+  font-weight: 700;
+  color: var(--c-muted);
 }
 
 .dshell__topright {
@@ -179,23 +172,9 @@
   gap: 14px;
 }
 
-.dshell__pool {
-  display: flex;
-  padding: 3px;
-  border-radius: 10px;
-  background: #eef1f6;
-}
-.dshell__pool button {
-  padding: 6px 14px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--c-muted);
-}
-.dshell__pool button.on {
-  background: var(--c-card);
-  color: var(--c-ink);
-  box-shadow: 0 1px 2px rgba(20, 30, 60, 0.06);
+/* 계정 메뉴 앵커 — MacMenu는 이 래퍼 기준 top-right 정렬 */
+.dshell__accountwrap {
+  position: relative;
 }
 
 .dshell__avatar {
@@ -208,6 +187,14 @@
   color: #fff;
   font-size: 13px;
   font-weight: 700;
+  transition: transform 0.12s ease, opacity 0.12s ease;
+}
+.dshell__avatar:hover {
+  opacity: 0.9;
+}
+.dshell__avatar:active {
+  transform: scale(0.97);
+  opacity: 0.85;
 }
 
 /* 콘텐츠만 라운드 카드로 띄운다 — 셸 크롬과의 위계를 모서리·배경 대비로 만든다 */
