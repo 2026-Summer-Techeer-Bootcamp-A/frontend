@@ -4,11 +4,11 @@ import { SwitchRow, useToast } from '../formkit'
 import { useSettings, type NotificationSettings } from '../settingsStore'
 import '../smallscreens.css'
 
-const ROWS: { key: keyof NotificationSettings; title: string; desc: string; icon: React.ReactNode }[] = [
-  { key: 'deadline', title: '마감 임박 알림', desc: '찜한 공고 마감 3일 전에 알려드려요', icon: <Clock size={17} /> },
-  { key: 'newJobs', title: '새 맞춤 공고', desc: '내 기술과 잘 맞는 공고가 올라오면', icon: <Sparkles size={17} /> },
-  { key: 'trend', title: '트렌드 · 시장 리포트', desc: '주간 기술 트렌드 요약', icon: <TrendingUp size={17} /> },
-  { key: 'marketing', title: '마케팅 · 이벤트', desc: '혜택과 소식을 받아볼게요', icon: <Megaphone size={17} /> },
+const ROWS: { key: keyof NotificationSettings; title: string; desc: string; icon: React.ReactNode; tint: string }[] = [
+  { key: 'deadline', title: '마감 임박 알림', desc: '찜한 공고 마감 3일 전에 알려드려요', icon: <Clock size={17} />, tint: '#c76a2e' },
+  { key: 'newJobs', title: '새 맞춤 공고', desc: '내 기술과 잘 맞는 공고가 올라오면', icon: <Sparkles size={17} />, tint: '#2f61b8' },
+  { key: 'trend', title: '트렌드 · 시장 리포트', desc: '주간 기술 트렌드 요약', icon: <TrendingUp size={17} />, tint: '#218a58' },
+  { key: 'marketing', title: '마케팅 · 이벤트', desc: '혜택과 소식을 받아볼게요', icon: <Megaphone size={17} />, tint: '#7c7f88' },
 ]
 
 export default function SettingsNotifications() {
@@ -23,6 +23,7 @@ export default function SettingsNotifications() {
             <SwitchRow
               key={r.key}
               icon={r.icon}
+              tint={r.tint}
               title={r.title}
               desc={r.desc}
               checked={settings.notifications[r.key]}
