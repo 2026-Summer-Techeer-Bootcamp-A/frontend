@@ -41,4 +41,7 @@ export const MARKET_WIDGETS: WidgetCatalogItem[] = [
   { id: 'tier-compare', label: '기업 규모별 요구 차이', shape: 'bars', allowedSizes: ['1x1', '2x1'], defaultSize: '2x1' },
   { id: 'generation-trend', label: '레거시 → 신진 스택 변화', shape: 'line', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
   { id: 'scatter', label: '수요 × 빈도 분포', shape: 'scatter', allowedSizes: ['2x1', '2x2'], defaultSize: '2x2' },
+  { id: 'hot-companies', label: '이번 달 활발 기업', shape: 'bars', allowedSizes: ['1x1', '2x1'], defaultSize: '2x1' },
+  { id: 'region-density', label: '지역별 공고 밀도', shape: 'bars', allowedSizes: ['1x1', '2x1'], defaultSize: '2x1' },
+  { id: 'tier-donut', label: '기업 규모 분포', shape: 'ring', allowedSizes: ['1x1'], defaultSize: '1x1' },
 ]
