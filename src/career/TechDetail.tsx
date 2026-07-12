@@ -41,7 +41,7 @@ export default function TechDetail() {
     : []
 
   return (
-    <SubScreen title={tech}>
+    <SubScreen title={tech} desktopBack>
       {/* 요약 */}
       <Card>
         <div className="scr-card__title">
