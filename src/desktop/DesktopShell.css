@@ -5,21 +5,23 @@
 .dshell {
   display: flex;
   height: 100dvh;
-  background: #f6f8fc; /* 셸 크롬은 옅은 회색(= THEME.screenBg), 콘텐츠 카드가 흰색 */
+  background: #f7f7f8; /* 셸 크롬은 옅은 회색, 콘텐츠 카드가 흰색 */
   color: var(--c-ink);
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
   letter-spacing: var(--c-ls);
 }
 
-/* ---------- 아이콘+라벨 레일 ---------- */
+/* ---------- 아이콘+라벨 레일 — 블랙, 좌측 edge 밀착 ---------- */
 .dshell__rail {
   flex: none;
   width: 84px;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
   padding: 18px 0;
+  background: #0d0d0d;
 }
 
 .dshell__brand-dot {
@@ -27,7 +29,7 @@
   height: 26px;
   margin-bottom: 18px;
   border-radius: 9px;
-  background: var(--c-accent);
+  background: #ffffff;
 }
 
 .dshell__railnav {
@@ -39,7 +41,7 @@
 .dshell__railfoot {
   margin-top: auto;
   padding-top: 12px;
-  border-top: 1px solid #eef1f6;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -55,7 +57,7 @@
   width: 66px;
   height: 56px;
   border-radius: 12px;
-  color: var(--c-muted);
+  color: rgba(255, 255, 255, 0.62);
   transition: background 0.15s ease, color 0.15s ease;
 }
 .dshell__raillabel {
@@ -65,17 +67,17 @@
   white-space: nowrap;
 }
 .dshell__railbtn:hover {
-  background: #eef1f6;
-  color: var(--c-ink);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
 }
 .dshell__railbtn.on {
-  background: var(--c-chipbg);
-  color: var(--c-chiptext);
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
 }
 
 /* 키보드 포커스 링 */
 .dshell__railbtn:focus-visible {
-  outline: 2px solid var(--c-accent);
+  outline: 2px solid #fff;
   outline-offset: 2px;
 }
 
@@ -100,9 +102,9 @@
 /* 톱바 좌측 — 섹션 라벨(항상 표시) + 필 탭 셀렉터 */
 .dshell__crumb {
   flex: none;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--c-ink);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-muted);
 }
 
 /* 필 탭 — SegmentedControl과 동일 문법의 캡슐 그룹 */
