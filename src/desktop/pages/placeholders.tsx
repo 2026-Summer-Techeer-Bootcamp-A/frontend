@@ -47,8 +47,43 @@ function careerLabel(min: number | null, max: number | null) {
 
 /* ───────────────── 검색(구 맞춤 공고) — 필터 전면 + 이력서 자동주입 ─────────────────
    postings에는 "직무"에 해당하는 별도 필드가 없다(careerData.json 확인 완료 — title/techs/
-   region/tier/careerMin·Max/pool 뿐). title에서 직무를 유추하면 데이터에 없는 사실을
-   만들어내는 셈이라, 브리핑 지시대로 직무 필터는 스킵하고 리포트 우려사항에 남긴다. */
+   region/tier/careerMin·Max/pool 뿐). title/techs로부터 결정론적 키워드 매칭으로 직무를
+   유추한다(derivePosition) — LLM 추론이 아니라 고정 규칙이라 채용시장 통계와 항상 일관된
+   결과를 낸다. */
+const POSITION_CATS = ['백엔드', '프론트엔드', '풀스택', '데이터/AI', '모바일', '인프라/DevOps', '기획/PM', '디자인', 'QA', '기타'] as const
+type PositionCat = typeof POSITION_CATS[number]
+
+function derivePosition(title: string, techs: string[]): PositionCat {
+  const t = title.toLowerCase()
+  const hasAny = (words: string[]) => words.some((w) => t.includes(w))
+  const techHas = (words: string[]) => techs.some((tc) => words.includes(tc))
+
+  const isBackend = hasAny(['백엔드', 'backend', 'server', '서버'])
+  const isFrontend = hasAny(['프론트', 'frontend'])
+  const isFullstack = hasAny(['풀스택', 'fullstack', 'full-stack'])
+  const isData = hasAny(['데이터', 'data engineer', 'data scientist', 'ml ', 'ai ', '머신러닝', '인공지능', 'llm'])
+  const isMobile = hasAny(['ios', 'android', '모바일', 'flutter', 'react native'])
+  const isInfra = hasAny(['devops', 'infra', '인프라', 'sre', 'platform engineer', '플랫폼'])
+  const isPM = hasAny(['기획', 'pm ', 'product manager', '프로덕트'])
+  const isDesign = hasAny(['디자이너', 'design', 'ux', 'ui/ux'])
+  const isQA = hasAny(['qa', '품질', 'test engineer'])
+
+  if (isFullstack || (isBackend && isFrontend)) return '풀스택'
+  if (isBackend) return '백엔드'
+  if (isFrontend) return '프론트엔드'
+  if (isData) return '데이터/AI'
+  if (isMobile) return '모바일'
+  if (isInfra) return '인프라/DevOps'
+  if (isPM) return '기획/PM'
+  if (isDesign) return '디자인'
+  if (isQA) return 'QA'
+  if (techHas(['React', 'Vue', 'Next.js', 'TypeScript', 'HTML', 'CSS'])) return '프론트엔드'
+  if (techHas(['Spring', 'Django', 'FastAPI', 'Node.js', 'Java', 'Kotlin', 'Go'])) return '백엔드'
+  if (techHas(['Python', 'TensorFlow', 'PyTorch', 'Pandas'])) return '데이터/AI'
+  if (techHas(['Docker', 'Kubernetes', 'Terraform', 'AWS', 'GCP', 'Azure'])) return '인프라/DevOps'
+  return '기타'
+}
+
 const TIERS = ['대기업', '중견', '중소'] as const
 const TOP_TECHS = data.topTechs.slice(0, 20).map((t) => t.tech)
 const JOBS_AS_OF = data.meta.asOf
@@ -76,6 +111,8 @@ export function DesktopJobs() {
   const [careerMax, setCareerMax] = useState<number | null>(null)
   const [deadlineOnly, setDeadlineOnly] = useState(false)
   const [tierFilter, setTierFilter] = useState<Set<string>>(new Set(TIERS))
+  const [positionFilter, setPositionFilter] = useState<PositionCat | ''>('')
+  const [pvTab, setPvTab] = useState<'desc' | 'company'>('desc')
 
   // 이력서 셀렉터 → 필터 자동주입(헤드라인 기능). 이력서를 "선택"할 때 1회만 초기값을
   // 채워 넣고, 그 뒤로는 사용자가 자유롭게 덮어쓸 수 있어야 하므로 activeId(선택 이벤트)에만
@@ -113,14 +150,17 @@ export function DesktopJobs() {
       })
     }
     arr = arr.filter((p) => tierFilter.has(p.tier || '중소'))
+    if (positionFilter) arr = arr.filter((p) => derivePosition(p.title, p.techs) === positionFilter)
     return [...arr].sort((a, b) =>
       sort === 'tier' ? tierRank(a.tier) - tierRank(b.tier) || b.matchPct - a.matchPct
         : sort === 'latest' ? (b.postDate || '').localeCompare(a.postDate || '')
           : b.matchPct - a.matchPct)
-  }, [byPool, q, techFilter, region, careerMin, careerMax, deadlineOnly, tierFilter, sort])
+  }, [byPool, q, techFilter, region, careerMin, careerMax, deadlineOnly, tierFilter, positionFilter, sort])
 
   const sel = list.find((p) => p.id === selId) ?? list[0]
   const activePresetKey = CAREER_PRESETS.find((c) => c.min === careerMin && c.max === careerMax)?.key ?? null
+
+  useEffect(() => setPvTab('desc'), [sel?.id])
 
   const toggleTech = (t: string) => setTechFilter((s) => {
     const next = new Set(s)
@@ -185,6 +225,14 @@ export function DesktopJobs() {
             <select className="djobs__select" value={region} onChange={(e) => setRegion(e.target.value)}>
               <option value="">전체</option>
               {regions.map((r) => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+
+          <div className="djobs__fld">
+            <span className="djobs__fld-l">직무</span>
+            <select className="djobs__select" value={positionFilter} onChange={(e) => setPositionFilter(e.target.value as PositionCat | '')}>
+              <option value="">전체</option>
+              {POSITION_CATS.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
 
@@ -254,7 +302,16 @@ export function DesktopJobs() {
             <>
               <div className="djobs__pv-head">
                 <CompanyLogo logo={sel.logo} name={sel.company} size={52} radius={14} />
-                <MiniScore pct={sel.matchPct} size={54} />
+                <div className="djobs__pv-head-r">
+                  <MiniScore pct={sel.matchPct} size={54} />
+                  <span
+                    className="djobs__pv-full"
+                    title="전체 화면에서 보기"
+                    onClick={() => navigate(`/job/${encodeURIComponent(sel.id)}`)}
+                  >
+                    <ArrowUpRight size={15} />
+                  </span>
+                </div>
               </div>
               <h2 className="djobs__pv-title">{sel.title}</h2>
               <div className="djobs__pv-meta">{sel.company} · {sel.region ?? '지역 미상'} · {careerLabel(sel.careerMin, sel.careerMax)}</div>
@@ -266,9 +323,53 @@ export function DesktopJobs() {
                   </span>
                 ))}
               </div>
-              <button className="djobs__pv-cta" onClick={() => navigate(`/job/${encodeURIComponent(sel.id)}`)}>
-                상세 보기 <ArrowUpRight size={16} />
-              </button>
+
+              <div className="djobs__pv-tabs">
+                <span className={`djobs__pv-tab${pvTab === 'desc' ? ' on' : ''}`} onClick={() => setPvTab('desc')}>상세 공고</span>
+                <span className={`djobs__pv-tab${pvTab === 'company' ? ' on' : ''}`} onClick={() => setPvTab('company')}>회사 정보</span>
+              </div>
+              <div className="djobs__pv-body">
+                {pvTab === 'desc' ? (
+                  <>
+                    {sel.descSections && sel.descSections.length ? (
+                      sel.descSections.map((s, i) => (
+                        <div key={i}>
+                          <div className="djobs__pv-dsec">{s.title}</div>
+                          <p style={{ whiteSpace: 'pre-line' }}>{s.text}</p>
+                        </div>
+                      ))
+                    ) : (
+                      <p>이 공고의 요구 기술 스택을 기반으로 매칭도를 계산했어요.</p>
+                    )}
+                    <div className="djobs__pv-dsec">요구 기술</div>
+                    <p>{sel.techs.join(' · ')}</p>
+                  </>
+                ) : (() => {
+                  const ci = sel.companyInfo ?? { industry: '', homepage: '', established: '', location: '', tags: [] as string[] }
+                  return (
+                    <>
+                      <div className="djobs__pv-kv"><span>회사</span><b>{sel.company}</b></div>
+                      {ci.industry && <div className="djobs__pv-kv"><span>업종</span><b>{ci.industry}</b></div>}
+                      {ci.established && <div className="djobs__pv-kv"><span>설립</span><b>{ci.established}</b></div>}
+                      <div className="djobs__pv-kv"><span>지역</span><b>{ci.location || sel.region || 'Remote'}</b></div>
+                      <div className="djobs__pv-kv"><span>채용 풀</span><b>{sel.pool}</b></div>
+                      {ci.homepage && (
+                        <div className="djobs__pv-kv">
+                          <span>홈페이지</span>
+                          <a href={ci.homepage} target="_blank" rel="noreferrer" className="djobs__pv-link">바로가기 ↗</a>
+                        </div>
+                      )}
+                      {ci.tags && ci.tags.length > 0 && (
+                        <div className="djobs__pv-techs" style={{ marginTop: 12 }}>
+                          {ci.tags.map((tg) => (
+                            <span key={tg} className="djobs__tech held">{tg}</span>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )
+                })()}
+              </div>
             </>
           )}
         </aside>

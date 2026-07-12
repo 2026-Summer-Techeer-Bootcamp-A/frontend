@@ -3,8 +3,6 @@
    보조 클래스(칩 로우 · 이력서 CTA · 셀렉트 · 토글)만 여기에 더한다. */
 
 .djobs__filters {
-  max-height: calc(100dvh - 32px);
-  overflow-y: auto;
   padding-right: 2px;
 }
 
