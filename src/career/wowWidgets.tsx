@@ -265,7 +265,7 @@ export function HypeVsHireWidget({ size = '2x2' }: { size?: WidgetSize }) {
       type: 'scatter',
       data: series.map((d) => ({
         value: [d.i_pct, d.d_pct], raw: d,
-        symbolSize: 8 + Math.log(d.n + 1) * 2.2,
+        symbolSize: 6 + Math.log(d.n + 1) * 2.2,
         itemStyle: {
           color: d.cat === '진주' ? '#d9822b' : '#c9c9cf',
           borderColor: d.owned ? '#0b0b0c' : 'transparent',

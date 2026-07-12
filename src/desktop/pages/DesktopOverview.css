@@ -100,7 +100,7 @@
 .dov__aside-chart { margin-top: 12px; }
 
 /* 마감 임박 */
-.dov__dl { display: flex; flex-direction: column; margin-top: 10px; }
+.dov__dl { display: flex; flex-direction: column; margin-top: 12px; }
 .dov__dl-row {
   display: flex;
   align-items: center;
