@@ -50,6 +50,22 @@
 }
 .dov__cta-btn:active { transform: scale(0.97); opacity: 0.85; }
 
+/* 2단 레이아웃 — 좌측 인사이트 그리드(3열, 촘촘) + 우측 세로 타임라인 레일.
+   레일은 뷰포트에 고정(sticky)돼 내부 콘텐츠가 자체 스크롤되고, 좁은 화면에서는
+   한 컬럼으로 접힌다. */
+.dov__layout { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; align-items: start; margin-top: 8px; }
+.dov__rail { position: sticky; top: 0; align-self: stretch; }
+.dov__rail > * { height: calc(100dvh - 150px); }
+@media (max-width: 1180px) {
+  .dov__layout { grid-template-columns: 1fr; }
+  .dov__rail { position: static; }
+  .dov__rail > * { height: auto; }
+}
+
+/* 좌측 인사이트 그리드는 위젯을 더 작고 촘촘하게 보여주기 위해 3열로 좁힌다
+   (widgetGrid.css의 기본 4열은 시장 페이지 등 다른 .wgrid에는 그대로 유지). */
+.dov__insights.wgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
 /* 통일 위젯그리드(.wgrid) 위에 얹는 보정 — 그리드 자체 규칙은 widgetGrid.css가 담당.
    grid-auto-flow: dense는 대시보드(.dov__grid)에만 스코프해 빈칸을 뒤 위젯이 메우게 한다
    (시장 페이지의 .wgrid에는 영향 없음 — widgetGrid.css 공용 규칙은 건드리지 않는다). */

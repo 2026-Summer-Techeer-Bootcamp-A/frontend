@@ -44,7 +44,7 @@ const FEED_RECENT = stripHeaderRow<RecentRow>(FEED.recent)
 export function LatestJobsTimeline({ size = '2x2' }: { size?: WidgetSize }) {
   const matchedRecent = useMemo(() => FEED_RECENT.filter((r) => r.matched), [])
   const maxTotal = useMemo(() => Math.max(...FEED_DAILY.map((d) => d.total), 1), [])
-  const listCount = size === '2x2' ? 6 : size === '2x1' ? 3 : 0
+  const listCount = size === '2x2' ? 10 : size === '2x1' ? 3 : 0
   const matchedCount = useCountUp(size === '1x1' ? FEED._meta.matchedN : 0)
 
   return (

@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 // 위젯 표시/숨김 설정(로컬 저장). settingsStore.ts와 동일한 패턴 —
 // localStorage가 정본, 변경 시 CustomEvent로 브로드캐스트. 드래그 재배치·variant는 범위 밖.
 export type WidgetSection = 'dashboard' | 'market'
-export type WidgetSize = '1x1' | '2x1' | '2x2'
+export type WidgetSize = '1x1' | '1x2' | '2x1' | '2x2'
 export type DashboardConfig = {
   hidden: Record<WidgetSection, string[]>
   size: Record<WidgetSection, Record<string, WidgetSize>>
