@@ -1,0 +1,1689 @@
+{
+  "_meta": {
+    "source": "jumpit_live",
+    "N": 898,
+    "asOf": "2026-07-11",
+    "range": [
+      "2026-06-06",
+      "2026-07-11"
+    ],
+    "myskills": [
+      "aws",
+      "css",
+      "docker",
+      "git",
+      "html",
+      "javascript",
+      "linux",
+      "mysql",
+      "node.js",
+      "postgresql",
+      "python",
+      "react",
+      "sql",
+      "typescript"
+    ],
+    "matchedN": 406,
+    "note": "실 채용공고 publishedAt 기준 타임라인. 내게 맞음 = 내 보유 기술 2개+ 겹치거나(또는 1개+직군 일치). 색 = 매칭 여부."
+  },
+  "daily": [
+    {
+      "date": "2026-06-06",
+      "total": 26,
+      "matched": 10
+    },
+    {
+      "date": "2026-06-07",
+      "total": 11,
+      "matched": 4
+    },
+    {
+      "date": "2026-06-08",
+      "total": 34,
+      "matched": 10
+    },
+    {
+      "date": "2026-06-09",
+      "total": 44,
+      "matched": 10
+    },
+    {
+      "date": "2026-06-10",
+      "total": 32,
+      "matched": 13
+    },
+    {
+      "date": "2026-06-11",
+      "total": 19,
+      "matched": 12
+    },
+    {
+      "date": "2026-06-12",
+      "total": 25,
+      "matched": 15
+    },
+    {
+      "date": "2026-06-13",
+      "total": 8,
+      "matched": 2
+    },
+    {
+      "date": "2026-06-14",
+      "total": 5,
+      "matched": 3
+    },
+    {
+      "date": "2026-06-15",
+      "total": 29,
+      "matched": 17
+    },
+    {
+      "date": "2026-06-16",
+      "total": 26,
+      "matched": 7
+    },
+    {
+      "date": "2026-06-17",
+      "total": 37,
+      "matched": 23
+    },
+    {
+      "date": "2026-06-18",
+      "total": 22,
+      "matched": 14
+    },
+    {
+      "date": "2026-06-19",
+      "total": 16,
+      "matched": 13
+    },
+    {
+      "date": "2026-06-20",
+      "total": 13,
+      "matched": 12
+    },
+    {
+      "date": "2026-06-21",
+      "total": 9,
+      "matched": 5
+    },
+    {
+      "date": "2026-06-22",
+      "total": 28,
+      "matched": 10
+    },
+    {
+      "date": "2026-06-23",
+      "total": 33,
+      "matched": 4
+    },
+    {
+      "date": "2026-06-24",
+      "total": 18,
+      "matched": 10
+    },
+    {
+      "date": "2026-06-25",
+      "total": 24,
+      "matched": 17
+    },
+    {
+      "date": "2026-06-26",
+      "total": 24,
+      "matched": 17
+    },
+    {
+      "date": "2026-06-27",
+      "total": 23,
+      "matched": 13
+    },
+    {
+      "date": "2026-06-28",
+      "total": 4,
+      "matched": 1
+    },
+    {
+      "date": "2026-06-29",
+      "total": 50,
+      "matched": 24
+    },
+    {
+      "date": "2026-06-30",
+      "total": 43,
+      "matched": 22
+    },
+    {
+      "date": "2026-07-01",
+      "total": 26,
+      "matched": 10
+    },
+    {
+      "date": "2026-07-02",
+      "total": 43,
+      "matched": 19
+    },
+    {
+      "date": "2026-07-03",
+      "total": 25,
+      "matched": 12
+    },
+    {
+      "date": "2026-07-04",
+      "total": 17,
+      "matched": 7
+    },
+    {
+      "date": "2026-07-05",
+      "total": 21,
+      "matched": 6
+    },
+    {
+      "date": "2026-07-06",
+      "total": 46,
+      "matched": 17
+    },
+    {
+      "date": "2026-07-07",
+      "total": 32,
+      "matched": 7
+    },
+    {
+      "date": "2026-07-08",
+      "total": 30,
+      "matched": 10
+    },
+    {
+      "date": "2026-07-09",
+      "total": 33,
+      "matched": 20
+    },
+    {
+      "date": "2026-07-10",
+      "total": 21,
+      "matched": 10
+    },
+    {
+      "date": "2026-07-11",
+      "total": 1,
+      "matched": 0
+    }
+  ],
+  "recent": [
+    {
+      "id": 54428935,
+      "date": "2026-07-11",
+      "title": "클라우드 솔루션 아키텍트 (AWS) 모집",
+      "company": "웅진",
+      "cat": "devops/시스템 엔지니어",
+      "career": "5~20년",
+      "techs": [
+        "AWS"
+      ],
+      "myTechs": [
+        "AWS"
+      ],
+      "score": 1,
+      "matched": false,
+      "loc": "서울"
+    },
+    {
+      "id": 54430465,
+      "date": "2026-07-10",
+      "title": "데이터 플로우 및 시스템 아키텍처 분석가 채용",
+      "company": "골든플래닛",
+      "cat": "빅데이터 엔지니어",
+      "career": "2~20년",
+      "techs": [
+        "GCP"
+      ],
+      "myTechs": [],
+      "score": 0,
+      "matched": false,
+      "loc": "서울"
+    },
+    {
+      "id": 54430417,
+      "date": "2026-07-10",
+      "title": "React Native 모바일 앱 개발자 (Android/iOS)",
+      "company": "제이엠씨컨설팅",
+      "cat": "안드로이드 개발자",
+      "career": "2~7년",
+      "techs": [
+        "Android OS",
+        "iOS",
+        "Java",
+        "JavaScript",
+        "Kotlin",
+        "React Native"
+      ],
+      "myTechs": [
+        "JavaScript",
+        "TypeScript"
+      ],
+      "score": 2,
+      "matched": true,
+      "loc": "경기"
+    },
+    {
+      "id": 54429364,
+      "date": "2026-07-10",
+      "title": "F/W개발(MCU) (경력 3~7년)",
+      "company": "원익피앤이",
+      "cat": "HW/임베디드",
+      "career": "3~7년",
+      "techs": [
+        "C",
+        "FW",
+        "MCU"
+      ],
+      "myTechs": [],
+      "score": 0,
+      "matched": false,
+      "loc": "경기"
+    },
+    {
+      "id": 54429353,
+      "date": "2026-07-10",
+      "title": "F/W개발(MCU) (경력 8~10년)",
+      "company": "원익피앤이",
+      "cat": "HW/임베디드",
+      "career": "8~10년",
+      "techs": [
+        "C",
+        "FW",
+        "MCU"
+      ],
+      "myTechs": [],
+      "score": 0,
+      "matched": false,
+      "loc": "경기"
+    },
+    {
+      "id": 54429347,
+      "date": "2026-07-10",
+      "title": "F/W개발(MCU) (경력 11~15년)",
+      "company": "원익피앤이",
+      "cat": "HW/임베디드",
+      "career": "11~15년",
+      "techs": [
+        "C",
+        "FW",
+        "MCU"
+      ],
+      "myTechs": [],
+      "score": 0,
+      "matched": false,
+      "loc": "경기"
+    },
+    {
+      "id": 54428472,
+      "date": "2026-07-10",
+      "title": "[반도체 IP설계] RTL설계&검증엔지니어",
+      "company": "칩스앤미디어",
+      "cat": "HW/임베디드",
+      "career": "5~12년",
+      "techs": [
+        "C",
+        "Java",
+        "Linux",
+        "Perl",
+        "Python",
+        "HW"
+      ],
+      "myTechs": [
+        "Linux",
+        "Python"
+      ],
+      "score": 2,
+      "matched": true,
+      "loc": "서울"
+    },
+    {
+      "id": 54427093,
+      "date": "2026-07-10",
+      "title": "풀스택 개발자 채용",
+      "company": "이네이블러",
+      "cat": "서버/백엔드 개발자",
+      "career": "3~10년",
+      "techs": [
+        "C#",
+        "Docker",
+        "Java",
+        "MariaDB",
+        "Spring Boot",
+        "Vue.js"
+      ],
+      "myTechs": [
+        "Docker"
+      ],
+      "score": 1,
+      "matched": true,
+      "loc": "울산"
+    },
+    {
+      "id": 54427085,
+      "date": "2026-07-10",
+      "title": "백엔드 개발자 (3년 이상)",
+      "company": "이노버스",
+      "cat": "서버/백엔드 개발자",
+      "career": "3~20년",
+      "techs": [
+        "Amazon CloudFront",
+        "Amazon RDS",
+        "Amazon SQS",
+        "Java",
+        "MQTT",
+        "MySQL"
+      ],
+      "myTechs": [
+        "MySQL",
+        "AWS"
+      ],
+      "score": 2,
+      "matched": true,
+      "loc": "울산"
+    },
+    {
+      "id": 54422365,
+      "date": "2026-07-10",
+      "title": "Phased Array Antenna Design 채용",
+      "company": "인텔리안테크놀로지스",
+      "cat": "기술지원",
+      "career": "3~8년",
+      "techs": [
+        "HW"
+      ],
+      "myTechs": [],
+      "score": 0,
+      "matched": false,
+      "loc": "경기"
+    },
+    {
+      "id": 54422353,
+      "date": "2026-07-10",
+      "title": "안테나측청 담당자 (평택연구소)",
+      "company": "인텔리안테크놀로지스",
+      "cat": "기술지원",
+      "career": "1~20년",
+      "techs": [
+        "RF",
+        "Network",
+        "Spectrum"
+      ],
+      "myTechs": [],
+      "score": 0,
+      "matched": false,
+      "loc": "경기"
+    },
+    {
+      "id": 54421360,
+      "date": "2026-07-10",
+      "title": "하드웨어 개발자 경력 정규직 채용",
+      "company": "엠투클라우드",
+      "cat": "HW/임베디드",
+      "career": "2~10년",
+      "techs": [
+        "AWS IoT Device Management",
+        "Orcad",
+        "PCB",
+        "Pads"
+      ],
+      "myTechs": [],
+      "score": 0,
+      "matched": false,
+      "loc": "서울"
+    },
+    {
+      "id": 54417610,
+      "date": "2026-07-10",
+      "title": "DO-178C S/W TEST & Verification Engineer",
+      "company": "컨트로맥스",
+      "cat": "QA 엔지니어",
+      "career": "3~10년",
+      "techs": [
+        "C++",
+        "GitLab",
+        "SourceTree",
+        "QA",
+        "SW"
+      ],
+      "myTechs": [],
+      "score": 0,
+      "matched": false,
+      "loc": "대전"
+    },
+    {
+      "id": 54417507,
+      "date": "2026-07-10",
+      "title": "Back-End 경력사원 채용",
+      "company": "하마랩",
+      "cat": "서버/백엔드 개발자",
+      "career": "3~10년",
+      "techs": [
+        "Git",
+        "Java",
+        "Linux",
+        "MariaDB",
+        "MySQL",
+        "QueryDSL"
+      ],
+      "myTechs": [
+        "Git",
+        "Linux",
+        "MySQL"
+      ],
+      "score": 3,
+      "matched": true,
+      "loc": "경기"
+    },
+    {
+      "id": 54417487,
+      "date": "2026-07-10",
+      "title": "Front-End 경력사원 채용",
+      "company": "하마랩",
+      "cat": "프론트엔드 개발자",
+      "career": "3~10년",
+      "techs": [
+        "Dart",
+        "Firebase",
+        "Flutter",
+        "Git",
+        "iOS",
+        "JavaScript"
+      ],
+      "myTechs": [
+        "Git",
+        "JavaScript",
+        "TypeScript"
+      ],
+      "score": 3,
+      "matched": true,
+      "loc": "경기"
+    },
+    {
+      "id": 54378713,
+      "date": "2026-07-10",
+      "title": "[전문연구요원] Robot Engineer",
+      "company": "리보틱스",
+      "cat": "devops/시스템 엔지니어",
+      "career": "3~20년",
+      "techs": [
+        "C",
+        "C++",
+        "Git",
+        "Linux",
+        "Python",
+        "TensorFlow"
+      ],
+      "myTechs": [
+        "Git",
+        "Linux",
+        "Python"
+      ],
+      "score": 3,
+      "matched": true,
+      "loc": "경기"
+    },
+    {
+      "id": 54378709,
+      "date": "2026-07-10",
+      "title": "Robot Behavior Engineer(경력)",
+      "company": "리보틱스",
+      "cat": "devops/시스템 엔지니어",
+      "career": "3~20년",
+      "techs": [
+        "C",
+        "C++",
+        "Git",
+        "Linux"
+      ],
+      "myTechs": [
+        "Git",
+        "Linux"
+      ],
+      "score": 2,
+      "matched": true,
+      "loc": "경기"
+    },
+    {
+      "id": 54378693,
+      "date": "2026-07-10",
+      "title": "Robot Planning & Control Engineer(경력)",
+      "company": "리보틱스",
+      "cat": "devops/시스템 엔지니어",
+      "career": "3~20년",
+      "techs": [
+        "C",
+        "C++",
+        "Git",
+        "Linux",
+        "ROS"
+      ],
+      "myTechs": [
+        "Git",
+        "Linux"
+      ],
+      "score": 2,
+      "matched": true,
+      "loc": "경기"
+    },
+    {
+      "id": 54378681,
+      "date": "2026-07-10",
+      "title": "Robot Platform ​Engineer(경력)",
+      "company": "리보틱스",
+      "cat": "devops/시스템 엔지니어",
+      "career": "3~20년",
+      "techs": [
+        "C",
+        "C++",
+        "Git",
+        "Linux",
+        "Embedded",
+        "ROS"
+      ],
+      "myTechs": [
+        "Git",
+        "Linux"
+      ],
+      "score": 2,
+      "matched": true,
+      "loc": "경기"
+    },
+    {
+      "id": 54378665,
+      "date": "2026-07-10",
+      "title": "Embedded Control ​Engineer(경력)",
+      "company": "리보틱스",
+      "cat": "devops/시스템 엔지니어",
+      "career": "3~20년",
+      "techs": [
+        "C",
+        "C++",
+        "Linux",
+        "Embedded",
+        "PLC"
+      ],
+      "myTechs": [
+        "Linux"
+      ],
+      "score": 1,
+      "matched": false,
+      "loc": "경기"
+    },
+    {
+      "id": 54378653,
+      "date": "2026-07-10",
+      "title": "SLAM Engineer(경력)",
+      "company": "리보틱스",
+      "cat": "devops/시스템 엔지니어",
+      "career": "3~20년",
+      "techs": [
+        "C++",
+        "GitHub",
+        "Python"
+      ],
+      "myTechs": [
+        "Python"
+      ],
+      "score": 1,
+      "matched": false,
+      "loc": "경기"
+    },
+    {
+      "id": 54378638,
+      "date": "2026-07-10",
+      "title": "Robot Perception ​Engineer(경력)",
+      "company": "리보틱스",
+      "cat": "devops/시스템 엔지니어",
+      "career": "3~20년",
+      "techs": [
+        "C++",
+        "Python",
+        "PyTorch",
+        "TensorFlow",
+        "OpenCV",
+        "DeepLearning"
+      ],
+      "myTechs": [
+        "Python"
+      ],
+      "score": 1,
+      "matched": false,
+      "loc": "경기"
+    },
+    {
+      "id": 54422270,
+      "date": "2026-07-09",
+      "title": "웹 퍼블리싱 채용",
+      "company": "메가스터디교육",
+      "cat": "웹퍼블리셔",
+      "career": "2~5년",
+      "techs": [
+        "JavaScript",
+        "AI/인공지능"
+      ],
+      "myTechs": [
+        "JavaScript"
+      ],
+      "score": 1,
+      "matched": true,
+      "loc": "서울"
+    },
+    {
+      "id": 54421913,
+      "date": "2026-07-09",
+      "title": "AP엔지니어 경력 채용",
+      "company": "미래컴퍼니",
+      "cat": "SW/솔루션",
+      "career": "4~11년",
+      "techs": [
+        "C",
+        "C++",
+        "Git",
+        "Linux",
+        "Python",
+        "Qt"
+      ],
+      "myTechs": [
+        "Git",
+        "Linux",
+        "Python"
+      ],
+      "score": 3,
+      "matched": true,
+      "loc": "경기"
+    },
+    {
+      "id": 54421903,
+      "date": "2026-07-09",
+      "title": "FPGA 설계 경력 채용",
+      "company": "미래컴퍼니",
+      "cat": "SW/솔루션",
+      "career": "8~20년",
+      "techs": [
+        "C++",
+        "Python",
+        "SW",
+        "FPGA",
+        "Verilog",
+        "VHDL"
+      ],
+      "myTechs": [
+        "Python"
+      ],
+      "score": 1,
+      "matched": false,
+      "loc": "경기"
+    },
+    {
+      "id": 54421741,
+      "date": "2026-07-09",
+      "title": "DevOps 시스템 관리자",
+      "company": "델레오코리아",
+      "cat": "devops/시스템 엔지니어",
+      "career": "6~10년",
+      "techs": [
+        "Docker",
+        "Git",
+        "Grafana",
+        "Java",
+        "Kubernetes",
+        "Prometheus"
+      ],
+      "myTechs": [
+        "Docker",
+        "Git",
+        "AWS"
+      ],
+      "score": 3,
+      "matched": true,
+      "loc": "서울"
+    },
+    {
+      "id": 54421288,
+      "date": "2026-07-09",
+      "title": "개발매니저(PM)",
+      "company": "코닉글로리",
+      "cat": "개발 PM",
+      "career": "3~10년",
+      "techs": [
+        "Java",
+        "JavaScript",
+        "React",
+        "Spring",
+        "JSP",
+        "SQL"
+      ],
+      "myTechs": [
+        "JavaScript",
+        "React",
+        "SQL"
+      ],
+      "score": 3,
+      "matched": true,
+      "loc": "서울"
+    },
+    {
+      "id": 54421268,
+      "date": "2026-07-09",
+      "title": "필드 엔지니어 채용",
+      "company": "피아스페이스",
+      "cat": "devops/시스템 엔지니어",
+      "career": "1~10년",
+      "techs": [
+        "Kafka",
+        "Linux",
+        "Python",
+        "Redis"
+      ],
+      "myTechs": [
+        "Linux",
+        "Python"
+      ],
+      "score": 2,
+      "matched": true,
+      "loc": "서울"
+    },
+    {
+      "id": 54420736,
+      "date": "2026-07-09",
+      "title": "웹서비스(백앤드) 개발자 채용",
+      "company": "메가스터디교육",
+      "cat": "서버/백엔드 개발자",
+      "career": "1~3년",
+      "techs": [
+        "Classic ASP",
+        "Microsoft SQL Server",
+        "MySQL",
+        "PHP",
+        "Spring Boot",
+        "REST API"
+      ],
+      "myTechs": [
+        "MySQL",
+        "SQL"
+      ],
+      "score": 2,
+      "matched": true,
+      "loc": "서울"
+    },
+    {
+      "id": 54420114,
+      "date": "2026-07-09",
+      "title": "데이터 엔지니어 경력 채용",
+      "company": "캐롯아이",
+      "cat": "빅데이터 엔지니어",
+      "career": "1~10년",
+      "techs": [
+        "Apache Spark",
+        "Docker",
+        "Git",
+        "Python",
+        "PyTorch",
+        "TensorFlow"
+      ],
+      "myTechs": [
+        "Docker",
+        "Git",
+        "Python",
+        "SQL"
+      ],
+      "score": 4,
+      "matched": true,
+      "loc": "서울"
+    },
+    {
+      "id": 54420072,
+      "date": "2026-07-09",
+      "title": "데이터 엔지니어 신입 채용",
+      "company": "캐롯아이",
+      "cat": "빅데이터 엔지니어",
+      "career": "신입",
+      "techs": [
+        "Apache Spark",
+        "Docker",
+        "Git",
+        "Python",
+        "PyTorch",
+        "TensorFlow"
+      ],
+      "myTechs": [
+        "Docker",
+        "Git",
+        "Python",
+        "SQL"
+      ],
+      "score": 4,
+      "matched": true,
+      "loc": "서울"
+    },
+    {
+      "id": 54419375,
+      "date": "2026-07-09",
+      "title": "기계장치 개발자 채용",
+      "company": "호전실업",
+      "cat": "개발 PM",
+      "career": "3~10년",
+      "techs": [
+        "PyTorch",
+        "TensorFlow"
+      ],
+      "myTechs": [],
+      "score": 0,
+      "matched": false,
+      "loc": "서울"
+    },
+    {
+      "id": 54419201,
+      "date": "2026-07-09",
+      "title": "콘텐츠 플랫폼 백엔드 개발(Junior)",
+      "company": "드림어스컴퍼니",
+      "cat": "devops/시스템 엔지니어",
+      "career": "신입",
+      "techs": [
+        "Elasticsearch",
+        "Java",
+        "Kafka",
+        "Kotlin",
+        "MongoDB",
+        "MySQL"
+      ],
+      "myTechs": [
+        "MySQL"
+      ],
+      "score": 1,
+      "matched": true,
+      "loc": "서울"
+    },
+    {
+      "id": 54419046,
+      "date": "2026-07-09",
+      "title": "회로개발 (경력 3~7년)",
+      "company": "원익피앤이",
+      "cat": "HW/임베디드",
+      "career": "3~7년",
+      "techs": [
+        "HW",
+        "FW",
+        "Embedded",
+        "SW"
+      ],
+      "myTechs": [],
+      "score": 0,
+      "matched": false,
+      "loc": "경기"
+    },
+    {
+      "id": 54419039,
+      "date": "2026-07-09",
+      "title": "회로개발 (경력 8~10년)",
+      "company": "원익피앤이",
+      "cat": "HW/임베디드",
+      "career": "8~10년",
+      "techs": [
+        "HW",
+        "FW",
+        "Embedded",
+        "SW"
+      ],
+      "myTechs": [],
+      "score": 0,
+      "matched": false,
+      "loc": "경기"
+    },
+    {
+      "id": 54419028,
+      "date": "2026-07-09",
+      "title": "회로개발 (경력 11~15년)",
+      "company": "원익피앤이",
+      "cat": "HW/임베디드",
+      "career": "11~15년",
+      "techs": [
+        "HW",
+        "FW",
+        "Embedded",
+        "SW"
+      ],
+      "myTechs": [],
+      "score": 0,
+      "matched": false,
+      "loc": "경기"
+    },
+    {
+      "id": 54419020,
+      "date": "2026-07-09",
+      "title": "FrontendEngineer(Next.js-Typescript)",
+      "company": "센트비",
+      "cat": "서버/백엔드 개발자",
+      "career": "5~20년",
+      "techs": [
+        "Next.js",
+        "React",
+        "React Storybook",
+        "Storybook",
+        "TypeScript",
+        "Vue.js"
+      ],
+      "myTechs": [
+        "React",
+        "TypeScript"
+      ],
+      "score": 2,
+      "matched": true,
+      "loc": "서울"
+    },
+    {
+      "id": 54418929,
+      "date": "2026-07-09",
+      "title": "SAP SM 모듈 운영 담당자(경력)",
+      "company": "비즈테크아이",
+      "cat": "SW/솔루션",
+      "career": "3~7년",
+      "techs": [
+        ".NET",
+        "Java",
+        "JavaScript",
+        "ABAP",
+        "ERP",
+        "GUI"
+      ],
+      "myTechs": [
+        "JavaScript"
+      ],
+      "score": 1,
+      "matched": false,
+      "loc": "서울"
+    },
+    {
+      "id": 54417893,
+      "date": "2026-07-09",
+      "title": "DevOps Engineer",
+      "company": "인피니티익스체인지코리아",
+      "cat": "devops/시스템 엔지니어",
+      "career": "5~10년",
+      "techs": [
+        "Azure DevOps",
+        "Kubernetes",
+        "Linux",
+        "Python",
+        "AWS",
+        "TCP/IP"
+      ],
+      "myTechs": [
+        "Linux",
+        "Python",
+        "AWS"
+      ],
+      "score": 3,
+      "matched": true,
+      "loc": "서울"
+    },
+    {
+      "id": 54417694,
+      "date": "2026-07-09",
+      "title": "풀스텍 개발자-경력",
+      "company": "러닝포인트",
+      "cat": "서버/백엔드 개발자",
+      "career": "1~3년",
+      "techs": [
+        "ExpressJS",
+        "JavaScript",
+        "MySQL",
+        "Next.js",
+        "Node.js",
+        "React"
+      ],
+      "myTechs": [
+        "JavaScript",
+        "MySQL",
+        "Node.js",
+        "React",
+        "TypeScript"
+      ],
+      "score": 5,
+      "matched": true,
+      "loc": "서울"
+    },
+    {
+      "id": 54417657,
+      "date": "2026-07-09",
+      "title": "안드로이드 러닝 앱 개발자 경력 (1~3년)",
+      "company": "러닝포인트",
+      "cat": "프론트엔드 개발자",
+      "career": "1~3년",
+      "techs": [
+        "Android OS",
+        "Figma",
+        "Firebase",
+        "Git",
+        "iOS",
+        "Kotlin"
+      ],
+      "myTechs": [
+        "Git"
+      ],
+      "score": 1,
+      "matched": true,
+      "loc": "서울"
+    },
+    {
+      "id": 54417316,
+      "date": "2026-07-09",
+      "title": "Frontend 개발자",
+      "company": "웨이센",
+      "cat": "프론트엔드 개발자",
+      "career": "1~5년",
+      "techs": [
+        "Git",
+        "Next.js",
+        "Playwright",
+        "React",
+        "TypeScript",
+        "REST API"
+      ],
+      "myTechs": [
+        "Git",
+        "React",
+        "TypeScript"
+      ],
+      "score": 3,
+      "matched": true,
+      "loc": "서울"
+    },
+    {
+      "id": 54417143,
+      "date": "2026-07-09",
+      "title": "네트워크 엔지니어",
+      "company": "핀다",
+      "cat": "devops/시스템 엔지니어",
+      "career": "3~6년",
+      "techs": [
+        "AWS",
+        "Network",
+        "Infra"
+      ],
+      "myTechs": [
+        "AWS"
+      ],
+      "score": 1,
+      "matched": false,
+      "loc": "서울"
+    },
+    {
+      "id": 54416114,
+      "date": "2026-07-09",
+      "title": "인프라 개발 및 유지보수",
+      "company": "비바이노베이션",
+      "cat": "기술지원",
+      "career": "3~10년",
+      "techs": [
+        "Datadog",
+        "GitHub Actions",
+        "Jenkins",
+        "Terraform",
+        "AWS"
+      ],
+      "myTechs": [
+        "AWS"
+      ],
+      "score": 1,
+      "matched": false,
+      "loc": "서울"
+    },
+    {
+      "id": 54415729,
+      "date": "2026-07-09",
+      "title": "[비알피커넥트] 데이터 사이언티스트",
+      "company": "바로팜",
+      "cat": "빅데이터 엔지니어",
+      "career": "5~20년",
+      "techs": [
+        "Python",
+        "SQL",
+        "Tableau",
+        "Power BI"
+      ],
+      "myTechs": [
+        "Python",
+        "SQL"
+      ],
+      "score": 2,
+      "matched": true,
+      "loc": "서울"
+    },
+    {
+      "id": 54415511,
+      "date": "2026-07-09",
+      "title": "SRE 포지션 (경력 3~10년)",
+      "company": "디어유",
+      "cat": "devops/시스템 엔지니어",
+      "career": "3~10년",
+      "techs": [
+        "Docker",
+        "Kafka",
+        "Kubernetes",
+        "Linux",
+        "Redis",
+        "Windows"
+      ],
+      "myTechs": [
+        "Docker",
+        "Linux",
+        "AWS"
+      ],
+      "score": 3,
+      "matched": true,
+      "loc": "서울"
+    },
+    {
+      "id": 54410475,
+      "date": "2026-07-09",
+      "title": "데이터 엔지니어 채용",
+      "company": "잉클",
+      "cat": "빅데이터 엔지니어",
+      "career": "3~20년",
+      "techs": [
+        "Docker",
+        "Kafka",
+        "Python",
+        "Rust",
+        "OLAP",
+        "REST API"
+      ],
+      "myTechs": [
+        "Docker",
+        "Python"
+      ],
+      "score": 2,
+      "matched": true,
+      "loc": "경기"
+    },
+    {
+      "id": 54409578,
+      "date": "2026-07-09",
+      "title": "SOC RTL Design Engineer [신입]",
+      "company": "보스반도체",
+      "cat": "프론트엔드 개발자",
+      "career": "신입",
+      "techs": [
+        "C#",
+        "C++",
+        "Python",
+        "AI/인공지능",
+        "Blockchain",
+        "Verilog"
+      ],
+      "myTechs": [
+        "Python"
+      ],
+      "score": 1,
+      "matched": true,
+      "loc": "경기"
+    },
+    {
+      "id": 54409561,
+      "date": "2026-07-09",
+      "title": "SOC RTL Design Engineer [경력]",
+      "company": "보스반도체",
+      "cat": "프론트엔드 개발자",
+      "career": "2~20년",
+      "techs": [
+        "C#",
+        "C++",
+        "Python",
+        "AI/인공지능",
+        "Blockchain",
+        "Verilog"
+      ],
+      "myTechs": [
+        "Python"
+      ],
+      "score": 1,
+      "matched": true,
+      "loc": "경기"
+    },
+    {
+      "id": 54409547,
+      "date": "2026-07-09",
+      "title": "ML Systems Runtime Engineer [경력]",
+      "company": "보스반도체",
+      "cat": "devops/시스템 엔지니어",
+      "career": "3~20년",
+      "techs": [
+        "Android OS",
+        "Linux",
+        "DeepLearning",
+        "AI/인공지능",
+        "Transformers"
+      ],
+      "myTechs": [
+        "Linux"
+      ],
+      "score": 1,
+      "matched": false,
+      "loc": "경기"
+    },
+    {
+      "id": 54409529,
+      "date": "2026-07-09",
+      "title": "ML Systems Runtime Engineer [신입]",
+      "company": "보스반도체",
+      "cat": "devops/시스템 엔지니어",
+      "career": "신입",
+      "techs": [
+        "Android OS",
+        "Linux",
+        "DeepLearning",
+        "AI/인공지능",
+        "Transformers"
+      ],
+      "myTechs": [
+        "Linux"
+      ],
+      "score": 1,
+      "matched": false,
+      "loc": "경기"
+    },
+    {
+      "id": 54409517,
+      "date": "2026-07-09",
+      "title": "SOC Field Application Engineer [경력]",
+      "company": "보스반도체",
+      "cat": "기술지원",
+      "career": "2~20년",
+      "techs": [
+        "C",
+        "C++",
+        "Confluence",
+        "GitHub",
+        "Jenkins",
+        "Linux"
+      ],
+      "myTechs": [
+        "Linux",
+        "Python"
+      ],
+      "score": 2,
+      "matched": true,
+      "loc": "경기"
+    },
+    {
+      "id": 54409448,
+      "date": "2026-07-09",
+      "title": "QA Lead / 테스트 매니저 (경력)",
+      "company": "하마랩",
+      "cat": "QA 엔지니어",
+      "career": "5~10년",
+      "techs": [
+        "Confluence",
+        "Cypress",
+        "Jira",
+        "Playwright",
+        "Postman",
+        "Redmine"
+      ],
+      "myTechs": [],
+      "score": 0,
+      "matched": false,
+      "loc": "경기"
+    },
+    {
+      "id": 54404183,
+      "date": "2026-07-09",
+      "title": "SAP ERP컨설팅(SI/SM)",
+      "company": "웅진",
+      "cat": "기술지원",
+      "career": "5~20년",
+      "techs": [
+        "ERP",
+        "SAP"
+      ],
+      "myTechs": [],
+      "score": 0,
+      "matched": false,
+      "loc": "서울"
+    },
+    {
+      "id": 54404158,
+      "date": "2026-07-09",
+      "title": "SAP ERP기술컨설팅(SI/SM)",
+      "company": "웅진",
+      "cat": "기술지원",
+      "career": "3~20년",
+      "techs": [
+        "ABAP",
+        "ERP",
+        "SAP",
+        "Fiori"
+      ],
+      "myTechs": [],
+      "score": 0,
+      "matched": false,
+      "loc": "서울"
+    },
+    {
+      "id": 54410499,
+      "date": "2026-07-08",
+      "title": "[분당 상장사] 파인뷰 펌웨어 개발",
+      "company": "파인디지털",
+      "cat": "HW/임베디드",
+      "career": "3~10년",
+      "techs": [
+        "C++",
+        "Linux",
+        "OpenCV",
+        "DeepLearning",
+        "HW",
+        "FW"
+      ],
+      "myTechs": [
+        "Linux"
+      ],
+      "score": 1,
+      "matched": false,
+      "loc": "경기"
+    },
+    {
+      "id": 54409682,
+      "date": "2026-07-08",
+      "title": "Web 개발자 채용",
+      "company": "넥서스커뮤니티",
+      "cat": "개발 PM",
+      "career": "8~15년",
+      "techs": [
+        "Git",
+        "Java",
+        "MySQL",
+        "React",
+        "Spring Boot",
+        "AWS"
+      ],
+      "myTechs": [
+        "Git",
+        "MySQL",
+        "React",
+        "AWS"
+      ],
+      "score": 4,
+      "matched": true,
+      "loc": "서울"
+    },
+    {
+      "id": 54409604,
+      "date": "2026-07-08",
+      "title": "전장 S/W 개발 (Lamp)",
+      "company": "한솔테크닉스",
+      "cat": "HW/임베디드",
+      "career": "4~8년",
+      "techs": [
+        "C",
+        "C++",
+        "Embedded",
+        "SW",
+        "MCU"
+      ],
+      "myTechs": [],
+      "score": 0,
+      "matched": false,
+      "loc": "경기"
+    },
+    {
+      "id": 54409476,
+      "date": "2026-07-08",
+      "title": "HW/FW 임베디드 개발자 채용 (경력 5년~15년)",
+      "company": "엔클로니",
+      "cat": "devops/시스템 엔지니어",
+      "career": "5~15년",
+      "techs": [
+        "C++",
+        "Confluence",
+        "Git",
+        "Jira",
+        "FW",
+        "Network"
+      ],
+      "myTechs": [
+        "Git"
+      ],
+      "score": 1,
+      "matched": true,
+      "loc": "서울"
+    },
+    {
+      "id": 54409321,
+      "date": "2026-07-08",
+      "title": "H/W개발 (무선충전)",
+      "company": "한솔테크닉스",
+      "cat": "HW/임베디드",
+      "career": "2~5년",
+      "techs": [
+        "HW",
+        "Circuit design",
+        "PCB",
+        "Diagrams"
+      ],
+      "myTechs": [],
+      "score": 0,
+      "matched": false,
+      "loc": "경기"
+    },
+    {
+      "id": 54408577,
+      "date": "2026-07-08",
+      "title": "로봇핸드 펌웨어 엔지니어",
+      "company": "원익로보틱스",
+      "cat": "HW/임베디드",
+      "career": "5~20년",
+      "techs": [
+        "C",
+        "C++",
+        "RTOS",
+        "MCU",
+        "ethernet"
+      ],
+      "myTechs": [],
+      "score": 0,
+      "matched": false,
+      "loc": "경기"
+    },
+    {
+      "id": 54408552,
+      "date": "2026-07-08",
+      "title": "로봇핸드 제어 엔지니어",
+      "company": "원익로보틱스",
+      "cat": "devops/시스템 엔지니어",
+      "career": "5~20년",
+      "techs": [
+        "C",
+        "C++",
+        "Python",
+        "ethernet"
+      ],
+      "myTechs": [
+        "Python"
+      ],
+      "score": 1,
+      "matched": false,
+      "loc": "경기"
+    },
+    {
+      "id": 54408542,
+      "date": "2026-07-08",
+      "title": "ROS 기반 주행 SW 개발",
+      "company": "원익로보틱스",
+      "cat": "SW/솔루션",
+      "career": "8~20년",
+      "techs": [
+        "C",
+        "C++",
+        "Python",
+        "SW",
+        "ROS"
+      ],
+      "myTechs": [
+        "Python"
+      ],
+      "score": 1,
+      "matched": false,
+      "loc": "경기"
+    },
+    {
+      "id": 54408533,
+      "date": "2026-07-08",
+      "title": "Application SW 개발",
+      "company": "원익로보틱스",
+      "cat": "SW/솔루션",
+      "career": "6~20년",
+      "techs": [
+        "C++",
+        "Java",
+        "JavaScript",
+        "SW",
+        "RTOS"
+      ],
+      "myTechs": [
+        "JavaScript"
+      ],
+      "score": 1,
+      "matched": false,
+      "loc": "경기"
+    },
+    {
+      "id": 54408524,
+      "date": "2026-07-08",
+      "title": "로봇핸드 AI 기술개발",
+      "company": "원익로보틱스",
+      "cat": "인공지능/머신러닝",
+      "career": "6~20년",
+      "techs": [
+        "C++",
+        "Linux",
+        "Python",
+        "PyTorch",
+        "TensorFlow",
+        "AI/인공지능"
+      ],
+      "myTechs": [
+        "Linux",
+        "Python"
+      ],
+      "score": 2,
+      "matched": true,
+      "loc": "경기"
+    },
+    {
+      "id": 54405528,
+      "date": "2026-07-08",
+      "title": "프로덕트 엔지니어 (경력 3~10년)",
+      "company": "오픈서베이",
+      "cat": "서버/백엔드 개발자",
+      "career": "3~10년",
+      "techs": [
+        "Git",
+        "Java",
+        "Kafka",
+        "Kotlin",
+        "Kubernetes",
+        "MySQL"
+      ],
+      "myTechs": [
+        "Git",
+        "MySQL",
+        "Python",
+        "React",
+        "TypeScript",
+        "AWS"
+      ],
+      "score": 6,
+      "matched": true,
+      "loc": "서울"
+    },
+    {
+      "id": 54405266,
+      "date": "2026-07-08",
+      "title": "AI 기반 헬스케어 엔지니어",
+      "company": "에이온비",
+      "cat": "서버/백엔드 개발자",
+      "career": "5~8년",
+      "techs": [
+        "Git",
+        "Java",
+        "Node.js",
+        "Python",
+        "React",
+        "AWS"
+      ],
+      "myTechs": [
+        "Git",
+        "Node.js",
+        "Python",
+        "React",
+        "AWS"
+      ],
+      "score": 5,
+      "matched": true,
+      "loc": "서울"
+    },
+    {
+      "id": 54405169,
+      "date": "2026-07-08",
+      "title": "생성형 AI 플랫폼 및 에이전트 개발 풀스택 개발자",
+      "company": "브릭에이아이",
+      "cat": "인공지능/머신러닝",
+      "career": "5~20년",
+      "techs": [
+        "Docker",
+        "GitLab CI",
+        "Kubernetes",
+        "Linux",
+        "Node.js",
+        "PostgreSQL"
+      ],
+      "myTechs": [
+        "Docker",
+        "Linux",
+        "Node.js",
+        "PostgreSQL",
+        "Python",
+        "React",
+        "TypeScript"
+      ],
+      "score": 7,
+      "matched": true,
+      "loc": "경기"
+    },
+    {
+      "id": 54404363,
+      "date": "2026-07-08",
+      "title": "산업용 청소로봇 기술지원 엔지니어",
+      "company": "대원씨티에스",
+      "cat": "기술지원",
+      "career": "1~10년",
+      "techs": [
+        "AI/인공지능",
+        "HW"
+      ],
+      "myTechs": [],
+      "score": 0,
+      "matched": false,
+      "loc": "서울"
+    },
+    {
+      "id": 54397427,
+      "date": "2026-07-08",
+      "title": "그룹사 SAP 시스템 운영(HR모듈)",
+      "company": "한국네트웍스",
+      "cat": "서버/백엔드 개발자",
+      "career": "5~15년",
+      "techs": [
+        "ABAP",
+        "SAP"
+      ],
+      "myTechs": [],
+      "score": 0,
+      "matched": false,
+      "loc": "경기"
+    }
+  ]
+}

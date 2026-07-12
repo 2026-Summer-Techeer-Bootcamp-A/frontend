@@ -13,6 +13,11 @@ const ROUTES = [
   { to: '/job/0', label: '공고 상세' },
   { to: '/tech/TypeScript', label: '기술 세부' },
   { to: '/cert-gap', label: '자격증 갭' },
+  { to: '/login', label: '로그인' },
+  { to: '/signup', label: '회원가입' },
+  { to: '/settings', label: '설정' },
+  { to: '/settings/notifications', label: '알림 설정' },
+  { to: '/states', label: '시스템 상태' },
   { to: '/design-system', label: '디자인 시스템' },
 ]
 

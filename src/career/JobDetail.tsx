@@ -39,8 +39,8 @@ export default function JobDetail() {
 
   if (!p) {
     return (
-      <div className="stage" style={{ background: t.stageBg }}>
-        <PhoneFrame stage="purple" bare screenBg={t.screenBg} statusTheme={t.statusTheme} homeIndicator="none">
+      <div className="stage stage--app">
+        <PhoneFrame app stage="purple" bare screenBg={t.screenBg} statusTheme={t.statusTheme} homeIndicator="none">
           <div className="crd" style={themeVars(t)}>공고를 찾을 수 없어요.</div>
         </PhoneFrame>
       </div>

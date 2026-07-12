@@ -763,7 +763,7 @@
 }
 
 /* ---- 데모 페이지 이동 리모컨 (폰 프레임 밖 · 뷰포트 우상단) ---- */
-.demo-remote { position: fixed; top: 16px; right: 18px; z-index: 200; }
+.demo-remote { position: fixed; bottom: 18px; right: 18px; z-index: 200; }
 .demo-remote__btn {
   display: inline-flex; align-items: center; gap: 7px;
   height: 36px; padding: 0 14px; border-radius: 18px;
@@ -774,7 +774,7 @@
 .demo-remote__btn:active { transform: scale(0.95); }
 .demo-remote__ov { position: fixed; inset: 0; z-index: 199; }
 .demo-remote__menu {
-  position: absolute; top: 44px; right: 0; width: 168px; z-index: 201;
+  position: absolute; bottom: 44px; right: 0; width: 168px; z-index: 201;
   background: #fff; border: 1px solid #e6e9ef; border-radius: 14px;
   box-shadow: 0 20px 48px rgba(20, 30, 60, 0.18); padding: 6px;
   animation: kit-tab-in 0.2s cubic-bezier(0, 0, 0.2, 1) backwards;

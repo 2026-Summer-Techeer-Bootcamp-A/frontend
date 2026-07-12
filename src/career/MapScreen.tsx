@@ -10,6 +10,7 @@ import PhoneFrame from '../components/PhoneFrame'
 import CompanyLogo from './CompanyLogo'
 import JobSheet from './JobSheet'
 import { MiniJobCard, MiniJobSkeleton, DynamicDock, BottomSheet, SegmentedControl } from './kit'
+import { LocationPermissionSheet } from './states'
 import { THEME, themeVars } from './themes'
 import { useResumesState, getDynamicPostings, useSavedJobs, jobKey, ddayInfo } from './state'
 import market from '../data/marketData.json'
@@ -92,6 +93,9 @@ export default function MapScreen() {
 
   // 검색
   const [query, setQuery] = useState('')
+  // 지도 첫 진입 시 위치 권한 요청 1회 (브라우저당). 데모에서 흔한 권한 플로우.
+  const [permOpen, setPermOpen] = useState(() => !localStorage.getItem('techeer_loc_perm_asked'))
+  const closePerm = () => { setPermOpen(false); localStorage.setItem('techeer_loc_perm_asked', '1') }
   const [searchFocused, setSearchFocused] = useState(false)
   // 필터
   const [filterOpen, setFilterOpen] = useState(false)
@@ -281,8 +285,8 @@ export default function MapScreen() {
   const menuIsSameCompany = !!menuView && menuView.pins.length > 0 && menuView.pins.every((p) => p.company === menuView.pins[0].company)
 
   return (
-    <div className="stage" style={{ background: t.stageBg }}>
-      <PhoneFrame stage="purple" bare screenBg={t.screenBg} statusTheme={t.statusTheme} homeIndicator="none">
+    <div className="stage stage--app">
+      <PhoneFrame app stage="purple" bare screenBg={t.screenBg} statusTheme={t.statusTheme} homeIndicator="none">
         <div className="career career--map" style={{ ...themeVars(t), padding: 0, height: '100%', position: 'relative' }}>
           <div ref={elRef} className="lmap" />
 
@@ -379,6 +383,8 @@ export default function MapScreen() {
             job={sel} open={!!sel} onClose={() => setSel(null)}
             onDetail={() => { if (sel) navigate(`/job/${encodeURIComponent(sel.id)}`); setSel(null) }}
           />
+
+          <LocationPermissionSheet open={permOpen} onClose={closePerm} />
 
           {/* 하단 독 — 평소엔 내비게이션, 지역 클릭 시 다이나믹 아일랜드처럼
               같은 자리에서 부드럽게 확장되어 그 지역(또는 같은 회사) 공고 리스트를 보여줌 */}
