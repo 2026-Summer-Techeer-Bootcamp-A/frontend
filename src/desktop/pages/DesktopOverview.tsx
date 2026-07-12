@@ -7,6 +7,7 @@ import {
 } from '../../career/kit'
 import { IndustryFitRadar, TechChainRoadmap } from '../../career/insights'
 import { HBars } from '../../career/charts'
+import { LatestJobsTimeline, LearningPathWidget, SkillUnlockWidget } from '../../career/wowWidgets'
 import CompanyLogo from '../../career/CompanyLogo'
 import { useResumesState, getDynamicPostings, calculateCoverage, ddayInfo } from '../../career/state'
 import { useAuth } from '../../career/authStore'
@@ -182,7 +183,7 @@ export default function DesktopOverview() {
       <div className="wgrid dov__grid">
         {/* 히어로 2종 — 검정 위젯(HeroStat이 자체 배경을 가지므로 dcard 없이 wcell만) */}
         {!isWidgetHidden('dashboard', 'hero-score') && (
-          <section className={`wcell wcell--${wsize('hero-score')}`}>
+          <section className={`wcell dov__hero-cell wcell--${wsize('hero-score')}`}>
             <HeroStat
               eyebrow="내 커리어 점수"
               value={covNum}
@@ -194,7 +195,7 @@ export default function DesktopOverview() {
           </section>
         )}
         {!isWidgetHidden('dashboard', 'hero-applicable') && (
-          <section className={`wcell wcell--${wsize('hero-applicable')}`}>
+          <section className={`wcell dov__hero-cell wcell--${wsize('hero-applicable')}`}>
             <HeroStat
               eyebrow="지원 가능 공고"
               value={applicableNum}
@@ -228,6 +229,13 @@ export default function DesktopOverview() {
           </div>
         )}
 
+        {/* 최신 공고 타임라인 */}
+        {!isWidgetHidden('dashboard', 'latest-timeline') && (
+          <div className={`wcell wcell--${wsize('latest-timeline')}`}>
+            <LatestJobsTimeline size={wsize('latest-timeline')} />
+          </div>
+        )}
+
         {/* 맞춤 공고 Top */}
         {!isWidgetHidden('dashboard', 'top-jobs') && (
           <section className={`dcard wcell wcell--${topJobsSize}`}>
@@ -247,6 +255,33 @@ export default function DesktopOverview() {
                 />
               ))}
             </div>
+          </section>
+        )}
+
+        {/* 학습 로드맵 */}
+        {!isWidgetHidden('dashboard', 'learning-path') && (
+          <div className={`wcell wcell--${wsize('learning-path')}`}>
+            <LearningPathWidget size={wsize('learning-path')} />
+          </div>
+        )}
+
+        {/* 한계 해금 */}
+        {!isWidgetHidden('dashboard', 'skill-unlock') && (
+          <div className={`wcell wcell--${wsize('skill-unlock')}`}>
+            <SkillUnlockWidget size={wsize('skill-unlock')} />
+          </div>
+        )}
+
+        {/* 커버리지 분포 */}
+        {!isWidgetHidden('dashboard', 'coverage-histogram') && (
+          <section className={`dcard wcell wcell--${wsize('coverage-histogram')}`}>
+            <SectionHeader title="커버리지 분포" hint="내 백분위" right={!hasResume && <PreviewBadge />} />
+            <CoverageHistogram
+              postings={domestic.map((p) => ({ techs: p.techs, held: p.matchHeld, total: p.matchTotal }))}
+              mySkills={skills}
+              gap={topGap.map(([tech, count]) => ({ tech, count }))}
+              poolLabel="국내"
+            />
           </section>
         )}
 
@@ -294,16 +329,20 @@ export default function DesktopOverview() {
           </section>
         )}
 
-        {/* 커버리지 분포 */}
-        {!isWidgetHidden('dashboard', 'coverage-histogram') && (
-          <section className={`dcard wcell wcell--${wsize('coverage-histogram')}`}>
-            <SectionHeader title="커버리지 분포" hint="내 백분위" right={!hasResume && <PreviewBadge />} />
-            <CoverageHistogram
-              postings={domestic.map((p) => ({ techs: p.techs, held: p.matchHeld, total: p.matchTotal }))}
-              mySkills={skills}
-              gap={topGap.map(([tech, count]) => ({ tech, count }))}
-              poolLabel="국내"
-            />
+        {/* 내 스킬 시장 모멘텀 */}
+        {!isWidgetHidden('dashboard', 'skill-momentum') && (
+          <section className={`dcard wcell wcell--${wsize('skill-momentum')}`}>
+            <SectionHeader title="내 스킬 시장 모멘텀" hint="국내 · 점유율" right={!hasResume && <PreviewBadge />} />
+            {skills.length === 0 ? (
+              <div className="dov__empty">이력서를 등록하면 내 스킬의 시장 모멘텀을 봐요.</div>
+            ) : skillMomentum.length === 0 ? (
+              <div className="dov__empty">시장 데이터에서 일치하는 보유 기술이 없어요.</div>
+            ) : (
+              <HBars
+                items={skillMomentum.map((i) => ({ label: i.tech, value: i.share, pct: (i.share / maxMomentumShare) * 100, owned: true }))}
+                unit="%"
+              />
+            )}
           </section>
         )}
 
@@ -347,23 +386,6 @@ export default function DesktopOverview() {
               ))}
               {gapVisible.length === 0 && <div className="dov__empty">갭 데이터가 없어요.</div>}
             </div>
-          </section>
-        )}
-
-        {/* 내 스킬 시장 모멘텀 */}
-        {!isWidgetHidden('dashboard', 'skill-momentum') && (
-          <section className={`dcard wcell wcell--${wsize('skill-momentum')}`}>
-            <SectionHeader title="내 스킬 시장 모멘텀" hint="국내 · 점유율" right={!hasResume && <PreviewBadge />} />
-            {skills.length === 0 ? (
-              <div className="dov__empty">이력서를 등록하면 내 스킬의 시장 모멘텀을 봐요.</div>
-            ) : skillMomentum.length === 0 ? (
-              <div className="dov__empty">시장 데이터에서 일치하는 보유 기술이 없어요.</div>
-            ) : (
-              <HBars
-                items={skillMomentum.map((i) => ({ label: i.tech, value: i.share, pct: (i.share / maxMomentumShare) * 100, owned: true }))}
-                unit="%"
-              />
-            )}
           </section>
         )}
 

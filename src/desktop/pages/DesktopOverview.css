@@ -50,11 +50,18 @@
 }
 .dov__cta-btn:active { transform: scale(0.97); opacity: 0.85; }
 
-/* 통일 위젯그리드(.wgrid) 위에 얹는 보정 — 그리드 자체 규칙은 widgetGrid.css가 담당. */
-.dov__grid { margin-top: 4px; }
+/* 통일 위젯그리드(.wgrid) 위에 얹는 보정 — 그리드 자체 규칙은 widgetGrid.css가 담당.
+   grid-auto-flow: dense는 대시보드(.dov__grid)에만 스코프해 빈칸을 뒤 위젯이 메우게 한다
+   (시장 페이지의 .wgrid에는 영향 없음 — widgetGrid.css 공용 규칙은 건드리지 않는다). */
+.dov__grid { margin-top: 4px; grid-auto-flow: row dense; }
 
 /* 히어로 위젯(HeroStat)이 2x1/2x2 셀을 꽉 채우도록 */
 .dov__grid .wcell--2x1 .kit-heroStat, .dov__grid .wcell--2x2 .kit-heroStat { height: 100%; }
+
+/* 검정 히어로 2개(hero-score/hero-applicable)가 같은 행에서 같은 높이가 되도록 명시적으로
+   stretch — .wgrid 전체의 align-items: start는 유지하되(다른 위젯의 자연 높이 정렬을 위해)
+   히어로 셀만 행 트랙 높이만큼 채운다. */
+.dov__grid .dov__hero-cell { align-self: stretch; }
 
 /* 리스트형 카드 콘텐츠가 .wcell(overflow hidden) 안에서 잘리지 않도록 스크롤 허용 */
 .dov__grid .dcard { overflow: hidden; }
