@@ -19,7 +19,6 @@ import { useRecentViews } from '../../career/viewHistoryStore'
 import data from '../../data/careerData.json'
 import marketData from '../../data/marketData.json'
 import './DesktopOverview.css'
-import '../../career/widgetGrid.css'
 
 const asOf = data.meta.asOf
 const TOTAL = data.meta.totalPostings
@@ -53,7 +52,8 @@ function MatchDistroBars({ postings }: { postings: { matchPct: number }[] }) {
 }
 
 /** 데스크톱 대시보드 — 검정 히어로 2 + stat 타일 4 + 개인화 위젯 다수의 촘촘한 커맨드센터.
- * 시장 페이지(DesktopMarket)와 동일한 통일 위젯그리드(.wgrid/.wcell)로 리사이즈를 지원한다. */
+ * 좌측 인사이트 존은 [고정 히어로 행] + [2열 CSS 컬럼 masonry]로 구성해 mixed-height
+ * 위젯이 섞여도 빈 카드(void) 없이 자연 높이로 흐른다. */
 export default function DesktopOverview() {
   const navigate = useNavigate()
   useDashboardConfig() // 위젯 표시/숨김·크기 변경 시 리렌더 트리거
@@ -177,173 +177,194 @@ export default function DesktopOverview() {
       )}
 
       <div className="dov__layout">
-        <div className="dov__insights wgrid dov__grid">
-          {/* 히어로 2종 — 검정 위젯(HeroStat이 자체 배경을 가지므로 dcard 없이 wcell만) */}
-          {!isWidgetHidden('dashboard', 'hero-score') && (
-            <section className={`wcell dov__hero-cell wcell--${wsize('hero-score')}`}>
-              <HeroStat
-                eyebrow="내 커리어 점수"
-                value={covNum}
-                unit="%"
-                chart={<ActivityRings metrics={rings} size={72} trackColor="rgba(255,255,255,.14)" />}
-                caption={<>국내 공고 <b>{scoreData.value.domesticTotal.toLocaleString()}건</b> 중 <b>{scoreData.value.applicable.toLocaleString()}건</b> 지원 가능</>}
-                footChips={previewA && <PreviewBadge />}
-              />
-            </section>
-          )}
-          {!isWidgetHidden('dashboard', 'hero-applicable') && (
-            <section className={`wcell dov__hero-cell wcell--${wsize('hero-applicable')}`}>
-              <HeroStat
-                eyebrow="지원 가능 공고"
-                value={applicableNum}
-                unit="건"
-                chart={<MatchDistroBars postings={domestic} />}
-                caption={<>전체 국내 공고 대비 <b>{applicableData.value.applicablePct}%</b></>}
-                footChips={previewB && <PreviewBadge />}
-              />
-            </section>
-          )}
-
-          {/* 신규 공고 · 내 스킬 시장 모멘텀 */}
-          {!isWidgetHidden('dashboard', 'stat-recent') && (
-            <div className="wcell wcell--1x1">
-              <StatTile label="신규 공고" value={statsData.value.recentCount} unit="건" />
-            </div>
-          )}
-          {!isWidgetHidden('dashboard', 'skill-momentum') && (
-            <section className={`dcard wcell wcell--${wsize('skill-momentum')}`}>
-              <SectionHeader title="내 스킬 시장 모멘텀" hint="국내 · 점유율" right={!hasResume && <PreviewBadge />} />
-              {skills.length === 0 ? (
-                <div className="dov__empty">이력서를 등록하면 내 스킬의 시장 모멘텀을 봐요.</div>
-              ) : skillMomentum.length === 0 ? (
-                <div className="dov__empty">시장 데이터에서 일치하는 보유 기술이 없어요.</div>
-              ) : (
-                <HBars
-                  items={skillMomentum.map((i) => ({ label: i.tech, value: i.share, pct: (i.share / maxMomentumShare) * 100, owned: true }))}
+        <div className="dov__insights">
+          {/* 1) 히어로 행 — 검정 위젯 2개, 나란히 같은 높이 */}
+          <div className="dov__heroes">
+            {!isWidgetHidden('dashboard', 'hero-score') && (
+              <div className="dov__hero-cell">
+                <HeroStat
+                  eyebrow="내 커리어 점수"
+                  value={covNum}
                   unit="%"
+                  chart={<ActivityRings metrics={rings} size={72} trackColor="rgba(255,255,255,.14)" />}
+                  caption={<>국내 공고 <b>{scoreData.value.domesticTotal.toLocaleString()}건</b> 중 <b>{scoreData.value.applicable.toLocaleString()}건</b> 지원 가능</>}
+                  footChips={previewA && <PreviewBadge />}
                 />
-              )}
-            </section>
-          )}
+              </div>
+            )}
+            {!isWidgetHidden('dashboard', 'hero-applicable') && (
+              <div className="dov__hero-cell">
+                <HeroStat
+                  eyebrow="지원 가능 공고"
+                  value={applicableNum}
+                  unit="건"
+                  chart={<MatchDistroBars postings={domestic} />}
+                  caption={<>전체 국내 공고 대비 <b>{applicableData.value.applicablePct}%</b></>}
+                  footChips={previewB && <PreviewBadge />}
+                />
+              </div>
+            )}
+          </div>
 
-          {/* 한계 해금 · 학습 로드맵 */}
-          {!isWidgetHidden('dashboard', 'skill-unlock') && (
-            <div className={`wcell wcell--${wsize('skill-unlock')}`}>
-              <SkillUnlockWidget size={wsize('skill-unlock')} />
-            </div>
-          )}
-          {!isWidgetHidden('dashboard', 'learning-path') && (
-            <div className={`wcell wcell--${wsize('learning-path')}`}>
-              <LearningPathWidget size={wsize('learning-path')} />
-            </div>
-          )}
+          {/* 2) 인사이트 카드 — 2열 CSS 컬럼 masonry(자연 높이, void 없음) */}
+          <div className="dov__cards">
+            {/* 신규 공고 · 내 스킬 시장 모멘텀 */}
+            {!isWidgetHidden('dashboard', 'stat-recent') && (
+              <div className="dov__card-item">
+                <StatTile label="신규 공고" value={statsData.value.recentCount} unit="건" />
+              </div>
+            )}
+            {!isWidgetHidden('dashboard', 'skill-momentum') && (
+              <div className="dov__card-item">
+                <section className="dcard">
+                  <SectionHeader title="내 스킬 시장 모멘텀" hint="국내 · 점유율" right={!hasResume && <PreviewBadge />} />
+                  {skills.length === 0 ? (
+                    <div className="dov__empty">이력서를 등록하면 내 스킬의 시장 모멘텀을 봐요.</div>
+                  ) : skillMomentum.length === 0 ? (
+                    <div className="dov__empty">시장 데이터에서 일치하는 보유 기술이 없어요.</div>
+                  ) : (
+                    <HBars
+                      items={skillMomentum.map((i) => ({ label: i.tech, value: i.share, pct: (i.share / maxMomentumShare) * 100, owned: true }))}
+                      unit="%"
+                    />
+                  )}
+                </section>
+              </div>
+            )}
 
-          {/* 커버리지 분포 · 업종 적합도 */}
-          {!isWidgetHidden('dashboard', 'coverage-histogram') && (
-            <section className={`dcard wcell wcell--${wsize('coverage-histogram')}`}>
-              <SectionHeader title="커버리지 분포" hint="내 백분위" right={!hasResume && <PreviewBadge />} />
-              <CoverageHistogram
-                postings={domestic.map((p) => ({ techs: p.techs, held: p.matchHeld, total: p.matchTotal }))}
-                mySkills={skills}
-                gap={topGap.map(([tech, count]) => ({ tech, count }))}
-                poolLabel="국내"
-              />
-            </section>
-          )}
-          {!isWidgetHidden('dashboard', 'industry-fit') && (
-            <section className={`dcard wcell wcell--${wsize('industry-fit')}`}>
-              <SectionHeader title="업종 적합도" right={!hasResume && <PreviewBadge />} />
-              <div className="dov__aside-chart"><IndustryFitRadar skills={skills} /></div>
-            </section>
-          )}
+            {/* 한계 해금 · 학습 로드맵 */}
+            {!isWidgetHidden('dashboard', 'skill-unlock') && (
+              <div className="dov__card-item">
+                <SkillUnlockWidget size={wsize('skill-unlock')} />
+              </div>
+            )}
+            {!isWidgetHidden('dashboard', 'learning-path') && (
+              <div className="dov__card-item">
+                <LearningPathWidget size={wsize('learning-path')} />
+              </div>
+            )}
 
-          {/* 맞춤 공고 Top */}
-          {!isWidgetHidden('dashboard', 'top-jobs') && (
-            <section className={`dcard wcell wcell--${topJobsSize}`}>
-              <SectionHeader title="맞춤 공고 Top" hint={`${topJobsVisible.length}건`} right={
-                <div className="dov__hdright">
-                  {!hasResume && jobsData.source === 'mock' && <PreviewBadge />}
-                  <button className="dov__more" onClick={() => navigate('/jobs')}>전체 보기 <ArrowUpRight size={15} /></button>
-                </div>
-              } />
-              <div className="dov__jobs">
-                {topJobsVisible.map((p) => (
-                  <JobCardCompact
-                    key={p.id}
-                    job={{ company: p.company, title: p.title, matchPct: p.matchPct, careerLabel: careerLabel(p.careerMin, p.careerMax) }}
-                    logo={<CompanyLogo logo={p.logo} name={p.company} size={40} radius={11} />}
-                    onOpen={() => navigate(`/job/${encodeURIComponent(p.id)}`)}
+            {/* 커버리지 분포 · 업종 적합도 */}
+            {!isWidgetHidden('dashboard', 'coverage-histogram') && (
+              <div className="dov__card-item">
+                <section className="dcard">
+                  <SectionHeader title="커버리지 분포" hint="내 백분위" right={!hasResume && <PreviewBadge />} />
+                  <CoverageHistogram
+                    postings={domestic.map((p) => ({ techs: p.techs, held: p.matchHeld, total: p.matchTotal }))}
+                    mySkills={skills}
+                    gap={topGap.map(([tech, count]) => ({ tech, count }))}
+                    poolLabel="국내"
                   />
-                ))}
+                </section>
               </div>
-            </section>
-          )}
+            )}
+            {!isWidgetHidden('dashboard', 'industry-fit') && (
+              <div className="dov__card-item">
+                <section className="dcard">
+                  <SectionHeader title="업종 적합도" right={!hasResume && <PreviewBadge />} />
+                  <div className="dov__aside-chart"><IndustryFitRadar skills={skills} /></div>
+                </section>
+              </div>
+            )}
 
-          {/* 오늘 브리핑 · 마감 임박 · 북마크한 공고 · 최근 본 공고 */}
-          {!isWidgetHidden('dashboard', 'brief') && (
-            <section className={`dcard wcell wcell--${briefSize}`}>
-              <span className="dov__card-eyebrow"><Sparkles size={14} /> 오늘 브리핑</span>
-              <ul className="dov__brief">{briefVisible}</ul>
-            </section>
-          )}
-          {!isWidgetHidden('dashboard', 'deadlines') && (
-            <section className={`dcard wcell wcell--${deadlinesSize}`}>
-              <span className="dov__card-eyebrow"><Clock size={14} /> 마감 임박</span>
-              <div className="dov__dl">
-                {deadlinesVisible.length === 0 && <div className="dov__empty">임박한 마감이 없어요.</div>}
-                {deadlinesVisible.map(({ p, dd }) => (
-                  <button key={p.id} className="dov__dl-row" onClick={() => navigate(`/job/${encodeURIComponent(p.id)}`)}>
-                    <CompanyLogo logo={p.logo} name={p.company} size={30} radius={9} />
-                    <span className="dov__dl-body">
-                      <span className="dov__dl-co">{p.company}</span>
-                      <span className="dov__dl-ti">{p.title}</span>
-                    </span>
-                    <span className={`dov__dday${dd.d <= 3 ? ' urgent' : ''}`}>D-{dd.d}</span>
-                  </button>
-                ))}
+            {/* 맞춤 공고 Top */}
+            {!isWidgetHidden('dashboard', 'top-jobs') && (
+              <div className="dov__card-item">
+                <section className="dcard">
+                  <SectionHeader title="맞춤 공고 Top" hint={`${topJobsVisible.length}건`} right={
+                    <div className="dov__hdright">
+                      {!hasResume && jobsData.source === 'mock' && <PreviewBadge />}
+                      <button className="dov__more" onClick={() => navigate('/jobs')}>전체 보기 <ArrowUpRight size={15} /></button>
+                    </div>
+                  } />
+                  <div className="dov__jobs">
+                    {topJobsVisible.map((p) => (
+                      <JobCardCompact
+                        key={p.id}
+                        job={{ company: p.company, title: p.title, matchPct: p.matchPct, careerLabel: careerLabel(p.careerMin, p.careerMax) }}
+                        logo={<CompanyLogo logo={p.logo} name={p.company} size={40} radius={11} />}
+                        onOpen={() => navigate(`/job/${encodeURIComponent(p.id)}`)}
+                      />
+                    ))}
+                  </div>
+                </section>
               </div>
-            </section>
-          )}
-          {!isWidgetHidden('dashboard', 'bookmarks') && (
-            <section className={`dcard wcell wcell--${bookmarksSize}`}>
-              <SectionHeader title="북마크한 공고" hint={`${bookmarkedPostings.length}건`} right={
-                <button className="dov__more" onClick={() => navigate('/jobs')}>전체 보기 <ArrowUpRight size={15} /></button>
-              } />
-              {bookmarksVisible.length === 0 ? (
-                <div className="dov__empty">북마크한 공고가 없어요. 공고 상세에서 북마크해보세요.</div>
-              ) : (
-                <div className="dov__jobs">
-                  {bookmarksVisible.map((p) => (
-                    <JobCardCompact
-                      key={p.id}
-                      job={{ company: p.company, title: p.title, matchPct: p.matchPct, careerLabel: careerLabel(p.careerMin, p.careerMax) }}
-                      logo={<CompanyLogo logo={p.logo} name={p.company} size={40} radius={11} />}
-                      onOpen={() => navigate(`/job/${encodeURIComponent(p.id)}`)}
-                    />
-                  ))}
-                </div>
-              )}
-            </section>
-          )}
-          {!isWidgetHidden('dashboard', 'recent-views') && (
-            <section className={`dcard wcell wcell--${recentViewsSize}`}>
-              <SectionHeader title="최근 본 공고" hint={`${recentViewPostings.length}건`} />
-              {recentViewPostings.length === 0 ? (
-                <div className="dov__empty">최근 본 공고가 없어요.</div>
-              ) : (
-                <div className="dov__jobs">
-                  {recentViewPostings.map((p) => (
-                    <JobCardCompact
-                      key={p.id}
-                      job={{ company: p.company, title: p.title, matchPct: p.matchPct, careerLabel: careerLabel(p.careerMin, p.careerMax) }}
-                      logo={<CompanyLogo logo={p.logo} name={p.company} size={40} radius={11} />}
-                      onOpen={() => navigate(`/job/${encodeURIComponent(p.id)}`)}
-                    />
-                  ))}
-                </div>
-              )}
-            </section>
-          )}
+            )}
+
+            {/* 오늘 브리핑 · 마감 임박 · 북마크한 공고 · 최근 본 공고 */}
+            {!isWidgetHidden('dashboard', 'brief') && (
+              <div className="dov__card-item">
+                <section className="dcard">
+                  <span className="dov__card-eyebrow"><Sparkles size={14} /> 오늘 브리핑</span>
+                  <ul className="dov__brief">{briefVisible}</ul>
+                </section>
+              </div>
+            )}
+            {!isWidgetHidden('dashboard', 'deadlines') && (
+              <div className="dov__card-item">
+                <section className="dcard">
+                  <span className="dov__card-eyebrow"><Clock size={14} /> 마감 임박</span>
+                  <div className="dov__dl">
+                    {deadlinesVisible.length === 0 && <div className="dov__empty">임박한 마감이 없어요.</div>}
+                    {deadlinesVisible.map(({ p, dd }) => (
+                      <button key={p.id} className="dov__dl-row" onClick={() => navigate(`/job/${encodeURIComponent(p.id)}`)}>
+                        <CompanyLogo logo={p.logo} name={p.company} size={30} radius={9} />
+                        <span className="dov__dl-body">
+                          <span className="dov__dl-co">{p.company}</span>
+                          <span className="dov__dl-ti">{p.title}</span>
+                        </span>
+                        <span className={`dov__dday${dd.d <= 3 ? ' urgent' : ''}`}>D-{dd.d}</span>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              </div>
+            )}
+            {!isWidgetHidden('dashboard', 'bookmarks') && (
+              <div className="dov__card-item">
+                <section className="dcard">
+                  <SectionHeader title="북마크한 공고" hint={`${bookmarkedPostings.length}건`} right={
+                    <button className="dov__more" onClick={() => navigate('/jobs')}>전체 보기 <ArrowUpRight size={15} /></button>
+                  } />
+                  {bookmarksVisible.length === 0 ? (
+                    <div className="dov__empty">북마크한 공고가 없어요. 공고 상세에서 북마크해보세요.</div>
+                  ) : (
+                    <div className="dov__jobs">
+                      {bookmarksVisible.map((p) => (
+                        <JobCardCompact
+                          key={p.id}
+                          job={{ company: p.company, title: p.title, matchPct: p.matchPct, careerLabel: careerLabel(p.careerMin, p.careerMax) }}
+                          logo={<CompanyLogo logo={p.logo} name={p.company} size={40} radius={11} />}
+                          onOpen={() => navigate(`/job/${encodeURIComponent(p.id)}`)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </section>
+              </div>
+            )}
+            {!isWidgetHidden('dashboard', 'recent-views') && (
+              <div className="dov__card-item">
+                <section className="dcard">
+                  <SectionHeader title="최근 본 공고" hint={`${recentViewPostings.length}건`} />
+                  {recentViewPostings.length === 0 ? (
+                    <div className="dov__empty">최근 본 공고가 없어요.</div>
+                  ) : (
+                    <div className="dov__jobs">
+                      {recentViewPostings.map((p) => (
+                        <JobCardCompact
+                          key={p.id}
+                          job={{ company: p.company, title: p.title, matchPct: p.matchPct, careerLabel: careerLabel(p.careerMin, p.careerMax) }}
+                          logo={<CompanyLogo logo={p.logo} name={p.company} size={40} radius={11} />}
+                          onOpen={() => navigate(`/job/${encodeURIComponent(p.id)}`)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </section>
+              </div>
+            )}
+          </div>
         </div>
 
         <aside className="dov__rail">
