@@ -74,6 +74,7 @@ const SECTIONS: Section[] = [
       { to: '/resume', label: '이력서', end: true },
       { to: '/settings/account', label: '계정' },
       { to: '/settings/notifications', label: '알림' },
+      { to: '/settings', label: '설정', end: true },
     ],
   },
 ]

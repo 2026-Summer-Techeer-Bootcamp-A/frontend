@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, MapPin, Briefcase, ArrowUpRight, Bell, Shield, Settings, LogOut, FileText, Award } from 'lucide-react'
+import { Search, MapPin, ArrowUpRight, FileText } from 'lucide-react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import {
-  MiniScore, SectionHeader, SegmentedControl, MenuRow, SkillChip,
+  MiniScore, SectionHeader, SegmentedControl, SkillChip,
   OpportunityQuadrant, TechIcon, type QuadItem,
 } from '../../career/kit'
 import CompanyLogo from '../../career/CompanyLogo'
@@ -236,7 +236,7 @@ export function DesktopMap() {
 /* ───────────────── 마이 — 프로필 · 기술 · 설정 ───────────────── */
 export function DesktopMy() {
   const navigate = useNavigate()
-  const { user, isAuthed, logout } = useAuth()
+  const { user, isAuthed } = useAuth()
   const { activeResume } = useResumesState()
   const skills = activeResume?.skills ?? []
   const coverage = activeResume?.coveragePct ?? calculateCoverage(skills, '국내')
@@ -252,52 +252,35 @@ export function DesktopMy() {
       </header>
 
       <div className="dmy__grid">
-        <div className="dmy__main">
-          <section className="dcard dmy__profile">
-            <span className="dmy__avatar">{initial}</span>
-            <div className="dmy__id">
-              <span className="dmy__nm">{name}</span>
-              <span className="dmy__em">{email}</span>
-            </div>
-            <button className="dmy__edit" onClick={() => navigate(isAuthed ? '/settings/account' : '/login')}>
-              {isAuthed ? '내 정보 수정' : '로그인'}
-            </button>
-          </section>
+        <section className="dcard dmy__profile">
+          <span className="dmy__avatar">{initial}</span>
+          <div className="dmy__id">
+            <span className="dmy__nm">{name}</span>
+            <span className="dmy__em">{email}</span>
+          </div>
+          <button className="dmy__edit" onClick={() => navigate(isAuthed ? '/settings/account' : '/login')}>
+            {isAuthed ? '내 정보 수정' : '로그인'}
+          </button>
+        </section>
 
-          <section className="dcard">
-            <SectionHeader title="활성 이력서" right={<button className="dpage__more" onClick={() => navigate('/resume/submit')}>편집</button>} />
-            <button className="dmy__resume" onClick={() => navigate('/resume/submit')}>
-              <span className="dmy__resume-ic"><FileText size={18} /></span>
-              <span className="djobs__row-b">
-                <span className="djobs__row-t">{activeResume?.title ?? '이력서'}</span>
-                <span className="djobs__row-c">{activeResume?.position ?? '직무 미정'} · 보유 기술 {skills.length}개 · 커버리지 {coverage}%</span>
-              </span>
-            </button>
-          </section>
+        <section className="dcard">
+          <SectionHeader title="활성 이력서" right={<button className="dpage__more" onClick={() => navigate('/resume/submit')}>편집</button>} />
+          <button className="dmy__resume" onClick={() => navigate('/resume/submit')}>
+            <span className="dmy__resume-ic"><FileText size={18} /></span>
+            <span className="djobs__row-b">
+              <span className="djobs__row-t">{activeResume?.title ?? '이력서'}</span>
+              <span className="djobs__row-c">{activeResume?.position ?? '직무 미정'} · 보유 기술 {skills.length}개 · 커버리지 {coverage}%</span>
+            </span>
+          </button>
+        </section>
 
-          <section className="dcard">
-            <SectionHeader title="보유 기술" hint={`${skills.length}개`} />
-            <div className="dmy__skills">
-              {skills.map((s) => <SkillChip key={s} tech={s} />)}
-              {skills.length === 0 && <div className="dpage__empty">등록된 기술이 없어요.</div>}
-            </div>
-          </section>
-        </div>
-
-        <aside className="dmy__aside">
-          <section className="dcard">
-            <SectionHeader title="설정" />
-            <div className="kit-menulist">
-              <MenuRow icon={<Award size={18} />} label="자격증 갭" onClick={() => navigate('/cert-gap')} />
-              <MenuRow icon={<Bell size={18} />} label="알림 설정" onClick={() => navigate('/settings/notifications')} />
-              <MenuRow icon={<Shield size={18} />} label="개인정보 · 데이터" value="원문 미저장" onClick={() => navigate('/settings/privacy')} />
-              <MenuRow icon={<Settings size={18} />} label="설정" onClick={() => navigate('/settings')} />
-              {isAuthed
-                ? <MenuRow icon={<LogOut size={18} />} label="로그아웃" danger onClick={() => { logout(); navigate('/login') }} />
-                : <MenuRow icon={<Briefcase size={18} />} label="로그인" onClick={() => navigate('/login')} />}
-            </div>
-          </section>
-        </aside>
+        <section className="dcard">
+          <SectionHeader title="보유 기술" hint={`${skills.length}개`} />
+          <div className="dmy__skills">
+            {skills.map((s) => <SkillChip key={s} tech={s} />)}
+            {skills.length === 0 && <div className="dpage__empty">등록된 기술이 없어요.</div>}
+          </div>
+        </section>
       </div>
     </div>
   )

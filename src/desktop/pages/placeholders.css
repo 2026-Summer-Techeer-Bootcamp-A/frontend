@@ -110,8 +110,7 @@
 .dmap__rows { margin-top: 6px; }
 
 /* ── 마이 ── */
-.dmy__grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; align-items: start; }
-.dmy__main { display: flex; flex-direction: column; gap: 16px; }
+.dmy__grid { display: flex; flex-direction: column; gap: 16px; max-width: 880px; }
 .dmy__profile { display: flex; align-items: center; gap: 14px; }
 .dmy__avatar {
   flex: none; width: 56px; height: 56px; border-radius: 50%;
@@ -127,12 +126,11 @@
 .dmy__resume { display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; margin-top: 4px; }
 .dmy__resume-ic { flex: none; width: 40px; height: 40px; border-radius: 11px; display: flex; align-items: center; justify-content: center; color: var(--accent-700); background: var(--accent-50); }
 .dmy__skills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-.dmy__aside { display: flex; flex-direction: column; gap: 16px; }
 
 /* 좁은 폭 대응 */
 @media (max-width: 1180px) {
   .djobs__grid { grid-template-columns: 1fr 340px; }
   .djobs__filters { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; position: static; align-items: center; }
-  .dmkt__grid, .dmap__grid, .dmy__grid { grid-template-columns: 1fr; }
+  .dmkt__grid, .dmap__grid { grid-template-columns: 1fr; }
   .dmkt__quad { grid-row: auto; }
 }
