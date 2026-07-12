@@ -215,6 +215,36 @@ function MarketScatter({ items }: { items: { tech: string; share: number; count:
   )
 }
 
+function SkillShareSparkline({ items }: { items: ShareItem[] }) {
+  const sparkItems = items.slice(1, 6)
+  const maxShare = Math.max(...sparkItems.map((i) => i.share), 1)
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: '5px', height: '48px', padding: '8px 0' }}>
+      {sparkItems.map((item, idx) => (
+        <div
+          key={item.tech}
+          style={{
+            width: '8px',
+            height: `${20 + (item.share / maxShare) * 28}px`,
+            borderRadius: '2px',
+            background: idx === 0 ? 'rgba(255, 255, 255, 0.7)' : 'rgba(255, 255, 255, 0.5)',
+            flexShrink: 0,
+          }}
+        />
+      ))}
+      <div
+        style={{
+          width: '10px',
+          height: `${20 + ((items[0]?.share ?? 0) / maxShare) * 28}px`,
+          borderRadius: '2px',
+          background: '#1f9d57',
+          flexShrink: 0,
+        }}
+      />
+    </div>
+  )
+}
+
 export function DesktopMarket() {
   const navigate = useNavigate()
   const domestic = marketData.skillShare['국내'] as { asOf: string; N: number; items: ShareItem[] }
@@ -245,6 +275,7 @@ export function DesktopMarket() {
             eyebrow="수요 리더보드 1위"
             value={leader?.share ?? 0}
             unit="%"
+            chart={<SkillShareSparkline items={top} />}
             caption={leader && <>가장 많이 요구되는 기술은 <b>{leader.tech}</b> · 공고 <b>{leader.count.toLocaleString()}건</b></>}
             footChips={leaderboard.source === 'mock' && <PreviewBadge />}
           />
