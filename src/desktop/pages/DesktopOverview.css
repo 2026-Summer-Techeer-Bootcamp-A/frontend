@@ -53,7 +53,7 @@
 /* 2단 레이아웃 — 좌측 인사이트 존(히어로 행 + 2열 masonry) + 우측 세로 타임라인 레일.
    레일은 뷰포트에 고정(sticky)돼 내부 콘텐츠가 자체 스크롤되고, 좁은 화면에서는
    한 컬럼으로 접힌다. */
-.dov__layout { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; align-items: start; margin-top: 8px; }
+.dov__layout { display: grid; grid-template-columns: minmax(0, 1fr) 460px; gap: 16px; align-items: start; margin-top: 8px; }
 .dov__rail { position: sticky; top: 0; align-self: stretch; }
 .dov__rail > * { height: calc(100dvh - 150px); }
 @media (max-width: 1180px) {
