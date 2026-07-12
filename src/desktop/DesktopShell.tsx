@@ -30,6 +30,7 @@ type Section = {
   home: string // 아이콘 클릭 시 이동할 대표 라우트
   match: string[] // 이 섹션 소속으로 판정할 경로 프리픽스
   items: SubItem[]
+  foot?: boolean // 레일 하단(railfoot) 배치 — macOS처럼 설정은 하단에 둔다
 }
 
 // 모바일 4탭을 계승한 5섹션. 셸 밖에 떠돌던 설정·자격증 갭·이력서 제출을 하위 메뉴로 흡수.
@@ -74,12 +75,22 @@ const SECTIONS: Section[] = [
     label: '마이',
     icon: CircleUser,
     home: '/resume',
-    match: ['/resume', '/settings'],
+    match: ['/resume'],
+    items: [{ to: '/resume', label: '이력서', end: true }],
+  },
+  {
+    key: 'settings',
+    label: '설정',
+    icon: Settings,
+    home: '/settings',
+    match: ['/settings'],
+    foot: true,
     items: [
-      { to: '/resume', label: '이력서', end: true },
       { to: '/settings/account', label: '계정' },
       { to: '/settings/notifications', label: '알림' },
-      { to: '/settings', label: '설정', end: true },
+      { to: '/settings/privacy', label: '개인정보' },
+      { to: '/settings/terms', label: '이용약관' },
+      { to: '/settings/about', label: '앱 정보' },
     ],
   },
 ]
@@ -135,7 +146,7 @@ export default function DesktopShell({ children }: { children: ReactNode }) {
         <div className="dshell__brand-dot" aria-hidden />
 
         <nav className="dshell__railnav" aria-label="주요 메뉴">
-          {SECTIONS.map((s) => {
+          {SECTIONS.filter((s) => !s.foot).map((s) => {
             const Icon = s.icon
             return (
               <button
@@ -152,8 +163,23 @@ export default function DesktopShell({ children }: { children: ReactNode }) {
           })}
         </nav>
 
-        {/* 학습 문서는 서브 — 레일 하단 분리 배치. 셸 밖 라우트로 이동한다. */}
+        {/* 하단 섹션(설정) + 학습 문서 — macOS처럼 설정류는 레일 하단에 분리 배치 */}
         <div className="dshell__railfoot">
+          {SECTIONS.filter((s) => s.foot).map((s) => {
+            const Icon = s.icon
+            return (
+              <button
+                key={s.key}
+                type="button"
+                aria-label={s.label}
+                data-label={s.label}
+                className={`dshell__railbtn${s.key === active.key ? ' on' : ''}`}
+                onClick={() => onRailClick(s)}
+              >
+                <Icon size={21} strokeWidth={2} />
+              </button>
+            )
+          })}
           <button
             type="button"
             aria-label="RAG 문서"
