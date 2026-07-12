@@ -12,9 +12,6 @@
   --e1: 0 1px 2px rgba(20, 30, 60, 0.05), 0 1px 1px rgba(20, 30, 60, 0.04);
   --e2: 0 2px 8px rgba(20, 30, 60, 0.06), 0 1px 2px rgba(20, 30, 60, 0.05);
 }
-.dpage__head { margin-bottom: 20px; }
-.dpage__title { font-size: 25px; font-weight: 800; letter-spacing: -0.8px; color: var(--c-ink); }
-.dpage__desc { margin-top: 6px; font-size: 14px; color: var(--c-muted); }
 .dpage__empty { font-size: 13.5px; color: var(--c-muted); padding: 20px 4px; text-align: center; }
 .dpage__more { font-size: 12.5px; font-weight: 700; color: var(--accent-700); }
 

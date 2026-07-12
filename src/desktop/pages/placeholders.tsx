@@ -48,11 +48,6 @@ export function DesktopJobs() {
 
   return (
     <div className="dpage djobs">
-      <header className="dpage__head">
-        <h1 className="dpage__title">맞춤 공고</h1>
-        <p className="dpage__desc">필터 · 결과 · 상세를 한 화면에서</p>
-      </header>
-
       <div className="djobs__grid">
         {/* 필터 */}
         <aside className="dcard djobs__filters">
@@ -139,11 +134,6 @@ export function DesktopMarket() {
 
   return (
     <div className="dpage dmkt">
-      <header className="dpage__head">
-        <h1 className="dpage__title">채용 시장</h1>
-        <p className="dpage__desc">수요 · 기회 · 커버리지를 분석 보드로 (기준일 {marketData.asOf})</p>
-      </header>
-
       <div className="dmkt__grid">
         <section className="dcard dmkt__quad">
           <SectionHeader title="기회 사분면" hint="수요 × 보유" />
@@ -198,10 +188,6 @@ export function DesktopMap() {
 
   return (
     <div className="dpage dmap">
-      <header className="dpage__head">
-        <h1 className="dpage__title">지도</h1>
-        <p className="dpage__desc">국내 채용 공고를 지도와 리스트로 (핀 {pins.length}개)</p>
-      </header>
       <div className="dmap__grid">
         <div className="dcard dmap__map">
           <div ref={elRef} className="dmap__leaflet" />
@@ -252,11 +238,6 @@ export function DesktopMy() {
 
   return (
     <div className="dpage dmy">
-      <header className="dpage__head">
-        <h1 className="dpage__title">마이</h1>
-        <p className="dpage__desc">이력서 · 내 기술 · 설정</p>
-      </header>
-
       <div className="dmy__grid">
         <section className="dcard dmy__profile">
           <span className="dmy__avatar">{initial}</span>
