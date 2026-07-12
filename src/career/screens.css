@@ -786,6 +786,67 @@
 .dsub__title { font-size: 24px; font-weight: 800; letter-spacing: -0.8px; color: var(--c-ink); margin-bottom: 16px; }
 .dsub__content { max-width: 680px; }
 
+/* ---- 공고 상세(데스크톱) — 본문 + 사이드 2열 ---- */
+.djd {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 24px;
+  align-items: start;
+}
+.djd-main {
+  min-width: 0;
+  max-width: 760px;
+  padding: 4px 0 40px;
+}
+.djd-side {
+  position: sticky;
+  top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.djd-card {
+  background: var(--c-card);
+  border: 1px solid #eef0f4;
+  border-radius: var(--c-radius, 22px);
+  padding: 14px;
+  box-shadow: 0 6px 20px rgba(50, 50, 100, 0.05);
+}
+.djd-meta .crd__pills { margin-top: 0; }
+.djd-applyrow {
+  display: flex;
+  gap: 10px;
+}
+.djd-apply {
+  flex: 1;
+  background: var(--c-accent);
+  color: #fff;
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  transition: transform 0.12s ease, background 0.15s ease;
+}
+.djd-apply:hover { background: var(--accent-700, #21447c); }
+.djd-apply:active { transform: scale(0.98); }
+.djd-bookmark {
+  flex: none;
+  width: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line, #e6e9ef);
+  border-radius: 12px;
+  background: var(--c-card);
+  transition: transform 0.12s ease, border-color 0.12s ease;
+}
+.djd-bookmark:active { transform: scale(0.95); }
+
+@media (max-width: 1279px) {
+  .djd { grid-template-columns: 1fr; }
+  .djd-side { position: static; top: auto; }
+}
+
 /* 온보딩 인트로 (예상 소요 배지) */
 .scr-intro {
   display: flex;
