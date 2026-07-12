@@ -1,0 +1,82 @@
+/* 검색(공고) 페이지 — 필터 패널 확장 스타일. market.css처럼 placeholders.tsx에서 분리해 로드.
+   기존 .djobs__* 뼈대(placeholders.css)는 그대로 두고, 늘어난 필터 항목에 필요한
+   보조 클래스(칩 로우 · 이력서 CTA · 셀렉트 · 토글)만 여기에 더한다. */
+
+.djobs__filters {
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.djobs__resume-cta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px dashed var(--line, #e6e9ef);
+  border-radius: 14px;
+  background: var(--accent-50);
+}
+.djobs__resume-cta span {
+  font-size: 12.5px;
+  color: var(--c-muted);
+  line-height: 1.4;
+}
+.djobs__resume-cta button {
+  align-self: flex-start;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--c-ink, #0b0b0c);
+  border-radius: 10px;
+  padding: 7px 12px;
+  transition: transform 0.12s ease;
+}
+.djobs__resume-cta button:active { transform: scale(0.97); }
+
+.djobs__chiprow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.djobs__chiprow button {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-muted);
+  background: var(--accent-50);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 6px 11px;
+  transition: color 0.14s ease, background 0.14s ease, border-color 0.14s ease;
+}
+.djobs__chiprow button:hover { color: var(--c-ink); }
+.djobs__chiprow button.on {
+  color: var(--accent-700, #18181b);
+  background: var(--accent-100);
+  border-color: var(--accent-200);
+}
+
+.djobs__select {
+  width: 100%;
+  font-size: 13px;
+  color: var(--c-ink);
+  background: var(--c-card, #fff);
+  border: 1px solid var(--line, #e6e9ef);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.djobs__toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--c-ink);
+  cursor: pointer;
+}
+.djobs__toggle input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--c-ink, #0b0b0c);
+}
