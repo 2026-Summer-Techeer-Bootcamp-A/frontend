@@ -7,6 +7,7 @@ import {
   siMongodb, siGraphql, siApachekafka, siRuby, siPhp, siNginx, siElasticsearch,
   siFlutter, siJira, siNextdotjs, siExpress, siMariadb,
 } from 'simple-icons'
+import { Sparkline } from './charts'
 import './kit.css'
 
 // 실제 브랜드 아이콘 (simple-icons). 상표 이슈로 없는 것은 이니셜 배지로 폴백.
@@ -74,7 +75,7 @@ export function StatHero({
    "도달률"(실제 지원 가능한 공고 비율)을 함께 겹쳐 보여주는 요약. */
 export type RingMetric = { key: string; label: string; pct: number; ghost?: number; color: string; note?: string }
 
-export function ActivityRings({ metrics, size = 66 }: { metrics: RingMetric[]; size?: number }) {
+export function ActivityRings({ metrics, size = 66, trackColor = 'var(--accent-50)' }: { metrics: RingMetric[]; size?: number; trackColor?: string }) {
   const sw = size * 0.115
   const gap = sw * 0.32
   const c = size / 2
@@ -87,7 +88,7 @@ export function ActivityRings({ metrics, size = 66 }: { metrics: RingMetric[]; s
         const off = (v: number) => circ * (1 - Math.max(0, Math.min(100, v)) / 100)
         return (
           <g key={m.key} transform={`rotate(-90 ${c} ${c})`}>
-            <circle cx={c} cy={c} r={r} fill="none" stroke="var(--accent-50)" strokeWidth={sw} />
+            <circle cx={c} cy={c} r={r} fill="none" stroke={trackColor} strokeWidth={sw} />
             {m.ghost != null && m.ghost > m.pct && (
               <circle
                 cx={c} cy={c} r={r} fill="none" stroke={m.color} opacity={0.32} strokeWidth={sw} strokeLinecap="round"
@@ -649,6 +650,54 @@ export function SegmentedControl({
       ))}
     </div>
   )
+}
+
+/* ---------- 13. 검정 히어로 스탯 카드 (대시보드 커맨드센터) ----------
+   macOS 위젯 톤: 숫자 좌하단 강조 + 심플 그래프. value는 이미 렌더링된
+   ReactNode(카운트업 등은 호출부에서 useCountUp으로 만들어 넘긴다)라
+   숫자가 아닌 콘텐츠도 그대로 받을 수 있다. */
+export function HeroStat({
+  eyebrow, value, unit, caption, chart, footChips,
+}: { eyebrow: string; value: ReactNode; unit?: string; caption?: ReactNode; chart?: ReactNode; footChips?: ReactNode }) {
+  return (
+    <div className="kit-heroStat">
+      <div className="kit-heroStat__top">
+        <span className="kit-heroStat__eyebrow">{eyebrow}</span>
+        {chart && <div className="kit-heroStat__chart">{chart}</div>}
+      </div>
+      <div className="kit-heroStat__bottom">
+        <div className="kit-heroStat__num">
+          {value}{unit && <span>{unit}</span>}
+        </div>
+        {caption && <div className="kit-heroStat__caption">{caption}</div>}
+        {footChips && <div className="kit-heroStat__chips">{footChips}</div>}
+      </div>
+    </div>
+  )
+}
+
+/* ---------- 14. stat 타일 (촘촘한 대시보드용 초소형 카드) ---------- */
+export function StatTile({
+  label, value, unit, delta, spark,
+}: { label: string; value: ReactNode; unit?: string; delta?: string; spark?: number[] }) {
+  return (
+    <div className="kit-statTile">
+      <div className="kit-statTile__top">
+        <span className="kit-statTile__label">{label}</span>
+        {spark && spark.length > 1
+          ? <Sparkline data={spark} w={52} h={22} />
+          : delta && <span className="kit-statTile__delta">{delta}</span>}
+      </div>
+      <div className="kit-statTile__num">
+        {value}{unit && <span>{unit}</span>}
+      </div>
+    </div>
+  )
+}
+
+/* ---------- 15. 프리뷰 배지 (mock 폴백 위젯 표식) ---------- */
+export function PreviewBadge() {
+  return <span className="kit-previewBadge">preview</span>
 }
 
 /* ---------- 유틸: 카운트업 ---------- */
