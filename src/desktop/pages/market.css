@@ -1,4 +1,6 @@
-/* 채용 시장 — 시장 흐름 인텔리전스 보드. placeholders.css의 .dpage/.dcard 토큰을 그대로 쓴다. */
+/* 채용 시장 — 시장 흐름 인텔리전스 보드. placeholders.css의 .dpage/.dcard 토큰을 그대로 쓴다.
+   12컬럼 밀집 그리드 — 각 카드는 명시적 span을 가지고, 모든 행이 12칸을 정확히 채워서
+   좌/우 빈 컬럼(void)이 생기지 않도록 한다. */
 
 .dmkt2__head { margin-bottom: 18px; }
 .dmkt2__title { font-size: 34px; font-weight: 800; letter-spacing: -1px; line-height: 1.15; color: var(--c-ink); }
@@ -6,17 +8,32 @@
 
 .dmkt2__grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-auto-flow: dense;
-  gap: 16px;
-  align-items: start;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 14px;
+  /* align-items 기본값(stretch) — 짧은 카드가 행 높이만큼 늘어나 빈 공간이 남지 않는다. */
 }
 
-.dmkt2__cell--hero { grid-column: span 1; }
-.dmkt2__cell--bars { grid-column: span 2; }
-.dmkt2__cell--wide { grid-column: span 3; }
+/* row 1: 검정 히어로(수요 1위) + 상위 요구 기술 Top14 리더보드 */
+.dmkt2__cell--hero { grid-column: span 4; }
+.dmkt2__cell--bars { grid-column: span 8; }
 
-/* 수요 리더보드 히어로 — kit-heroStat(검정)을 셀 안에 꽉 채운다 */
+/* row 2: 기술 공동출현 네트워크 + 트렌드 전파 네트워크 */
+.dmkt2__cell--net { grid-column: span 8; min-height: 380px; }
+.dmkt2__cell--prop { grid-column: span 4; min-height: 380px; }
+
+/* row 3: 연도별 추이 · 무버스 · 티어 비교 — 3등분 */
+.dmkt2__cell--third { grid-column: span 4; min-height: 320px; }
+
+/* row 4: 세대별 변화 · 수요×빈도 분포 — 2등분 */
+.dmkt2__cell--half { grid-column: span 6; min-height: 320px; }
+
+.dmkt2__cell--net, .dmkt2__cell--prop, .dmkt2__cell--third, .dmkt2__cell--half {
+  display: flex;
+  flex-direction: column;
+}
+
+/* 수요 리더보드 히어로 — kit-heroStat(검정)을 셀 안에 꽉 채운다. 이웃(Top14)보다
+   내용이 짧아도 stretch로 행 높이를 그대로 물려받아 카드 아래에 빈 공간이 남지 않는다. */
 .dmkt2__cell--hero .kit-heroStat { height: 100%; }
 
 /* 상위 요구 기술 Top14 바 */
@@ -28,13 +45,29 @@
 .dmkt2__bar-track i { display: block; height: 100%; border-radius: 999px; background: var(--accent-300); }
 .dmkt2__bar-v { flex: none; width: 40px; text-align: right; font-size: 12px; font-weight: 700; color: var(--c-muted); }
 
-@media (max-width: 1180px) {
-  .dmkt2__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .dmkt2__cell--bars { grid-column: span 1; }
-  .dmkt2__cell--wide { grid-column: span 2; }
+/* 수요 × 빈도 분포 — 순수 시장 산점도(보유/미보유 이분법 없음) */
+.dmkt2__scatter { display: flex; flex-direction: column; flex: 1; margin-top: 6px; }
+.dmkt2__scatter-svg { width: 100%; height: auto; flex: 1; }
+.dmkt2__scatter-ax { font-size: 10px; fill: var(--c-muted); font-weight: 600; }
+.dmkt2__scatter-lbl { font-size: 9.5px; fill: var(--c-ink); font-weight: 700; }
+.dmkt2__scatter-legend {
+  display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px;
 }
+.dmkt2__scatter-legend span {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11.5px; font-weight: 600; color: var(--c-muted);
+}
+.dmkt2__scatter-legend i { width: 8px; height: 8px; border-radius: 50%; flex: none; }
 
-@media (max-width: 760px) {
+@media (max-width: 1180px) {
   .dmkt2__grid { grid-template-columns: 1fr; }
-  .dmkt2__cell--hero, .dmkt2__cell--bars, .dmkt2__cell--wide { grid-column: span 1; }
+  .dmkt2__cell--hero,
+  .dmkt2__cell--bars,
+  .dmkt2__cell--net,
+  .dmkt2__cell--prop,
+  .dmkt2__cell--third,
+  .dmkt2__cell--half {
+    grid-column: span 1;
+    min-height: 0;
+  }
 }

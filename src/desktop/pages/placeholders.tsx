@@ -5,7 +5,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import {
   MiniScore, SectionHeader, SegmentedControl, SkillChip,
-  OpportunityQuadrant, TechIcon, HeroStat, PreviewBadge, type QuadItem,
+  TechIcon, HeroStat, PreviewBadge,
 } from '../../career/kit'
 import {
   TechCoNetworkGraph, TrendPropagationGraph, TechYearlyTrendChart,
@@ -162,6 +162,59 @@ async function fetchCooccurrenceLive(): Promise<CooccurrenceMap> {
   return res.json()
 }
 
+/** 기회 사분면(OpportunityQuadrant)은 보유/미보유 이분법 위젯이라, 시장 페이지처럼
+ * 전 항목이 owned:false인 맥락에서 쓰면 "보유" 밴드가 항상 텅 비어 버그처럼 보인다.
+ * 여기서는 그 대신 수요(점유율) × 빈도(공고량) 두 실수치 축을 그대로 흩뿌리는
+ * 순수 시장 산점도를 쓴다 — 빈 밴드 자체가 없다. */
+function MarketScatter({ items }: { items: { tech: string; share: number; count: number }[] }) {
+  const W = 320, H = 200
+  const shares = items.map((i) => i.share)
+  const counts = items.map((i) => i.count)
+  const maxShare = Math.max(...shares, 1)
+  const minShare = Math.min(...shares, 0)
+  const maxCount = Math.max(...counts, 1)
+  const minCount = Math.min(...counts, 0)
+  const laid = items.map((it) => {
+    const nx = maxShare === minShare ? 0.5 : (it.share - minShare) / (maxShare - minShare)
+    const ny = maxCount === minCount ? 0.5 : (it.count - minCount) / (maxCount - minCount)
+    const isTop = it.share === maxShare
+    const isPeak = it.count === maxCount && !isTop
+    return {
+      ...it,
+      x: 20 + nx * (W - 40),
+      y: H - 18 - ny * (H - 34),
+      isTop, isPeak,
+    }
+  })
+  return (
+    <div className="dmkt2__scatter">
+      <svg viewBox={`0 0 ${W} ${H}`} className="dmkt2__scatter-svg">
+        <line x1="16" y1={H - 18} x2={W - 8} y2={H - 18} stroke="#e7e7ea" strokeWidth="1" />
+        <line x1="16" y1="6" x2="16" y2={H - 18} stroke="#e7e7ea" strokeWidth="1" />
+        <text x={W - 8} y={H - 6} textAnchor="end" className="dmkt2__scatter-ax">수요 →</text>
+        <text x="16" y="15" className="dmkt2__scatter-ax">공고량 ↑</text>
+        {laid.map((p) => (
+          <g key={p.tech}>
+            <circle
+              cx={p.x} cy={p.y} r={p.isTop || p.isPeak ? 6.5 : 4.5}
+              fill={p.isTop ? '#1f9d57' : p.isPeak ? '#d9822b' : 'var(--c-accent)'}
+              fillOpacity={p.isTop || p.isPeak ? 0.95 : 0.45}
+            />
+            {(p.isTop || p.isPeak) && (
+              <text x={p.x} y={p.y - 10} textAnchor="middle" className="dmkt2__scatter-lbl">{p.tech}</text>
+            )}
+          </g>
+        ))}
+      </svg>
+      <div className="dmkt2__scatter-legend">
+        <span><i style={{ background: '#1f9d57' }} />최고 수요</span>
+        <span><i style={{ background: '#d9822b' }} />최다 공고</span>
+        <span><i style={{ background: 'var(--c-accent)', opacity: 0.45 }} />그 외 기술</span>
+      </div>
+    </div>
+  )
+}
+
 export function DesktopMarket() {
   const navigate = useNavigate()
   const domestic = marketData.skillShare['국내'] as { asOf: string; N: number; items: ShareItem[] }
@@ -174,8 +227,8 @@ export function DesktopMarket() {
   const leader = top[0]
   const maxShare = Math.max(...top.map((i) => i.share), 1)
 
-  const quad: QuadItem[] = useMemo(() => domestic.items.slice(0, 16).map((i) => ({
-    tech: i.tech, demand: i.share, owned: false, count: i.count,
+  const scatterItems = useMemo(() => domestic.items.slice(0, 16).map((i) => ({
+    tech: i.tech, share: i.share, count: i.count,
   })), [])
 
   return (
@@ -212,45 +265,45 @@ export function DesktopMarket() {
         </section>
 
         {/* 2. 기술 공동출현 네트워크 */}
-        <section className="dcard dmkt2__cell dmkt2__cell--wide">
+        <section className="dcard dmkt2__cell dmkt2__cell--net">
           <SectionHeader title="기술 공동출현 네트워크" hint="함께 요구되는 기술 · force graph" />
           <TechCoNetworkGraph skills={NO_SKILLS} />
         </section>
 
         {/* 3. 트렌드 전파 네트워크 */}
-        <section className="dcard dmkt2__cell dmkt2__cell--wide">
+        <section className="dcard dmkt2__cell dmkt2__cell--prop">
           <SectionHeader title="트렌드 전파 네트워크" hint="선행 기술 → 후행 기술 시차" />
           <TrendPropagationGraph />
         </section>
 
         {/* 4. 연도별 점유율 추이 */}
-        <section className="dcard dmkt2__cell">
+        <section className="dcard dmkt2__cell dmkt2__cell--third">
           <SectionHeader title="연도별 점유율 추이" hint="국내 · 단일 소스" />
           <TechYearlyTrendChart skills={NO_SKILLS} />
         </section>
 
         {/* 5. 급상승 · 급감 */}
-        <section className="dcard dmkt2__cell">
+        <section className="dcard dmkt2__cell dmkt2__cell--third">
           <SectionHeader title="급상승 · 급감 Top" />
           <TechMoversBar />
         </section>
 
         {/* 6. 기업 규모별 요구 차이 */}
-        <section className="dcard dmkt2__cell">
+        <section className="dcard dmkt2__cell dmkt2__cell--third">
           <SectionHeader title="기업 규모별 요구 차이" hint="대기업 · 중견 · 중소" />
           <TierCompareChart />
         </section>
 
         {/* 7. 레거시 → 신진 스택 변화 */}
-        <section className="dcard dmkt2__cell">
+        <section className="dcard dmkt2__cell dmkt2__cell--half">
           <SectionHeader title="레거시 → 신진 스택 변화" hint="설립 세대별" />
           <GenerationTrendChart skills={NO_SKILLS} />
         </section>
 
-        {/* 8. 기회 사분면 — 순수 수요 × 공고량 */}
-        <section className="dcard dmkt2__cell">
-          <SectionHeader title="기회 사분면" hint="수요 × 공고량" />
-          <OpportunityQuadrant items={quad} onPick={(t) => navigate(`/tech/${encodeURIComponent(t)}`)} />
+        {/* 8. 수요 × 빈도 분포 — 순수 시장 산점도(보유 개념 없음) */}
+        <section className="dcard dmkt2__cell dmkt2__cell--half">
+          <SectionHeader title="수요 × 빈도 분포" hint="국내 · 상위 16개 기술" />
+          <MarketScatter items={scatterItems} />
         </section>
       </div>
     </div>
