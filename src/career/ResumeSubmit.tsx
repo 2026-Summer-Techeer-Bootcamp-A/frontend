@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { UploadCloud, Check, Plus } from 'lucide-react'
 import { SubScreen, PoolToggle } from './charts'
-import { SkillChip, TechSearchSheet } from './kit'
+import { SkillChip, TechSearchSheet, SegmentedControl } from './kit'
 import { useResumesState, calculateCoverage } from './state'
+import { useResumePrefs, type ResumePreferences } from './preferencesStore'
 import techs from '../data/techs.json'
 
 const TECHS = techs as { tech: string; count: number }[]
@@ -17,11 +18,43 @@ const POSITIONS = [
 ]
 
 type Mode = 'form' | 'pdf'
+type Level = NonNullable<ResumePreferences['level']>
+type JobSearchStatus = NonNullable<ResumePreferences['jobSearchStatus']>
+type Stage = keyof ResumePreferences['companyStagePrefs']
+type StagePref = ResumePreferences['companyStagePrefs'][Stage]
+
+const LEVELS: { key: Level; label: string; range: string; min: number; max: number }[] = [
+  { key: 'intern', label: '신입', range: '0~1년', min: 0, max: 1 },
+  { key: 'junior', label: '주니어', range: '1~3년', min: 1, max: 3 },
+  { key: 'mid', label: '미드레벨', range: '3~6년', min: 3, max: 6 },
+  { key: 'senior', label: '시니어', range: '6~10년', min: 6, max: 10 },
+  { key: 'lead', label: '리드', range: '10~15년', min: 10, max: 15 },
+  { key: 'director', label: '디렉터', range: '15~20년', min: 15, max: 20 },
+]
+
+const STAGES: { key: Stage; label: string }[] = [
+  { key: '대기업', label: '대기업' },
+  { key: '중견', label: '중견기업' },
+  { key: '중소', label: '중소·스타트업' },
+]
+const STAGE_PREFS: { key: StagePref; label: string }[] = [
+  { key: 'hide', label: '숨김' },
+  { key: 'show', label: '보통' },
+  { key: 'boost', label: '강조' },
+]
+
+const SECTORS = [
+  '백엔드', '프론트엔드', '데이터', 'AI·ML', '인프라·DevOps', '보안',
+  '모바일', '게임', '핀테크', '대규모 트래픽', 'MSA', '클라우드',
+]
+
+const REGIONS = ['서울', '경기', '인천', '부산', '대구', '대전', '광주', '그 외']
 
 export default function ResumeSubmit() {
   const navigate = useNavigate()
   const { resumes, activeId, updateResumes } = useResumesState()
   const active = resumes.find((r) => r.id === activeId) ?? resumes[0]
+  const { prefs, updatePrefs } = useResumePrefs()
 
   const [mode, setMode] = useState<Mode>('form')
   const [parsed, setParsed] = useState(false)
@@ -36,8 +69,31 @@ export default function ResumeSubmit() {
   const [careerMax, setCareerMax] = useState(String(active?.careerMax ?? 3))
   const [skills, setSkills] = useState<string[]>(active?.skills ?? [])
 
+  const [level, setLevel] = useState<Level | undefined>(prefs.level)
+  const [jobSearchStatus, setJobSearchStatus] = useState<JobSearchStatus | undefined>(prefs.jobSearchStatus)
+  const [companyStagePrefs, setCompanyStagePrefs] = useState(prefs.companyStagePrefs)
+  const [sectorInterests, setSectorInterests] = useState<string[]>(prefs.sectorInterests)
+  const [remote, setRemote] = useState(prefs.location.remote)
+  const [onsite, setOnsite] = useState(prefs.location.onsite)
+  const [regions, setRegions] = useState<string[]>(prefs.location.regions)
+
   const toggleSkill = (t: string) =>
     setSkills((s) => (s.includes(t) ? s.filter((x) => x !== t) : [...s, t]))
+
+  const handleLevel = (lv: typeof LEVELS[number]) => {
+    setLevel(lv.key)
+    setCareerMin(String(lv.min))
+    setCareerMax(String(lv.max))
+  }
+
+  const setStagePref = (stage: Stage, val: StagePref) =>
+    setCompanyStagePrefs((c) => ({ ...c, [stage]: val }))
+
+  const toggleSector = (s: string) =>
+    setSectorInterests((arr) => (arr.includes(s) ? arr.filter((x) => x !== s) : [...arr, s]))
+
+  const toggleRegion = (r: string) =>
+    setRegions((arr) => (arr.includes(r) ? arr.filter((x) => x !== r) : [...arr, r]))
 
   const handleParse = () => {
     setParsed(true)
@@ -63,11 +119,23 @@ export default function ResumeSubmit() {
         : x,
     )
     updateResumes(updated)
+    updatePrefs({
+      level,
+      jobSearchStatus,
+      companyStagePrefs,
+      sectorInterests,
+      location: { remote, onsite, regions },
+    })
     navigate('/resume')
   }
 
   return (
     <SubScreen title="이력서 제출">
+      <div className="scr-intro">
+        <div className="scr-intro__text">몇 가지 선호를 알려주시면 추천을 더 정확하게 맞춰드려요.</div>
+        <span className="scr-intro__badge">예상 소요 약 2분</span>
+      </div>
+
       <div className="scr-segfull">
         <button className={mode === 'form' ? 'on' : ''} onClick={() => setMode('form')}>직접 입력</button>
         <button className={mode === 'pdf' ? 'on' : ''} onClick={() => setMode('pdf')}>PDF 업로드</button>
@@ -105,13 +173,104 @@ export default function ResumeSubmit() {
           </div>
 
           <div className="scr-field">
+            <label className="scr-field__lbl">현재 레벨</label>
+            <div className="scr-levellist">
+              {LEVELS.map((lv) => (
+                <button
+                  key={lv.key}
+                  className={`scr-levelrow${level === lv.key ? ' on' : ''}`}
+                  onClick={() => handleLevel(lv)}
+                >
+                  <span className="scr-levelrow__label">{lv.label}</span>
+                  <span className="scr-levelrow__range">{lv.range}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="scr-field">
             <label className="scr-field__lbl">경력 (년)</label>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <input className="scr-input" type="number" min={0} value={careerMin} onChange={(e) => setCareerMin(e.target.value)} placeholder="최소" />
               <span style={{ color: 'var(--c-muted)', fontSize: 13 }}>~</span>
               <input className="scr-input" type="number" min={0} value={careerMax} onChange={(e) => setCareerMax(e.target.value)} placeholder="최대" />
             </div>
-            <span className="scr-field__hint" style={{ fontSize: 12, color: 'var(--c-muted)' }}>신입은 0으로 두세요.</span>
+            <span className="scr-field__hint" style={{ fontSize: 12, color: 'var(--c-muted)' }}>신입은 0으로 두세요. 위 레벨을 고르면 자동으로 채워져요.</span>
+          </div>
+
+          <div className="scr-field">
+            <label className="scr-field__lbl">구직 상태</label>
+            <SegmentedControl
+              value={jobSearchStatus ?? 'active'}
+              onChange={(v) => setJobSearchStatus(v as JobSearchStatus)}
+              options={[
+                { key: 'active', label: '적극적으로 찾는 중' },
+                { key: 'casual', label: '가볍게 보는 중' },
+                { key: 'none', label: '안 찾음' },
+              ]}
+            />
+          </div>
+
+          <div className="scr-field">
+            <label className="scr-field__lbl">기업 단계 선호</label>
+            <div className="scr-stagelist">
+              {STAGES.map((s) => (
+                <div className="scr-stagerow" key={s.key}>
+                  <span className="scr-stagerow__name">{s.label}</span>
+                  <div className="scr-stagepill">
+                    {STAGE_PREFS.map((sp) => (
+                      <button
+                        key={sp.key}
+                        className={companyStagePrefs[s.key] === sp.key ? 'on' : ''}
+                        onClick={() => setStagePref(s.key, sp.key)}
+                      >
+                        {sp.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="scr-field">
+            <label className="scr-field__lbl">관심 분야</label>
+            <div className="scr-chiprow">
+              {SECTORS.map((s) => (
+                <button
+                  key={s}
+                  className={`scr-selchip${sectorInterests.includes(s) ? ' on' : ''}`}
+                  onClick={() => toggleSector(s)}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="scr-field">
+            <label className="scr-field__lbl">근무 형태·지역</label>
+            <div className="scr-checkrow">
+              <label className="scr-checkopt">
+                <input type="checkbox" checked={remote} onChange={(e) => setRemote(e.target.checked)} /> 재택
+              </label>
+              <label className="scr-checkopt">
+                <input type="checkbox" checked={onsite} onChange={(e) => setOnsite(e.target.checked)} /> 사무실·하이브리드
+              </label>
+            </div>
+            {onsite && (
+              <div className="scr-chiprow" style={{ marginTop: 10 }}>
+                {REGIONS.map((r) => (
+                  <button
+                    key={r}
+                    className={`scr-selchip${regions.includes(r) ? ' on' : ''}`}
+                    onClick={() => toggleRegion(r)}
+                  >
+                    {r}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="scr-field">

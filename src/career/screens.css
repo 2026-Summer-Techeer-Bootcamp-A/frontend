@@ -786,6 +786,142 @@
 .dsub__title { font-size: 24px; font-weight: 800; letter-spacing: -0.8px; color: var(--c-ink); margin-bottom: 16px; }
 .dsub__content { max-width: 680px; }
 
+/* 온보딩 인트로 (예상 소요 배지) */
+.scr-intro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 10px 0 2px;
+}
+.scr-intro__text {
+  font-size: 13px;
+  color: var(--c-muted);
+  line-height: 1.5;
+}
+.scr-intro__badge {
+  flex: none;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-700);
+  background: var(--accent-50);
+  border-radius: 20px;
+  padding: 5px 10px;
+  white-space: nowrap;
+}
+
+/* 3택 세그먼트가 폼 필드 안에서 쓰일 땐 전체 폭으로 늘리고 줄바꿈 허용 */
+.scr-field .kit-segctl { width: 100%; }
+.scr-field .kit-segctl button { white-space: normal; line-height: 1.3; }
+
+/* 현재 레벨 — 세로 선택 로우 리스트 */
+.scr-levellist {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 2px;
+}
+.scr-levelrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  padding: 13px 15px;
+  background: var(--c-card);
+  transition: border-color 0.12s, background 0.12s;
+}
+.scr-levelrow__label { font-size: 14px; font-weight: 700; color: var(--c-ink); }
+.scr-levelrow__range { font-size: 12px; color: var(--c-muted); font-variant-numeric: tabular-nums; }
+.scr-levelrow.on {
+  border-color: var(--c-accent);
+  background: var(--accent-50);
+}
+.scr-levelrow.on .scr-levelrow__label,
+.scr-levelrow.on .scr-levelrow__range {
+  color: var(--accent-700);
+}
+
+/* 기업 단계 선호 — 로우 + 3way 필 토글 */
+.scr-stagelist {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+.scr-stagerow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.scr-stagerow__name { font-size: 13.5px; font-weight: 600; color: var(--c-ink); }
+.scr-stagepill {
+  display: flex;
+  background: #eceef3;
+  border-radius: 11px;
+  padding: 3px;
+  flex: none;
+}
+.scr-stagepill button {
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-muted);
+}
+.scr-stagepill button.on {
+  background: var(--c-card);
+  color: var(--accent-700);
+  font-weight: 700;
+  box-shadow: var(--e1);
+}
+
+/* 관심 분야 · 지역 — 다중 선택 칩 */
+.scr-chiprow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+.scr-selchip {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--c-ink);
+  background: #eef0f4;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 7px 13px;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.scr-selchip.on {
+  background: var(--c-accent);
+  color: #fff;
+  border-color: var(--c-accent);
+}
+
+/* 근무 형태 체크박스 */
+.scr-checkrow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 2px;
+}
+.scr-checkopt {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  color: var(--c-ink);
+  font-weight: 600;
+}
+.scr-checkopt input {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--c-accent);
+}
+
 /* 이력서 폼 드롭다운(직무 카테고리) */
 .scr-select {
   appearance: none;
