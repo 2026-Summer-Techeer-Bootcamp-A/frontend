@@ -10,7 +10,6 @@ import {
 import CompanyLogo from '../../career/CompanyLogo'
 import { useResumesState, getDynamicPostings, calculateCoverage } from '../../career/state'
 import { useAuth } from '../../career/authStore'
-import careerData from '../../data/careerData.json'
 import marketData from '../../data/marketData.json'
 import './placeholders.css'
 
@@ -46,13 +45,12 @@ export function DesktopJobs() {
   }, [postings, pool, q, sort])
 
   const sel = list.find((p) => p.id === selId) ?? list[0]
-  const selIdx = sel ? careerData.postings.findIndex((x) => x.id === sel.id) : -1
 
   return (
     <div className="dpage djobs">
       <header className="dpage__head">
         <h1 className="dpage__title">맞춤 공고</h1>
-        <p className="dpage__desc">필터 · 결과 · 상세를 한 화면에서 (마스터–디테일)</p>
+        <p className="dpage__desc">필터 · 결과 · 상세를 한 화면에서</p>
       </header>
 
       <div className="djobs__grid">
@@ -114,7 +112,7 @@ export function DesktopJobs() {
                   </span>
                 ))}
               </div>
-              <button className="djobs__pv-cta" onClick={() => navigate(`/job/${selIdx}`)}>
+              <button className="djobs__pv-cta" onClick={() => navigate(`/job/${encodeURIComponent(sel.id)}`)}>
                 상세 보기 <ArrowUpRight size={16} />
               </button>
             </>
@@ -223,8 +221,8 @@ export function DesktopMap() {
               <button key={p.id} className={`djobs__row${sel?.id === p.id ? ' on' : ''}`} onClick={() => setSel(p)}>
                 <CompanyLogo logo={p.logo} name={p.company} size={34} radius={9} />
                 <span className="djobs__row-b">
-                  <span className="djobs__row-t">{p.company}</span>
-                  <span className="djobs__row-c"><MapPin size={11} /> {p.district} · {p.tier}</span>
+                  <span className="djobs__row-t">{p.title}</span>
+                  <span className="djobs__row-c"><MapPin size={11} /> {p.company} · {p.district}</span>
                 </span>
               </button>
             ))}

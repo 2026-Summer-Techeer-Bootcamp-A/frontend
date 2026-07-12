@@ -7,7 +7,7 @@ import {
   ChartNoAxesColumn,
   MapPin,
   CircleUser,
-  MessageSquare,
+  BookOpen,
   Search,
 } from 'lucide-react'
 import { THEME, themeVars } from '../career/themes'
@@ -72,7 +72,6 @@ const SECTIONS: Section[] = [
     match: ['/resume', '/settings'],
     items: [
       { to: '/resume', label: '이력서', end: true },
-      { to: '/resume/submit', label: '이력서 제출' },
       { to: '/settings/account', label: '계정' },
       { to: '/settings/notifications', label: '알림' },
     ],
@@ -91,16 +90,20 @@ function sectionOf(pathname: string): Section {
 export default function DesktopShell({ children }: { children: ReactNode }) {
   const location = useLocation()
   const navigate = useNavigate()
-  const [open, setOpen] = useState(true)
+  const [userOpen, setUserOpen] = useState(true)
   const active = sectionOf(location.pathname)
 
-  // 같은 아이콘 재클릭 = 패널 토글, 다른 아이콘 = 섹션 이동(+패널 열기)
+  // 하위 메뉴가 1개뿐인 섹션은 패널이 레일과 중복이라 아예 열지 않는다
+  const hasSub = active.items.length > 1
+  const open = userOpen && hasSub
+
+  // 같은 아이콘 재클릭 = 패널 토글(하위 메뉴 있을 때만), 다른 아이콘 = 섹션 이동(+패널 열기)
   const onRailClick = (s: Section) => {
     if (s.key === active.key) {
-      setOpen((v) => !v)
+      if (hasSub) setUserOpen((v) => !v)
       return
     }
-    setOpen(true)
+    setUserOpen(true)
     navigate(s.home)
   }
 
@@ -128,16 +131,16 @@ export default function DesktopShell({ children }: { children: ReactNode }) {
           })}
         </nav>
 
-        {/* AI는 서브 — 레일 하단 분리 배치. 셸 밖 라우트로 이동한다. */}
+        {/* 학습 문서는 서브 — 레일 하단 분리 배치. 셸 밖 라우트로 이동한다. */}
         <div className="dshell__railfoot">
           <button
             type="button"
-            aria-label="AI 채팅"
-            data-label="AI 채팅"
+            aria-label="RAG 문서"
+            data-label="RAG 문서"
             className="dshell__railbtn"
             onClick={() => navigate('/rag-docs')}
           >
-            <MessageSquare size={21} strokeWidth={2} />
+            <BookOpen size={21} strokeWidth={2} />
           </button>
         </div>
       </aside>
