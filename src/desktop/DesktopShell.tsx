@@ -14,7 +14,7 @@ import { THEME, themeVars } from '../career/themes'
 import './DesktopShell.css'
 
 /* 데스크톱 셸 — Phase 2: 아이콘 레일 + 개폐형 세부 메뉴 패널.
-   앱 전체를 라운드 프레임 카드에 담고, 왼쪽 레일은 아이콘만 노출한다.
+   오른쪽 콘텐츠 영역만 라운드 카드로 처리하고, 왼쪽 레일은 아이콘만 노출한다.
    활성 섹션은 URL에서 파생하고, 같은 아이콘 재클릭이 패널을 토글한다. */
 
 type SubItem = { to: string; label: string; end?: boolean }
@@ -106,85 +106,83 @@ export default function DesktopShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="dshell" style={themeVars(THEME)}>
-      <div className="dshell__frame">
-        <aside className="dshell__rail">
-          {/* 브랜드 도트 — 실제 로고 확정 전 플레이스홀더 */}
-          <div className="dshell__brand-dot" aria-hidden />
+      <aside className="dshell__rail">
+        {/* 브랜드 도트 — 실제 로고 확정 전 플레이스홀더 */}
+        <div className="dshell__brand-dot" aria-hidden />
 
-          <nav className="dshell__railnav" aria-label="주요 메뉴">
-            {SECTIONS.map((s) => {
-              const Icon = s.icon
-              return (
-                <button
-                  key={s.key}
-                  type="button"
-                  aria-label={s.label}
-                  data-label={s.label}
-                  className={`dshell__railbtn${s.key === active.key ? ' on' : ''}`}
-                  onClick={() => onRailClick(s)}
-                >
-                  <Icon size={21} strokeWidth={2} />
-                </button>
-              )
-            })}
-          </nav>
+        <nav className="dshell__railnav" aria-label="주요 메뉴">
+          {SECTIONS.map((s) => {
+            const Icon = s.icon
+            return (
+              <button
+                key={s.key}
+                type="button"
+                aria-label={s.label}
+                data-label={s.label}
+                className={`dshell__railbtn${s.key === active.key ? ' on' : ''}`}
+                onClick={() => onRailClick(s)}
+              >
+                <Icon size={21} strokeWidth={2} />
+              </button>
+            )
+          })}
+        </nav>
 
-          {/* AI는 서브 — 레일 하단 분리 배치. 셸 밖 라우트로 이동한다. */}
-          <div className="dshell__railfoot">
-            <button
-              type="button"
-              aria-label="AI 채팅"
-              data-label="AI 채팅"
-              className="dshell__railbtn"
-              onClick={() => navigate('/rag-docs')}
-            >
-              <MessageSquare size={21} strokeWidth={2} />
-            </button>
-          </div>
-        </aside>
-
-        <aside
-          className={`dshell__panel${open ? ' open' : ''}`}
-          aria-hidden={!open}
-        >
-          <div className="dshell__panelinner">
-            <div className="dshell__paneltitle">{active.label}</div>
-            <nav className="dshell__panelnav" aria-label={`${active.label} 세부 메뉴`}>
-              {active.items.map((it) => (
-                <NavLink
-                  key={it.to}
-                  to={it.to}
-                  end={it.end}
-                  tabIndex={open ? 0 : -1}
-                  className={({ isActive }) =>
-                    `dshell__navitem${isActive ? ' on' : ''}`
-                  }
-                >
-                  {it.label}
-                </NavLink>
-              ))}
-            </nav>
-          </div>
-        </aside>
-
-        <div className="dshell__main">
-          <header className="dshell__topbar">
-            <button className="dshell__search" type="button">
-              <Search size={16} />
-              <span>공고 · 기술 검색</span>
-            </button>
-            <div className="dshell__topright">
-              {/* 국내/글로벌 풀 토글 자리 — 실제 상태 연동은 Phase 3 */}
-              <div className="dshell__pool" role="group" aria-label="채용 풀">
-                <button type="button" className="on">국내</button>
-                <button type="button">글로벌</button>
-              </div>
-              <div className="dshell__avatar" aria-label="프로필">리버</div>
-            </div>
-          </header>
-
-          <main className="dshell__content">{children}</main>
+        {/* AI는 서브 — 레일 하단 분리 배치. 셸 밖 라우트로 이동한다. */}
+        <div className="dshell__railfoot">
+          <button
+            type="button"
+            aria-label="AI 채팅"
+            data-label="AI 채팅"
+            className="dshell__railbtn"
+            onClick={() => navigate('/rag-docs')}
+          >
+            <MessageSquare size={21} strokeWidth={2} />
+          </button>
         </div>
+      </aside>
+
+      <aside
+        className={`dshell__panel${open ? ' open' : ''}`}
+        aria-hidden={!open}
+      >
+        <div className="dshell__panelinner">
+          <div className="dshell__paneltitle">{active.label}</div>
+          <nav className="dshell__panelnav" aria-label={`${active.label} 세부 메뉴`}>
+            {active.items.map((it) => (
+              <NavLink
+                key={it.to}
+                to={it.to}
+                end={it.end}
+                tabIndex={open ? 0 : -1}
+                className={({ isActive }) =>
+                  `dshell__navitem${isActive ? ' on' : ''}`
+                }
+              >
+                {it.label}
+              </NavLink>
+            ))}
+          </nav>
+        </div>
+      </aside>
+
+      <div className="dshell__main">
+        <header className="dshell__topbar">
+          <button className="dshell__search" type="button">
+            <Search size={16} />
+            <span>공고 · 기술 검색</span>
+          </button>
+          <div className="dshell__topright">
+            {/* 국내/글로벌 풀 토글 자리 — 실제 상태 연동은 Phase 3 */}
+            <div className="dshell__pool" role="group" aria-label="채용 풀">
+              <button type="button" className="on">국내</button>
+              <button type="button">글로벌</button>
+            </div>
+            <div className="dshell__avatar" aria-label="프로필">리버</div>
+          </div>
+        </header>
+
+        <main className="dshell__content">{children}</main>
       </div>
     </div>
   )

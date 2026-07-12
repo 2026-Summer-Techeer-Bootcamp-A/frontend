@@ -1,23 +1,14 @@
-/* 데스크톱 셸 — 아이콘 레일 + 개폐형 세부 메뉴 패널 + 라운드 프레임.
+/* 데스크톱 셸 — 아이콘 레일 + 개폐형 세부 메뉴 패널 + 라운드 콘텐츠 카드.
+   셸 크롬(레일·패널·톱바)은 흰 배경에 두고, 콘텐츠 영역만 라운드 카드로 처리한다.
    색·모션 값은 src/design/tokens.ts 를 정본으로 한다. */
 
 .dshell {
-  min-height: 100dvh;
-  padding: 14px;
-  background: #dee2ea; /* 프레임 뒤 백드롭 — neutral 200~300 사이 */
+  display: flex;
+  height: 100dvh;
+  background: var(--c-card);
   color: var(--c-ink);
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
   letter-spacing: var(--c-ls);
-}
-
-/* ---------- 라운드 프레임 ---------- */
-.dshell__frame {
-  display: flex;
-  height: calc(100dvh - 28px);
-  border-radius: 24px;
-  background: var(--c-card);
-  box-shadow: 0 8px 24px rgba(20, 30, 60, 0.08), 0 2px 6px rgba(20, 30, 60, 0.05);
-  overflow: hidden;
 }
 
 /* ---------- 아이콘 레일 ---------- */
@@ -29,7 +20,6 @@
   align-items: center;
   gap: 4px;
   padding: 18px 0;
-  background: var(--c-card);
   border-right: 1px solid #eef1f6;
 }
 
@@ -100,13 +90,10 @@
   flex: none;
   width: 0;
   overflow: hidden;
-  background: var(--c-card);
-  border-right: 1px solid transparent;
   transition: width 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 .dshell__panel.open {
   width: 240px;
-  border-right-color: #eef1f6;
 }
 
 /* 내부는 고정폭 — 개폐 중 텍스트가 찌그러지지 않게 한다 */
@@ -155,13 +142,12 @@
   font-weight: 700;
 }
 
-/* ---------- 메인(톱바 + 콘텐츠) ---------- */
+/* ---------- 메인(톱바 + 콘텐츠 카드) ---------- */
 .dshell__main {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  background: #f6f8fc; /* = THEME.screenBg */
 }
 
 .dshell__topbar {
@@ -171,9 +157,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 0 28px;
-  background: var(--c-card);
-  border-bottom: 1px solid #e2e5ec;
+  padding: 0 24px 0 12px;
 }
 
 .dshell__search {
@@ -226,9 +210,15 @@
   font-weight: 700;
 }
 
+/* 콘텐츠만 라운드 카드로 띄운다 — 셸 크롬과의 위계를 모서리·배경 대비로 만든다 */
 .dshell__content {
   flex: 1;
   min-width: 0;
+  min-height: 0;
+  margin: 0 16px 16px 8px;
   padding: 28px;
+  border-radius: 24px;
+  border: 1px solid #eef1f6;
+  background: #f6f8fc; /* = THEME.screenBg */
   overflow-y: auto;
 }
