@@ -218,7 +218,8 @@ export default function DesktopShell({ children }: { children: ReactNode }) {
 
       <div className="dshell__main">
         <header className="dshell__topbar">
-          <span className="dshell__crumb">{active.label}</span>
+          {/* 패널이 열려 있으면 패널 제목과 중복이라 브레드크럼을 숨긴다 */}
+          {!open && <span className="dshell__crumb">{active.label}</span>}
           <div className="dshell__topright">
             <div className="dshell__accountwrap">
               <button

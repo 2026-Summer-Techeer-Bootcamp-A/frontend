@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { User, Bell, FileText, Shield, Info, LogOut } from 'lucide-react'
 import { SubScreen } from '../charts'
 import { MenuRow, SectionHeader } from '../kit'
 import LogoutSheet from '../auth/LogoutSheet'
 import { useAuth } from '../authStore'
+import { useIsDesktop } from '../../shared/useMediaQuery'
 import { APP_VERSION } from './about'
 import '../smallscreens.css'
 
@@ -12,6 +13,11 @@ export default function SettingsHome() {
   const navigate = useNavigate()
   const { isAuthed, logout } = useAuth()
   const [logoutOpen, setLogoutOpen] = useState(false)
+  const isDesktop = useIsDesktop()
+
+  // 데스크톱은 사이드 패널이 설정 홈 역할을 하므로 목록 페이지가 패널과 중복된다 —
+  // 첫 하위 항목으로 리다이렉트한다. 모바일은 패널이 없어 홈 목록이 그대로 필요하다.
+  if (isDesktop) return <Navigate to="/settings/account" replace />
 
   return (
     <SubScreen title="설정">
