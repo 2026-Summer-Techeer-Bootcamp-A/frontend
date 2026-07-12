@@ -364,9 +364,8 @@ const TECH: Record<string, [string, string]> = {
 // 매칭% → 채도 그라데이션. 100%=진한 accent, 낮을수록 채도가 빠짐.
 export function matchGrad(pct: number): string {
   const p = Math.max(0, Math.min(100, pct)) / 100
-  const sat = 26 + p * 33 // 26% ~ 59%(accent)
-  const lig = 52 - p * 7 // 52% ~ 45%(accent)
-  return `linear-gradient(90deg, hsl(217 ${Math.round(sat * 0.72)}% ${Math.round(lig + 8)}%), hsl(217 ${Math.round(sat)}% ${Math.round(lig)}%))`
+  const lig = 74 - p * 62 // 74% (light gray, low match) ~ 12% (near-black, high match)
+  return `linear-gradient(90deg, hsl(220 4% ${Math.round(lig + 10)}%), hsl(220 4% ${Math.round(lig)}%))`
 }
 
 function techLabel(t: string) { return TECH[t]?.[0] ?? (t.replace(/[^A-Za-z0-9]/g, '').slice(0, 2) || t.slice(0, 2)) }
