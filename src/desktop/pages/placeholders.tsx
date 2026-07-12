@@ -203,7 +203,13 @@ export function DesktopMap() {
         <p className="dpage__desc">국내 채용 공고를 지도와 리스트로 (핀 {pins.length}개)</p>
       </header>
       <div className="dmap__grid">
-        <div className="dcard dmap__map"><div ref={elRef} className="dmap__leaflet" /></div>
+        <div className="dcard dmap__map">
+          <div ref={elRef} className="dmap__leaflet" />
+          <div className="dmap__legend">
+            <span><i style={{ background: '#2f61b8' }} /> 매칭 50% 이상</span>
+            <span><i style={{ background: '#8fa0b8' }} /> 50% 미만</span>
+          </div>
+        </div>
         <aside className="dcard dmap__list">
           <SectionHeader title={sel ? '선택한 공고' : '공고 리스트'} hint={sel ? sel.district : `${pins.length}개`} />
           {sel && (
@@ -216,7 +222,7 @@ export function DesktopMap() {
               <MiniScore pct={sel.matchPct} size={40} />
             </button>
           )}
-          <div className="dmap__rows">
+          <div className="dmap__rows kit-scroll">
             {pins.slice(0, 30).map((p) => (
               <button key={p.id} className={`djobs__row${sel?.id === p.id ? ' on' : ''}`} onClick={() => setSel(p)}>
                 <CompanyLogo logo={p.logo} name={p.company} size={34} radius={9} />

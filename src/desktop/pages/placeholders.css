@@ -103,11 +103,28 @@
 
 /* ── 지도 ── */
 .dmap__grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 16px; align-items: start; }
-.dmap__map { padding: 0; overflow: hidden; }
+.dmap__map { position: relative; padding: 0; overflow: hidden; }
 .dmap__leaflet { width: 100%; height: calc(100dvh - 180px); min-height: 460px; border-radius: 18px; }
-.dmap__list { max-height: calc(100dvh - 160px); overflow-y: auto; }
+.dmap__legend {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  z-index: 5;
+  display: flex;
+  gap: 12px;
+  padding: 7px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: var(--e1);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--c-muted);
+}
+.dmap__legend span { display: inline-flex; align-items: center; gap: 5px; }
+.dmap__legend i { width: 8px; height: 8px; border-radius: 50%; }
+.dmap__list { max-height: calc(100dvh - 160px); display: flex; flex-direction: column; }
 .dmap__sel { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px; margin: 8px 0; border-radius: 12px; background: var(--accent-50); text-align: left; }
-.dmap__rows { margin-top: 6px; }
+.dmap__rows { flex: 1; min-height: 0; margin-top: 6px; }
 
 /* ── 마이 ── */
 .dmy__grid { display: flex; flex-direction: column; gap: 16px; max-width: 880px; }
