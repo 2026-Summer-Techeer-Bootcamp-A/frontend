@@ -11,6 +11,8 @@ import { useIsDesktop } from '../shared/useMediaQuery'
 import data from '../data/careerData.json'
 import marketData from '../data/marketData.json'
 import { useResumesState } from './state'
+import { isBookmarked, toggleBookmark, useBookmarks } from './bookmarkStore'
+import { recordView } from './viewHistoryStore'
 import './career.css'
 
 type MapPin = { id: string; lat: number; lng: number }
@@ -81,7 +83,9 @@ export default function JobDetail() {
   const navigate = useNavigate()
   const isDesktop = useIsDesktop()
   const [tab, setTab] = useState<'desc' | 'company'>('desc')
-  const [bookmarked, setBookmarked] = useState(false)
+  // 북마크 상태 자체는 bookmarkStore가 정본(localStorage) — 여기서는 구독만 걸어
+  // 다른 탭/컴포넌트에서 토글돼도 리렌더되도록 한다(반환값은 쓰지 않는다).
+  useBookmarks()
   const { activeResume } = useResumesState()
   const activeSkills = activeResume ? activeResume.skills : []
 
@@ -89,6 +93,12 @@ export default function JobDetail() {
   // 동적 복사본은 원본 배열과 참조가 달라 indexOf가 항상 -1이 나오는 버그가 있었다 —
   // 안정적인 id로 직접 찾도록 수정.
   const p = data.postings.find((x) => x.id === decodeURIComponent(id ?? ''))
+  const bookmarked = isBookmarked(p?.id ?? '')
+
+  // 조회 기록 — 훅 규칙을 지키기 위해 얼리리턴보다 위에서 항상 호출하고, 내부에서 p 유무를 체크한다.
+  useEffect(() => {
+    if (p) recordView(p.id)
+  }, [p?.id])
 
   if (!p) {
     return (
@@ -119,7 +129,7 @@ export default function JobDetail() {
         fill: bookmarked ? 'var(--c-accent)' : 'none',
         transition: 'all 0.2s ease',
       }}
-      onClick={() => setBookmarked(!bookmarked)}
+      onClick={() => toggleBookmark(p.id)}
     />
   )
 
@@ -266,7 +276,7 @@ export default function JobDetail() {
                 type="button"
                 className="djd-bookmark"
                 aria-label={bookmarked ? '북마크 해제' : '북마크'}
-                onClick={() => setBookmarked(!bookmarked)}
+                onClick={() => toggleBookmark(p.id)}
               >
                 <Bookmark size={18} style={{ color: bookmarked ? 'var(--c-accent)' : 'var(--c-muted)', fill: bookmarked ? 'var(--c-accent)' : 'none' }} />
               </button>

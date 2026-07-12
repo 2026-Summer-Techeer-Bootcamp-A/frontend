@@ -8,7 +8,9 @@ import {
   siFlutter, siJira, siNextdotjs, siExpress, siMariadb,
 } from 'simple-icons'
 import { Sparkline } from './charts'
-import { useDashboardConfig, toggleWidget, type WidgetSection } from './dashboardConfig'
+import { useDashboardConfig, toggleWidget, getWidgetSize, setWidgetSize, type WidgetSection } from './dashboardConfig'
+import type { WidgetCatalogItem } from './widgetCatalog'
+import { WidgetShapeIcon } from './widgetIcons'
 import './kit.css'
 
 // 실제 브랜드 아이콘 (simple-icons). 상표 이슈로 없는 것은 이니셜 배지로 폴백.
@@ -496,7 +498,7 @@ export function SectionHeader({ title, hint, right }: { title: string; hint?: st
 }
 
 /* ---------- 5b. 위젯 표시/숨김 설정 — 기어 버튼 + 팝오버 ---------- */
-export function WidgetSettingsMenu({ section, items }: { section: WidgetSection; items: { id: string; label: string }[] }) {
+export function WidgetSettingsMenu({ section, items }: { section: WidgetSection; items: WidgetCatalogItem[] }) {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
   const config = useDashboardConfig()
@@ -533,14 +535,31 @@ export function WidgetSettingsMenu({ section, items }: { section: WidgetSection;
         <div className="kit-wset__pop" role="menu">
           <div className="kit-wset__pop-title">위젯 표시</div>
           {items.map((it) => (
-            <label key={it.id} className="kit-wset__row">
-              <input
-                type="checkbox"
-                checked={!hidden.includes(it.id)}
-                onChange={() => toggleWidget(section, it.id)}
-              />
-              <span>{it.label}</span>
-            </label>
+            <div key={it.id} className="kit-wset__row2">
+              <span className="kit-wset__shape"><WidgetShapeIcon shape={it.shape} size={20} /></span>
+              <label className="kit-wset__row2-main">
+                <input
+                  type="checkbox"
+                  checked={!hidden.includes(it.id)}
+                  onChange={() => toggleWidget(section, it.id)}
+                />
+                <span>{it.label}</span>
+              </label>
+              {it.allowedSizes.length > 1 && (
+                <div className="kit-wset__sizepills">
+                  {it.allowedSizes.map((sz) => (
+                    <button
+                      key={sz}
+                      type="button"
+                      className={`kit-wset__sizepill${getWidgetSize(section, it.id, it.defaultSize) === sz ? ' on' : ''}`}
+                      onClick={() => setWidgetSize(section, it.id, sz)}
+                    >
+                      {sz}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           ))}
         </div>
       )}
