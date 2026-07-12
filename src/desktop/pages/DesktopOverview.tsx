@@ -55,10 +55,7 @@ export default function DesktopOverview() {
   return (
     <div className="dov">
       <header className="dov__head">
-        <div>
-          <h1 className="dov__title">안녕하세요, {user?.nickname ?? '리버'}님</h1>
-          <p className="dov__sub">오늘의 커리어 지표와 확인할 것들을 한 화면에 모았어요.</p>
-        </div>
+        <h1 className="dov__title">안녕하세요, {user?.nickname ?? '리버'}님</h1>
         <div className="dov__asof">기준일 {asOf} · 공고 {TOTAL.toLocaleString()}건</div>
       </header>
 
