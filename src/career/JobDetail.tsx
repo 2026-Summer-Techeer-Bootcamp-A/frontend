@@ -1,14 +1,65 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ChevronLeft, Bookmark, MapPin, Briefcase, Calendar } from 'lucide-react'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 import PhoneFrame from '../components/PhoneFrame'
 import CompanyLogo from './CompanyLogo'
 import { matchGrad } from './kit'
 import { THEME, themeVars } from './themes'
 import { useIsDesktop } from '../shared/useMediaQuery'
 import data from '../data/careerData.json'
+import marketData from '../data/marketData.json'
 import { useResumesState } from './state'
 import './career.css'
+
+type MapPin = { id: string; lat: number; lng: number }
+
+/** 공고 id로 marketData.map.pins에서 좌표를 찾는다. 백엔드 lat/lng가 아직 라이브로
+ * 연결되지 않아(별도 태스크 진행 중) 지금은 mock 지도 데이터를 매핑해 쓴다.
+ * 매칭되는 pin이 없으면 undefined — 호출부에서 지도 카드를 조용히 숨긴다. */
+function findPinCoord(id: string): MapPin | undefined {
+  return (marketData.map.pins as MapPin[]).find((pp) => pp.id === id)
+}
+
+/** 공고 상세 하단 — 근무 위치 미니 지도. MapScreen.tsx의 L.map/L.tileLayer 초기화 패턴을
+ * 그대로 이식하되, 단일 pin만 그리는 축소판(정적 미리보기 톤 — 드래그/줌 비활성)이다. */
+function LocationMapCard({ lat, lng, address }: { lat: number; lng: number; address: string }) {
+  const elRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!elRef.current) return
+    const map = L.map(elRef.current, {
+      center: [lat, lng],
+      zoom: 15,
+      zoomControl: false,
+      attributionControl: false,
+      dragging: false,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
+      touchZoom: false,
+      boxZoom: false,
+      keyboard: false,
+    })
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map)
+    L.marker([lat, lng], {
+      icon: L.divIcon({ className: 'lpin-wrap', html: '<div class="crd-map__pin"></div>', iconSize: [18, 18], iconAnchor: [9, 9] }),
+    }).addTo(map)
+    const tid = window.setTimeout(() => map.invalidateSize(), 60)
+    return () => {
+      window.clearTimeout(tid)
+      map.remove()
+    }
+  }, [lat, lng])
+
+  return (
+    <div className="crd-map">
+      <div className="crd-map__label">근무 위치</div>
+      <div className="crd-map__addr">{address}</div>
+      <div ref={elRef} className="crd-map__canvas" />
+    </div>
+  )
+}
 
 function careerText(min: number | null, max: number | null) {
   if (min == null && max == null) return '경력 무관'
@@ -56,6 +107,9 @@ export default function JobDetail() {
   const matchPct = matchTotal ? Math.round((matchHeld / matchTotal) * 100) : 100
 
   const ci = p.companyInfo ?? { industry: '', homepage: '', established: '', location: '', tags: [] as string[] }
+  // 국외 공고는 지도 카드를 아예 렌더하지 않는다. id 매칭 pin이 없으면(백엔드 좌표 미연동
+  // 등) 에러 대신 조용히 숨긴다.
+  const pinCoord = p.pool === '국내' ? findPinCoord(p.id) : undefined
   const bookmarkBtn = (
     <Bookmark
       size={21}
@@ -172,6 +226,10 @@ export default function JobDetail() {
     </div>
   )
 
+  const mapBlock = pinCoord && (
+    <LocationMapCard lat={pinCoord.lat} lng={pinCoord.lng} address={ci.location || p.region || '주소 정보 없음'} />
+  )
+
   const detail = (
     <>
       {headerBlock}
@@ -179,6 +237,7 @@ export default function JobDetail() {
       {matchBlock}
       {tabsNavBlock}
       {tabsBodyBlock}
+      {mapBlock}
       <div className="crd__actions">
         <button className="crd__apply">지원하기</button>
       </div>
@@ -196,6 +255,7 @@ export default function JobDetail() {
             {headerBlock}
             {tabsNavBlock}
             {tabsBodyBlock}
+            {mapBlock}
           </div>
           <aside className="djd-side">
             {matchBlock}

@@ -956,6 +956,42 @@
   margin-left: 14px;
   min-width: 0;
 }
+/* 공고 상세 — 근무 위치 미니 지도 카드 */
+.crd-map {
+  background: #fff;
+  border: 1px solid var(--line, #e6e9ef);
+  border-radius: 18px;
+  padding: 14px;
+  margin-top: 16px;
+  overflow: hidden;
+}
+.crd-map__label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--c-muted);
+  margin-bottom: 2px;
+}
+.crd-map__addr {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--c-ink);
+  margin-bottom: 10px;
+}
+.crd-map__canvas {
+  width: 100%;
+  height: 150px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f0f0f1;
+}
+.crd-map__pin {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #0b0b0c;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
 .crd__actions {
   display: flex;
   gap: 12px;
