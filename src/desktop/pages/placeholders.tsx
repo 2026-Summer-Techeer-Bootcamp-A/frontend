@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, MapPin, ArrowUpRight, FileText } from 'lucide-react'
+import { Search, MapPin, ArrowUpRight, FileText, Settings, Award } from 'lucide-react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import {
   MiniScore, SectionHeader, SegmentedControl, SkillChip,
   TechIcon, HeroStat, PreviewBadge, WidgetSettingsMenu,
+  StatTile, JobCardCompact, MenuRow,
 } from '../../career/kit'
 import {
   TechCoNetworkGraph, TrendPropagationGraph, TechYearlyTrendChart,
@@ -18,6 +19,8 @@ import { useResumesState, getDynamicPostings, calculateCoverage, ddayInfo } from
 import { useAuth } from '../../career/authStore'
 import { useDashboardConfig, isWidgetHidden, getWidgetSize } from '../../career/dashboardConfig'
 import { MARKET_WIDGETS } from '../../career/widgetCatalog'
+import { useBookmarks } from '../../career/bookmarkStore'
+import { useRecentViews } from '../../career/viewHistoryStore'
 import marketData from '../../data/marketData.json'
 import data from '../../data/careerData.json'
 import './placeholders.css'
@@ -823,7 +826,9 @@ export function DesktopMap() {
   )
 }
 
-/* ───────────────── 마이 — 프로필 · 기술 · 설정 ───────────────── */
+/* ───────────────── 마이 — 프로필 · 이력서 · 활동(대시보드/시장과 통일된 커맨드센터 톤) ─────────────────
+   상단 검정 히어로(대시보드 HeroStat 계열과 시각적으로 호응) + 2컬럼 본문(.dmy__body).
+   좌측(main): 활성 이력서 · 보유 기술 · 북마크한 공고. 우측(aside): 활동 요약 · 최근 본 공고 · 바로가기. */
 export function DesktopMy() {
   const navigate = useNavigate()
   const { user, isAuthed } = useAuth()
@@ -834,38 +839,133 @@ export function DesktopMy() {
   const email = user?.email ?? 'bootcamp@example.com'
   const initial = (user ? (user.nickname || user.email) : 'RV').slice(0, 2).toUpperCase()
 
+  const postings = useMemo(() => getDynamicPostings(skills), [skills])
+
+  const bookmarkIds = useBookmarks()
+  const bookmarkedPostings = useMemo(
+    () => bookmarkIds.map((id) => postings.find((p) => p.id === id)).filter((p): p is typeof postings[number] => !!p),
+    [bookmarkIds, postings],
+  )
+  const bookmarksVisible = bookmarkedPostings.slice(0, 5)
+
+  const recentViewIds = useRecentViews(5)
+  const recentViewPostings = useMemo(
+    () => recentViewIds.map((id) => postings.find((p) => p.id === id)).filter((p): p is typeof postings[number] => !!p),
+    [recentViewIds, postings],
+  )
+
   return (
     <div className="dpage dmy">
-      <div className="dmy__grid">
-        <section className="dcard dmy__profile">
-          <span className="dmy__avatar">{initial}</span>
-          <div className="dmy__id">
-            <span className="dmy__nm">{name}</span>
-            <span className="dmy__em">{email}</span>
-          </div>
-          <button className="dmy__edit" onClick={() => navigate(isAuthed ? '/settings/account' : '/login')}>
-            {isAuthed ? '내 정보 수정' : '로그인'}
-          </button>
-        </section>
+      <header className="dmy__head">
+        <h1 className="dmy__title">마이</h1>
+        <div className="dmy__sub">내 프로필 · 이력서 · 활동</div>
+      </header>
 
-        <section className="dcard">
-          <SectionHeader title="활성 이력서" right={<button className="dpage__more" onClick={() => navigate('/resume/submit')}>편집</button>} />
-          <button className="dmy__resume" onClick={() => navigate('/resume/submit')}>
-            <span className="dmy__resume-ic"><FileText size={18} /></span>
-            <span className="djobs__row-b">
-              <span className="djobs__row-t">{activeResume?.title ?? '이력서'}</span>
-              <span className="djobs__row-c">{activeResume?.position ?? '직무 미정'} · 보유 기술 {skills.length}개 · 커버리지 {coverage}%</span>
-            </span>
-          </button>
-        </section>
-
-        <section className="dcard">
-          <SectionHeader title="보유 기술" hint={`${skills.length}개`} />
-          <div className="dmy__skills">
-            {skills.map((s) => <SkillChip key={s} tech={s} />)}
-            {skills.length === 0 && <div className="dpage__empty">등록된 기술이 없어요.</div>}
+      <section className="dmy__hero">
+        <span className="dmy__hero-avatar">{initial}</span>
+        <div className="dmy__hero-id">
+          <span className="dmy__hero-nm">{name}</span>
+          <span className="dmy__hero-em">{email}</span>
+          <div className="dmy__hero-stats">
+            <span><b>{skills.length}</b> 보유 기술</span>
+            <span><b>{coverage}%</b> 커버리지</span>
+            <span><b>{bookmarkedPostings.length}</b> 북마크</span>
           </div>
-        </section>
+        </div>
+        <button className="dmy__hero-edit" onClick={() => navigate(isAuthed ? '/settings/account' : '/login')}>
+          {isAuthed ? '내 정보 수정' : '로그인'}
+        </button>
+      </section>
+
+      <div className="dmy__body">
+        <div className="dmy__main">
+          <section className="dcard">
+            <SectionHeader title="활성 이력서" right={<button className="dpage__more" onClick={() => navigate('/resume/submit')}>편집</button>} />
+            {activeResume ? (
+              <button className="dmy__resume" onClick={() => navigate('/resume/submit')}>
+                <span className="dmy__resume-ic"><FileText size={18} /></span>
+                <span className="djobs__row-b">
+                  <span className="djobs__row-t">{activeResume.title ?? '이력서'}</span>
+                  <span className="djobs__row-c">{activeResume.position ?? '직무 미정'} · 보유 기술 {skills.length}개 · 커버리지 {coverage}%</span>
+                </span>
+              </button>
+            ) : (
+              <div className="dmy__resume-empty">
+                <span>이력서를 등록해보세요</span>
+                <button className="dmy__resume-btn" onClick={() => navigate('/resume/submit')}>이력서 등록하기</button>
+              </div>
+            )}
+          </section>
+
+          <section className="dcard">
+            <SectionHeader title="보유 기술" hint={`${skills.length}개`} />
+            <div className="dmy__skills">
+              {skills.map((s) => <SkillChip key={s} tech={s} />)}
+              {skills.length === 0 && <div className="dpage__empty">등록된 기술이 없어요.</div>}
+            </div>
+          </section>
+
+          <section className="dcard">
+            <SectionHeader title="북마크한 공고" hint={`${bookmarkedPostings.length}건`} right={
+              <button className="dpage__more" onClick={() => navigate('/jobs')}>전체 보기</button>
+            } />
+            {bookmarksVisible.length === 0 ? (
+              <div className="dpage__empty">공고 상세에서 북마크하면 여기 모여요.</div>
+            ) : (
+              <>
+                <div className="dmy__jobs">
+                  {bookmarksVisible.map((p) => (
+                    <JobCardCompact
+                      key={p.id}
+                      job={{ company: p.company, title: p.title, matchPct: p.matchPct, careerLabel: careerLabel(p.careerMin, p.careerMax) }}
+                      logo={<CompanyLogo logo={p.logo} name={p.company} size={40} radius={11} />}
+                      onOpen={() => navigate(`/job/${encodeURIComponent(p.id)}`)}
+                    />
+                  ))}
+                </div>
+                {bookmarkedPostings.length > bookmarksVisible.length && (
+                  <div className="dmy__more-txt">{bookmarkedPostings.length - bookmarksVisible.length}개 더</div>
+                )}
+              </>
+            )}
+          </section>
+        </div>
+
+        <aside className="dmy__aside">
+          <div className="dmy__stats">
+            <StatTile label="북마크" value={bookmarkedPostings.length} unit="건" />
+            <StatTile label="최근 본 공고" value={recentViewPostings.length} unit="건" />
+            <StatTile label="커버리지" value={coverage} unit="%" />
+          </div>
+
+          <section className="dcard">
+            <SectionHeader title="최근 본 공고" />
+            {recentViewPostings.length === 0 ? (
+              <div className="dpage__empty">최근 본 공고가 없어요.</div>
+            ) : (
+              <div className="dmy__recent">
+                {recentViewPostings.map((p) => (
+                  <button key={p.id} className="djobs__row" onClick={() => navigate(`/job/${encodeURIComponent(p.id)}`)}>
+                    <CompanyLogo logo={p.logo} name={p.company} size={34} radius={9} />
+                    <span className="djobs__row-b">
+                      <span className="djobs__row-t">{p.title}</span>
+                      <span className="djobs__row-c">{p.company}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="dcard">
+            <SectionHeader title="바로가기" />
+            <div className="kit-menulist">
+              <MenuRow icon={<Settings size={17} />} label="계정 설정" onClick={() => navigate('/settings')} />
+              <MenuRow icon={<FileText size={17} />} label="이력서 관리" onClick={() => navigate('/resume/submit')} />
+              <MenuRow icon={<Award size={17} />} label="자격증 갭" onClick={() => navigate('/cert-gap')} />
+            </div>
+          </section>
+        </aside>
       </div>
     </div>
   )
