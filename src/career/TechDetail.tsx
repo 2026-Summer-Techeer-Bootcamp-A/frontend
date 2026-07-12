@@ -1,4 +1,5 @@
 import { useParams } from 'react-router-dom'
+import { ChartColumn } from 'lucide-react'
 import { SubScreen, Card, AsOf, HBars, Sparkline } from './charts'
 import market from '../data/marketData.json'
 import career from '../data/careerData.json'
@@ -41,7 +42,7 @@ export default function TechDetail() {
     : []
 
   return (
-    <SubScreen title={tech}>
+    <SubScreen title={tech} desktopBack>
       {/* 요약 */}
       <Card>
         <div className="scr-card__title">
@@ -104,9 +105,10 @@ export default function TechDetail() {
       )}
 
       {!detail && !cooc && !comp && (
-        <Card>
-          <div className="scr-card__hint">이 기술의 상세 집계는 데모 데이터에 포함되지 않았어요. 점유율만 표시해요.</div>
-        </Card>
+        <div className="crd-empty">
+          <ChartColumn size={24} />
+          <p>이 기술의 상세 집계는 데모 데이터에 포함되지 않았어요. 점유율만 표시해요.</p>
+        </div>
       )}
       <div style={{ height: 20 }} />
     </SubScreen>

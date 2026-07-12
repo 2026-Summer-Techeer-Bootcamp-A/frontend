@@ -1,82 +1,85 @@
-/* 데스크톱 셸 — Phase 1 구조 전용 스타일.
-   여긴 "레이아웃 뼈대"만 담는다. 최종 비주얼(그림자/간격/컬러 뉘앙스)은 디자인 확정 후 조정. */
+/* 데스크톱 셸 — 아이콘+라벨 레일 + 톱바 필 탭 + 라운드 콘텐츠 카드.
+   셸 크롬(레일·톱바)은 옅은 배경에 두고, 콘텐츠 영역만 라운드 카드로 처리한다.
+   색·모션 값은 src/design/tokens.ts 를 정본으로 한다. */
 
 .dshell {
   display: flex;
-  min-height: 100dvh;
-  background: #f6f8fc; /* = THEME.screenBg. 토큰 변수엔 bg가 없어 상수로 둔다 */
+  height: 100dvh;
+  background: #f6f8fc; /* 셸 크롬은 옅은 회색(= THEME.screenBg), 콘텐츠 카드가 흰색 */
   color: var(--c-ink);
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
   letter-spacing: var(--c-ls);
 }
 
-/* ---------- 사이드바 ---------- */
-.dshell__side {
+/* ---------- 아이콘+라벨 레일 ---------- */
+.dshell__rail {
   flex: none;
-  width: 236px;
+  width: 84px;
   display: flex;
   flex-direction: column;
-  padding: 22px 16px;
-  background: var(--c-card);
-  border-right: 1px solid #e2e5ec;
-  position: sticky;
-  top: 0;
-  height: 100dvh;
+  align-items: center;
+  gap: 4px;
+  padding: 18px 0;
 }
 
-.dshell__brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 10px 22px;
-  font-size: 19px;
-  font-weight: 800;
-  letter-spacing: -0.5px;
-}
 .dshell__brand-dot {
-  width: 22px;
-  height: 22px;
-  border-radius: 7px;
+  width: 26px;
+  height: 26px;
+  margin-bottom: 18px;
+  border-radius: 9px;
   background: var(--c-accent);
 }
 
-.dshell__nav {
+.dshell__railnav {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 6px;
 }
 
-.dshell__navfoot {
+.dshell__railfoot {
   margin-top: auto;
   padding-top: 12px;
   border-top: 1px solid #eef1f6;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.dshell__navitem {
+/* 레일 버튼 — 아이콘 위 + 라벨 아래 세로 스택. 라벨이 항상 보이므로 툴팁은 없다 */
+.dshell__railbtn {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
-  padding: 11px 12px;
+  justify-content: center;
+  gap: 4px;
+  width: 66px;
+  height: 56px;
   border-radius: 12px;
   color: var(--c-muted);
-  font-size: 14px;
-  font-weight: 600;
   transition: background 0.15s ease, color 0.15s ease;
 }
-.dshell__navitem:hover {
-  background: #f2f5fb;
+.dshell__raillabel {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+.dshell__railbtn:hover {
+  background: #eef1f6;
   color: var(--c-ink);
 }
-.dshell__navitem.on {
+.dshell__railbtn.on {
   background: var(--c-chipbg);
   color: var(--c-chiptext);
-  font-weight: 700;
-}
-.dshell__navitem.sub {
-  color: var(--c-muted);
 }
 
-/* ---------- 메인(톱바 + 콘텐츠) ---------- */
+/* 키보드 포커스 링 */
+.dshell__railbtn:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+}
+
+/* ---------- 메인(톱바 + 콘텐츠 카드) ---------- */
 .dshell__main {
   flex: 1;
   min-width: 0;
@@ -91,50 +94,49 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 0 28px;
-  background: var(--c-card);
-  border-bottom: 1px solid #e2e5ec;
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  padding: 0 24px 0 20px;
 }
 
-.dshell__search {
+/* 톱바 좌측 — 섹션 라벨(항상 표시) + 필 탭 셀렉터 */
+.dshell__crumb {
+  flex: none;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--c-ink);
+}
+
+/* 필 탭 — SegmentedControl과 동일 문법의 캡슐 그룹 */
+.dshell__tabs {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  width: min(420px, 40vw);
-  padding: 9px 14px;
-  border-radius: 12px;
-  background: #f2f5fb;
+  padding: 3px;
+  border-radius: 999px;
+  background: #eef1f6;
+}
+.dshell__tab {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
   color: var(--c-muted);
-  font-size: 13.5px;
-  text-align: left;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.dshell__tab.on {
+  background: var(--c-card);
+  color: var(--c-ink);
+  box-shadow: 0 1px 2px rgba(20, 30, 60, 0.06);
 }
 
 .dshell__topright {
   display: flex;
   align-items: center;
   gap: 14px;
+  margin-left: auto; /* 브레드크럼이 숨어도 항상 우측 정렬 */
 }
 
-.dshell__pool {
-  display: flex;
-  padding: 3px;
-  border-radius: 10px;
-  background: #eef1f6;
-}
-.dshell__pool button {
-  padding: 6px 14px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--c-muted);
-}
-.dshell__pool button.on {
-  background: var(--c-card);
-  color: var(--c-ink);
-  box-shadow: 0 1px 2px rgba(20, 30, 60, 0.06);
+/* 계정 메뉴 앵커 — MacMenu는 이 래퍼 기준 top-right 정렬 */
+.dshell__accountwrap {
+  position: relative;
 }
 
 .dshell__avatar {
@@ -147,11 +149,53 @@
   color: #fff;
   font-size: 13px;
   font-weight: 700;
+  transition: transform 0.12s ease, opacity 0.12s ease;
+}
+.dshell__avatar:hover {
+  opacity: 0.9;
+}
+.dshell__avatar:active {
+  transform: scale(0.97);
+  opacity: 0.85;
 }
 
+/* 콘텐츠만 라운드 카드로 띄운다 — 셸 크롬과의 위계를 모서리·배경 대비로 만든다 */
 .dshell__content {
   flex: 1;
   min-width: 0;
+  min-height: 0;
+  margin: 0 16px 16px; /* 패널이 없어진 2열 레이아웃 — 좌우 대칭 */
   padding: 28px;
+  border-radius: 24px;
+  border: 1px solid #eef1f6;
+  background: var(--c-card); /* 콘텐츠는 흰색 카드 */
   overflow-y: auto;
+  /* 스크롤바 — .screen-scroll(index.css)과 동일한 시스템 스타일. 라운드 카드 안쪽에 머문다 */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(47, 97, 184, 0.26) transparent;
+}
+.dshell__content::-webkit-scrollbar {
+  width: 5px;
+}
+.dshell__content::-webkit-scrollbar-thumb {
+  background: rgba(47, 97, 184, 0.26);
+  border-radius: 5px;
+}
+.dshell__content::-webkit-scrollbar-thumb:hover {
+  background: rgba(47, 97, 184, 0.45);
+}
+.dshell__content::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 12px 0; /* 라운딩 모서리와 트랙이 겹치지 않게 위아래를 비운다 */
+}
+
+/* ---------- 모바일 유래 화면의 데스크톱 보정 ----------
+   셸 안에 그대로 얹힌 모바일 화면(.dsub 하위)이 넓은 화면을 조금 더 쓰게 한다.
+   .dshell 스코프라 모바일 렌더에는 영향이 없다. */
+.dshell .dsub__content {
+  max-width: 840px;
+}
+.dshell .scr-levellist {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }

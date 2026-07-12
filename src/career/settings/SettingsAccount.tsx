@@ -52,7 +52,7 @@ export default function SettingsAccount() {
 
       <SectionHeader title="보안" />
       <div className="kit-menulist">
-        <MenuRow icon={<KeyRound size={18} />} label="비밀번호 변경" onClick={() => show('준비 중이에요')} />
+        <MenuRow icon={<KeyRound size={18} />} tint="#5a86cf" label="비밀번호 변경" onClick={() => show('준비 중이에요')} />
         <MenuRow icon={<UserX size={18} />} label="회원 탈퇴" danger onClick={() => show('준비 중이에요')} />
       </div>
       <div style={{ height: 18 }} />

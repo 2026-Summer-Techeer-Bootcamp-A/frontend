@@ -89,17 +89,14 @@ export default function DesktopOverview() {
               <button className="dov__more" onClick={() => navigate('/jobs')}>전체 보기 <ArrowUpRight size={15} /></button>
             } />
             <div className="dov__jobs">
-              {topJobs.map((p) => {
-                const idx = data.postings.findIndex((x) => x.id === p.id)
-                return (
-                  <JobCardCompact
-                    key={p.id}
-                    job={{ company: p.company, title: p.title, matchPct: p.matchPct, careerLabel: careerLabel(p.careerMin, p.careerMax) }}
-                    logo={<CompanyLogo logo={p.logo} name={p.company} size={40} radius={11} />}
-                    onOpen={() => navigate(`/job/${idx}`)}
-                  />
-                )
-              })}
+              {topJobs.map((p) => (
+                <JobCardCompact
+                  key={p.id}
+                  job={{ company: p.company, title: p.title, matchPct: p.matchPct, careerLabel: careerLabel(p.careerMin, p.careerMax) }}
+                  logo={<CompanyLogo logo={p.logo} name={p.company} size={40} radius={11} />}
+                  onOpen={() => navigate(`/job/${encodeURIComponent(p.id)}`)}
+                />
+              ))}
             </div>
           </section>
         </div>
@@ -121,9 +118,8 @@ export default function DesktopOverview() {
             <div className="dov__dl">
               {deadlines.length === 0 && <div className="dov__empty">임박한 마감이 없어요.</div>}
               {deadlines.map(({ p, dd }) => {
-                const idx = data.postings.findIndex((x) => x.id === p.id)
                 return (
-                  <button key={p.id} className="dov__dl-row" onClick={() => navigate(`/job/${idx}`)}>
+                  <button key={p.id} className="dov__dl-row" onClick={() => navigate(`/job/${encodeURIComponent(p.id)}`)}>
                     <CompanyLogo logo={p.logo} name={p.company} size={30} radius={9} />
                     <span className="dov__dl-body">
                       <span className="dov__dl-co">{p.company}</span>

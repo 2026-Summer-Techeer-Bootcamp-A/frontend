@@ -2,9 +2,11 @@ import type { ReactNode } from 'react'
 import { Compass } from 'lucide-react'
 import { PageTransition } from '../kit'
 import { THEME, themeVars } from '../themes'
+import { useIsDesktop } from '../../shared/useMediaQuery'
 import '../career.css'
 import '../screens.css'
 import '../smallscreens.css'
+import './authDesktop.css'
 
 // 브랜드명은 데모 플레이스홀더. 실제 서비스명이 정해지면 여기만 교체.
 export const BRAND_NAME = '커리어'
@@ -24,9 +26,25 @@ const FEATURES = [
   '지역별 채용 지도 · 시장 트렌드',
 ]
 
-/** 인증 화면 셸 — 폰 프레임 없음. 데스크톱은 좌 브랜드 패널 + 우 폼 풀스크린, 모바일은 폼 풀블리드. */
+/** 인증 화면 셸 — 폰 프레임 없음. 데스크톱은 macOS 로그인 윈도우 문법(월페이퍼 + 중앙 글래스 카드),
+    모바일은 폼 풀블리드. 폼 로직은 children(Login/Signup)이 그대로 갖고 셸은 프레젠테이션만 바꾼다. */
 export default function AuthShell({ children }: { children: ReactNode }) {
   const t = THEME
+  const isDesktop = useIsDesktop()
+
+  if (isDesktop) {
+    return (
+      <div className="dauth" style={themeVars(t)}>
+        <div className="dauth__card">
+          <div className="dauth__mark" aria-hidden>
+            <Compass size={24} strokeWidth={2.2} />
+          </div>
+          <PageTransition type="fade">{children}</PageTransition>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="ss-authpage" style={themeVars(t)}>
       <aside className="ss-authpage__aside">
