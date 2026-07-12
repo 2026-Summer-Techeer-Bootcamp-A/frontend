@@ -1,0 +1,120 @@
+/* 인증 화면 데스크톱 전용(macOS 로그인 윈도우 문법) — 월페이퍼 배경 + 중앙 글래스 카드.
+   재질·형태만 macOS에서 가져오고 색은 우리 팔레트(tokens.ts)로 틴트한다.
+   전부 .dauth 스코프 — 모바일 렌더(AuthShell 모바일 분기)에는 영향이 없다. */
+
+.dauth {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  font-family: 'Pretendard', 'Poppins', sans-serif;
+  color: var(--c-ink);
+  background: radial-gradient(120% 120% at 70% 20%, #eef3fb 0%, #e5e8ee 55%, #dcdfe6 100%);
+  /* .career와 동일 확장 토큰 보강(폼 컴포넌트 ss-*가 사용) */
+  --line: #e6e9ef;
+  --accent-50: #eef3fb;
+  --accent-100: #dde8f9;
+  --accent-200: #bcd0f0;
+  --accent-300: #8fb0e2;
+  --accent-700: #21447c;
+  --e1: 0 1px 2px rgba(20, 30, 60, 0.05), 0 1px 1px rgba(20, 30, 60, 0.04);
+  --e2: 0 2px 8px rgba(20, 30, 60, 0.06), 0 1px 2px rgba(20, 30, 60, 0.05);
+  --e3: 0 8px 24px rgba(20, 30, 60, 0.08), 0 2px 6px rgba(20, 30, 60, 0.05);
+}
+
+/* 중앙 카드 — 글래스 재질 + elevation 4, 진입 모션은 decelerate 300ms */
+.dauth__card {
+  width: 100%;
+  max-width: 400px;
+  padding: 32px;
+  border-radius: 20px;
+  border: 1px solid rgba(28, 29, 33, 0.08);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(24px) saturate(1.5);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  box-shadow: 0 20px 48px rgba(20, 30, 60, 0.14), 0 6px 16px rgba(20, 30, 60, 0.08);
+  animation: dauth-in 0.3s cubic-bezier(0, 0, 0.2, 1);
+}
+@keyframes dauth-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.dauth__card .kit-trans {
+  display: flex;
+  flex-direction: column;
+}
+
+/* 카드 상단 중앙 앱 아이콘 — 셸 브랜드 도트와 동일 문법의 스쿼클 */
+.dauth__mark {
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 6px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--c-accent);
+  color: #fff;
+  box-shadow: var(--e2);
+}
+
+/* children 내부 브랜드 로크업은 카드 상단 아이콘과 중복 — 숨긴다 */
+.dauth .ss-brand {
+  display: none;
+}
+
+/* 타이틀 · 설명 — 중앙 정렬 */
+.dauth .ss-authtitle {
+  margin-top: 10px;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  text-align: center;
+}
+.dauth .ss-authsub {
+  font-size: 13px;
+  text-align: center;
+}
+
+/* 입력 필드 */
+.dauth .ss-form {
+  margin-top: 20px;
+}
+.dauth .ss-field__input {
+  border: 1px solid #e2e5ec;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 14px;
+  padding: 11px 13px;
+}
+.dauth .ss-field__wrap .ss-field__input {
+  padding-right: 44px;
+}
+.dauth .ss-field__input:focus {
+  border-color: var(--c-accent);
+  box-shadow: 0 0 0 3px #dde8f9;
+}
+
+/* 주 버튼 — 전체 폭, press 피드백은 scale 0.98 */
+.dauth .ss-btn {
+  border-radius: 11px;
+}
+.dauth .ss-btn:active {
+  transform: scale(0.98);
+}
+
+/* 하단 전환 링크 */
+.dauth .ss-authswitch {
+  text-align: center;
+  font-size: 13px;
+}
+.dauth .ss-authswitch a {
+  color: var(--c-accent);
+}
