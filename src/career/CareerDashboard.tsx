@@ -9,6 +9,7 @@ import { RoadmapTeaserWidget, BigCoGapWidget, TechTemperatureWidget, type Deadli
 import { THEME, themeVars } from './themes'
 import data from '../data/careerData.json'
 import { useResumesState, getDynamicPostings, calculateCoverage, ddayInfo, useHeroMode, useSavedJobs, jobKey, HERO_MODES, type HeroMode } from './state'
+import { useAuth } from './authStore'
 import './career.css'
 
 const HERO_MODE_LABEL: Record<HeroMode, string> = {
@@ -235,6 +236,7 @@ export default function CareerDashboard() {
   const emptyParam = searchParams.get('empty') === 'true'
 
   const { resumes, activeResume } = useResumesState()
+  const { user } = useAuth()
   const hasResume = !emptyParam && resumes.length > 0
 
   const activeSkills = useMemo(() => hasResume ? activeResume.skills : [], [hasResume, activeResume])
@@ -342,8 +344,8 @@ export default function CareerDashboard() {
 
 
   return (
-    <div className="stage" style={{ background: t.stageBg }}>
-      <PhoneFrame stage="purple" bare screenBg={t.screenBg} statusTheme={t.statusTheme} homeIndicator="none">
+    <div className="stage stage--app">
+      <PhoneFrame app stage="purple" bare screenBg={t.screenBg} statusTheme={t.statusTheme} homeIndicator="none">
         <div className="career" style={themeVars(t)}>
           <PageTransition type="fade">
             {/* Greeting — 설정 버튼은 히어로 카드 위가 아니라 이 짧은 인사말 줄 옆 여백에 띄운다.
@@ -354,7 +356,7 @@ export default function CareerDashboard() {
                   <Settings size={15} />
                 </button>
               )}
-              <div className="cr-greet-line">좋은 아침이에요 👋 <b>리버</b>님</div>
+              <div className="cr-greet-line">좋은 아침이에요 👋 <b>{user?.nickname ?? '리버'}</b>님</div>
             </div>
 
             {/* 상단 위젯존(~40%): 히어로(또는 이력서 유도) + 위젯 캐러셀 6종 — 이력서 없어도 잠그지 않고

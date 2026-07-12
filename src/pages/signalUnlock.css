@@ -1,0 +1,146 @@
+/* ========== 와우 · 스킬 하나의 나비효과 (/signal/unlock) ==========
+   이력서×공고 언락 시뮬레이터. 다크 히어로 도달 미터. signature-language.md 준수. */
+
+.ul-stage {
+  --bg: #f6f8fc;
+  --card: #ffffff;
+  --inset: #eef1f6;
+  --hair: #e2e5ec;
+  --ink: #1c1d21;
+  --ink2: #43454c;
+  --muted: #7c7f88;
+  --faint: #a2a6b0;
+  --panel: #12141a;
+  --pborder: #262a34;
+  --on: #f4f6fb;
+  --on-muted: #8b90a0;
+  --blue: #2f61b8;
+  --blue-on: #5a86cf;
+  --blue-tint: #eef3fb;
+  --green: #218a58;
+  --green-on: #3fb27f;
+  --green-tint: #e6f5ed;
+
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--ink);
+  min-height: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 48px 40px 72px;
+  background: radial-gradient(120% 80% at 82% -6%, #eef2fb 0%, rgba(238, 242, 251, 0) 46%), var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+.ul-canvas { width: 1120px; max-width: 100%; }
+
+/* 헤더 */
+.ul-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 40px; margin-bottom: 18px; }
+.ul-eyebrow {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--green); background: var(--green-tint); padding: 5px 10px; border-radius: 999px;
+}
+.ul-title { margin: 12px 0 6px; font-size: 36px; font-weight: 800; letter-spacing: -1.4px; line-height: 1.08; }
+.ul-dek { margin: 0; font-size: 14.5px; color: var(--muted); max-width: 560px; line-height: 1.55; }
+.ul-dek b { color: var(--ink2); font-weight: 700; }
+.ul-badge {
+  flex: none; display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11.5px; font-weight: 700; color: var(--muted);
+  background: var(--card); border: 1px solid var(--hair); padding: 7px 12px; border-radius: 999px;
+}
+.ul-badge svg { color: var(--blue); }
+
+/* 목표 프로필 */
+.ul-target {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  background: var(--card); border: 1px solid var(--hair); border-radius: 14px;
+  padding: 10px 14px; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(20, 30, 60, 0.04);
+}
+.ul-target__k { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 800; color: var(--ink); }
+.ul-target__k svg { color: var(--green); }
+.ul-roles { display: flex; flex-wrap: wrap; gap: 5px; }
+.ul-role {
+  font: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12.5px; font-weight: 700; color: var(--ink2);
+  background: var(--inset); border: 1px solid transparent; border-radius: 999px; padding: 6px 13px;
+  transition: background 140ms, color 140ms, border-color 140ms;
+}
+.ul-role i { font-size: 10.5px; font-style: normal; font-weight: 700; color: var(--faint); }
+.ul-role:hover { background: #e7ecf5; }
+.ul-role.is-on { background: var(--green); color: #fff; border-color: var(--green); }
+.ul-role.is-on i { color: rgba(255, 255, 255, 0.75); }
+.ul-target__ind { margin-left: auto; font-size: 12px; color: var(--muted); }
+.ul-target__ind b { color: var(--ink2); font-weight: 700; }
+.ul-target__ind em { font-style: normal; font-size: 10.5px; color: var(--faint); background: var(--inset); padding: 2px 7px; border-radius: 999px; margin-left: 4px; }
+
+.ul-empty {
+  background: var(--card); border: 1px dashed var(--hair); border-radius: 12px;
+  padding: 20px; text-align: center; font-size: 13px; color: var(--muted);
+}
+
+/* 내 기술 */
+.ul-mine { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 18px; }
+.ul-mine__k { font-size: 11.5px; font-weight: 700; color: var(--faint); margin-right: 4px; }
+.ul-mine__chip { font-size: 11.5px; font-weight: 700; color: var(--blue); background: var(--blue-tint); border: 1px solid #cfe0f6; border-radius: 7px; padding: 3px 9px; }
+
+/* 다크 히어로 미터 */
+.ul-hero { background: var(--panel); border: 1px solid var(--pborder); border-radius: 20px; padding: 20px 22px 16px; margin-bottom: 20px; }
+.ul-hero__bar { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 14px; }
+.ul-hero__big {
+  font-size: 46px; font-weight: 800; letter-spacing: -2px; color: var(--green-on); line-height: 0.95;
+  font-variant-numeric: tabular-nums; transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.ul-hero__big.is-boost { transform: scale(1.06); }
+.ul-hero__big i { font-size: 18px; font-style: normal; font-weight: 700; color: var(--on-muted); margin-left: 2px; }
+.ul-hero__lbl { font-size: 13px; color: #c4c8d2; margin-top: 4px; }
+.ul-hero__lbl b { color: var(--on); font-weight: 700; }
+.ul-num { font-variant-numeric: tabular-nums; }
+.ul-hero__gain { display: inline-block; margin-left: 8px; font-size: 12px; font-weight: 800; color: var(--green-on); background: rgba(63, 178, 127, 0.14); padding: 2px 9px; border-radius: 999px; }
+.ul-hero__legend { display: flex; gap: 14px; flex-wrap: wrap; padding-top: 4px; }
+.ul-hero__legend span { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; color: var(--on-muted); }
+.ul-hero__legend i { width: 11px; height: 11px; border-radius: 3px; }
+.ul-hero__hint {
+  display: flex; align-items: center; gap: 7px; margin-top: 12px; padding-top: 12px;
+  border-top: 1px solid var(--pborder); font-size: 13px; color: #c4c8d2;
+}
+.ul-hero__hint svg { color: var(--green-on); flex: none; }
+.ul-hero__hint b { color: var(--on); font-weight: 700; }
+.ul-hero__hint .ul-g { color: var(--green-on); }
+
+/* 후보 그리드 */
+.ul-cands { margin-bottom: 18px; }
+.ul-cands__h { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.ul-cands__h > span:first-child { font-size: 16px; font-weight: 800; letter-spacing: -0.3px; }
+.ul-cands__sub { font-size: 12px; color: var(--muted); }
+.ul-reset {
+  margin-left: auto; display: inline-flex; align-items: center; gap: 5px;
+  font: inherit; font-size: 12px; font-weight: 700; color: var(--ink2);
+  background: var(--card); border: 1px solid var(--hair); border-radius: 999px; padding: 5px 12px; cursor: pointer;
+}
+.ul-reset:hover { background: var(--inset); }
+
+.ul-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ul-cand {
+  display: grid; grid-template-columns: auto 116px 1fr auto; align-items: center; gap: 12px;
+  text-align: left; font: inherit; cursor: pointer;
+  background: var(--card); border: 1px solid var(--hair); border-radius: 12px; padding: 12px 15px;
+  box-shadow: 0 1px 3px rgba(20, 30, 60, 0.04); transition: border-color 160ms, box-shadow 160ms, transform 160ms;
+}
+.ul-cand:hover { border-color: #cfe0f6; box-shadow: 0 4px 14px rgba(20, 30, 60, 0.08); }
+.ul-cand.is-on { border-color: var(--green); box-shadow: 0 6px 18px rgba(33, 138, 88, 0.18); background: var(--green-tint); transform: translateY(-1px); }
+.ul-cand__rank { width: 20px; height: 20px; border-radius: 6px; display: grid; place-items: center; background: var(--inset); color: var(--muted); font-size: 11px; font-weight: 800; }
+.ul-cand.is-on .ul-cand__rank { background: var(--green); color: #fff; }
+.ul-cand__tech { font-size: 14.5px; font-weight: 800; color: var(--ink); letter-spacing: -0.2px; }
+.ul-cand__bar { height: 8px; border-radius: 999px; background: var(--inset); overflow: hidden; }
+.ul-cand__fill { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--green), var(--green-on)); }
+.ul-cand__n { font-size: 15px; font-weight: 800; color: var(--green); font-variant-numeric: tabular-nums; text-align: right; }
+.ul-cand__n i { font-size: 10.5px; font-style: normal; font-weight: 600; color: var(--muted); margin-left: 2px; }
+.ul-cand__req { display: none; }
+
+/* 푸터 */
+.ul-foot { display: flex; align-items: flex-start; gap: 8px; font-size: 11.5px; color: var(--faint); line-height: 1.55; }
+.ul-foot b { color: var(--muted); font-weight: 700; }
+.ul-foot__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); flex: none; margin-top: 5px; }
+
+@media (max-width: 900px) {
+  .ul-grid { grid-template-columns: 1fr; }
+}

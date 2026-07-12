@@ -1,9 +1,11 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Award, Bookmark, Bell, Shield, Settings, LogOut, Plus, X, Briefcase, User, FileText, ChevronRight } from 'lucide-react'
+import { Award, Bookmark, Bell, Shield, Settings, LogOut, LogIn, Plus, X, Briefcase, User, FileText, ChevronRight } from 'lucide-react'
 import { CareerScreen, ScreenHead } from './charts'
 import { MenuRow, SectionHeader, SkillChip, TechSearchSheet } from './kit'
 import { useResumesState, calculateCoverage, type Resume } from './state'
+import { useAuth } from './authStore'
+import LogoutSheet from './auth/LogoutSheet'
 import techs from '../data/techs.json'
 
 const TECHS = techs as { tech: string; count: number }[]
@@ -16,8 +18,14 @@ function careerText(min: number | null, max: number | null) {
 export default function ResumeScreen() {
   const navigate = useNavigate()
   const { resumes, activeId, activeResume, updateResumes, selectResume, addResume } = useResumesState()
+  const { user, isAuthed, logout } = useAuth()
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [logoutOpen, setLogoutOpen] = useState(false)
   const uid = useRef(Date.now())
+
+  const displayName = user?.nickname ?? '리버'
+  const displayEmail = user?.email ?? 'bootcamp@example.com'
+  const avatarInitial = user ? (user.nickname || user.email).slice(0, 2).toUpperCase() : 'RV'
 
   const toggleSkill = (t: string) => {
     const updated = resumes.map((x) => {
@@ -77,12 +85,14 @@ export default function ResumeScreen() {
       {/* 계정 카드 — 담백하게: 아바타 이니셜 + 이름/이메일 + 정보수정, 아래 목표직무·경력 2단 */}
       <div className="cr-profile">
         <div className="cr-profile__top">
-          <span className="cr-profile__avatar">RV</span>
+          <span className="cr-profile__avatar">{avatarInitial}</span>
           <div className="cr-profile__id">
-            <span className="nm">리버</span>
-            <span className="em">bootcamp@example.com</span>
+            <span className="nm">{displayName}</span>
+            <span className="em">{displayEmail}</span>
           </div>
-          <button className="cr-profile__edit" onClick={() => navigate('/resume/submit')}>내 정보 수정</button>
+          <button className="cr-profile__edit" onClick={() => navigate(isAuthed ? '/settings/account' : '/login')}>
+            {isAuthed ? '내 정보 수정' : '로그인'}
+          </button>
         </div>
         <div className="cr-profile__stats">
           <div className="cr-profile__stat">
@@ -127,14 +137,17 @@ export default function ResumeScreen() {
       {/* 설정 */}
       <SectionHeader title="설정" />
       <div className="kit-menulist">
-        <MenuRow icon={<Bell size={18} />} label="알림 설정" />
-        <MenuRow icon={<Shield size={18} />} label="개인정보 · 데이터" value="원문 미저장" />
-        <MenuRow icon={<Settings size={18} />} label="설정" />
-        <MenuRow icon={<LogOut size={18} />} label="로그아웃" danger />
+        <MenuRow icon={<Bell size={18} />} label="알림 설정" onClick={() => navigate('/settings/notifications')} />
+        <MenuRow icon={<Shield size={18} />} label="개인정보 · 데이터" value="원문 미저장" onClick={() => navigate('/settings/privacy')} />
+        <MenuRow icon={<Settings size={18} />} label="설정" onClick={() => navigate('/settings')} />
+        {isAuthed
+          ? <MenuRow icon={<LogOut size={18} />} label="로그아웃" danger onClick={() => setLogoutOpen(true)} />
+          : <MenuRow icon={<LogIn size={18} />} label="로그인" onClick={() => navigate('/login')} />}
       </div>
       <div style={{ height: 18 }} />
 
       <TechSearchSheet open={pickerOpen} onClose={() => setPickerOpen(false)} all={TECHS} owned={activeResume.skills} onToggle={toggleSkill} />
+      <LogoutSheet open={logoutOpen} onClose={() => setLogoutOpen(false)} onConfirm={() => { logout(); setLogoutOpen(false); navigate('/login') }} />
     </CareerScreen>
   )
 }

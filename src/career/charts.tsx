@@ -15,8 +15,8 @@ export function CareerScreen({ active, children }: { active: CareerTab; children
   const t = THEME
   const loc = useLocation()
   return (
-    <div className="stage" style={{ background: t.stageBg }}>
-      <PhoneFrame stage="purple" bare screenBg={t.screenBg} statusTheme={t.statusTheme} homeIndicator="none">
+    <div className="stage stage--app">
+      <PhoneFrame app stage="purple" bare screenBg={t.screenBg} statusTheme={t.statusTheme} homeIndicator="none">
         <div className="career" style={themeVars(t)}>
           <PageTransition type="tab" keyId={loc.pathname}>{children}</PageTransition>
           <CareerTabBar active={active} />
@@ -31,8 +31,8 @@ export function SubScreen({ title, children }: { title: string; children: ReactN
   const t = THEME
   const navigate = useNavigate()
   return (
-    <div className="stage" style={{ background: t.stageBg }}>
-      <PhoneFrame stage="purple" bare screenBg={t.screenBg} statusTheme={t.statusTheme} homeIndicator="dark">
+    <div className="stage stage--app">
+      <PhoneFrame app stage="purple" bare screenBg={t.screenBg} statusTheme={t.statusTheme} homeIndicator="dark">
         <div className="crd" style={themeVars(t)}>
           <div className="crd__head">
             <span className="crd__back" onClick={() => navigate(-1)}>
