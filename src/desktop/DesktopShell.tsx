@@ -3,9 +3,8 @@ import type { ReactNode } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard,
-  Briefcase,
+  Search,
   ChartNoAxesColumn,
-  MapPin,
   CircleUser,
   BookOpen,
   Settings,
@@ -46,11 +45,11 @@ const SECTIONS: Section[] = [
   },
   {
     key: 'jobs',
-    label: '맞춤 공고',
-    icon: Briefcase,
+    label: '검색',
+    icon: Search,
     home: '/jobs',
     match: ['/jobs', '/job/'],
-    items: [{ to: '/jobs', label: '공고 목록' }],
+    items: [{ to: '/jobs', label: '검색 결과' }],
   },
   {
     key: 'market',
@@ -62,14 +61,6 @@ const SECTIONS: Section[] = [
       { to: '/market', label: '시장 개요' },
       { to: '/cert-gap', label: '자격증 갭' },
     ],
-  },
-  {
-    key: 'map',
-    label: '지도',
-    icon: MapPin,
-    home: '/map',
-    match: ['/map'],
-    items: [{ to: '/map', label: '지도 보기' }],
   },
   {
     key: 'my',
