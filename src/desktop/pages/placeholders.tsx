@@ -91,7 +91,7 @@ const CAREER_PRESETS: { key: string; label: string; min: number | null; max: num
 /* ───────────────── 맞춤 공고 — 마스터-디테일 ───────────────── */
 export function DesktopJobs() {
   const navigate = useNavigate()
-  const { resumes, activeId, activeResume, selectResume } = useResumesState()
+  const { resumes, activeId, activeResume } = useResumesState()
   const skills = activeResume?.skills ?? []
 
   const [pool, setPool] = useState<'국내' | '국외'>('국내')
@@ -178,17 +178,9 @@ export function DesktopJobs() {
             </div>
           ) : (
             <div className="djobs__fld">
-              <span className="djobs__fld-l">이력서로 자동 채우기</span>
-              <div className="djobs__chiprow">
-                {resumes.map((r, i) => (
-                  <button
-                    key={r.id}
-                    className={activeId === r.id ? 'on' : ''}
-                    onClick={() => selectResume(r.id)}
-                  >
-                    이력서 {i + 1}
-                  </button>
-                ))}
+              <span className="djobs__fld-l">이력서 자동 적용</span>
+              <div className="djobs__resume-active">
+                <FileText size={14} /> {activeResume.title} 기준으로 필터가 채워졌어요
               </div>
             </div>
           )}
