@@ -32,6 +32,9 @@ export const DASHBOARD_WIDGETS: WidgetCatalogItem[] = [
   { id: 'bookmarks', label: '북마크한 공고', shape: 'list', allowedSizes: ['1x1', '2x1', '2x2'], defaultSize: '2x1' },
   { id: 'recent-views', label: '최근 본 공고', shape: 'list', allowedSizes: ['1x1', '2x1'], defaultSize: '1x1' },
   { id: 'skill-momentum', label: '내 스킬 시장 모멘텀', shape: 'bars', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
+  { id: 'latest-timeline', label: '최신 공고 타임라인', shape: 'line', allowedSizes: ['2x1', '2x2'], defaultSize: '2x2' },
+  { id: 'learning-path', label: '학습 로드맵', shape: 'bars', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
+  { id: 'skill-unlock', label: '한계 해금', shape: 'bars', allowedSizes: ['1x1', '2x1', '2x2'], defaultSize: '2x1' },
 ]
 
 export const MARKET_WIDGETS: WidgetCatalogItem[] = [
@@ -47,4 +50,8 @@ export const MARKET_WIDGETS: WidgetCatalogItem[] = [
   { id: 'hot-companies', label: '이번 달 활발 기업', shape: 'bars', allowedSizes: ['1x1', '2x1'], defaultSize: '2x1' },
   { id: 'region-density', label: '지역별 공고 밀도', shape: 'bars', allowedSizes: ['1x1', '2x1'], defaultSize: '2x1' },
   { id: 'tier-donut', label: '기업 규모 분포', shape: 'ring', allowedSizes: ['1x1'], defaultSize: '1x1' },
+  { id: 'hype-vs-hire', label: 'Hype vs Hire', shape: 'scatter', allowedSizes: ['2x1', '2x2'], defaultSize: '2x2' },
+  { id: 'competency', label: '회사가 원하는 역량', shape: 'bars', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
+  { id: 'response-rate', label: '응답 잘 오는 회사', shape: 'stat', allowedSizes: ['1x1', '2x1'], defaultSize: '2x1' },
+  { id: 'concept-signal', label: '개념 → 기술 시그니처', shape: 'radar', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
 ]
