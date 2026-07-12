@@ -1,6 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import DemoRemote from './career/DemoRemote'
-import DemoMode from './career/DemoMode'
 import Gallery from './pages/Gallery'
 import P1Home from './pages/P1Home'
 import P1List from './pages/P1List'
@@ -9,6 +8,20 @@ import P2Home from './pages/P2Home'
 import P3Home from './pages/P3Home'
 import P3Detail from './pages/P3Detail'
 import Orbit from './pages/Orbit'
+import RefBotrix from './pages/RefBotrix'
+import RefEducation from './pages/RefEducation'
+import RefMysales from './pages/RefMysales'
+import RefHom from './pages/RefHom'
+import Signal from './pages/Signal'
+import SignalNetwork from './pages/SignalNetwork'
+import SignalTrend from './pages/SignalTrend'
+import SignalConceptTrend from './pages/SignalConceptTrend'
+import SignalConceptBridge from './pages/SignalConceptBridge'
+import SignalConcept from './pages/SignalConcept'
+import SignalCompetency from './pages/SignalCompetency'
+import SignalFeed from './pages/SignalFeed'
+import SignalUnlock from './pages/SignalUnlock'
+import SignalSkillTree from './pages/SignalSkillTree'
 import CareerDashboard from './career/CareerDashboard'
 import JobDetail from './career/JobDetail'
 import MarketScreen from './career/MarketScreen'
@@ -18,6 +31,16 @@ import ResumeScreen from './career/ResumeScreen'
 import ResumeSubmit from './career/ResumeSubmit'
 import TechDetail from './career/TechDetail'
 import CertGap from './career/CertGap'
+// 자잘한 화면 세트 — 인증(A) · 설정(B) · 시스템 상태(C)
+import SplashScreen from './career/auth/SplashScreen'
+import LoginScreen from './career/auth/LoginScreen'
+import SignupScreen from './career/auth/SignupScreen'
+import SettingsHome from './career/settings/SettingsHome'
+import SettingsAccount from './career/settings/SettingsAccount'
+import SettingsNotifications from './career/settings/SettingsNotifications'
+import SettingsLegal from './career/settings/SettingsLegal'
+import SettingsAbout from './career/settings/SettingsAbout'
+import NotFoundScreen, { StatesGallery, OfflineScreen } from './career/states'
 import DesignSystemLayout from './design/DesignSystemLayout'
 import DoDont from './design/DoDont'
 import LikeApple from './design/LikeApple'
@@ -62,19 +85,21 @@ import WidgetX from './pages/widgets/WidgetX'
 import RagDocs from './rag/RagDocs'
 import ResponsiveProductLayout from './shared/ResponsiveProductLayout'
 import Adaptive from './shared/Adaptive'
-import { DesktopOverview, DesktopJobs, DesktopMarket, DesktopMap, DesktopMy } from './desktop/pages/placeholders'
+import DesktopOverview from './desktop/pages/DesktopOverview'
+import { DesktopJobs, DesktopMarket, DesktopMap, DesktopMy } from './desktop/pages/placeholders'
 
 export default function App() {
   return (
     <>
     <DemoRemote />
-    <DemoMode />
     <Routes>
       {/* ─────────────────────────────────────────────────────────────
           제품(Product) — 반응형 셸 스왑.
           데스크톱(>=1024px): DesktopShell(사이드바+톱바)이 감싸고 본문은 데스크톱 페이지.
           모바일: 기존 폰 화면(자체 프레임)을 그대로 렌더. Adaptive가 폭으로 본문을 스왑한다.
           ───────────────────────────────────────────────────────────── */}
+      {/* 제품 라우트 — 데스크톱(>=1024): 사이드바 셸 + 데스크톱 페이지.
+          모바일: 프레임리스 모바일 화면. Adaptive가 폭으로 본문을 스왑한다. */}
       <Route element={<ResponsiveProductLayout />}>
         <Route path="/" element={<Adaptive mobile={CareerDashboard} desktop={DesktopOverview} />} />
         <Route path="/jobs" element={<Adaptive mobile={JobsScreen} desktop={DesktopJobs} />} />
@@ -88,6 +113,19 @@ export default function App() {
       <Route path="/resume/submit" element={<ResumeSubmit />} />
       <Route path="/tech/:name" element={<TechDetail />} />
       <Route path="/cert-gap" element={<CertGap />} />
+
+      {/* ─── 자잘한 화면 세트: 인증 · 설정 · 시스템 상태 (선택적 게이팅) ─── */}
+      <Route path="/splash" element={<SplashScreen />} />
+      <Route path="/login" element={<LoginScreen />} />
+      <Route path="/signup" element={<SignupScreen />} />
+      <Route path="/settings" element={<SettingsHome />} />
+      <Route path="/settings/account" element={<SettingsAccount />} />
+      <Route path="/settings/notifications" element={<SettingsNotifications />} />
+      <Route path="/settings/terms" element={<SettingsLegal kind="terms" />} />
+      <Route path="/settings/privacy" element={<SettingsLegal kind="privacy" />} />
+      <Route path="/settings/about" element={<SettingsAbout />} />
+      <Route path="/states" element={<StatesGallery />} />
+      <Route path="/offline" element={<OfflineScreen />} />
 
       {/* ─────────────────────────────────────────────────────────────
           실험실(Lab) — 데모 · 디자인시스템 · 위젯 · RAG 문서. 제품 IA가 아님.
@@ -146,6 +184,23 @@ export default function App() {
       <Route path="/p3-home" element={<P3Home />} />
       <Route path="/p3-detail" element={<P3Detail />} />
       <Route path="/orbit" element={<Orbit />} />
+      <Route path="/ref-botrix" element={<RefBotrix />} />
+      <Route path="/ref-education" element={<RefEducation />} />
+      <Route path="/ref-mysales" element={<RefMysales />} />
+      <Route path="/ref-hom" element={<RefHom />} />
+      <Route path="/signal" element={<Signal />} />
+      <Route path="/signal/network" element={<SignalNetwork />} />
+      <Route path="/signal/trend" element={<SignalTrend />} />
+      <Route path="/signal/concept" element={<SignalConcept />} />
+      <Route path="/signal/concept-trend" element={<SignalConceptTrend />} />
+      <Route path="/signal/concept-bridge" element={<SignalConceptBridge />} />
+      <Route path="/signal/competency" element={<SignalCompetency />} />
+      <Route path="/signal/feed" element={<SignalFeed />} />
+      <Route path="/signal/unlock" element={<SignalUnlock />} />
+      <Route path="/signal/skilltree" element={<SignalSkillTree />} />
+
+      {/* 매칭되지 않는 모든 경로 → 404 */}
+      <Route path="*" element={<NotFoundScreen />} />
     </Routes>
     </>
   )

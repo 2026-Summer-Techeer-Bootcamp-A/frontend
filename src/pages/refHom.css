@@ -1,0 +1,488 @@
+/* ================= HOM · Smart Home App (레퍼런스 클론, 다크) =================
+   원본: dribbble "HOM Dark (Tablet): Smart Home App".
+   태블릿 프레임을 걷어내고 내부 UI만 평평하게 재현. */
+
+.hom-stage {
+  --bg-side: #171a24;
+  --bg-app: #1c2029;
+  --bg-panel: #1f2430;
+  --card: #262b38;
+  --card-2: #2b3140;
+  --line: #313747;
+  --ink: #f3f5fa;
+  --muted: #8b90a3;
+  --muted-2: #6b7085;
+  --accent: #5b8cf0;
+  --accent-2: #8a7cf0;
+  --grad: linear-gradient(140deg, #5b8cf0, #8a7cf0);
+
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: var(--ink);
+  min-height: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 44px 40px 60px;
+  background: radial-gradient(120% 90% at 50% -10%, #e7e6f2 0%, #dcdbeb 50%, #d3d3e4 100%);
+  -webkit-font-smoothing: antialiased;
+}
+
+.hom {
+  width: 1240px;
+  max-width: 100%;
+  display: grid;
+  grid-template-columns: 232px 200px 1fr 320px;
+  background: var(--bg-app);
+  border-radius: 26px;
+  overflow: hidden;
+  box-shadow: 0 40px 90px -40px rgba(20, 18, 45, 0.7);
+}
+
+/* ================= 사이드바 ================= */
+.hom-side {
+  background: var(--bg-side);
+  padding: 24px 20px 22px;
+  display: flex;
+  flex-direction: column;
+}
+.hom-side__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 26px;
+}
+.hom-logo {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+}
+.hom-logo svg { color: var(--accent); }
+.hom-gear {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.hom-profile { margin-bottom: 26px; }
+.hom-profile__img {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 14px;
+  border: 2px solid #2e3444;
+}
+.hom-profile__name {
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.hom-profile__date {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.hom-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+.hom-navitem {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+}
+.hom-navitem svg { color: var(--muted-2); flex: none; }
+.hom-navitem.is-active {
+  background: linear-gradient(90deg, rgba(91, 140, 240, 0.16), rgba(91, 140, 240, 0.02));
+  color: var(--ink);
+}
+.hom-navitem.is-active svg { color: var(--accent); }
+.hom-navitem__bar {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 22px;
+  border-radius: 3px;
+  background: var(--grad);
+}
+
+.hom-side__foot { margin-top: 18px; }
+.hom-standby {
+  display: inline-flex;
+  padding: 9px 18px;
+  border-radius: 20px;
+  border: 1px solid #333a4b;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 18px;
+}
+.hom-setup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 16px;
+  background: linear-gradient(140deg, #2a3040, #232838);
+  border: 1px solid #333a4b;
+}
+.hom-setup__ico {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--grad);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  flex: none;
+  box-shadow: 0 8px 18px -8px rgba(91, 140, 240, 0.8);
+}
+.hom-setup__t { font-size: 13.5px; font-weight: 700; }
+.hom-setup__s { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+
+/* ================= 디바이스 목록 ================= */
+.hom-devices {
+  background: var(--bg-side);
+  border-left: 1px solid #21252f;
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.hom-dev__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--ink);
+  padding: 2px 4px;
+}
+.hom-dev__head svg { color: var(--muted); }
+
+.hom-devcard {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 16px;
+}
+.hom-devcard.is-selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), 0 14px 30px -18px rgba(91, 140, 240, 0.7);
+}
+.hom-devcard__ico {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--card-2);
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  margin-bottom: 14px;
+}
+.hom-devcard__name { font-size: 15px; font-weight: 700; }
+.hom-devcard__model { font-size: 12px; color: var(--muted); margin-top: 3px; }
+.hom-devcard__temp {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.hom-devcard__temp b { color: var(--accent); font-size: 15px; font-weight: 800; margin-right: 6px; }
+.hom-devcard__rows { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.hom-devcard__row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.hom-devcard__row span:last-child { color: var(--ink); font-weight: 600; }
+.hom-devcard__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+}
+.hom-devcard__state { font-size: 12.5px; font-weight: 700; color: var(--muted); letter-spacing: 0.04em; }
+
+/* 전원 버튼 */
+.hom-power {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  display: grid;
+  place-items: center;
+  background: #333a4b;
+  color: var(--muted);
+  cursor: pointer;
+}
+.hom-power.is-on {
+  background: var(--grad);
+  color: #fff;
+  box-shadow: 0 8px 18px -8px rgba(91, 140, 240, 0.9);
+}
+.hom-power--lg { width: 46px; height: 46px; }
+
+/* ================= 메인 컨트롤 ================= */
+.hom-main {
+  background: var(--bg-app);
+  padding: 26px 32px;
+  display: flex;
+  flex-direction: column;
+}
+.hom-main__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.hom-main__id { display: flex; align-items: center; gap: 14px; }
+.hom-main__idico {
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+}
+.hom-main__title { font-size: 21px; font-weight: 800; letter-spacing: -0.01em; }
+.hom-main__sub { font-size: 13px; color: var(--muted); margin-top: 3px; }
+
+/* 다이얼 */
+.hom-dial {
+  position: relative;
+  width: 300px;
+  height: 300px;
+  margin: 30px auto 26px;
+}
+.hom-dial svg { display: block; }
+.hom-dial__center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.hom-dial__temp {
+  font-size: 76px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  display: flex;
+  align-items: flex-start;
+}
+.hom-dial__temp span { font-size: 34px; font-weight: 700; margin-top: 6px; }
+.hom-dial__unit { font-size: 16px; color: var(--muted); margin-top: 8px; }
+
+/* 모드 */
+.hom-mode { margin-top: 6px; }
+.hom-mode__lb { font-size: 14px; color: var(--muted); margin-bottom: 12px; }
+.hom-mode__row {
+  display: flex;
+  gap: 8px;
+  padding: 6px;
+  background: var(--bg-panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+.hom-modebtn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 8px;
+  border-radius: 12px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.hom-modebtn svg { color: var(--muted-2); }
+.hom-modebtn.is-active {
+  background: var(--card-2);
+  color: var(--ink);
+  box-shadow: 0 8px 20px -12px rgba(0, 0, 0, 0.6);
+}
+.hom-modebtn.is-active svg { color: var(--accent); }
+
+/* 액션 카드 */
+.hom-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-top: 20px;
+}
+.hom-actioncard {
+  background: var(--bg-panel);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.hom-actioncard__ico {
+  width: 52px;
+  height: 52px;
+  border-radius: 15px;
+  background: var(--card-2);
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  margin-bottom: 14px;
+}
+.hom-actioncard__t { font-size: 15px; font-weight: 700; }
+.hom-actioncard__s { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+/* ================= 우측 ================= */
+.hom-right {
+  background: var(--bg-side);
+  border-left: 1px solid #21252f;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.hom-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 18px;
+}
+
+/* 에너지 */
+.hom-energy__lb { font-size: 12.5px; color: var(--muted); }
+.hom-energy__big { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; margin-top: 4px; }
+.hom-energy__chart { position: relative; margin: 14px 0 8px; height: 96px; }
+.hom-energy__chart svg { width: 100%; height: 96px; display: block; }
+.hom-energy__tag {
+  position: absolute;
+  top: -4px;
+  right: 26%;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--card-2);
+  padding: 3px 8px;
+  border-radius: 8px;
+}
+.hom-energy__days {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--muted-2);
+}
+.hom-energy__days .is-active { color: var(--accent); font-weight: 700; }
+.hom-energy__cost {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.hom-energy__costhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.hom-energy__costhead span { display: inline-flex; align-items: center; gap: 6px; }
+.hom-energy__costval { font-size: 20px; font-weight: 800; margin-top: 6px; }
+.hom-energy__costval span { color: var(--muted); font-weight: 700; }
+
+/* 액티비티 */
+.hom-activity__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.hom-activity__head span { font-size: 15px; font-weight: 700; }
+.hom-activity__head a { font-size: 12px; color: var(--muted); cursor: pointer; }
+.hom-feed {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+.hom-feed__img { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; flex: none; }
+.hom-feed__sys {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--card-2);
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  flex: none;
+}
+.hom-feed__mid { min-width: 0; }
+.hom-feed__txt { font-size: 13px; color: var(--muted); }
+.hom-feed__txt b { color: var(--ink); font-weight: 700; }
+.hom-feed__time {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--muted-2);
+  margin-top: 3px;
+}
+
+/* 날씨 */
+.hom-weather {
+  border-radius: 18px;
+  padding: 18px;
+  background: linear-gradient(135deg, #4f86e8 0%, #6a72e6 55%, #8a6fe0 100%);
+  color: #fff;
+  box-shadow: 0 18px 34px -20px rgba(79, 134, 232, 0.8);
+}
+.hom-weather__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.hom-weather__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 800;
+}
+.hom-weather__loc { font-size: 12px; opacity: 0.85; margin-top: 5px; }
+.hom-weather__temp { font-size: 34px; font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
+.hom-weather__temp span { font-size: 16px; font-weight: 700; }
+.hom-weather__stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 20px;
+}
+.hom-wstat__v { font-size: 16px; font-weight: 800; }
+.hom-wstat__l { font-size: 11px; opacity: 0.85; margin-top: 3px; }

@@ -1,0 +1,623 @@
+/* ============================================================
+   자잘한 화면(인증 · 설정 · 시스템 상태) 전용 스타일.
+   DS 토큰(--c-*, --line, --accent-*, --e1~4) 위에서만 동작한다.
+   ss- 네임스페이스로 기존 클래스와 충돌하지 않는다.
+   macOS 톤: 부드러운 포커스 링 · 프레스 스케일 · 스프링 토글.
+   ============================================================ */
+
+/* SubScreen 셸(.crd)에는 .career의 확장 토큰(라인/accent 스케일/elevation)이 없다.
+   설정·상태 갤러리의 ss- 컴포넌트가 이 값들을 쓰므로 .crd 범위에 보강한다. */
+.crd {
+  --line: #e6e9ef;
+  --accent-50: #eef3fb;
+  --accent-100: #dde8f9;
+  --accent-200: #bcd0f0;
+  --accent-300: #8fb0e2;
+  --accent-700: #21447c;
+  --e1: 0 1px 2px rgba(20, 30, 60, 0.05), 0 1px 1px rgba(20, 30, 60, 0.04);
+  --e2: 0 2px 8px rgba(20, 30, 60, 0.06), 0 1px 2px rgba(20, 30, 60, 0.05);
+  --e3: 0 8px 24px rgba(20, 30, 60, 0.08), 0 2px 6px rgba(20, 30, 60, 0.05);
+}
+
+/* ── 인증 풀스크린 (폰 프레임 없음 · PC↔모바일 반응형) ──
+   데스크톱: 좌 브랜드 패널 + 우 폼. 모바일: 폼 풀블리드. */
+.ss-authpage {
+  display: flex;
+  min-height: 100dvh;
+  font-family: 'Pretendard', 'Poppins', sans-serif;
+  color: var(--c-ink);
+  /* .career와 동일 확장 토큰 보강(폼 컴포넌트가 사용) */
+  --line: #e6e9ef;
+  --accent-50: #eef3fb;
+  --accent-100: #dde8f9;
+  --accent-200: #bcd0f0;
+  --accent-300: #8fb0e2;
+  --accent-700: #21447c;
+  --e1: 0 1px 2px rgba(20, 30, 60, 0.05), 0 1px 1px rgba(20, 30, 60, 0.04);
+  --e2: 0 2px 8px rgba(20, 30, 60, 0.06), 0 1px 2px rgba(20, 30, 60, 0.05);
+  --e3: 0 8px 24px rgba(20, 30, 60, 0.08), 0 2px 6px rgba(20, 30, 60, 0.05);
+}
+.ss-authpage__aside { display: none; }
+.ss-authpage__main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 22px;
+  background: var(--c-card, #fff);
+}
+.ss-authpage__form { width: 100%; max-width: 400px; }
+.ss-authpage__form .kit-trans { display: flex; flex-direction: column; }
+.ss-authpage__brandrow { display: flex; align-items: center; gap: 12px; }
+.ss-authpage__bname { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+.ss-authpage__btag { margin-top: 18px; font-size: 17px; font-weight: 600; opacity: 0.92; }
+.ss-authpage__feats { margin-top: 26px; display: flex; flex-direction: column; gap: 12px; }
+.ss-authpage__feats li {
+  position: relative;
+  padding-left: 22px;
+  font-size: 13.5px;
+  opacity: 0.85;
+  line-height: 1.4;
+}
+.ss-authpage__feats li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 7px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+/* 데스크톱: 좌 브랜드 패널 노출 + 폼 내 소형 브랜드 숨김 */
+@media (min-width: 860px) {
+  .ss-authpage__aside {
+    flex: 1.05;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 56px 60px;
+    color: #fff;
+    background: linear-gradient(150deg, #17306a 0%, var(--accent-700) 42%, var(--c-accent) 100%);
+  }
+  .ss-authpage__aside .ss-brand__mark { background: rgba(255, 255, 255, 0.16); box-shadow: none; }
+  .ss-authpage__main { flex: 1; padding: 40px; }
+  .ss-authpage__form .ss-brand { display: none; }
+  .ss-authpage__form .ss-authtitle { margin-top: 0; }
+}
+
+/* ---------- 인증 셸 ---------- */
+.career.ss-auth {
+  padding: 4px 22px 32px;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.ss-auth .kit-trans {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.ss-authbody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.ss-authtitle {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  color: var(--c-ink);
+  margin-top: 22px;
+}
+.ss-authsub {
+  font-size: 13.5px;
+  color: var(--c-muted);
+  margin-top: 6px;
+  line-height: 1.5;
+}
+.ss-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 22px;
+}
+
+/* ---------- 브랜드 로크업 ---------- */
+.ss-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ss-brand__mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: linear-gradient(140deg, var(--c-accent), var(--accent-700));
+  box-shadow: var(--e2);
+}
+.ss-brand__name {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--c-ink);
+}
+
+/* ---------- 스플래시 ---------- */
+.ss-splash {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+}
+.ss-splash__mark {
+  width: 76px;
+  height: 76px;
+  border-radius: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: linear-gradient(140deg, var(--c-accent), var(--accent-700));
+  box-shadow: var(--e3);
+  animation: ss-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both, ss-breathe 3.2s ease-in-out 0.7s infinite;
+}
+.ss-splash__name {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  color: var(--c-ink);
+  animation: ss-fadeup 0.5s ease 0.15s both;
+}
+.ss-splash__tag {
+  font-size: 13px;
+  color: var(--c-muted);
+  margin-top: -8px;
+  animation: ss-fadeup 0.5s ease 0.28s both;
+}
+.ss-splash__dots {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.ss-splash__dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-300);
+  animation: ss-blink 1.1s ease-in-out infinite;
+}
+.ss-splash__dots i:nth-child(2) { animation-delay: 0.15s; }
+.ss-splash__dots i:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes ss-pop {
+  from { opacity: 0; transform: scale(0.7); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes ss-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+@keyframes ss-fadeup {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes ss-blink {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+/* ---------- 필드 ---------- */
+.ss-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.ss-field__label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--c-ink);
+}
+.ss-field__wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.ss-field__input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 13px 14px;
+  font-size: 15px;
+  color: var(--c-ink);
+  background: #fff;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+.ss-field__wrap .ss-field__input { padding-right: 44px; }
+.ss-field__input::placeholder { color: #b3b7c0; }
+.ss-field__input:focus {
+  outline: none;
+  border-color: var(--accent-300);
+  box-shadow: 0 0 0 3px rgba(47, 97, 184, 0.14);
+}
+.ss-field__input.err {
+  border-color: var(--c-gap);
+  box-shadow: 0 0 0 3px rgba(224, 69, 58, 0.12);
+}
+.ss-field__eye {
+  position: absolute;
+  right: 6px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--c-muted);
+  border-radius: 8px;
+}
+.ss-field__eye:active { transform: scale(0.9); }
+.ss-field__err {
+  font-size: 12px;
+  color: var(--c-gap);
+  font-weight: 600;
+}
+.ss-field__hint {
+  font-size: 12px;
+  color: var(--c-muted);
+}
+
+/* ---------- 버튼 ---------- */
+.ss-btn {
+  width: 100%;
+  height: 50px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 14px;
+  font-size: 15.5px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--c-accent);
+  box-shadow: var(--e2);
+  transition: transform 0.13s cubic-bezier(0.25, 0.1, 0.25, 1), background 0.15s ease, opacity 0.15s ease;
+}
+.ss-btn:active { transform: scale(0.975); }
+.ss-btn:hover { background: var(--accent-700); }
+.ss-btn:disabled { opacity: 0.55; }
+.ss-btn--ghost {
+  color: var(--accent-700);
+  background: var(--accent-50);
+  box-shadow: none;
+}
+.ss-btn--ghost:hover { background: var(--accent-100); }
+.ss-btn--danger {
+  color: #fff;
+  background: var(--c-gap);
+  box-shadow: none;
+}
+.ss-btn--danger:hover { background: #c73a30; }
+.ss-spinner {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2.2px solid rgba(255, 255, 255, 0.45);
+  border-top-color: #fff;
+  animation: ss-spin 0.7s linear infinite;
+}
+.ss-btn--ghost .ss-spinner { border-color: rgba(47, 97, 184, 0.35); border-top-color: var(--accent-700); }
+@keyframes ss-spin { to { transform: rotate(360deg); } }
+
+/* ---------- 소셜 · 구분선 · 전환 링크 ---------- */
+.ss-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0;
+  font-size: 12px;
+  color: var(--c-muted);
+}
+.ss-divider::before,
+.ss-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+.ss-social {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ss-social__btn {
+  width: 100%;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--c-ink);
+  transition: transform 0.13s ease, background 0.15s ease;
+}
+.ss-social__btn:active { transform: scale(0.98); }
+.ss-social__btn:hover { background: #fafbfd; }
+.ss-social__ic {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ss-social__soon {
+  margin-left: auto;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--c-muted);
+  background: var(--bg, #f0f2f6);
+  border-radius: 6px;
+  padding: 2px 7px;
+}
+.ss-authswitch {
+  margin-top: 22px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--c-muted);
+}
+.ss-authswitch a {
+  color: var(--accent-700);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ---------- 토스트 ---------- */
+.ss-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 40px;
+  transform: translate(-50%, 20px);
+  max-width: 300px;
+  padding: 11px 18px;
+  border-radius: 999px;
+  background: rgba(28, 29, 33, 0.92);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: var(--e3);
+  backdrop-filter: blur(8px);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 60;
+  transition: opacity 0.22s ease, transform 0.28s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+.ss-toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* ---------- 스위치 ---------- */
+.ss-switch {
+  flex: none;
+  width: 46px;
+  height: 28px;
+  border-radius: 999px;
+  background: #d5d9e0;
+  padding: 2px;
+  transition: background 0.24s cubic-bezier(0.34, 1.2, 0.64, 1);
+}
+.ss-switch.on { background: var(--c-accent); }
+.ss-switch__knob {
+  display: block;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: transform 0.24s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+.ss-switch.on .ss-switch__knob { transform: translateX(18px); }
+.ss-swrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 4px;
+}
+.ss-swrow + .ss-swrow { border-top: 1px solid var(--line); }
+.ss-swrow__ic {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-50);
+  color: var(--accent-700);
+}
+.ss-swrow__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ss-swrow__t { font-size: 14.5px; font-weight: 600; color: var(--c-ink); }
+.ss-swrow__d { font-size: 12px; color: var(--c-muted); line-height: 1.4; }
+
+/* ---------- 설정 그룹 ---------- */
+.ss-group { margin-top: 22px; }
+.ss-group__cap {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--c-muted);
+  margin: 0 4px 8px;
+  letter-spacing: 0;
+}
+.ss-card {
+  background: var(--c-card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: var(--e1);
+  overflow: hidden;
+}
+.ss-card--pad { padding: 4px 14px; }
+
+/* 계정 화면 아바타 편집 */
+.ss-account {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 24px 0 10px;
+}
+.ss-account__avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(140deg, var(--c-accent), var(--accent-700));
+  box-shadow: var(--e2);
+}
+.ss-account__email { font-size: 13px; color: var(--c-muted); }
+
+/* ---------- 약관 / 앱 정보 ---------- */
+.ss-legal { padding: 6px 2px 40px; }
+.ss-legal h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--c-ink);
+  margin: 20px 0 8px;
+}
+.ss-legal h3:first-child { margin-top: 6px; }
+.ss-legal p {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #4b4e57;
+  margin-bottom: 8px;
+}
+.ss-legal__meta {
+  font-size: 12px;
+  color: var(--c-muted);
+  margin-bottom: 16px;
+}
+.ss-about {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 26px 0 18px;
+}
+.ss-about__mark {
+  width: 66px;
+  height: 66px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: linear-gradient(140deg, var(--c-accent), var(--accent-700));
+  box-shadow: var(--e3);
+  margin-bottom: 6px;
+}
+.ss-about__name { font-size: 18px; font-weight: 800; color: var(--c-ink); }
+.ss-about__ver { font-size: 12.5px; color: var(--c-muted); }
+.ss-about__note {
+  font-size: 12px;
+  color: var(--c-muted);
+  text-align: center;
+  line-height: 1.6;
+  margin-top: 18px;
+  padding: 0 6px;
+}
+
+/* ---------- 시스템 상태 (Empty / Error / Offline / 404) ---------- */
+.ss-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 8px;
+  padding: 40px 26px;
+  min-height: 100%;
+}
+.ss-state__ic {
+  width: 66px;
+  height: 66px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-700);
+  background: var(--accent-50);
+  margin-bottom: 6px;
+}
+.ss-state__ic--warn { color: #b56a1e; background: #fbf1e4; }
+.ss-state__ic--err { color: #c73a30; background: #fdeceb; }
+.ss-state__title {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--c-ink);
+  letter-spacing: -0.4px;
+}
+.ss-state__desc {
+  font-size: 13.5px;
+  color: var(--c-muted);
+  line-height: 1.55;
+  max-width: 260px;
+}
+.ss-state__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  width: 100%;
+  max-width: 240px;
+  flex-direction: column;
+}
+.ss-state__big {
+  font-size: 58px;
+  font-weight: 800;
+  letter-spacing: -2px;
+  color: var(--accent-300);
+  line-height: 1;
+}
+
+/* ---------- 상태 갤러리 (데모 프레임) ---------- */
+.ss-gallery__note {
+  font-size: 12.5px;
+  color: var(--c-muted);
+  line-height: 1.5;
+  margin: 4px 4px 4px;
+}
+.ss-demoframe {
+  position: relative;
+  height: 300px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--screen-bg, #f6f8fc);
+  overflow: hidden;
+  margin-top: 10px;
+}
+.ss-demoframe .ss-state { padding: 24px; }
+.ss-demoframe__tag {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  z-index: 2;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-700);
+  background: var(--accent-50);
+  border-radius: 7px;
+  padding: 3px 8px;
+}

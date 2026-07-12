@@ -1,0 +1,1349 @@
+{
+  "_meta": {
+    "simulated": false,
+    "source": "jumpit+wanted",
+    "N": 4097,
+    "asOf": "2026-07-10",
+    "method": "lexicon_v1",
+    "note": "개념·개념×기술을 실공고 텍스트에서 어휘사전+기술 taxonomy로 실측. rate=그 개념 공고 중 해당 기술 동시 등장 비율. 시뮬레이션 아님.",
+    "limits": "연도별 추이는 스냅샷이라 미제공. 표면형 매칭 한계 존재.",
+    "owned": [
+      "AWS",
+      "CSS",
+      "Docker",
+      "Git",
+      "HTML",
+      "JavaScript",
+      "Linux",
+      "MySQL",
+      "Node.js",
+      "PostgreSQL",
+      "Python",
+      "React",
+      "SQL",
+      "TypeScript"
+    ]
+  },
+  "concepts": [
+    {
+      "key": "DevOps·자동화",
+      "label": "DevOps·자동화",
+      "color": "#2a9db0",
+      "demand": 38.0,
+      "n": 1558,
+      "coverage": {
+        "covPct": 76.0,
+        "ownedCount": 7,
+        "techCount": 10,
+        "ownedNames": [
+          "Python",
+          "AWS",
+          "Git",
+          "Docker",
+          "TypeScript",
+          "Linux",
+          "PostgreSQL"
+        ]
+      },
+      "techs": [
+        {
+          "tech": "Python",
+          "n": 704,
+          "rate": 45.2,
+          "lift": 1.26,
+          "owned": true
+        },
+        {
+          "tech": "AWS",
+          "n": 640,
+          "rate": 41.1,
+          "lift": 1.53,
+          "owned": true
+        },
+        {
+          "tech": "Git",
+          "n": 559,
+          "rate": 35.9,
+          "lift": 1.54,
+          "owned": true
+        },
+        {
+          "tech": "Docker",
+          "n": 441,
+          "rate": 28.3,
+          "lift": 1.68,
+          "owned": true
+        },
+        {
+          "tech": "Kubernetes",
+          "n": 414,
+          "rate": 26.6,
+          "lift": 1.65,
+          "owned": false
+        },
+        {
+          "tech": "Java",
+          "n": 322,
+          "rate": 20.7,
+          "lift": 1.2,
+          "owned": false
+        },
+        {
+          "tech": "TypeScript",
+          "n": 294,
+          "rate": 18.9,
+          "lift": 1.39,
+          "owned": true
+        },
+        {
+          "tech": "Linux",
+          "n": 252,
+          "rate": 16.2,
+          "lift": 1.03,
+          "owned": true
+        },
+        {
+          "tech": "GCP",
+          "n": 250,
+          "rate": 16.0,
+          "lift": 1.55,
+          "owned": false
+        },
+        {
+          "tech": "PostgreSQL",
+          "n": 240,
+          "rate": 15.4,
+          "lift": 1.58,
+          "owned": true
+        }
+      ],
+      "signature": [
+        {
+          "tech": "GitHub Actions",
+          "n": 175,
+          "rate": 11.2,
+          "lift": 2.41,
+          "owned": false
+        },
+        {
+          "tech": "Terraform",
+          "n": 162,
+          "rate": 10.4,
+          "lift": 2.39,
+          "owned": false
+        },
+        {
+          "tech": "Prometheus",
+          "n": 128,
+          "rate": 8.2,
+          "lift": 2.17,
+          "owned": false
+        },
+        {
+          "tech": "Grafana",
+          "n": 161,
+          "rate": 10.3,
+          "lift": 2.16,
+          "owned": false
+        },
+        {
+          "tech": "Docker",
+          "n": 441,
+          "rate": 28.3,
+          "lift": 1.68,
+          "owned": true
+        }
+      ],
+      "cooc": [
+        {
+          "key": "고가용성·안정성",
+          "rate": 42.6
+        },
+        {
+          "key": "AI·LLM",
+          "rate": 35.9
+        },
+        {
+          "key": "대규모 트래픽",
+          "rate": 31.4
+        },
+        {
+          "key": "보안·컴플라이언스",
+          "rate": 29.5
+        }
+      ]
+    },
+    {
+      "key": "AI·LLM",
+      "label": "AI·LLM",
+      "color": "#6b5bd6",
+      "demand": 31.7,
+      "n": 1298,
+      "coverage": {
+        "covPct": 68.5,
+        "ownedCount": 6,
+        "techCount": 10,
+        "ownedNames": [
+          "Python",
+          "AWS",
+          "Git",
+          "Docker",
+          "TypeScript",
+          "Linux"
+        ]
+      },
+      "techs": [
+        {
+          "tech": "Python",
+          "n": 719,
+          "rate": 55.4,
+          "lift": 1.55,
+          "owned": true
+        },
+        {
+          "tech": "AWS",
+          "n": 391,
+          "rate": 30.1,
+          "lift": 1.12,
+          "owned": true
+        },
+        {
+          "tech": "PyTorch",
+          "n": 304,
+          "rate": 23.4,
+          "lift": 2.67,
+          "owned": false
+        },
+        {
+          "tech": "Git",
+          "n": 280,
+          "rate": 21.6,
+          "lift": 0.92,
+          "owned": true
+        },
+        {
+          "tech": "Docker",
+          "n": 256,
+          "rate": 19.7,
+          "lift": 1.17,
+          "owned": true
+        },
+        {
+          "tech": "Kubernetes",
+          "n": 251,
+          "rate": 19.3,
+          "lift": 1.2,
+          "owned": false
+        },
+        {
+          "tech": "GCP",
+          "n": 208,
+          "rate": 16.0,
+          "lift": 1.54,
+          "owned": false
+        },
+        {
+          "tech": "TypeScript",
+          "n": 190,
+          "rate": 14.6,
+          "lift": 1.08,
+          "owned": true
+        },
+        {
+          "tech": "Linux",
+          "n": 160,
+          "rate": 12.3,
+          "lift": 0.79,
+          "owned": true
+        },
+        {
+          "tech": "TensorFlow",
+          "n": 154,
+          "rate": 11.9,
+          "lift": 2.64,
+          "owned": false
+        }
+      ],
+      "signature": [
+        {
+          "tech": "LangChain",
+          "n": 153,
+          "rate": 11.8,
+          "lift": 3.04,
+          "owned": false
+        },
+        {
+          "tech": "OpenAI",
+          "n": 109,
+          "rate": 8.4,
+          "lift": 2.92,
+          "owned": false
+        },
+        {
+          "tech": "PyTorch",
+          "n": 304,
+          "rate": 23.4,
+          "lift": 2.67,
+          "owned": false
+        },
+        {
+          "tech": "TensorFlow",
+          "n": 154,
+          "rate": 11.9,
+          "lift": 2.64,
+          "owned": false
+        },
+        {
+          "tech": "FastAPI",
+          "n": 145,
+          "rate": 11.2,
+          "lift": 1.88,
+          "owned": false
+        }
+      ],
+      "cooc": [
+        {
+          "key": "DevOps·자동화",
+          "rate": 43.1
+        },
+        {
+          "key": "고가용성·안정성",
+          "rate": 28.0
+        },
+        {
+          "key": "대규모 트래픽",
+          "rate": 27.7
+        },
+        {
+          "key": "실시간·스트리밍",
+          "rate": 20.1
+        }
+      ]
+    },
+    {
+      "key": "고가용성·안정성",
+      "label": "고가용성·안정성",
+      "color": "#c8506a",
+      "demand": 29.4,
+      "n": 1205,
+      "coverage": {
+        "covPct": 66.8,
+        "ownedCount": 6,
+        "techCount": 10,
+        "ownedNames": [
+          "AWS",
+          "Python",
+          "Git",
+          "Docker",
+          "Linux",
+          "TypeScript"
+        ]
+      },
+      "techs": [
+        {
+          "tech": "AWS",
+          "n": 483,
+          "rate": 40.1,
+          "lift": 1.49,
+          "owned": true
+        },
+        {
+          "tech": "Python",
+          "n": 467,
+          "rate": 38.8,
+          "lift": 1.08,
+          "owned": true
+        },
+        {
+          "tech": "Git",
+          "n": 380,
+          "rate": 31.5,
+          "lift": 1.35,
+          "owned": true
+        },
+        {
+          "tech": "Kubernetes",
+          "n": 339,
+          "rate": 28.1,
+          "lift": 1.75,
+          "owned": false
+        },
+        {
+          "tech": "Docker",
+          "n": 325,
+          "rate": 27.0,
+          "lift": 1.6,
+          "owned": true
+        },
+        {
+          "tech": "Java",
+          "n": 280,
+          "rate": 23.2,
+          "lift": 1.35,
+          "owned": false
+        },
+        {
+          "tech": "Linux",
+          "n": 237,
+          "rate": 19.7,
+          "lift": 1.26,
+          "owned": true
+        },
+        {
+          "tech": "Spring",
+          "n": 220,
+          "rate": 18.3,
+          "lift": 1.53,
+          "owned": false
+        },
+        {
+          "tech": "TypeScript",
+          "n": 204,
+          "rate": 16.9,
+          "lift": 1.25,
+          "owned": true
+        },
+        {
+          "tech": "Redis",
+          "n": 201,
+          "rate": 16.7,
+          "lift": 1.96,
+          "owned": false
+        }
+      ],
+      "signature": [
+        {
+          "tech": "Grafana",
+          "n": 158,
+          "rate": 13.1,
+          "lift": 2.74,
+          "owned": false
+        },
+        {
+          "tech": "Prometheus",
+          "n": 123,
+          "rate": 10.2,
+          "lift": 2.7,
+          "owned": false
+        },
+        {
+          "tech": "ArgoCD",
+          "n": 98,
+          "rate": 8.1,
+          "lift": 2.35,
+          "owned": false
+        },
+        {
+          "tech": "Terraform",
+          "n": 117,
+          "rate": 9.7,
+          "lift": 2.23,
+          "owned": false
+        },
+        {
+          "tech": "GitHub Actions",
+          "n": 121,
+          "rate": 10.0,
+          "lift": 2.15,
+          "owned": false
+        }
+      ],
+      "cooc": [
+        {
+          "key": "DevOps·자동화",
+          "rate": 55.1
+        },
+        {
+          "key": "대규모 트래픽",
+          "rate": 38.3
+        },
+        {
+          "key": "보안·컴플라이언스",
+          "rate": 34.1
+        },
+        {
+          "key": "AI·LLM",
+          "rate": 30.2
+        }
+      ]
+    },
+    {
+      "key": "대규모 트래픽",
+      "label": "대규모 트래픽",
+      "color": "#2f61b8",
+      "demand": 23.3,
+      "n": 954,
+      "coverage": {
+        "covPct": 49.9,
+        "ownedCount": 4,
+        "techCount": 10,
+        "ownedNames": [
+          "AWS",
+          "Python",
+          "Git",
+          "Docker"
+        ]
+      },
+      "techs": [
+        {
+          "tech": "AWS",
+          "n": 429,
+          "rate": 45.0,
+          "lift": 1.68,
+          "owned": true
+        },
+        {
+          "tech": "Python",
+          "n": 372,
+          "rate": 39.0,
+          "lift": 1.09,
+          "owned": true
+        },
+        {
+          "tech": "Kubernetes",
+          "n": 302,
+          "rate": 31.7,
+          "lift": 1.97,
+          "owned": false
+        },
+        {
+          "tech": "Git",
+          "n": 265,
+          "rate": 27.8,
+          "lift": 1.19,
+          "owned": true
+        },
+        {
+          "tech": "Java",
+          "n": 264,
+          "rate": 27.7,
+          "lift": 1.61,
+          "owned": false
+        },
+        {
+          "tech": "Docker",
+          "n": 239,
+          "rate": 25.1,
+          "lift": 1.48,
+          "owned": true
+        },
+        {
+          "tech": "Spring",
+          "n": 225,
+          "rate": 23.6,
+          "lift": 1.97,
+          "owned": false
+        },
+        {
+          "tech": "Kafka",
+          "n": 186,
+          "rate": 19.5,
+          "lift": 2.3,
+          "owned": false
+        },
+        {
+          "tech": "GCP",
+          "n": 174,
+          "rate": 18.2,
+          "lift": 1.76,
+          "owned": false
+        },
+        {
+          "tech": "Redis",
+          "n": 159,
+          "rate": 16.7,
+          "lift": 1.96,
+          "owned": false
+        }
+      ],
+      "signature": [
+        {
+          "tech": "Kafka",
+          "n": 186,
+          "rate": 19.5,
+          "lift": 2.3,
+          "owned": false
+        },
+        {
+          "tech": "Prometheus",
+          "n": 83,
+          "rate": 8.7,
+          "lift": 2.3,
+          "owned": false
+        },
+        {
+          "tech": "Grafana",
+          "n": 101,
+          "rate": 10.6,
+          "lift": 2.21,
+          "owned": false
+        },
+        {
+          "tech": "Terraform",
+          "n": 87,
+          "rate": 9.1,
+          "lift": 2.1,
+          "owned": false
+        },
+        {
+          "tech": "Kotlin",
+          "n": 145,
+          "rate": 15.2,
+          "lift": 2.04,
+          "owned": false
+        }
+      ],
+      "cooc": [
+        {
+          "key": "DevOps·자동화",
+          "rate": 51.3
+        },
+        {
+          "key": "고가용성·안정성",
+          "rate": 48.3
+        },
+        {
+          "key": "AI·LLM",
+          "rate": 37.7
+        },
+        {
+          "key": "보안·컴플라이언스",
+          "rate": 28.1
+        }
+      ]
+    },
+    {
+      "key": "보안·컴플라이언스",
+      "label": "보안·컴플라이언스",
+      "color": "#d9932f",
+      "demand": 22.2,
+      "n": 909,
+      "coverage": {
+        "covPct": 74.9,
+        "ownedCount": 7,
+        "techCount": 10,
+        "ownedNames": [
+          "AWS",
+          "Python",
+          "Git",
+          "Docker",
+          "Linux",
+          "PostgreSQL",
+          "TypeScript"
+        ]
+      },
+      "techs": [
+        {
+          "tech": "AWS",
+          "n": 345,
+          "rate": 38.0,
+          "lift": 1.41,
+          "owned": true
+        },
+        {
+          "tech": "Python",
+          "n": 329,
+          "rate": 36.2,
+          "lift": 1.01,
+          "owned": true
+        },
+        {
+          "tech": "Git",
+          "n": 227,
+          "rate": 25.0,
+          "lift": 1.07,
+          "owned": true
+        },
+        {
+          "tech": "Kubernetes",
+          "n": 226,
+          "rate": 24.9,
+          "lift": 1.55,
+          "owned": false
+        },
+        {
+          "tech": "Docker",
+          "n": 226,
+          "rate": 24.9,
+          "lift": 1.47,
+          "owned": true
+        },
+        {
+          "tech": "Linux",
+          "n": 175,
+          "rate": 19.3,
+          "lift": 1.23,
+          "owned": true
+        },
+        {
+          "tech": "Java",
+          "n": 170,
+          "rate": 18.7,
+          "lift": 1.09,
+          "owned": false
+        },
+        {
+          "tech": "PostgreSQL",
+          "n": 145,
+          "rate": 16.0,
+          "lift": 1.64,
+          "owned": true
+        },
+        {
+          "tech": "TypeScript",
+          "n": 135,
+          "rate": 14.9,
+          "lift": 1.09,
+          "owned": true
+        },
+        {
+          "tech": "GCP",
+          "n": 135,
+          "rate": 14.9,
+          "lift": 1.43,
+          "owned": false
+        }
+      ],
+      "signature": [
+        {
+          "tech": "Terraform",
+          "n": 101,
+          "rate": 11.1,
+          "lift": 2.56,
+          "owned": false
+        },
+        {
+          "tech": "Grafana",
+          "n": 94,
+          "rate": 10.3,
+          "lift": 2.16,
+          "owned": false
+        },
+        {
+          "tech": "Azure",
+          "n": 92,
+          "rate": 10.1,
+          "lift": 1.67,
+          "owned": false
+        },
+        {
+          "tech": "PostgreSQL",
+          "n": 145,
+          "rate": 16.0,
+          "lift": 1.64,
+          "owned": true
+        },
+        {
+          "tech": "MySQL",
+          "n": 134,
+          "rate": 14.7,
+          "lift": 1.59,
+          "owned": true
+        }
+      ],
+      "cooc": [
+        {
+          "key": "DevOps·자동화",
+          "rate": 50.6
+        },
+        {
+          "key": "고가용성·안정성",
+          "rate": 45.2
+        },
+        {
+          "key": "대규모 트래픽",
+          "rate": 29.5
+        },
+        {
+          "key": "AI·LLM",
+          "rate": 24.6
+        }
+      ]
+    },
+    {
+      "key": "실시간·스트리밍",
+      "label": "실시간·스트리밍",
+      "color": "#2a9db0",
+      "demand": 16.5,
+      "n": 676,
+      "coverage": {
+        "covPct": 66.0,
+        "ownedCount": 6,
+        "techCount": 10,
+        "ownedNames": [
+          "Python",
+          "AWS",
+          "Git",
+          "Docker",
+          "Linux",
+          "TypeScript"
+        ]
+      },
+      "techs": [
+        {
+          "tech": "Python",
+          "n": 320,
+          "rate": 47.3,
+          "lift": 1.32,
+          "owned": true
+        },
+        {
+          "tech": "AWS",
+          "n": 214,
+          "rate": 31.7,
+          "lift": 1.18,
+          "owned": true
+        },
+        {
+          "tech": "Git",
+          "n": 183,
+          "rate": 27.1,
+          "lift": 1.16,
+          "owned": true
+        },
+        {
+          "tech": "C++",
+          "n": 178,
+          "rate": 26.3,
+          "lift": 1.81,
+          "owned": false
+        },
+        {
+          "tech": "Docker",
+          "n": 154,
+          "rate": 22.8,
+          "lift": 1.35,
+          "owned": true
+        },
+        {
+          "tech": "Kafka",
+          "n": 146,
+          "rate": 21.6,
+          "lift": 2.55,
+          "owned": false
+        },
+        {
+          "tech": "Linux",
+          "n": 141,
+          "rate": 20.9,
+          "lift": 1.33,
+          "owned": true
+        },
+        {
+          "tech": "Kubernetes",
+          "n": 138,
+          "rate": 20.4,
+          "lift": 1.27,
+          "owned": false
+        },
+        {
+          "tech": "Java",
+          "n": 114,
+          "rate": 16.9,
+          "lift": 0.98,
+          "owned": false
+        },
+        {
+          "tech": "TypeScript",
+          "n": 104,
+          "rate": 15.4,
+          "lift": 1.13,
+          "owned": true
+        }
+      ],
+      "signature": [
+        {
+          "tech": "Kafka",
+          "n": 146,
+          "rate": 21.6,
+          "lift": 2.55,
+          "owned": false
+        },
+        {
+          "tech": "Airflow",
+          "n": 69,
+          "rate": 10.2,
+          "lift": 2.46,
+          "owned": false
+        },
+        {
+          "tech": "C++",
+          "n": 178,
+          "rate": 26.3,
+          "lift": 1.81,
+          "owned": false
+        },
+        {
+          "tech": "PyTorch",
+          "n": 96,
+          "rate": 14.2,
+          "lift": 1.62,
+          "owned": false
+        },
+        {
+          "tech": "Redis",
+          "n": 89,
+          "rate": 13.2,
+          "lift": 1.55,
+          "owned": false
+        }
+      ],
+      "cooc": [
+        {
+          "key": "DevOps·자동화",
+          "rate": 46.3
+        },
+        {
+          "key": "AI·LLM",
+          "rate": 38.6
+        },
+        {
+          "key": "고가용성·안정성",
+          "rate": 37.6
+        },
+        {
+          "key": "대규모 트래픽",
+          "rate": 34.5
+        }
+      ]
+    },
+    {
+      "key": "데이터 파이프라인",
+      "label": "데이터 파이프라인",
+      "color": "#2f61b8",
+      "demand": 11.7,
+      "n": 481,
+      "coverage": {
+        "covPct": 67.6,
+        "ownedCount": 6,
+        "techCount": 10,
+        "ownedNames": [
+          "Python",
+          "AWS",
+          "SQL",
+          "Docker",
+          "Git",
+          "PostgreSQL"
+        ]
+      },
+      "techs": [
+        {
+          "tech": "Python",
+          "n": 307,
+          "rate": 63.8,
+          "lift": 1.78,
+          "owned": true
+        },
+        {
+          "tech": "AWS",
+          "n": 224,
+          "rate": 46.6,
+          "lift": 1.74,
+          "owned": true
+        },
+        {
+          "tech": "SQL",
+          "n": 141,
+          "rate": 29.3,
+          "lift": 2.83,
+          "owned": true
+        },
+        {
+          "tech": "Kubernetes",
+          "n": 134,
+          "rate": 27.9,
+          "lift": 1.73,
+          "owned": false
+        },
+        {
+          "tech": "Kafka",
+          "n": 120,
+          "rate": 24.9,
+          "lift": 2.95,
+          "owned": false
+        },
+        {
+          "tech": "Docker",
+          "n": 116,
+          "rate": 24.1,
+          "lift": 1.43,
+          "owned": true
+        },
+        {
+          "tech": "Airflow",
+          "n": 114,
+          "rate": 23.7,
+          "lift": 5.71,
+          "owned": false
+        },
+        {
+          "tech": "Git",
+          "n": 105,
+          "rate": 21.8,
+          "lift": 0.93,
+          "owned": true
+        },
+        {
+          "tech": "GCP",
+          "n": 99,
+          "rate": 20.6,
+          "lift": 1.98,
+          "owned": false
+        },
+        {
+          "tech": "PostgreSQL",
+          "n": 82,
+          "rate": 17.0,
+          "lift": 1.75,
+          "owned": true
+        }
+      ],
+      "signature": [
+        {
+          "tech": "Airflow",
+          "n": 114,
+          "rate": 23.7,
+          "lift": 5.71,
+          "owned": false
+        },
+        {
+          "tech": "BigQuery",
+          "n": 41,
+          "rate": 8.5,
+          "lift": 5.14,
+          "owned": false
+        },
+        {
+          "tech": "Kafka",
+          "n": 120,
+          "rate": 24.9,
+          "lift": 2.95,
+          "owned": false
+        },
+        {
+          "tech": "SQL",
+          "n": 141,
+          "rate": 29.3,
+          "lift": 2.83,
+          "owned": true
+        },
+        {
+          "tech": "MongoDB",
+          "n": 46,
+          "rate": 9.6,
+          "lift": 2.29,
+          "owned": false
+        }
+      ],
+      "cooc": [
+        {
+          "key": "DevOps·자동화",
+          "rate": 58.4
+        },
+        {
+          "key": "AI·LLM",
+          "rate": 52.8
+        },
+        {
+          "key": "대규모 트래픽",
+          "rate": 40.1
+        },
+        {
+          "key": "고가용성·안정성",
+          "rate": 37.4
+        }
+      ]
+    },
+    {
+      "key": "클라우드 네이티브",
+      "label": "클라우드 네이티브",
+      "color": "#2f61b8",
+      "demand": 11.5,
+      "n": 473,
+      "coverage": {
+        "covPct": 58.2,
+        "ownedCount": 5,
+        "techCount": 10,
+        "ownedNames": [
+          "AWS",
+          "Docker",
+          "Python",
+          "Git",
+          "Linux"
+        ]
+      },
+      "techs": [
+        {
+          "tech": "Kubernetes",
+          "n": 295,
+          "rate": 62.4,
+          "lift": 3.88,
+          "owned": false
+        },
+        {
+          "tech": "AWS",
+          "n": 290,
+          "rate": 61.3,
+          "lift": 2.29,
+          "owned": true
+        },
+        {
+          "tech": "Docker",
+          "n": 284,
+          "rate": 60.0,
+          "lift": 3.55,
+          "owned": true
+        },
+        {
+          "tech": "Python",
+          "n": 241,
+          "rate": 51.0,
+          "lift": 1.42,
+          "owned": true
+        },
+        {
+          "tech": "Git",
+          "n": 169,
+          "rate": 35.7,
+          "lift": 1.53,
+          "owned": true
+        },
+        {
+          "tech": "Java",
+          "n": 134,
+          "rate": 28.3,
+          "lift": 1.65,
+          "owned": false
+        },
+        {
+          "tech": "GCP",
+          "n": 134,
+          "rate": 28.3,
+          "lift": 2.73,
+          "owned": false
+        },
+        {
+          "tech": "Linux",
+          "n": 117,
+          "rate": 24.7,
+          "lift": 1.58,
+          "owned": true
+        },
+        {
+          "tech": "Kafka",
+          "n": 114,
+          "rate": 24.1,
+          "lift": 2.85,
+          "owned": false
+        },
+        {
+          "tech": "Spring",
+          "n": 113,
+          "rate": 23.9,
+          "lift": 2.0,
+          "owned": false
+        }
+      ],
+      "signature": [
+        {
+          "tech": "Terraform",
+          "n": 84,
+          "rate": 17.8,
+          "lift": 4.09,
+          "owned": false
+        },
+        {
+          "tech": "Prometheus",
+          "n": 73,
+          "rate": 15.4,
+          "lift": 4.08,
+          "owned": false
+        },
+        {
+          "tech": "Kubernetes",
+          "n": 295,
+          "rate": 62.4,
+          "lift": 3.88,
+          "owned": false
+        },
+        {
+          "tech": "Grafana",
+          "n": 85,
+          "rate": 18.0,
+          "lift": 3.76,
+          "owned": false
+        },
+        {
+          "tech": "ArgoCD",
+          "n": 60,
+          "rate": 12.7,
+          "lift": 3.66,
+          "owned": false
+        }
+      ],
+      "cooc": [
+        {
+          "key": "DevOps·자동화",
+          "rate": 68.5
+        },
+        {
+          "key": "고가용성·안정성",
+          "rate": 54.8
+        },
+        {
+          "key": "대규모 트래픽",
+          "rate": 43.3
+        },
+        {
+          "key": "AI·LLM",
+          "rate": 41.4
+        }
+      ]
+    },
+    {
+      "key": "MSA·분산",
+      "label": "MSA·분산",
+      "color": "#2a9db0",
+      "demand": 10.0,
+      "n": 409,
+      "coverage": {
+        "covPct": 41.5,
+        "ownedCount": 4,
+        "techCount": 10,
+        "ownedNames": [
+          "AWS",
+          "Docker",
+          "Python",
+          "Git"
+        ]
+      },
+      "techs": [
+        {
+          "tech": "AWS",
+          "n": 234,
+          "rate": 57.2,
+          "lift": 2.13,
+          "owned": true
+        },
+        {
+          "tech": "Kubernetes",
+          "n": 199,
+          "rate": 48.7,
+          "lift": 3.02,
+          "owned": false
+        },
+        {
+          "tech": "Java",
+          "n": 198,
+          "rate": 48.4,
+          "lift": 2.82,
+          "owned": false
+        },
+        {
+          "tech": "Spring",
+          "n": 177,
+          "rate": 43.3,
+          "lift": 3.62,
+          "owned": false
+        },
+        {
+          "tech": "Docker",
+          "n": 164,
+          "rate": 40.1,
+          "lift": 2.37,
+          "owned": true
+        },
+        {
+          "tech": "Python",
+          "n": 161,
+          "rate": 39.4,
+          "lift": 1.1,
+          "owned": true
+        },
+        {
+          "tech": "Kafka",
+          "n": 160,
+          "rate": 39.1,
+          "lift": 4.62,
+          "owned": false
+        },
+        {
+          "tech": "Redis",
+          "n": 142,
+          "rate": 34.7,
+          "lift": 4.08,
+          "owned": false
+        },
+        {
+          "tech": "Git",
+          "n": 137,
+          "rate": 33.5,
+          "lift": 1.43,
+          "owned": true
+        },
+        {
+          "tech": "Kotlin",
+          "n": 105,
+          "rate": 25.7,
+          "lift": 3.45,
+          "owned": false
+        }
+      ],
+      "signature": [
+        {
+          "tech": "gRPC",
+          "n": 35,
+          "rate": 8.6,
+          "lift": 6.26,
+          "owned": false
+        },
+        {
+          "tech": "JPA",
+          "n": 60,
+          "rate": 14.7,
+          "lift": 5.37,
+          "owned": false
+        },
+        {
+          "tech": "RabbitMQ",
+          "n": 46,
+          "rate": 11.2,
+          "lift": 4.8,
+          "owned": false
+        },
+        {
+          "tech": "Kafka",
+          "n": 160,
+          "rate": 39.1,
+          "lift": 4.62,
+          "owned": false
+        },
+        {
+          "tech": "Redis",
+          "n": 142,
+          "rate": 34.7,
+          "lift": 4.08,
+          "owned": false
+        }
+      ],
+      "cooc": [
+        {
+          "key": "대규모 트래픽",
+          "rate": 57.0
+        },
+        {
+          "key": "고가용성·안정성",
+          "rate": 53.8
+        },
+        {
+          "key": "DevOps·자동화",
+          "rate": 53.3
+        },
+        {
+          "key": "보안·컴플라이언스",
+          "rate": 32.5
+        }
+      ]
+    }
+  ]
+}
