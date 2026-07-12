@@ -182,6 +182,7 @@
   display: flex;
   align-items: center;
   gap: 14px;
+  margin-left: auto; /* 브레드크럼이 숨어도 항상 우측 정렬 */
 }
 
 /* 계정 메뉴 앵커 — MacMenu는 이 래퍼 기준 top-right 정렬 */
