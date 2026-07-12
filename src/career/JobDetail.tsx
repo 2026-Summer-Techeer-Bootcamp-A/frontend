@@ -6,7 +6,6 @@ import CompanyLogo from './CompanyLogo'
 import { matchGrad } from './kit'
 import { THEME, themeVars } from './themes'
 import { useIsDesktop } from '../shared/useMediaQuery'
-import DesktopShell from '../desktop/DesktopShell'
 import data from '../data/careerData.json'
 import { useResumesState } from './state'
 import './career.css'
@@ -70,118 +69,151 @@ export default function JobDetail() {
     />
   )
 
+  // 회사 로고 + 제목 헤더 — 모바일·데스크톱 공용 조각
+  const headerBlock = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10 }}>
+      <CompanyLogo logo={p.logo} name={p.company} size={54} radius={14} />
+      <div>
+        <div className="crd__co">
+          {p.company} · {p.pool}
+        </div>
+        <div className="crd__role" style={{ margin: '2px 0 0' }}>{p.title}</div>
+      </div>
+    </div>
+  )
+
+  // 지역·경력·마감 메타 — 모바일에선 헤더 아래 칩, 데스크톱에선 사이드 메타 카드 안으로 이동
+  const pillsBlock = (
+    <div className="crd__pills">
+      <span className="crd__pill"><MapPin size={15} /> {p.region || 'Remote'}</span>
+      <span className="crd__pill"><Briefcase size={15} /> {careerText(p.careerMin, p.careerMax)}</span>
+      {p.closeDate && (() => {
+        const d = Math.round((new Date(p.closeDate).getTime() - new Date(data.meta.asOf).getTime()) / 86400000)
+        if (d < 0) return null
+        const [, m, dd] = p.closeDate.split('-')
+        return (
+          <span className="crd__pill" style={{ color: '#e0693a' }}>
+            <Calendar size={15} /> ~{Number(m)}/{Number(dd)} 마감 D-{d}
+          </span>
+        )
+      })()}
+    </div>
+  )
+
+  // 매칭 섹션 — 모바일에선 본문 흐름 안, 데스크톱에선 사이드 카드로 이동
+  const matchBlock = (
+    <div className="crd__match">
+      <h4>
+        <span>내 매칭 (요구 {matchTotal}개 중 {matchHeld}개 보유)</span>
+        <b>{matchPct}%</b>
+      </h4>
+      <div className="cr-track">
+        <i style={{ width: `${matchPct}%`, background: matchGrad(matchPct) }} />
+      </div>
+      <div className="cr-chips">
+        {held.map((s) => (
+          <span key={s} className="cr-chip held">{s}</span>
+        ))}
+        {gap.map((s) => (
+          <span key={s} className="cr-chip gap">+{s}</span>
+        ))}
+      </div>
+    </div>
+  )
+
+  const tabsNavBlock = (
+    <div className="crd__tabs">
+      <span className={`crd__tab ${tab === 'desc' ? 'on' : ''}`} onClick={() => setTab('desc')}>상세 설명</span>
+      <span className={`crd__tab ${tab === 'company' ? 'on' : ''}`} onClick={() => setTab('company')}>회사</span>
+    </div>
+  )
+
+  const tabsBodyBlock = (
+    <div className="crd__body">
+      {tab === 'desc' ? (
+        <>
+          {p.descSections && p.descSections.length ? (
+            p.descSections.map((s, i) => (
+              <div key={i} style={{ marginBottom: 6 }}>
+                <div className="crd-sec">{s.title}</div>
+                <p style={{ whiteSpace: 'pre-line' }}>{renderBold(s.text)}</p>
+              </div>
+            ))
+          ) : (
+            <p>이 공고의 요구 기술 스택을 기반으로 매칭도를 계산했어요.</p>
+          )}
+          <div className="crd-sec">요구 기술</div>
+          <p>{p.techs.join(' · ')}</p>
+        </>
+      ) : (
+        <>
+          <div className="kv"><span>회사</span><b>{p.company}</b></div>
+          {ci.industry && <div className="kv"><span>업종</span><b>{ci.industry}</b></div>}
+          {ci.established && <div className="kv"><span>설립</span><b>{ci.established}</b></div>}
+          <div className="kv"><span>지역</span><b>{ci.location || p.region || 'Remote'}</b></div>
+          <div className="kv"><span>채용 풀</span><b>{p.pool}</b></div>
+          {ci.homepage && (
+            <div className="kv">
+              <span>홈페이지</span>
+              <a href={ci.homepage} target="_blank" rel="noreferrer" style={{ color: 'var(--c-accent)', fontWeight: 600 }}>
+                바로가기 ↗
+              </a>
+            </div>
+          )}
+          {ci.tags && ci.tags.length > 0 && (
+            <div style={{ marginTop: 12 }}>
+              {ci.tags.map((tg) => (
+                <span key={tg} className="cr-chip held" style={{ marginRight: 6 }}>{tg}</span>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  )
+
   const detail = (
     <>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10 }}>
-            <CompanyLogo logo={p.logo} name={p.company} size={54} radius={14} />
-            <div>
-              <div className="crd__co">
-                {p.company} · {p.pool}
-              </div>
-              <div className="crd__role" style={{ margin: '2px 0 0' }}>{p.title}</div>
-            </div>
-          </div>
-
-          <div className="crd__pills">
-            <span className="crd__pill"><MapPin size={15} /> {p.region || 'Remote'}</span>
-            <span className="crd__pill"><Briefcase size={15} /> {careerText(p.careerMin, p.careerMax)}</span>
-            {p.closeDate && (() => {
-              const d = Math.round((new Date(p.closeDate).getTime() - new Date(data.meta.asOf).getTime()) / 86400000)
-              if (d < 0) return null
-              const [, m, dd] = p.closeDate.split('-')
-              return (
-                <span className="crd__pill" style={{ color: '#e0693a' }}>
-                  <Calendar size={15} /> ~{Number(m)}/{Number(dd)} 마감 D-{d}
-                </span>
-              )
-            })()}
-          </div>
-
-          {/* 항상 보이는 매칭 섹션 */}
-          <div className="crd__match">
-            <h4>
-              <span>내 매칭 (요구 {matchTotal}개 중 {matchHeld}개 보유)</span>
-              <b>{matchPct}%</b>
-            </h4>
-            <div className="cr-track">
-              <i style={{ width: `${matchPct}%`, background: matchGrad(matchPct) }} />
-            </div>
-            <div className="cr-chips">
-              {held.map((s) => (
-                <span key={s} className="cr-chip held">{s}</span>
-              ))}
-              {gap.map((s) => (
-                <span key={s} className="cr-chip gap">+{s}</span>
-              ))}
-            </div>
-          </div>
-
-          {/* 탭 */}
-          <div className="crd__tabs">
-            <span className={`crd__tab ${tab === 'desc' ? 'on' : ''}`} onClick={() => setTab('desc')}>상세 설명</span>
-            <span className={`crd__tab ${tab === 'company' ? 'on' : ''}`} onClick={() => setTab('company')}>회사</span>
-          </div>
-
-          <div className="crd__body">
-            {tab === 'desc' ? (
-              <>
-                {p.descSections && p.descSections.length ? (
-                  p.descSections.map((s, i) => (
-                    <div key={i} style={{ marginBottom: 6 }}>
-                      <div className="crd-sec">{s.title}</div>
-                      <p style={{ whiteSpace: 'pre-line' }}>{renderBold(s.text)}</p>
-                    </div>
-                  ))
-                ) : (
-                  <p>이 공고의 요구 기술 스택을 기반으로 매칭도를 계산했어요.</p>
-                )}
-                <div className="crd-sec">요구 기술</div>
-                <p>{p.techs.join(' · ')}</p>
-              </>
-            ) : (
-              <>
-                <div className="kv"><span>회사</span><b>{p.company}</b></div>
-                {ci.industry && <div className="kv"><span>업종</span><b>{ci.industry}</b></div>}
-                {ci.established && <div className="kv"><span>설립</span><b>{ci.established}</b></div>}
-                <div className="kv"><span>지역</span><b>{ci.location || p.region || 'Remote'}</b></div>
-                <div className="kv"><span>채용 풀</span><b>{p.pool}</b></div>
-                {ci.homepage && (
-                  <div className="kv">
-                    <span>홈페이지</span>
-                    <a href={ci.homepage} target="_blank" rel="noreferrer" style={{ color: 'var(--c-accent)', fontWeight: 600 }}>
-                      바로가기 ↗
-                    </a>
-                  </div>
-                )}
-                {ci.tags && ci.tags.length > 0 && (
-                  <div style={{ marginTop: 12 }}>
-                    {ci.tags.map((tg) => (
-                      <span key={tg} className="cr-chip held" style={{ marginRight: 6 }}>{tg}</span>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-
+      {headerBlock}
+      {pillsBlock}
+      {matchBlock}
+      {tabsNavBlock}
+      {tabsBodyBlock}
       <div className="crd__actions">
         <button className="crd__apply">지원하기</button>
       </div>
     </>
   )
 
+  // 데스크톱 셸 크롬은 라우트 레이아웃(ResponsiveProductLayout)이 씌운다.
+  // 본문(회사·제목+탭)과 사이드(매칭·메타·지원 액션)를 2열로 나눠 가로 공간을 쓴다.
   if (isDesktop) {
     return (
-      <DesktopShell>
-        <div className="dsub">
-          <button className="dsub__back" onClick={() => navigate(-1)}><ChevronLeft size={17} /> 뒤로</button>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <h1 className="dsub__title" style={{ marginBottom: 0 }}>채용 상세</h1>
-            {bookmarkBtn}
+      <div className="dsub">
+        <button className="dsub__back" onClick={() => navigate(-1)}><ChevronLeft size={17} /> 뒤로</button>
+        <div className="djd">
+          <div className="djd-main crd">
+            {headerBlock}
+            {tabsNavBlock}
+            {tabsBodyBlock}
           </div>
-          <div className="dsub__content crd" style={{ maxWidth: 760 }}>{detail}</div>
+          <aside className="djd-side">
+            {matchBlock}
+            <div className="djd-card djd-meta">{pillsBlock}</div>
+            <div className="djd-applyrow">
+              <button className="djd-apply">지원하기</button>
+              <button
+                type="button"
+                className="djd-bookmark"
+                aria-label={bookmarked ? '북마크 해제' : '북마크'}
+                onClick={() => setBookmarked(!bookmarked)}
+              >
+                <Bookmark size={18} style={{ color: bookmarked ? 'var(--c-accent)' : 'var(--c-muted)', fill: bookmarked ? 'var(--c-accent)' : 'none' }} />
+              </button>
+            </div>
+          </aside>
         </div>
-      </DesktopShell>
+      </div>
     )
   }
 

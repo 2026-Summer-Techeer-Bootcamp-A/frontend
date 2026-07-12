@@ -1,16 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, MapPin, Briefcase, ArrowUpRight, Bell, Shield, Settings, LogOut, FileText, Award } from 'lucide-react'
+import { Search, MapPin, ArrowUpRight, FileText } from 'lucide-react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import {
-  MiniScore, SectionHeader, SegmentedControl, MenuRow, SkillChip,
+  MiniScore, SectionHeader, SegmentedControl, SkillChip,
   OpportunityQuadrant, TechIcon, type QuadItem,
 } from '../../career/kit'
 import CompanyLogo from '../../career/CompanyLogo'
 import { useResumesState, getDynamicPostings, calculateCoverage } from '../../career/state'
 import { useAuth } from '../../career/authStore'
-import careerData from '../../data/careerData.json'
 import marketData from '../../data/marketData.json'
 import './placeholders.css'
 
@@ -46,13 +45,12 @@ export function DesktopJobs() {
   }, [postings, pool, q, sort])
 
   const sel = list.find((p) => p.id === selId) ?? list[0]
-  const selIdx = sel ? careerData.postings.findIndex((x) => x.id === sel.id) : -1
 
   return (
     <div className="dpage djobs">
       <header className="dpage__head">
         <h1 className="dpage__title">맞춤 공고</h1>
-        <p className="dpage__desc">필터 · 결과 · 상세를 한 화면에서 (마스터–디테일)</p>
+        <p className="dpage__desc">필터 · 결과 · 상세를 한 화면에서</p>
       </header>
 
       <div className="djobs__grid">
@@ -114,7 +112,7 @@ export function DesktopJobs() {
                   </span>
                 ))}
               </div>
-              <button className="djobs__pv-cta" onClick={() => navigate(`/job/${selIdx}`)}>
+              <button className="djobs__pv-cta" onClick={() => navigate(`/job/${encodeURIComponent(sel.id)}`)}>
                 상세 보기 <ArrowUpRight size={16} />
               </button>
             </>
@@ -205,7 +203,13 @@ export function DesktopMap() {
         <p className="dpage__desc">국내 채용 공고를 지도와 리스트로 (핀 {pins.length}개)</p>
       </header>
       <div className="dmap__grid">
-        <div className="dcard dmap__map"><div ref={elRef} className="dmap__leaflet" /></div>
+        <div className="dcard dmap__map">
+          <div ref={elRef} className="dmap__leaflet" />
+          <div className="dmap__legend">
+            <span><i style={{ background: '#2f61b8' }} /> 매칭 50% 이상</span>
+            <span><i style={{ background: '#8fa0b8' }} /> 50% 미만</span>
+          </div>
+        </div>
         <aside className="dcard dmap__list">
           <SectionHeader title={sel ? '선택한 공고' : '공고 리스트'} hint={sel ? sel.district : `${pins.length}개`} />
           {sel && (
@@ -218,13 +222,13 @@ export function DesktopMap() {
               <MiniScore pct={sel.matchPct} size={40} />
             </button>
           )}
-          <div className="dmap__rows">
+          <div className="dmap__rows kit-scroll">
             {pins.slice(0, 30).map((p) => (
               <button key={p.id} className={`djobs__row${sel?.id === p.id ? ' on' : ''}`} onClick={() => setSel(p)}>
                 <CompanyLogo logo={p.logo} name={p.company} size={34} radius={9} />
                 <span className="djobs__row-b">
-                  <span className="djobs__row-t">{p.company}</span>
-                  <span className="djobs__row-c"><MapPin size={11} /> {p.district} · {p.tier}</span>
+                  <span className="djobs__row-t">{p.title}</span>
+                  <span className="djobs__row-c"><MapPin size={11} /> {p.company} · {p.district}</span>
                 </span>
               </button>
             ))}
@@ -238,7 +242,7 @@ export function DesktopMap() {
 /* ───────────────── 마이 — 프로필 · 기술 · 설정 ───────────────── */
 export function DesktopMy() {
   const navigate = useNavigate()
-  const { user, isAuthed, logout } = useAuth()
+  const { user, isAuthed } = useAuth()
   const { activeResume } = useResumesState()
   const skills = activeResume?.skills ?? []
   const coverage = activeResume?.coveragePct ?? calculateCoverage(skills, '국내')
@@ -254,52 +258,35 @@ export function DesktopMy() {
       </header>
 
       <div className="dmy__grid">
-        <div className="dmy__main">
-          <section className="dcard dmy__profile">
-            <span className="dmy__avatar">{initial}</span>
-            <div className="dmy__id">
-              <span className="dmy__nm">{name}</span>
-              <span className="dmy__em">{email}</span>
-            </div>
-            <button className="dmy__edit" onClick={() => navigate(isAuthed ? '/settings/account' : '/login')}>
-              {isAuthed ? '내 정보 수정' : '로그인'}
-            </button>
-          </section>
+        <section className="dcard dmy__profile">
+          <span className="dmy__avatar">{initial}</span>
+          <div className="dmy__id">
+            <span className="dmy__nm">{name}</span>
+            <span className="dmy__em">{email}</span>
+          </div>
+          <button className="dmy__edit" onClick={() => navigate(isAuthed ? '/settings/account' : '/login')}>
+            {isAuthed ? '내 정보 수정' : '로그인'}
+          </button>
+        </section>
 
-          <section className="dcard">
-            <SectionHeader title="활성 이력서" right={<button className="dpage__more" onClick={() => navigate('/resume/submit')}>편집</button>} />
-            <button className="dmy__resume" onClick={() => navigate('/resume/submit')}>
-              <span className="dmy__resume-ic"><FileText size={18} /></span>
-              <span className="djobs__row-b">
-                <span className="djobs__row-t">{activeResume?.title ?? '이력서'}</span>
-                <span className="djobs__row-c">{activeResume?.position ?? '직무 미정'} · 보유 기술 {skills.length}개 · 커버리지 {coverage}%</span>
-              </span>
-            </button>
-          </section>
+        <section className="dcard">
+          <SectionHeader title="활성 이력서" right={<button className="dpage__more" onClick={() => navigate('/resume/submit')}>편집</button>} />
+          <button className="dmy__resume" onClick={() => navigate('/resume/submit')}>
+            <span className="dmy__resume-ic"><FileText size={18} /></span>
+            <span className="djobs__row-b">
+              <span className="djobs__row-t">{activeResume?.title ?? '이력서'}</span>
+              <span className="djobs__row-c">{activeResume?.position ?? '직무 미정'} · 보유 기술 {skills.length}개 · 커버리지 {coverage}%</span>
+            </span>
+          </button>
+        </section>
 
-          <section className="dcard">
-            <SectionHeader title="보유 기술" hint={`${skills.length}개`} />
-            <div className="dmy__skills">
-              {skills.map((s) => <SkillChip key={s} tech={s} />)}
-              {skills.length === 0 && <div className="dpage__empty">등록된 기술이 없어요.</div>}
-            </div>
-          </section>
-        </div>
-
-        <aside className="dmy__aside">
-          <section className="dcard">
-            <SectionHeader title="설정" />
-            <div className="kit-menulist">
-              <MenuRow icon={<Award size={18} />} label="자격증 갭" onClick={() => navigate('/cert-gap')} />
-              <MenuRow icon={<Bell size={18} />} label="알림 설정" onClick={() => navigate('/settings/notifications')} />
-              <MenuRow icon={<Shield size={18} />} label="개인정보 · 데이터" value="원문 미저장" onClick={() => navigate('/settings/privacy')} />
-              <MenuRow icon={<Settings size={18} />} label="설정" onClick={() => navigate('/settings')} />
-              {isAuthed
-                ? <MenuRow icon={<LogOut size={18} />} label="로그아웃" danger onClick={() => { logout(); navigate('/login') }} />
-                : <MenuRow icon={<Briefcase size={18} />} label="로그인" onClick={() => navigate('/login')} />}
-            </div>
-          </section>
-        </aside>
+        <section className="dcard">
+          <SectionHeader title="보유 기술" hint={`${skills.length}개`} />
+          <div className="dmy__skills">
+            {skills.map((s) => <SkillChip key={s} tech={s} />)}
+            {skills.length === 0 && <div className="dpage__empty">등록된 기술이 없어요.</div>}
+          </div>
+        </section>
       </div>
     </div>
   )
