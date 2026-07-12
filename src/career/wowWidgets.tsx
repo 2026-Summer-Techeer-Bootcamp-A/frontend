@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import ReactECharts from 'echarts-for-react'
 import { Check } from 'lucide-react'
 import { AsOf } from './charts'
-import { SectionHeader, useCountUp } from './kit'
+import { SectionHeader, useCountUp, MiniScore } from './kit'
 import { FONT, tooltipStyle } from '../pages/widgets/base'
 import type { WidgetSize } from './dashboardConfig'
+import { useResumesState, getDynamicPostings } from './state'
 import feedRaw from '../data/feedData.json'
 import y1Raw from '../data/pearl/y1.json'
 import matchRaw from '../data/matchData.json'
@@ -32,19 +34,23 @@ function stripHeaderRow<T>(rows: unknown[]): T[] {
    최신 공고 타임라인 + 내 매칭 강조
    ============================================================ */
 type DailyRow = { date: string; total: number; matched: number }
-type RecentRow = {
-  id: number; date: string; title: string; company: string; cat: string; career: string
-  techs: string[]; myTechs: string[]; score: number; matched: boolean; loc: string
-}
 type FeedMeta = { N: number; asOf: string; myskills: string[]; matchedN: number }
 const FEED = feedRaw as unknown as { _meta: FeedMeta; daily: unknown[]; recent: unknown[] }
 const FEED_DAILY = stripHeaderRow<DailyRow>(FEED.daily)
-const FEED_RECENT = stripHeaderRow<RecentRow>(FEED.recent)
 
 export function LatestJobsTimeline({ size = '2x2' }: { size?: WidgetSize }) {
-  const matchedRecent = useMemo(() => FEED_RECENT.filter((r) => r.matched), [])
+  const navigate = useNavigate()
+  const { activeResume } = useResumesState()
+  const skills = useMemo(() => activeResume?.skills ?? [], [activeResume])
+  // 하단 리스트는 careerData 기반(getDynamicPostings)으로 만든다 — feedData의 id는
+  // 상세 페이지(careerData) id와 달라 클릭해도 /job/{id}로 갈 수 없기 때문.
+  // 상단 36일 일별 차트는 계속 feedData를 쓴다(시계열 소스는 그대로 유지).
+  const rankedPostings = useMemo(
+    () => getDynamicPostings(skills).filter((p) => p.pool === '국내').sort((a, b) => b.matchPct - a.matchPct),
+    [skills],
+  )
   const maxTotal = useMemo(() => Math.max(...FEED_DAILY.map((d) => d.total), 1), [])
-  const listCount = size === '2x2' ? 10 : size === '2x1' ? 3 : 0
+  const listCount = size === '2x2' ? 14 : size === '2x1' ? 3 : 0
   const matchedCount = useCountUp(size === '1x1' ? FEED._meta.matchedN : 0)
 
   return (
@@ -83,20 +89,44 @@ export function LatestJobsTimeline({ size = '2x2' }: { size?: WidgetSize }) {
               ))}
             </div>
             {listCount > 0 && (
-              <div className="wow-joblist">
-                {matchedRecent.slice(0, listCount).map((r) => (
-                  <div key={r.id} className="wow-joblist__row">
-                    <div className="wow-joblist__main">
-                      <span className="wow-joblist__co">{r.company}</span>
-                      <span className="wow-joblist__title">{r.title}</span>
-                    </div>
-                    <div className="wow-joblist__chips">
-                      {r.myTechs.slice(0, 3).map((t) => <span key={t} className="wow-chip">{t}</span>)}
-                    </div>
-                    <span className="wow-joblist__score">{r.score}</span>
-                  </div>
-                ))}
-              </div>
+              <>
+                <p className="wow-joblist__label">국내 최신 공고 · 내 매칭순</p>
+                <div className="wow-joblist">
+                  {rankedPostings.slice(0, listCount).map((p) => {
+                    const held = p.techs.filter((t) => skills.includes(t))
+                    const heldShown = held.slice(0, 3)
+                    const heldExtra = held.length - heldShown.length
+                    const gapShown = p.gap.slice(0, 3)
+                    const gapExtra = p.gap.length - gapShown.length
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        className="wow-joblist__row"
+                        onClick={() => navigate(`/job/${encodeURIComponent(p.id)}`)}
+                      >
+                        <div className="wow-joblist__top">
+                          <div className="wow-joblist__main">
+                            <div className="wow-joblist__meta">
+                              <span className="wow-joblist__co">{p.company} · {p.tier}</span>
+                              <span className="wow-joblist__date">{p.postDate.slice(5)}</span>
+                            </div>
+                            <span className="wow-joblist__title">{p.title}</span>
+                            {(p.region || p.district) && <span className="wow-joblist__loc">{p.region || p.district}</span>}
+                          </div>
+                          <MiniScore pct={p.matchPct} size={40} />
+                        </div>
+                        <div className="wow-joblist__chips">
+                          {heldShown.map((t) => <span key={`h-${t}`} className="wow-chip wow-chip--held">{t}</span>)}
+                          {heldExtra > 0 && <span className="wow-chip wow-chip--held wow-chip--more">+{heldExtra}</span>}
+                          {gapShown.map((t) => <span key={`g-${t}`} className="wow-chip wow-chip--gap">{t}</span>)}
+                          {gapExtra > 0 && <span className="wow-chip wow-chip--gap wow-chip--more">+{gapExtra}</span>}
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              </>
             )}
           </>
         )}
