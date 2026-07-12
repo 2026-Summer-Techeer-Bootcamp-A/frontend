@@ -5,6 +5,8 @@ import PhoneFrame from '../components/PhoneFrame'
 import CompanyLogo from './CompanyLogo'
 import { matchGrad } from './kit'
 import { THEME, themeVars } from './themes'
+import { useIsDesktop } from '../shared/useMediaQuery'
+import DesktopShell from '../desktop/DesktopShell'
 import data from '../data/careerData.json'
 import { useResumesState } from './state'
 import './career.css'
@@ -27,6 +29,7 @@ export default function JobDetail() {
   const { id } = useParams<{ id: string }>()
   const t = THEME
   const navigate = useNavigate()
+  const isDesktop = useIsDesktop()
   const [tab, setTab] = useState<'desc' | 'company'>('desc')
   const [bookmarked, setBookmarked] = useState(false)
   const { activeResume } = useResumesState()
@@ -54,28 +57,22 @@ export default function JobDetail() {
   const matchPct = matchTotal ? Math.round((matchHeld / matchTotal) * 100) : 100
 
   const ci = p.companyInfo ?? { industry: '', homepage: '', established: '', location: '', tags: [] as string[] }
-  return (
-    <div className="stage" style={{ background: t.stageBg }}>
-      <PhoneFrame stage="purple" bare screenBg={t.screenBg} statusTheme={t.statusTheme} homeIndicator="dark">
-        <div className="crd kit-trans kit-trans--push" style={themeVars(t)}>
-          <div className="crd__head">
-            <span className="crd__back" onClick={() => navigate(-1)}>
-              <ChevronLeft size={24} />
-            </span>
-            <span style={{ fontSize: 16, fontWeight: 600, margin: '0 auto' }}>채용 상세</span>
-            <Bookmark
-              size={21}
-              style={{
-                cursor: 'pointer',
-                color: bookmarked ? 'var(--c-accent)' : 'var(--c-muted)',
-                fill: bookmarked ? 'var(--c-accent)' : 'none',
-                transition: 'all 0.2s ease',
-              }}
-              onClick={() => setBookmarked(!bookmarked)}
-            />
-          </div>
+  const bookmarkBtn = (
+    <Bookmark
+      size={21}
+      style={{
+        cursor: 'pointer',
+        color: bookmarked ? 'var(--c-accent)' : 'var(--c-muted)',
+        fill: bookmarked ? 'var(--c-accent)' : 'none',
+        transition: 'all 0.2s ease',
+      }}
+      onClick={() => setBookmarked(!bookmarked)}
+    />
+  )
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10 }}>
+  const detail = (
+    <>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10 }}>
             <CompanyLogo logo={p.logo} name={p.company} size={54} radius={14} />
             <div>
               <div className="crd__co">
@@ -167,9 +164,39 @@ export default function JobDetail() {
             )}
           </div>
 
-          <div className="crd__actions">
-            <button className="crd__apply">지원하기</button>
+      <div className="crd__actions">
+        <button className="crd__apply">지원하기</button>
+      </div>
+    </>
+  )
+
+  if (isDesktop) {
+    return (
+      <DesktopShell>
+        <div className="dsub">
+          <button className="dsub__back" onClick={() => navigate(-1)}><ChevronLeft size={17} /> 뒤로</button>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <h1 className="dsub__title" style={{ marginBottom: 0 }}>채용 상세</h1>
+            {bookmarkBtn}
           </div>
+          <div className="dsub__content crd" style={{ maxWidth: 760 }}>{detail}</div>
+        </div>
+      </DesktopShell>
+    )
+  }
+
+  return (
+    <div className="stage stage--app">
+      <PhoneFrame app stage="purple" bare screenBg={t.screenBg} statusTheme={t.statusTheme} homeIndicator="dark">
+        <div className="crd kit-trans kit-trans--push" style={themeVars(t)}>
+          <div className="crd__head">
+            <span className="crd__back" onClick={() => navigate(-1)}>
+              <ChevronLeft size={24} />
+            </span>
+            <span style={{ fontSize: 16, fontWeight: 600, margin: '0 auto' }}>채용 상세</span>
+            {bookmarkBtn}
+          </div>
+          {detail}
         </div>
       </PhoneFrame>
     </div>

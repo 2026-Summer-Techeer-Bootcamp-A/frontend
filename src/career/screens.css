@@ -763,6 +763,40 @@
 }
 
 /* ---- 데모 페이지 이동 리모컨 (폰 프레임 밖 · 뷰포트 우상단) ---- */
+/* 데스크톱 보조 화면(설정·이력서 제출·기술/자격증 등) — 사이드바 셸 안의 콘텐츠 컬럼.
+   PhoneFrame 모바일 컬럼이 아니라 데스크톱 앱 크롬 안에서 렌더된다. */
+.dsub {
+  max-width: 920px;
+  --line: #e6e9ef;
+  --accent-50: #eef3fb;
+  --accent-100: #dde8f9;
+  --accent-200: #bcd0f0;
+  --accent-300: #8fb0e2;
+  --accent-700: #21447c;
+  --e1: 0 1px 2px rgba(20, 30, 60, 0.05), 0 1px 1px rgba(20, 30, 60, 0.04);
+  --e2: 0 2px 8px rgba(20, 30, 60, 0.06), 0 1px 2px rgba(20, 30, 60, 0.05);
+  --e3: 0 8px 24px rgba(20, 30, 60, 0.08), 0 2px 6px rgba(20, 30, 60, 0.05);
+}
+.dsub__back {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 13px; font-weight: 600; color: var(--c-muted); margin-bottom: 8px;
+  transition: color 0.14s ease;
+}
+.dsub__back:hover { color: var(--c-ink); }
+.dsub__title { font-size: 24px; font-weight: 800; letter-spacing: -0.8px; color: var(--c-ink); margin-bottom: 16px; }
+.dsub__content { max-width: 680px; }
+
+/* 이력서 폼 드롭다운(직무 카테고리) */
+.scr-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%237c7f88' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+  cursor: pointer;
+}
+
 .demo-remote { position: fixed; bottom: 18px; right: 18px; z-index: 200; }
 .demo-remote__btn {
   display: inline-flex; align-items: center; gap: 7px;
