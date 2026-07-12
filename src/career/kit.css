@@ -1000,7 +1000,7 @@ button.kit-wcard:active { opacity: 0.6; }
 .kit-wset__btn[aria-expanded='true'] { background: var(--accent-50); color: var(--c-ink); border-color: var(--c-ink); }
 .kit-wset__pop {
   position: absolute; top: calc(100% + 8px); right: 0; z-index: 40;
-  min-width: 232px; max-height: 320px; overflow-y: auto;
+  min-width: 260px; max-height: 320px; overflow-y: auto;
   background: var(--c-card); border: 1px solid var(--line); border-radius: 14px;
   box-shadow: var(--e3); padding: 8px;
 }
@@ -1015,3 +1015,9 @@ button.kit-wcard:active { opacity: 0.6; }
 }
 .kit-wset__row:hover { background: var(--accent-50); }
 .kit-wset__row input[type='checkbox'] { flex: none; width: 15px; height: 15px; accent-color: var(--c-accent); }
+.kit-wset__row2 { display: flex; align-items: center; gap: 8px; padding: 6px 4px; }
+.kit-wset__shape { flex: none; display: flex; align-items: center; justify-content: center; width: 26px; height: 20px; color: var(--c-muted); }
+.kit-wset__row2-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; color: var(--c-ink); }
+.kit-wset__sizepills { flex: none; display: flex; gap: 3px; }
+.kit-wset__sizepill { font-size: 10px; font-weight: 700; color: var(--c-muted); border: 1px solid var(--line); border-radius: 6px; padding: 3px 5px; }
+.kit-wset__sizepill.on { color: #fff; background: var(--c-accent); border-color: var(--c-accent); }
