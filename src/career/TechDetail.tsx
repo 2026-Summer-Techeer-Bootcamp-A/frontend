@@ -1,8 +1,10 @@
+import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { ChartColumn } from 'lucide-react'
 import { SubScreen, Card, AsOf, HBars, Sparkline } from './charts'
 import market from '../data/marketData.json'
 import career from '../data/careerData.json'
+import { recruitmentApi, type CompanyBySkillDto } from './recruitmentApi'
 
 const RESUME: string[] = career.resume.skills
 
@@ -10,6 +12,19 @@ export default function TechDetail() {
   const { name = '' } = useParams<{ name: string }>()
   const tech = decodeURIComponent(name)
   const owned = RESUME.includes(tech)
+  const [companyData, setCompanyData] = useState<CompanyBySkillDto | null>(null)
+  const [companyLoading, setCompanyLoading] = useState(true)
+  const [companyError, setCompanyError] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+    setCompanyLoading(true); setCompanyError('')
+    recruitmentApi.companiesBySkill(tech, 'domestic')
+      .then((result) => { if (!cancelled) setCompanyData(result) })
+      .catch((reason) => { if (!cancelled) setCompanyError(reason instanceof Error ? reason.message : '회사 데이터를 불러오지 못했습니다.') })
+      .finally(() => { if (!cancelled) setCompanyLoading(false) })
+    return () => { cancelled = true }
+  }, [tech])
 
   const detail = (market.techDetail as never as Record<string, {
     byCareer: { band: string; count: number }[]; spark: { y: string; n: number }[]
@@ -17,10 +32,12 @@ export default function TechDetail() {
   const cooc = (market.cooccurrence as never as Record<string, {
     base: number; items: { tech: string; coRate: number; coCount: number }[]
   }>)[tech]
-  const comp = (market.companyBySkill as never as Record<string, {
-    splitDate: string; present: { company: string; count: number }[]
-    past: { company: string; count: number }[]; domesticNote: string
-  }>)[tech]
+  const comp = companyData ? {
+    splitDate: companyData.split_date,
+    present: companyData.present.map((item) => ({ company: item.company, count: item.posting_count })),
+    past: companyData.past.map((item) => ({ company: item.company, count: item.posting_count })),
+    domesticNote: companyData.domestic_note ?? '',
+  } : null
 
   // 점유율(국내/국외)
   const shareOf = (pool: '국내' | '국외') => {
@@ -83,6 +100,8 @@ export default function TechDetail() {
       )}
 
       {/* 과거 vs 현재 기업 */}
+      {companyLoading && <Card><div className="scr-card__hint">회사 데이터를 불러오는 중입니다.</div></Card>}
+      {companyError && <Card><div className="scr-card__hint" role="alert">{companyError}</div></Card>}
       {comp && (
         <Card>
           <div className="scr-card__title">이 기술을 원한 기업</div>
