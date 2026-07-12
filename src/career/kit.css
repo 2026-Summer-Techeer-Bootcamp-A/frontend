@@ -494,7 +494,7 @@ button.kit-wcard:active { opacity: 0.6; }
   border-radius: 22px;
   padding: 20px;
   color: #fff;
-  background: linear-gradient(145deg, #0b0b0c 0%, #21447c 100%);
+  background: linear-gradient(145deg, #0b0b0c 0%, #18181b 100%);
   box-shadow: 0 12px 30px -10px rgba(33, 68, 124, 0.55);
 }
 .kit-rhero__top { display: flex; align-items: center; gap: 16px; }
@@ -504,7 +504,7 @@ button.kit-wcard:active { opacity: 0.6; }
 }
 .kit-rhero__hole {
   width: 66px; height: 66px; border-radius: 50%;
-  background: #21447c;
+  background: #18181b;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
 .kit-rhero__hole b { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }

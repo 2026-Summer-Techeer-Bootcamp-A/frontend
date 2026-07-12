@@ -31,7 +31,7 @@ export default function SettingsHome() {
       <div className="kit-menulist">
         <MenuRow icon={<FileText size={18} />} tint="#7c7f88" label="이용약관" onClick={() => navigate('/settings/terms')} />
         <MenuRow icon={<Shield size={18} />} tint="#218a58" label="개인정보처리방침" onClick={() => navigate('/settings/privacy')} />
-        <MenuRow icon={<Info size={18} />} tint="#5a86cf" label="앱 정보" value={`v${APP_VERSION}`} onClick={() => navigate('/settings/about')} />
+        <MenuRow icon={<Info size={18} />} tint="#a1a1aa" label="앱 정보" value={`v${APP_VERSION}`} onClick={() => navigate('/settings/about')} />
       </div>
 
       {isAuthed && (

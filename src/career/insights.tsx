@@ -150,7 +150,7 @@ const CAT_LABEL: Record<string, string> = {
   language: '언어', frontend: '프론트엔드', backend: '백엔드', data_db: '데이터·DB',
   cloud_services: '클라우드', devops: '데브옵스', ai_llm: 'AI/LLM', mobile: '모바일',
 }
-const OWNED_RING = '#21447c'
+const OWNED_RING = '#18181b'
 
 export function TechCoNetworkGraph({ skills = RESUME }: { skills?: string[] }) {
   const resumeSet = useMemo(() => new Set(skills), [skills])
@@ -168,7 +168,7 @@ export function TechCoNetworkGraph({ skills = RESUME }: { skills?: string[] }) {
         }
         const n = p.data.raw as NNode
         const isOwned = resumeSet.has(n.tech)
-        return `<b>${n.tech}</b> <span style="color:${CAT_COLOR[n.category]}">· ${CAT_LABEL[n.category]}</span>${isOwned ? ' <span style="color:#21447c">· 보유</span>' : ''}<br/>공고 ${n.n.toLocaleString()}건`
+        return `<b>${n.tech}</b> <span style="color:${CAT_COLOR[n.category]}">· ${CAT_LABEL[n.category]}</span>${isOwned ? ' <span style="color:#18181b">· 보유</span>' : ''}<br/>공고 ${n.n.toLocaleString()}건`
       },
     },
     series: [{
