@@ -263,6 +263,18 @@ export function TrendPropagationGraph() {
   )
 }
 
+/** 네트워크 그래프 옆 요약패널용 — 연결강도(n) 상위 기술. */
+export function getNetworkTopConnections(limit = 5): { tech: string; n: number }[] {
+  return [...N_DATA.data.nodes].sort((a, b) => b.n - a.n).slice(0, limit).map((n) => ({ tech: n.tech, n: n.n }))
+}
+
+/** 트렌드 전파 그래프 옆 요약패널용 — 선도 기술(출발 엣지 수) 상위. */
+export function getPropagationTopLeaders(limit = 5): { tech: string; count: number }[] {
+  const outdeg: Record<string, number> = {}
+  Y4.data.edges.forEach((e) => { outdeg[e.leader] = (outdeg[e.leader] ?? 0) + 1 })
+  return Object.entries(outdeg).sort((a, b) => b[1] - a[1]).slice(0, limit).map(([tech, count]) => ({ tech, count }))
+}
+
 /* ============================================================
    통계 탭 — 기업 규모별(대기업/중견/중소) 기술 요구 차이
    careerData.json 국내 공고 실측 집계(클라이언트 계산) · "격차 큰 순" 정렬.
