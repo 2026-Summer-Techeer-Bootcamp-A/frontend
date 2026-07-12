@@ -13,11 +13,13 @@ import {
 } from '../../career/insights'
 import { useWidgetData } from '../../career/useWidgetData'
 import CompanyLogo from '../../career/CompanyLogo'
-import { useResumesState, getDynamicPostings, calculateCoverage } from '../../career/state'
+import { useResumesState, getDynamicPostings, calculateCoverage, ddayInfo } from '../../career/state'
 import { useAuth } from '../../career/authStore'
 import marketData from '../../data/marketData.json'
+import data from '../../data/careerData.json'
 import './placeholders.css'
 import './market.css'
+import './jobs.css'
 
 /* 데스크톱 페이지 — 모바일 단일컬럼과 분리된 PC 레이아웃 틀.
    대시보드(홈)는 DesktopOverview.tsx가 담당. 여기는 공고·시장·지도·마이. */
@@ -29,43 +31,178 @@ function careerLabel(min: number | null, max: number | null) {
   return max && max !== min ? `경력 ${min}~${max}년` : `경력 ${min}년+`
 }
 
+/* ───────────────── 검색(구 맞춤 공고) — 필터 전면 + 이력서 자동주입 ─────────────────
+   postings에는 "직무"에 해당하는 별도 필드가 없다(careerData.json 확인 완료 — title/techs/
+   region/tier/careerMin·Max/pool 뿐). title에서 직무를 유추하면 데이터에 없는 사실을
+   만들어내는 셈이라, 브리핑 지시대로 직무 필터는 스킵하고 리포트 우려사항에 남긴다. */
+const TIERS = ['대기업', '중견', '중소'] as const
+const TOP_TECHS = data.topTechs.slice(0, 20).map((t) => t.tech)
+const JOBS_AS_OF = data.meta.asOf
+const CAREER_PRESETS: { key: string; label: string; min: number | null; max: number | null }[] = [
+  { key: 'all', label: '전체', min: null, max: null },
+  { key: 'new', label: '신입', min: 0, max: 0 },
+  { key: '1-3', label: '1-3년', min: 1, max: 3 },
+  { key: '3-5', label: '3-5년', min: 3, max: 5 },
+  { key: '5+', label: '5년+', min: 5, max: null },
+]
+
 /* ───────────────── 맞춤 공고 — 마스터-디테일 ───────────────── */
 export function DesktopJobs() {
   const navigate = useNavigate()
-  const { activeResume } = useResumesState()
+  const { resumes, activeId, activeResume, selectResume } = useResumesState()
   const skills = activeResume?.skills ?? []
+
   const [pool, setPool] = useState<'국내' | '국외'>('국내')
   const [q, setQ] = useState('')
   const [sort, setSort] = useState<'match' | 'tier' | 'latest'>('match')
   const [selId, setSelId] = useState<string | null>(null)
+  const [techFilter, setTechFilter] = useState<Set<string>>(new Set())
+  const [region, setRegion] = useState('')
+  const [careerMin, setCareerMin] = useState<number | null>(null)
+  const [careerMax, setCareerMax] = useState<number | null>(null)
+  const [deadlineOnly, setDeadlineOnly] = useState(false)
+  const [tierFilter, setTierFilter] = useState<Set<string>>(new Set(TIERS))
+
+  // 이력서 셀렉터 → 필터 자동주입(헤드라인 기능). 이력서를 "선택"할 때 1회만 초기값을
+  // 채워 넣고, 그 뒤로는 사용자가 자유롭게 덮어쓸 수 있어야 하므로 activeId(선택 이벤트)에만
+  // 반응한다 — activeResume 객체 참조가 다른 이유(예: 다른 화면에서 resume-state-change)로
+  // 바뀌어도 여기서 재실행되어 사용자가 손댄 필터를 되돌리면 안 된다.
+  useEffect(() => {
+    if (!activeResume) return
+    setTechFilter(new Set(activeResume.skills))
+    setCareerMin(activeResume.careerMin)
+    setCareerMax(activeResume.careerMax)
+    if (activeResume.pool) setPool(activeResume.pool)
+    // 직무(position) 필터는 위 사유로 존재하지 않아 자동주입 대상에서도 제외한다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeId])
 
   const postings = useMemo(() => getDynamicPostings(skills), [skills])
+  const byPool = useMemo(() => postings.filter((p) => p.pool === pool), [postings, pool])
+  const regions = useMemo(
+    () => [...new Set(byPool.map((p) => p.region).filter((r): r is string => !!r))].sort((a, b) => a.localeCompare(b, 'ko')),
+    [byPool],
+  )
+
   const list = useMemo(() => {
+    let arr = byPool
     const s = q.trim().toLowerCase()
-    let arr = postings.filter((p) => p.pool === pool)
     if (s) arr = arr.filter((p) => (p.company + ' ' + p.title).toLowerCase().includes(s))
+    if (techFilter.size > 0) arr = arr.filter((p) => [...techFilter].every((t) => p.techs.includes(t)))
+    if (region) arr = arr.filter((p) => p.region === region)
+    if (careerMin != null) arr = arr.filter((p) => (p.careerMax ?? Infinity) >= careerMin)
+    if (careerMax != null) arr = arr.filter((p) => (p.careerMin ?? 0) <= careerMax)
+    if (deadlineOnly) {
+      arr = arr.filter((p) => {
+        const dd = ddayInfo(p.closeDate || '', JOBS_AS_OF)
+        return dd != null && dd.d <= 7
+      })
+    }
+    arr = arr.filter((p) => tierFilter.has(p.tier || '중소'))
     return [...arr].sort((a, b) =>
       sort === 'tier' ? tierRank(a.tier) - tierRank(b.tier) || b.matchPct - a.matchPct
         : sort === 'latest' ? (b.postDate || '').localeCompare(a.postDate || '')
           : b.matchPct - a.matchPct)
-  }, [postings, pool, q, sort])
+  }, [byPool, q, techFilter, region, careerMin, careerMax, deadlineOnly, tierFilter, sort])
 
   const sel = list.find((p) => p.id === selId) ?? list[0]
+  const activePresetKey = CAREER_PRESETS.find((c) => c.min === careerMin && c.max === careerMax)?.key ?? null
+
+  const toggleTech = (t: string) => setTechFilter((s) => {
+    const next = new Set(s)
+    if (next.has(t)) next.delete(t); else next.add(t)
+    return next
+  })
+  const toggleTier = (t: string) => setTierFilter((s) => {
+    const next = new Set(s)
+    if (next.has(t)) next.delete(t); else next.add(t)
+    return next
+  })
 
   return (
     <div className="dpage djobs">
       <div className="djobs__grid">
         {/* 필터 */}
         <aside className="dcard djobs__filters">
+          {resumes.length === 0 ? (
+            <div className="djobs__resume-cta">
+              <span>이력서를 등록하면 필터가 자동으로 채워져요</span>
+              <button onClick={() => navigate('/resume/submit')}>이력서 등록하기</button>
+            </div>
+          ) : (
+            <div className="djobs__fld">
+              <span className="djobs__fld-l">이력서로 자동 채우기</span>
+              <div className="djobs__chiprow">
+                {resumes.map((r, i) => (
+                  <button
+                    key={r.id}
+                    className={activeId === r.id ? 'on' : ''}
+                    onClick={() => selectResume(r.id)}
+                  >
+                    이력서 {i + 1}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="djobs__search">
             <Search size={16} />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="회사 · 공고 검색" />
           </div>
+
           <div className="djobs__fld">
             <span className="djobs__fld-l">채용 풀</span>
             <SegmentedControl value={pool} onChange={(v) => setPool(v as '국내' | '국외')}
               options={[{ key: '국내', label: '국내' }, { key: '국외', label: '글로벌' }]} />
           </div>
+
+          <div className="djobs__fld">
+            <span className="djobs__fld-l">기술 스택</span>
+            <div className="djobs__chiprow">
+              {TOP_TECHS.map((t) => (
+                <button key={t} className={techFilter.has(t) ? 'on' : ''} onClick={() => toggleTech(t)}>{t}</button>
+              ))}
+            </div>
+          </div>
+
+          <div className="djobs__fld">
+            <span className="djobs__fld-l">지역</span>
+            <select className="djobs__select" value={region} onChange={(e) => setRegion(e.target.value)}>
+              <option value="">전체</option>
+              {regions.map((r) => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+
+          <div className="djobs__fld">
+            <span className="djobs__fld-l">경력</span>
+            <div className="djobs__chiprow">
+              {CAREER_PRESETS.map((c) => (
+                <button
+                  key={c.key}
+                  className={activePresetKey === c.key ? 'on' : ''}
+                  onClick={() => { setCareerMin(c.min); setCareerMax(c.max) }}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="djobs__fld">
+            <span className="djobs__fld-l">기업 규모</span>
+            <div className="djobs__chiprow">
+              {TIERS.map((t) => (
+                <button key={t} className={tierFilter.has(t) ? 'on' : ''} onClick={() => toggleTier(t)}>{t}</button>
+              ))}
+            </div>
+          </div>
+
+          <label className="djobs__toggle">
+            <input type="checkbox" checked={deadlineOnly} onChange={(e) => setDeadlineOnly(e.target.checked)} />
+            마감 임박(7일 이내)만
+          </label>
+
           <div className="djobs__fld">
             <span className="djobs__fld-l">정렬</span>
             <div className="djobs__sorts">
@@ -74,11 +211,13 @@ export function DesktopJobs() {
               ))}
             </div>
           </div>
+
           <div className="djobs__count">{list.length.toLocaleString()}건</div>
         </aside>
 
         {/* 결과 리스트 */}
         <div className="dcard djobs__list">
+          {list.length === 0 && <div className="dpage__empty">조건에 맞는 공고가 없어요.</div>}
           {list.slice(0, 40).map((p) => (
             <button
               key={p.id}
