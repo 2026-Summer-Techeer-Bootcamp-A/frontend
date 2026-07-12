@@ -212,6 +212,13 @@
 .dmy__resume-btn:active { transform: scale(0.96); opacity: 0.85; }
 
 .dmy__skills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.dmy__manage {
+  font-size: 12.5px; font-weight: 700; color: var(--accent-700);
+  background: var(--accent-50); border-radius: 999px; padding: 6px 12px;
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+.dmy__manage:hover { background: var(--accent-100); }
+.dmy__manage:active { transform: scale(0.96); }
 
 /* 북마크한 공고 — 맞춤 공고와 동일한 2열 컴팩트 카드 그리드 */
 .dmy__jobs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }

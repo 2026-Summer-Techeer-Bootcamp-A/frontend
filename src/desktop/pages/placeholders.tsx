@@ -21,6 +21,7 @@ import { useDashboardConfig, isWidgetHidden, getWidgetSize } from '../../career/
 import { MARKET_WIDGETS } from '../../career/widgetCatalog'
 import { useBookmarks } from '../../career/bookmarkStore'
 import { useRecentViews } from '../../career/viewHistoryStore'
+import { SkillManagerModal } from '../SkillManagerModal'
 import marketData from '../../data/marketData.json'
 import data from '../../data/careerData.json'
 import './placeholders.css'
@@ -820,16 +821,20 @@ export function DesktopMap() {
 
 /* ───────────────── 마이 — 프로필 · 이력서 · 활동(대시보드/시장과 통일된 커맨드센터 톤) ─────────────────
    상단 검정 히어로(대시보드 HeroStat 계열과 시각적으로 호응) + 2컬럼 본문(.dmy__body).
-   좌측(main): 활성 이력서 · 보유 기술 · 북마크한 공고. 우측(aside): 활동 요약 · 최근 본 공고 · 바로가기. */
+   좌측(main): 내 이력서 · 보유 기술 · 북마크한 공고. 우측(aside): 활동 요약 · 최근 본 공고 · 바로가기.
+   이력서는 단일화되어(Task 9-A) 여러 개 중 하나를 "활성"으로 고르는 개념이 아니므로
+   문구도 "내 이력서"로 통일한다. */
 export function DesktopMy() {
   const navigate = useNavigate()
   const { user, isAuthed } = useAuth()
-  const { activeResume } = useResumesState()
+  const { activeResume, updateResumes } = useResumesState()
   const skills = activeResume?.skills ?? []
   const coverage = activeResume?.coveragePct ?? calculateCoverage(skills, '국내')
   const name = user?.nickname ?? '리버'
   const email = user?.email ?? 'bootcamp@example.com'
   const initial = (user ? (user.nickname || user.email) : 'RV').slice(0, 2).toUpperCase()
+
+  const [skillModalOpen, setSkillModalOpen] = useState(false)
 
   const postings = useMemo(() => getDynamicPostings(skills), [skills])
 
@@ -872,7 +877,7 @@ export function DesktopMy() {
       <div className="dmy__body">
         <div className="dmy__main">
           <section className="dcard">
-            <SectionHeader title="활성 이력서" right={<button className="dpage__more" onClick={() => navigate('/resume/submit')}>편집</button>} />
+            <SectionHeader title="내 이력서" right={<button className="dpage__more" onClick={() => navigate('/resume/submit')}>편집</button>} />
             {activeResume ? (
               <button className="dmy__resume" onClick={() => navigate('/resume/submit')}>
                 <span className="dmy__resume-ic"><FileText size={18} /></span>
@@ -890,10 +895,22 @@ export function DesktopMy() {
           </section>
 
           <section className="dcard">
-            <SectionHeader title="보유 기술" hint={`${skills.length}개`} />
+            <SectionHeader
+              title="보유 기술"
+              hint={`${skills.length}개`}
+              right={activeResume && (
+                <button className="dmy__manage" onClick={() => setSkillModalOpen(true)}>기술 관리</button>
+              )}
+            />
             <div className="dmy__skills">
-              {skills.map((s) => <SkillChip key={s} tech={s} />)}
-              {skills.length === 0 && <div className="dpage__empty">등록된 기술이 없어요.</div>}
+              {!activeResume ? (
+                <div className="dpage__empty">이력서를 먼저 등록해주세요.</div>
+              ) : (
+                <>
+                  {skills.map((s) => <SkillChip key={s} tech={s} />)}
+                  {skills.length === 0 && <div className="dpage__empty">등록된 기술이 없어요.</div>}
+                </>
+              )}
             </div>
           </section>
 
@@ -959,6 +976,13 @@ export function DesktopMy() {
           </section>
         </aside>
       </div>
+
+      <SkillManagerModal
+        open={skillModalOpen && !!activeResume}
+        onClose={() => setSkillModalOpen(false)}
+        owned={skills}
+        onChange={(next) => { if (activeResume) updateResumes([{ ...activeResume, skills: next }]) }}
+      />
     </div>
   )
 }
