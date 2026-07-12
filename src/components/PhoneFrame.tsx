@@ -57,6 +57,9 @@ interface PhoneFrameProps {
   tilt?: boolean
   /** 스크롤과 무관하게 폰 화면에 고정되는 오버레이(데모 리모컨 등) */
   overlay?: ReactNode
+  /** 앱 모드: 가짜 기기 베젤·상태바·아일랜드·홈인디케이터를 제거하고 뷰포트를 채우는
+      PC↔모바일 반응형 컬럼으로 렌더한다. 랩 목업 페이지는 이 값을 켜지 않아 프레임이 유지된다. */
+  app?: boolean
 }
 
 export default function PhoneFrame({
@@ -69,15 +72,16 @@ export default function PhoneFrame({
   bare = false,
   tilt = false,
   overlay,
+  app = false,
 }: PhoneFrameProps) {
   const phone = (
-    <div className={`phone${tilt ? ' phone--tilt' : ''}`}>
-      <div className="phone__island" />
+    <div className={`phone${tilt ? ' phone--tilt' : ''}${app ? ' phone--app' : ''}`}>
+      {!app && <div className="phone__island" />}
       <div className="phone__screen" style={{ background: screenBg }}>
-        <StatusBar time={time} theme={statusTheme} />
+        {!app && <StatusBar time={time} theme={statusTheme} />}
         <div className="screen-scroll">{children}</div>
         {overlay}
-        {homeIndicator !== 'none' && (
+        {!app && homeIndicator !== 'none' && (
           <div className={`home-indicator home-indicator--${homeIndicator}`} />
         )}
       </div>
@@ -85,5 +89,5 @@ export default function PhoneFrame({
   )
 
   if (bare) return phone
-  return <div className={`stage stage--${stage}${tilt ? ' stage--tilt' : ''}`}>{phone}</div>
+  return <div className={`stage stage--${stage}${tilt ? ' stage--tilt' : ''}${app ? ' stage--app' : ''}`}>{phone}</div>
 }

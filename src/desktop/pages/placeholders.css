@@ -1,68 +1,138 @@
-/* Phase 1 플레이스홀더 스타일. 점선 슬롯은 "미구현" 신호이며 최종 화면엔 남지 않는다. */
+/* 데스크톱 페이지(공고·시장·지도·마이) — PC 최적화 레이아웃 틀. */
 
-.dph {
+.dpage {
   max-width: 1360px;
+  /* DesktopShell(.dshell)에는 .career 확장 토큰이 없어 보강한다. */
+  --line: #e6e9ef;
+  --accent-50: #eef3fb;
+  --accent-100: #dde8f9;
+  --accent-200: #bcd0f0;
+  --accent-300: #8fb0e2;
+  --accent-700: #21447c;
+  --e1: 0 1px 2px rgba(20, 30, 60, 0.05), 0 1px 1px rgba(20, 30, 60, 0.04);
+  --e2: 0 2px 8px rgba(20, 30, 60, 0.06), 0 1px 2px rgba(20, 30, 60, 0.05);
 }
+.dpage__head { margin-bottom: 20px; }
+.dpage__title { font-size: 25px; font-weight: 800; letter-spacing: -0.8px; color: var(--c-ink); }
+.dpage__desc { margin-top: 6px; font-size: 14px; color: var(--c-muted); }
+.dpage__empty { font-size: 13.5px; color: var(--c-muted); padding: 20px 4px; text-align: center; }
+.dpage__more { font-size: 12.5px; font-weight: 700; color: var(--accent-700); }
 
-.dph__head {
-  margin-bottom: 22px;
+.dcard {
+  background: var(--c-card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: var(--e1);
+  padding: 18px;
 }
-.dph__title {
-  font-size: 26px;
-  font-weight: 800;
-  letter-spacing: -0.8px;
-}
-.dph__desc {
-  margin-top: 6px;
-  font-size: 14px;
-  color: var(--c-muted);
-}
+.dcard__eyebrow { font-size: 12.5px; font-weight: 700; color: var(--c-muted); }
 
-.dph__grid {
-  display: grid;
-  gap: 18px;
-}
-.dph__grid--overview {
-  grid-template-columns: repeat(3, 1fr);
-}
-.dph__grid--jobs {
-  grid-template-columns: 260px 1fr 360px;
-}
-.dph__grid--market {
-  grid-template-columns: repeat(3, 1fr);
-}
-.dph__grid--map {
-  grid-template-columns: 1.6fr 1fr;
-}
-.dph__grid--my {
-  grid-template-columns: 1.4fr 1fr;
-}
-
-.dph__slot {
-  position: relative;
+/* 공용 리스트 행 */
+.djobs__row {
   display: flex;
   align-items: center;
-  justify-content: center;
-  min-height: 132px;
-  padding: 18px;
-  border-radius: var(--c-radius);
-  border: 1.5px dashed #cdd2db;
-  background: rgba(255, 255, 255, 0.5);
-  color: var(--c-muted);
-  font-size: 14px;
-  font-weight: 600;
-  text-align: center;
+  gap: 11px;
+  width: 100%;
+  padding: 10px;
+  border-radius: 12px;
+  text-align: left;
+  transition: background 0.13s ease;
 }
-.dph__slot.tall {
-  min-height: 300px;
+.djobs__row + .djobs__row { margin-top: 2px; }
+.djobs__row:hover { background: var(--accent-50); }
+.djobs__row.on { background: var(--accent-100); }
+.djobs__row-b { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.djobs__row-t { font-size: 13.5px; font-weight: 700; color: var(--c-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.djobs__row-c { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--c-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── 공고 마스터-디테일 ── */
+.djobs__grid { display: grid; grid-template-columns: 264px minmax(0, 1fr) 360px; gap: 16px; align-items: start; }
+.djobs__filters { display: flex; flex-direction: column; gap: 16px; position: sticky; top: 0; }
+.djobs__search {
+  display: flex; align-items: center; gap: 8px;
+  border: 1px solid var(--line); border-radius: 11px; padding: 10px 12px; color: var(--c-muted);
 }
-.dph__slot-tag {
-  position: absolute;
-  top: 10px;
-  right: 12px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.2px;
-  color: var(--c-accent);
-  opacity: 0.7;
+.djobs__search input { flex: 1; min-width: 0; font-size: 13.5px; color: var(--c-ink); }
+.djobs__fld { display: flex; flex-direction: column; gap: 8px; }
+.djobs__fld-l { font-size: 12px; font-weight: 700; color: var(--c-muted); }
+.djobs__sorts { display: flex; gap: 6px; }
+.djobs__sorts button {
+  flex: 1; font-size: 12.5px; font-weight: 600; color: var(--c-muted);
+  border: 1px solid var(--line); border-radius: 9px; padding: 7px 4px;
+}
+.djobs__sorts button.on { color: var(--accent-700); background: var(--accent-50); border-color: var(--accent-200); }
+.djobs__count { font-size: 12.5px; color: var(--c-muted); }
+.djobs__list { max-height: calc(100dvh - 200px); overflow-y: auto; }
+.djobs__preview { position: sticky; top: 0; }
+.djobs__pv-head { display: flex; align-items: center; justify-content: space-between; }
+.djobs__pv-title { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; color: var(--c-ink); margin-top: 14px; line-height: 1.3; }
+.djobs__pv-meta { font-size: 13px; color: var(--c-muted); margin-top: 6px; }
+.djobs__pv-sec { font-size: 12.5px; font-weight: 700; color: var(--c-muted); margin: 18px 0 10px; }
+.djobs__pv-techs { display: flex; flex-wrap: wrap; gap: 7px; }
+.djobs__tech {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12.5px; font-weight: 600; color: var(--c-muted);
+  background: var(--c-card); border: 1px solid var(--line); border-radius: 9px; padding: 5px 9px;
+}
+.djobs__tech.held { color: #1c7a4a; background: #eafaf1; border-color: #bfe7d0; }
+.djobs__pv-cta {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  width: 100%; margin-top: 22px; height: 46px; border-radius: 13px;
+  font-size: 14.5px; font-weight: 700; color: #fff; background: var(--c-accent); box-shadow: var(--e2);
+  transition: transform 0.13s ease, background 0.15s ease;
+}
+.djobs__pv-cta:active { transform: scale(0.98); }
+.djobs__pv-cta:hover { background: var(--accent-700); }
+
+/* ── 시장 분석 보드 ── */
+.dmkt__grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; align-items: start; }
+.dmkt__quad { grid-row: span 2; }
+.dmkt__cov-num { font-size: 46px; font-weight: 800; letter-spacing: -2px; color: var(--c-ink); margin-top: 10px; }
+.dmkt__cov-num span { font-size: 22px; color: var(--c-muted); margin-left: 2px; }
+.dmkt__cov-bar { height: 10px; border-radius: 999px; background: var(--accent-50); overflow: hidden; margin-top: 12px; }
+.dmkt__cov-bar i { display: block; height: 100%; border-radius: 999px; background: var(--c-accent); }
+.dmkt__cov-desc { font-size: 12.5px; color: var(--c-muted); margin-top: 10px; }
+.dmkt__bars { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.dmkt__bar { display: flex; align-items: center; gap: 10px; padding: 5px 4px; border-radius: 9px; transition: background 0.13s ease; }
+.dmkt__bar:hover { background: var(--accent-50); }
+.dmkt__bar-t { flex: none; width: 92px; font-size: 12.5px; font-weight: 600; color: var(--c-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dmkt__bar-track { flex: 1; height: 8px; border-radius: 999px; background: #eef1f6; overflow: hidden; }
+.dmkt__bar-track i { display: block; height: 100%; border-radius: 999px; background: var(--accent-300); }
+.dmkt__bar-track i.held { background: var(--c-accent); }
+.dmkt__bar-v { flex: none; width: 40px; text-align: right; font-size: 12px; font-weight: 700; color: var(--c-muted); }
+
+/* ── 지도 ── */
+.dmap__grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 16px; align-items: start; }
+.dmap__map { padding: 0; overflow: hidden; }
+.dmap__leaflet { width: 100%; height: calc(100dvh - 180px); min-height: 460px; border-radius: 18px; }
+.dmap__list { max-height: calc(100dvh - 160px); overflow-y: auto; }
+.dmap__sel { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px; margin: 8px 0; border-radius: 12px; background: var(--accent-50); text-align: left; }
+.dmap__rows { margin-top: 6px; }
+
+/* ── 마이 ── */
+.dmy__grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; align-items: start; }
+.dmy__main { display: flex; flex-direction: column; gap: 16px; }
+.dmy__profile { display: flex; align-items: center; gap: 14px; }
+.dmy__avatar {
+  flex: none; width: 56px; height: 56px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 800; color: #fff;
+  background: linear-gradient(140deg, var(--c-accent), var(--accent-700)); box-shadow: var(--e1);
+}
+.dmy__id { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.dmy__nm { font-size: 17px; font-weight: 800; color: var(--c-ink); }
+.dmy__em { font-size: 13px; color: var(--c-muted); }
+.dmy__edit { flex: none; font-size: 12.5px; font-weight: 700; color: var(--accent-700); border: 1px solid var(--accent-200); border-radius: 10px; padding: 8px 13px; transition: transform 0.12s ease; }
+.dmy__edit:active { transform: scale(0.96); }
+.dmy__resume { display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; margin-top: 4px; }
+.dmy__resume-ic { flex: none; width: 40px; height: 40px; border-radius: 11px; display: flex; align-items: center; justify-content: center; color: var(--accent-700); background: var(--accent-50); }
+.dmy__skills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.dmy__aside { display: flex; flex-direction: column; gap: 16px; }
+
+/* 좁은 폭 대응 */
+@media (max-width: 1180px) {
+  .djobs__grid { grid-template-columns: 1fr 340px; }
+  .djobs__filters { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; position: static; align-items: center; }
+  .dmkt__grid, .dmap__grid, .dmy__grid { grid-template-columns: 1fr; }
+  .dmkt__quad { grid-row: auto; }
 }

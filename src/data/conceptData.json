@@ -1,0 +1,93 @@
+{
+  "_meta": {
+    "simulated": true,
+    "note": "개념 키워드 파서가 완성됐다고 가정한 시뮬레이션 데이터. 실집계 아님. taxonomy_v2.concepts_buzzwords/ai_llm 방향을 반영해 그럴듯한 값으로 채운 목업.",
+    "asOf": "2026-07",
+    "years": [2020, 2021, 2022, 2023, 2024, 2025, 2026],
+    "N": 49015,
+    "levelLegend": { "0": "경험 없음", "1": "부분 경험", "2": "강한 경험" }
+  },
+  "concepts": [
+    {
+      "key": "ai", "label": "AI · LLM", "color": "#6b5bd6", "demand": 28, "delta": 19, "me": 1,
+      "yearly": [3, 4, 6, 14, 22, 28, 31],
+      "techs": [
+        { "tech": "Python", "w": 0.92 }, { "tech": "PyTorch", "w": 0.61 }, { "tech": "LangChain", "w": 0.44 },
+        { "tech": "FastAPI", "w": 0.38 }, { "tech": "TensorFlow", "w": 0.31 }, { "tech": "Pinecone", "w": 0.22 }
+      ],
+      "cooc": [ { "key": "data", "rate": 54 }, { "key": "cloud", "rate": 41 }, { "key": "realtime", "rate": 28 } ]
+    },
+    {
+      "key": "scale", "label": "대규모 트래픽", "color": "#2f61b8", "demand": 34, "delta": 3, "me": 0,
+      "yearly": [30, 31, 31, 32, 33, 34, 34],
+      "techs": [
+        { "tech": "Kubernetes", "w": 0.72 }, { "tech": "Kafka", "w": 0.58 }, { "tech": "Redis", "w": 0.55 },
+        { "tech": "Go", "w": 0.41 }, { "tech": "AWS", "w": 0.66 }, { "tech": "Cassandra", "w": 0.19 }
+      ],
+      "cooc": [ { "key": "realtime", "rate": 49 }, { "key": "msa", "rate": 47 }, { "key": "cloud", "rate": 44 } ]
+    },
+    {
+      "key": "msa", "label": "MSA · 분산", "color": "#2a9db0", "demand": 26, "delta": 7, "me": 0,
+      "yearly": [14, 17, 20, 23, 25, 26, 26],
+      "techs": [
+        { "tech": "Kubernetes", "w": 0.78 }, { "tech": "Kafka", "w": 0.52 }, { "tech": "gRPC", "w": 0.4 },
+        { "tech": "Spring", "w": 0.47 }, { "tech": "Docker", "w": 0.69 }, { "tech": "Istio", "w": 0.16 }
+      ],
+      "cooc": [ { "key": "cloud", "rate": 58 }, { "key": "scale", "rate": 47 }, { "key": "devops", "rate": 42 } ]
+    },
+    {
+      "key": "realtime", "label": "실시간 · 스트리밍", "color": "#2a9db0", "demand": 18, "delta": 5, "me": 1,
+      "yearly": [11, 12, 13, 15, 16, 18, 19],
+      "techs": [
+        { "tech": "Kafka", "w": 0.66 }, { "tech": "WebSocket", "w": 0.48 }, { "tech": "Redis", "w": 0.44 },
+        { "tech": "Flink", "w": 0.27 }, { "tech": "Go", "w": 0.33 }, { "tech": "RabbitMQ", "w": 0.24 }
+      ],
+      "cooc": [ { "key": "scale", "rate": 49 }, { "key": "data", "rate": 38 }, { "key": "ai", "rate": 28 } ]
+    },
+    {
+      "key": "data", "label": "데이터 파이프라인", "color": "#2f61b8", "demand": 22, "delta": 6, "me": 1,
+      "yearly": [13, 15, 16, 18, 20, 22, 23],
+      "techs": [
+        { "tech": "Airflow", "w": 0.62 }, { "tech": "Spark", "w": 0.5 }, { "tech": "Kafka", "w": 0.45 },
+        { "tech": "Python", "w": 0.71 }, { "tech": "BigQuery", "w": 0.3 }, { "tech": "dbt", "w": 0.21 }
+      ],
+      "cooc": [ { "key": "ai", "rate": 54 }, { "key": "cloud", "rate": 40 }, { "key": "realtime", "rate": 38 } ]
+    },
+    {
+      "key": "cloud", "label": "클라우드 네이티브", "color": "#2f61b8", "demand": 30, "delta": 9, "me": 2,
+      "yearly": [18, 21, 24, 27, 29, 30, 31],
+      "techs": [
+        { "tech": "Kubernetes", "w": 0.8 }, { "tech": "AWS", "w": 0.74 }, { "tech": "Terraform", "w": 0.52 },
+        { "tech": "Docker", "w": 0.77 }, { "tech": "Helm", "w": 0.3 }, { "tech": "GCP", "w": 0.28 }
+      ],
+      "cooc": [ { "key": "devops", "rate": 61 }, { "key": "msa", "rate": 58 }, { "key": "scale", "rate": 44 } ]
+    },
+    {
+      "key": "security", "label": "보안 · 컴플라이언스", "color": "#d9932f", "demand": 15, "delta": 4, "me": 0,
+      "yearly": [10, 11, 12, 13, 14, 15, 15],
+      "techs": [
+        { "tech": "OAuth", "w": 0.58 }, { "tech": "Vault", "w": 0.34 }, { "tech": "AWS IAM", "w": 0.46 },
+        { "tech": "Snyk", "w": 0.22 }, { "tech": "Keycloak", "w": 0.2 }, { "tech": "OWASP", "w": 0.31 }
+      ],
+      "cooc": [ { "key": "cloud", "rate": 39 }, { "key": "devops", "rate": 33 }, { "key": "msa", "rate": 27 } ]
+    },
+    {
+      "key": "devops", "label": "DevOps · 자동화", "color": "#2a9db0", "demand": 24, "delta": 5, "me": 2,
+      "yearly": [16, 18, 20, 22, 23, 24, 25],
+      "techs": [
+        { "tech": "Kubernetes", "w": 0.7 }, { "tech": "Terraform", "w": 0.55 }, { "tech": "GitHub Actions", "w": 0.5 },
+        { "tech": "ArgoCD", "w": 0.29 }, { "tech": "Docker", "w": 0.72 }, { "tech": "Jenkins", "w": 0.34 }
+      ],
+      "cooc": [ { "key": "cloud", "rate": 61 }, { "key": "msa", "rate": 42 }, { "key": "security", "rate": 33 } ]
+    },
+    {
+      "key": "global", "label": "글로벌 · 다국어", "color": "#c8506a", "demand": 12, "delta": 2, "me": 0,
+      "yearly": [9, 10, 10, 11, 11, 12, 12],
+      "techs": [
+        { "tech": "i18n", "w": 0.54 }, { "tech": "React", "w": 0.4 }, { "tech": "GraphQL", "w": 0.3 },
+        { "tech": "CDN", "w": 0.28 }, { "tech": "AWS", "w": 0.35 }, { "tech": "Next.js", "w": 0.26 }
+      ],
+      "cooc": [ { "key": "scale", "rate": 31 }, { "key": "cloud", "rate": 26 }, { "key": "ai", "rate": 18 } ]
+    }
+  ]
+}

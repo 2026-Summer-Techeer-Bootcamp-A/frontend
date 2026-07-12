@@ -191,6 +191,43 @@ ul {
   }
 }
 
+/* ── 앱 모드: 폰 목업 프레임을 걷어내고 PC↔모바일 반응형으로 렌더 ──
+   랩 목업 페이지(P1/P2/P3 등)는 app 프롭을 켜지 않아 프레임이 유지된다. */
+.stage--app {
+  padding: 0;
+  min-height: 100dvh;
+  align-items: stretch;
+  background: #f6f8fc;
+}
+.phone--app {
+  width: 100%;
+  max-width: 100%;
+  height: 100dvh;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  flex: 1;
+}
+.phone--app .phone__screen {
+  border-radius: 0;
+  padding-top: env(safe-area-inset-top, 0);
+}
+/* 태블릿·데스크톱: 중앙 정렬 앱 컬럼(콘텐츠가 좁은 컬럼용으로 설계돼 과폭 방지) */
+@media (min-width: 700px) {
+  .stage--app {
+    background: radial-gradient(120% 120% at 70% 20%, #eef1f6 0%, #e5e8ee 55%, #dcdfe6 100%);
+    align-items: stretch;
+  }
+  .phone--app {
+    max-width: 820px;
+    flex: none;
+  }
+  .phone--app .phone__screen {
+    box-shadow: 0 0 0 1px var(--line, #e6e9ef), 0 24px 60px -20px rgba(20, 30, 60, 0.22);
+  }
+}
+
 /* 스크롤 영역 */
 .screen-scroll {
   flex: 1;
@@ -231,6 +268,111 @@ ul {
   font-size: 15px;
   font-weight: 400;
 }
+/* 리스트 배치 — 큰 스와치 카드 대신 조밀한 행. 다열 auto-fill로 공간 활용도 ↑ */
+.gallery__h2 {
+  max-width: 960px;
+  margin: 28px auto 12px;
+  padding: 0 2px;
+  font-size: 16px;
+  font-weight: 700;
+  opacity: 0.85;
+}
+.gallery__h2:first-of-type { margin-top: 4px; }
+.gallery__list {
+  max-width: 960px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 8px;
+}
+.gallery__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  transition: background 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+}
+.gallery__row:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.18);
+  transform: translateX(2px);
+}
+.gallery__chip {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+}
+.gallery__row-body { min-width: 0; }
+.gallery__row-body h3 {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gallery__row-body span {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: #9497c4;
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 탭 셀렉터 + 라우터 경로 뱃지 */
+.gallery__tabs {
+  max-width: 960px;
+  margin: 0 auto 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: fit-content;
+  padding: 5px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.gallery__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 15px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #a9acd6;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.gallery__tab:hover { color: #fff; }
+.gallery__tab.on { background: rgba(255, 255, 255, 0.14); color: #fff; }
+.gallery__tab-n {
+  font-size: 11px;
+  font-weight: 700;
+  color: #9497c4;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+.gallery__tab.on .gallery__tab-n { color: #fff; background: rgba(255, 255, 255, 0.2); }
+.gallery__row-body { flex: 1; }
+.gallery__path {
+  flex: none;
+  margin-left: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  color: #7aa0dc;
+  background: rgba(122, 160, 220, 0.14);
+  border-radius: 6px;
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+
 .gallery__grid {
   max-width: 960px;
   margin: 0 auto;

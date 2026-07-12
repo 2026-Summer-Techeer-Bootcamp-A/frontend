@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, ChevronUp } from 'lucide-react'
+import { Search, ChevronUp, SearchX } from 'lucide-react'
 import { SubScreen, PoolToggle } from './charts'
+import { EmptyState } from './states'
 import { CardModeToggle, JobCardCompact, type CardMode } from './kit'
 import { JobCard } from './CareerDashboard'
 import CompanyLogo from './CompanyLogo'
@@ -67,7 +68,13 @@ export default function JobsScreen() {
 
       <div style={{ marginTop: 8 }}>
         {list.length === 0 ? (
-          <div className="cr-empty">검색 결과가 없어요.</div>
+          <EmptyState
+            icon={<SearchX size={26} />}
+            title={q.trim() ? '검색 결과가 없어요' : '조건에 맞는 공고가 없어요'}
+            desc={q.trim() ? <>‘{q.trim()}’와 일치하는 공고를 찾지 못했어요. 다른 키워드로 검색해보세요.</> : '풀·정렬 조건을 바꿔보세요.'}
+            secondaryLabel={q.trim() ? '검색 지우기' : undefined}
+            onSecondary={() => setQ('')}
+          />
         ) : mode === 'compact' ? (
           list.map((p) => {
             const originalIndex = data.postings.findIndex((x) => x.id === p.id)
