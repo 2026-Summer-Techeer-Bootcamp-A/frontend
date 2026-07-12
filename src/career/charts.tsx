@@ -5,6 +5,8 @@ import PhoneFrame from '../components/PhoneFrame'
 import CareerTabBar, { type CareerTab } from './CareerTabBar'
 import { PageTransition, SegmentedControl } from './kit'
 import { THEME, themeVars } from './themes'
+import { useIsDesktop } from '../shared/useMediaQuery'
+import DesktopShell from '../desktop/DesktopShell'
 import './career.css'
 import './screens.css'
 
@@ -30,6 +32,20 @@ export function CareerScreen({ active, children }: { active: CareerTab; children
 export function SubScreen({ title, children }: { title: string; children: ReactNode }) {
   const t = THEME
   const navigate = useNavigate()
+  const isDesktop = useIsDesktop()
+  if (isDesktop) {
+    return (
+      <DesktopShell>
+        <div className="dsub">
+          <button className="dsub__back" onClick={() => navigate(-1)}>
+            <ChevronLeft size={17} /> 뒤로
+          </button>
+          <h1 className="dsub__title">{title}</h1>
+          <div className="dsub__content">{children}</div>
+        </div>
+      </DesktopShell>
+    )
+  }
   return (
     <div className="stage stage--app">
       <PhoneFrame app stage="purple" bare screenBg={t.screenBg} statusTheme={t.statusTheme} homeIndicator="dark">

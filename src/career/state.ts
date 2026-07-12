@@ -10,6 +10,7 @@ export type Resume = {
   careerMin: number | null
   careerMax: number | null
   coveragePct: number
+  pool?: '국내' | '국외'
 }
 
 const STORAGE_KEY_RESUMES = 'techeer_resumes'
