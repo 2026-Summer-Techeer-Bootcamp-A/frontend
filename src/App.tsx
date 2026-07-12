@@ -115,17 +115,16 @@ export default function App() {
         <Route path="/settings/terms" element={<SettingsLegal kind="terms" />} />
         <Route path="/settings/privacy" element={<SettingsLegal kind="privacy" />} />
         <Route path="/settings/about" element={<SettingsAbout />} />
+        {/* 제품 상세 — 데스크톱 마스터-디테일 전환은 Phase 3. 지금은 모바일 화면 유지. */}
+        <Route path="/job/:id" element={<JobDetail />} />
+        <Route path="/tech/:name" element={<TechDetail />} />
+        <Route path="/states" element={<StatesGallery />} />
       </Route>
-
-      {/* 제품 상세 — 데스크톱 마스터-디테일 전환은 Phase 3. 지금은 모바일 화면 유지. */}
-      <Route path="/job/:id" element={<JobDetail />} />
-      <Route path="/tech/:name" element={<TechDetail />} />
 
       {/* ─── 자잘한 화면 세트: 인증 · 시스템 상태 (선택적 게이팅) ─── */}
       <Route path="/splash" element={<SplashScreen />} />
       <Route path="/login" element={<LoginScreen />} />
       <Route path="/signup" element={<SignupScreen />} />
-      <Route path="/states" element={<StatesGallery />} />
       <Route path="/offline" element={<OfflineScreen />} />
 
       {/* ─────────────────────────────────────────────────────────────
