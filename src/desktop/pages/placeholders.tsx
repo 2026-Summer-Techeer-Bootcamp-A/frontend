@@ -1,102 +1,306 @@
-import type { ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Search, MapPin, Briefcase, ArrowUpRight, Bell, Shield, Settings, LogOut, FileText, Award } from 'lucide-react'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
+import {
+  MiniScore, SectionHeader, SegmentedControl, MenuRow, SkillChip,
+  OpportunityQuadrant, TechIcon, type QuadItem,
+} from '../../career/kit'
+import CompanyLogo from '../../career/CompanyLogo'
+import { useResumesState, getDynamicPostings, calculateCoverage } from '../../career/state'
+import { useAuth } from '../../career/authStore'
+import careerData from '../../data/careerData.json'
+import marketData from '../../data/marketData.json'
 import './placeholders.css'
 
-/* Phase 1 데스크톱 페이지 플레이스홀더.
-   데이터/위젯을 붙이는 건 Phase 3. 지금은 각 영역의 "위계 의도"만 골격으로 보여준다.
-   점선 슬롯 = 아직 디자인/구현 전이라는 신호(최종 화면엔 남지 않는다). */
+/* 데스크톱 페이지 — 모바일 단일컬럼과 분리된 PC 레이아웃 틀.
+   대시보드(홈)는 DesktopOverview.tsx가 담당. 여기는 공고·시장·지도·마이. */
 
-function PageHead({ title, desc }: { title: string; desc: string }) {
-  return (
-    <header className="dph__head">
-      <h1 className="dph__title">{title}</h1>
-      <p className="dph__desc">{desc}</p>
-    </header>
-  )
+const TIER_RANK: Record<string, number> = { 대기업: 0, 중견: 1, 중소: 2 }
+const tierRank = (t: string | null) => (t && t in TIER_RANK ? TIER_RANK[t] : 3)
+function careerLabel(min: number | null, max: number | null) {
+  if (!min) return '신입·무관'
+  return max && max !== min ? `경력 ${min}~${max}년` : `경력 ${min}년+`
 }
 
-function Slot({ label, span = 1, tall = false }: { label: string; span?: number; tall?: boolean }) {
+/* ───────────────── 맞춤 공고 — 마스터-디테일 ───────────────── */
+export function DesktopJobs() {
+  const navigate = useNavigate()
+  const { activeResume } = useResumesState()
+  const skills = activeResume?.skills ?? []
+  const [pool, setPool] = useState<'국내' | '국외'>('국내')
+  const [q, setQ] = useState('')
+  const [sort, setSort] = useState<'match' | 'tier' | 'latest'>('match')
+  const [selId, setSelId] = useState<string | null>(null)
+
+  const postings = useMemo(() => getDynamicPostings(skills), [skills])
+  const list = useMemo(() => {
+    const s = q.trim().toLowerCase()
+    let arr = postings.filter((p) => p.pool === pool)
+    if (s) arr = arr.filter((p) => (p.company + ' ' + p.title).toLowerCase().includes(s))
+    return [...arr].sort((a, b) =>
+      sort === 'tier' ? tierRank(a.tier) - tierRank(b.tier) || b.matchPct - a.matchPct
+        : sort === 'latest' ? (b.postDate || '').localeCompare(a.postDate || '')
+          : b.matchPct - a.matchPct)
+  }, [postings, pool, q, sort])
+
+  const sel = list.find((p) => p.id === selId) ?? list[0]
+  const selIdx = sel ? careerData.postings.findIndex((x) => x.id === sel.id) : -1
+
   return (
-    <div className={`dph__slot${tall ? ' tall' : ''}`} style={{ gridColumn: `span ${span}` }}>
-      <span className="dph__slot-label">{label}</span>
-      <span className="dph__slot-tag">Phase 3</span>
+    <div className="dpage djobs">
+      <header className="dpage__head">
+        <h1 className="dpage__title">맞춤 공고</h1>
+        <p className="dpage__desc">필터 · 결과 · 상세를 한 화면에서 (마스터–디테일)</p>
+      </header>
+
+      <div className="djobs__grid">
+        {/* 필터 */}
+        <aside className="dcard djobs__filters">
+          <div className="djobs__search">
+            <Search size={16} />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="회사 · 공고 검색" />
+          </div>
+          <div className="djobs__fld">
+            <span className="djobs__fld-l">채용 풀</span>
+            <SegmentedControl value={pool} onChange={(v) => setPool(v as '국내' | '국외')}
+              options={[{ key: '국내', label: '국내' }, { key: '국외', label: '글로벌' }]} />
+          </div>
+          <div className="djobs__fld">
+            <span className="djobs__fld-l">정렬</span>
+            <div className="djobs__sorts">
+              {([['match', '매칭순'], ['tier', '규모순'], ['latest', '최신순']] as const).map(([k, lb]) => (
+                <button key={k} className={sort === k ? 'on' : ''} onClick={() => setSort(k)}>{lb}</button>
+              ))}
+            </div>
+          </div>
+          <div className="djobs__count">{list.length.toLocaleString()}건</div>
+        </aside>
+
+        {/* 결과 리스트 */}
+        <div className="dcard djobs__list">
+          {list.slice(0, 40).map((p) => (
+            <button
+              key={p.id}
+              className={`djobs__row${sel?.id === p.id ? ' on' : ''}`}
+              onClick={() => setSelId(p.id)}
+            >
+              <CompanyLogo logo={p.logo} name={p.company} size={38} radius={10} />
+              <span className="djobs__row-b">
+                <span className="djobs__row-t">{p.title}</span>
+                <span className="djobs__row-c">{p.company} · {careerLabel(p.careerMin, p.careerMax)}</span>
+              </span>
+              <MiniScore pct={p.matchPct} size={40} />
+            </button>
+          ))}
+        </div>
+
+        {/* 상세 프리뷰 */}
+        <aside className="dcard djobs__preview">
+          {!sel ? <div className="dpage__empty">공고가 없어요.</div> : (
+            <>
+              <div className="djobs__pv-head">
+                <CompanyLogo logo={sel.logo} name={sel.company} size={52} radius={14} />
+                <MiniScore pct={sel.matchPct} size={54} />
+              </div>
+              <h2 className="djobs__pv-title">{sel.title}</h2>
+              <div className="djobs__pv-meta">{sel.company} · {sel.region ?? '지역 미상'} · {careerLabel(sel.careerMin, sel.careerMax)}</div>
+              <div className="djobs__pv-sec">요구 기술</div>
+              <div className="djobs__pv-techs">
+                {sel.techs.map((t) => (
+                  <span key={t} className={`djobs__tech${skills.includes(t) ? ' held' : ''}`}>
+                    <TechIcon tech={t} size={18} />{t}
+                  </span>
+                ))}
+              </div>
+              <button className="djobs__pv-cta" onClick={() => navigate(`/job/${selIdx}`)}>
+                상세 보기 <ArrowUpRight size={16} />
+              </button>
+            </>
+          )}
+        </aside>
+      </div>
     </div>
   )
 }
 
-function Page({ children }: { children: ReactNode }) {
-  return <div className="dph">{children}</div>
-}
-
-/** 대시보드 — 멀티위젯 커맨드센터. 점수화 요약을 최상단 위계로. */
-export function DesktopOverview() {
-  return (
-    <Page>
-      <PageHead title="대시보드" desc="점수화 요약을 중심으로 오늘 확인할 것들을 한 화면에" />
-      <div className="dph__grid dph__grid--overview">
-        <Slot label="점수화 요약 (보유율 · 지원 가능)" span={2} tall />
-        <Slot label="오늘 브리핑" tall />
-        <Slot label="마감 임박" />
-        <Slot label="기술 갭 요약" />
-        <Slot label="맞춤 공고 Top" span={2} />
-      </div>
-    </Page>
-  )
-}
-
-/** 맞춤 공고 — 마스터-디테일(좌 필터 · 중앙 결과 · 우 상세 프리뷰). */
-export function DesktopJobs() {
-  return (
-    <Page>
-      <PageHead title="맞춤 공고" desc="필터 · 결과 · 상세를 한 화면에서 (마스터–디테일)" />
-      <div className="dph__grid dph__grid--jobs">
-        <Slot label="필터 패널" tall />
-        <Slot label="결과 리스트 / 테이블" tall />
-        <Slot label="상세 프리뷰" tall />
-      </div>
-    </Page>
-  )
-}
-
-/** 채용 시장 — 위젯 갤러리 + taxonomy 필터를 대형 분석 보드로. */
+/* ───────────────── 채용 시장 — 분석 보드 ───────────────── */
+type ShareItem = { tech: string; count: number; share: number; owned: boolean }
 export function DesktopMarket() {
+  const navigate = useNavigate()
+  const { activeResume } = useResumesState()
+  const skills = activeResume?.skills ?? []
+  const items = (marketData.skillShare['국내'].items as ShareItem[])
+  const top = items.slice(0, 14)
+  const maxShare = Math.max(...top.map((i) => i.share), 1)
+  const coverage = calculateCoverage(skills, '국내')
+  const quad: QuadItem[] = items.slice(0, 16).map((i) => ({
+    tech: i.tech, demand: i.share, owned: skills.includes(i.tech), count: i.count,
+  }))
+
   return (
-    <Page>
-      <PageHead title="채용 시장" desc="트렌드 위젯과 taxonomy 필터를 분석 보드로" />
-      <div className="dph__grid dph__grid--market">
-        <Slot label="taxonomy 필터" />
-        <Slot label="트렌드 위젯 A" />
-        <Slot label="트렌드 위젯 B" />
-        <Slot label="트렌드 위젯 C" />
-        <Slot label="트렌드 위젯 D" />
-        <Slot label="트렌드 위젯 E" />
+    <div className="dpage dmkt">
+      <header className="dpage__head">
+        <h1 className="dpage__title">채용 시장</h1>
+        <p className="dpage__desc">수요 · 기회 · 커버리지를 분석 보드로 (기준일 {marketData.asOf})</p>
+      </header>
+
+      <div className="dmkt__grid">
+        <section className="dcard dmkt__quad">
+          <SectionHeader title="기회 사분면" hint="수요 × 보유" />
+          <OpportunityQuadrant items={quad} onPick={(t) => navigate(`/tech/${encodeURIComponent(t)}`)} />
+        </section>
+
+        <section className="dcard dmkt__cov">
+          <span className="dcard__eyebrow">내 기술 커버리지 (국내 Top20)</span>
+          <div className="dmkt__cov-num">{coverage}<span>%</span></div>
+          <div className="dmkt__cov-bar"><i style={{ width: `${coverage}%` }} /></div>
+          <p className="dmkt__cov-desc">상위 요구 기술 20개 중 보유 비율이에요.</p>
+        </section>
+
+        <section className="dcard dmkt__top">
+          <SectionHeader title="가장 많이 요구되는 기술" hint="국내" />
+          <div className="dmkt__bars">
+            {top.map((i) => (
+              <button key={i.tech} className="dmkt__bar" onClick={() => navigate(`/tech/${encodeURIComponent(i.tech)}`)}>
+                <TechIcon tech={i.tech} size={22} />
+                <span className="dmkt__bar-t">{i.tech}</span>
+                <span className="dmkt__bar-track"><i className={skills.includes(i.tech) ? 'held' : ''} style={{ width: `${(i.share / maxShare) * 100}%` }} /></span>
+                <span className="dmkt__bar-v">{i.share}%</span>
+              </button>
+            ))}
+          </div>
+        </section>
       </div>
-    </Page>
+    </div>
   )
 }
 
-/** 지도 — 지도 + 리스트 동시 노출. */
+/* ───────────────── 지도 — 지도 + 리스트 ───────────────── */
+type Pin = { id: string; lat: number; lng: number; company: string; title: string; district: string; matchPct: number; tier: string; logo: string }
 export function DesktopMap() {
+  const elRef = useRef<HTMLDivElement>(null)
+  const [sel, setSel] = useState<Pin | null>(null)
+  const pins = marketData.map.pins as Pin[]
+
+  useEffect(() => {
+    if (!elRef.current) return
+    const map = L.map(elRef.current, { zoomControl: true, attributionControl: false }).setView([37.55, 126.99], 11)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { subdomains: 'abcd', maxZoom: 19 }).addTo(map)
+    pins.forEach((p) => {
+      const marker = L.circleMarker([p.lat, p.lng], {
+        radius: 7, weight: 2, color: '#fff',
+        fillColor: p.matchPct >= 50 ? '#2f61b8' : '#8fa0b8', fillOpacity: 0.9,
+      }).addTo(map)
+      marker.on('click', () => setSel(p))
+    })
+    return () => { map.remove() }
+  }, [pins])
+
   return (
-    <Page>
-      <PageHead title="지도" desc="지도와 공고 리스트를 동시에" />
-      <div className="dph__grid dph__grid--map">
-        <Slot label="지도" tall />
-        <Slot label="리스트 패널" tall />
+    <div className="dpage dmap">
+      <header className="dpage__head">
+        <h1 className="dpage__title">지도</h1>
+        <p className="dpage__desc">국내 채용 공고를 지도와 리스트로 (핀 {pins.length}개)</p>
+      </header>
+      <div className="dmap__grid">
+        <div className="dcard dmap__map"><div ref={elRef} className="dmap__leaflet" /></div>
+        <aside className="dcard dmap__list">
+          <SectionHeader title={sel ? '선택한 공고' : '공고 리스트'} hint={sel ? sel.district : `${pins.length}개`} />
+          {sel && (
+            <button className="dmap__sel" onClick={() => setSel(null)}>
+              <CompanyLogo logo={sel.logo} name={sel.company} size={40} radius={11} />
+              <span className="djobs__row-b">
+                <span className="djobs__row-t">{sel.title}</span>
+                <span className="djobs__row-c">{sel.company} · {sel.district} · {sel.tier}</span>
+              </span>
+              <MiniScore pct={sel.matchPct} size={40} />
+            </button>
+          )}
+          <div className="dmap__rows">
+            {pins.slice(0, 30).map((p) => (
+              <button key={p.id} className={`djobs__row${sel?.id === p.id ? ' on' : ''}`} onClick={() => setSel(p)}>
+                <CompanyLogo logo={p.logo} name={p.company} size={34} radius={9} />
+                <span className="djobs__row-b">
+                  <span className="djobs__row-t">{p.company}</span>
+                  <span className="djobs__row-c"><MapPin size={11} /> {p.district} · {p.tier}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </aside>
       </div>
-    </Page>
+    </div>
   )
 }
 
-/** 마이 — 이력서 · 내 기술 · 설정. */
+/* ───────────────── 마이 — 프로필 · 기술 · 설정 ───────────────── */
 export function DesktopMy() {
+  const navigate = useNavigate()
+  const { user, isAuthed, logout } = useAuth()
+  const { activeResume } = useResumesState()
+  const skills = activeResume?.skills ?? []
+  const coverage = activeResume?.coveragePct ?? calculateCoverage(skills, '국내')
+  const name = user?.nickname ?? '리버'
+  const email = user?.email ?? 'bootcamp@example.com'
+  const initial = (user ? (user.nickname || user.email) : 'RV').slice(0, 2).toUpperCase()
+
   return (
-    <Page>
-      <PageHead title="마이" desc="이력서 관리 · 내 기술 · 설정" />
-      <div className="dph__grid dph__grid--my">
-        <Slot label="프로필 · 이력서" tall />
-        <Slot label="내 기술" />
-        <Slot label="설정" />
+    <div className="dpage dmy">
+      <header className="dpage__head">
+        <h1 className="dpage__title">마이</h1>
+        <p className="dpage__desc">이력서 · 내 기술 · 설정</p>
+      </header>
+
+      <div className="dmy__grid">
+        <div className="dmy__main">
+          <section className="dcard dmy__profile">
+            <span className="dmy__avatar">{initial}</span>
+            <div className="dmy__id">
+              <span className="dmy__nm">{name}</span>
+              <span className="dmy__em">{email}</span>
+            </div>
+            <button className="dmy__edit" onClick={() => navigate(isAuthed ? '/settings/account' : '/login')}>
+              {isAuthed ? '내 정보 수정' : '로그인'}
+            </button>
+          </section>
+
+          <section className="dcard">
+            <SectionHeader title="활성 이력서" right={<button className="dpage__more" onClick={() => navigate('/resume/submit')}>편집</button>} />
+            <button className="dmy__resume" onClick={() => navigate('/resume/submit')}>
+              <span className="dmy__resume-ic"><FileText size={18} /></span>
+              <span className="djobs__row-b">
+                <span className="djobs__row-t">{activeResume?.title ?? '이력서'}</span>
+                <span className="djobs__row-c">{activeResume?.position ?? '직무 미정'} · 보유 기술 {skills.length}개 · 커버리지 {coverage}%</span>
+              </span>
+            </button>
+          </section>
+
+          <section className="dcard">
+            <SectionHeader title="보유 기술" hint={`${skills.length}개`} />
+            <div className="dmy__skills">
+              {skills.map((s) => <SkillChip key={s} tech={s} />)}
+              {skills.length === 0 && <div className="dpage__empty">등록된 기술이 없어요.</div>}
+            </div>
+          </section>
+        </div>
+
+        <aside className="dmy__aside">
+          <section className="dcard">
+            <SectionHeader title="설정" />
+            <div className="kit-menulist">
+              <MenuRow icon={<Award size={18} />} label="자격증 갭" onClick={() => navigate('/cert-gap')} />
+              <MenuRow icon={<Bell size={18} />} label="알림 설정" onClick={() => navigate('/settings/notifications')} />
+              <MenuRow icon={<Shield size={18} />} label="개인정보 · 데이터" value="원문 미저장" onClick={() => navigate('/settings/privacy')} />
+              <MenuRow icon={<Settings size={18} />} label="설정" onClick={() => navigate('/settings')} />
+              {isAuthed
+                ? <MenuRow icon={<LogOut size={18} />} label="로그아웃" danger onClick={() => { logout(); navigate('/login') }} />
+                : <MenuRow icon={<Briefcase size={18} />} label="로그인" onClick={() => navigate('/login')} />}
+            </div>
+          </section>
+        </aside>
       </div>
-    </Page>
+    </div>
   )
 }

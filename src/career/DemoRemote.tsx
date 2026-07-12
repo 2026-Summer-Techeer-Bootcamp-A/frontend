@@ -1,30 +1,34 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LayoutGrid, X } from 'lucide-react'
+import { LayoutGrid, X, List } from 'lucide-react'
 
+// 데모용 페이지 이동 목록 — label + 실제 라우터 경로(path).
 const ROUTES = [
-  { to: '/', label: '홈' },
-  { to: '/?empty=1', label: '홈 (이력서 없음)' },
-  { to: '/market', label: '시장' },
-  { to: '/map', label: '지도' },
-  { to: '/resume', label: '마이' },
-  { to: '/jobs', label: '채용 공고' },
-  { to: '/resume/submit', label: '이력서 제출' },
-  { to: '/job/0', label: '공고 상세' },
-  { to: '/tech/TypeScript', label: '기술 세부' },
-  { to: '/cert-gap', label: '자격증 갭' },
-  { to: '/login', label: '로그인' },
-  { to: '/signup', label: '회원가입' },
-  { to: '/settings', label: '설정' },
-  { to: '/settings/notifications', label: '알림 설정' },
-  { to: '/states', label: '시스템 상태' },
-  { to: '/design-system', label: '디자인 시스템' },
+  { to: '/', label: '홈 · 대시보드', path: '/' },
+  { to: '/jobs', label: '맞춤 공고', path: '/jobs' },
+  { to: '/market', label: '채용 시장', path: '/market' },
+  { to: '/map', label: '지도', path: '/map' },
+  { to: '/resume', label: '마이', path: '/resume' },
+  { to: '/job/0', label: '공고 상세', path: '/job/:id' },
+  { to: '/tech/TypeScript', label: '기술 세부', path: '/tech/:name' },
+  { to: '/cert-gap', label: '자격증 갭', path: '/cert-gap' },
+  { to: '/resume/submit', label: '이력서 제출', path: '/resume/submit' },
+  { to: '/splash', label: '스플래시', path: '/splash' },
+  { to: '/login', label: '로그인', path: '/login' },
+  { to: '/signup', label: '회원가입', path: '/signup' },
+  { to: '/settings', label: '설정', path: '/settings' },
+  { to: '/settings/account', label: '계정 관리', path: '/settings/account' },
+  { to: '/settings/notifications', label: '알림 설정', path: '/settings/notifications' },
+  { to: '/settings/about', label: '앱 정보', path: '/settings/about' },
+  { to: '/states', label: '시스템 상태', path: '/states' },
+  { to: '/design-system', label: '디자인 시스템', path: '/design-system' },
 ]
 
-/** 데모용 페이지 이동 리모컨 (폰 프레임 밖 · 뷰포트 우상단 고정). */
+/** 데모용 페이지 이동 리모컨 (뷰포트 우하단 고정). 각 항목에 라우터 경로 뱃지 + 갤러리 이동. */
 export default function DemoRemote() {
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
+  const go = (to: string) => { navigate(to); setOpen(false) }
   return (
     <div className="demo-remote">
       <button className="demo-remote__btn" onClick={() => setOpen((o) => !o)}>
@@ -35,9 +39,17 @@ export default function DemoRemote() {
         <>
           <div className="demo-remote__ov" onClick={() => setOpen(false)} />
           <div className="demo-remote__menu">
-            {ROUTES.map((r) => (
-              <button key={r.to} onClick={() => { navigate(r.to); setOpen(false) }}>{r.label}</button>
-            ))}
+            <div className="demo-remote__scroll">
+              {ROUTES.map((r) => (
+                <button key={r.to} className="demo-remote__item" onClick={() => go(r.to)}>
+                  <span className="demo-remote__label">{r.label}</span>
+                  <code className="demo-remote__path">{r.path}</code>
+                </button>
+              ))}
+            </div>
+            <button className="demo-remote__gallery" onClick={() => go('/gallery')}>
+              <List size={15} /> 전체 화면 리스트 (갤러리)
+            </button>
           </div>
         </>
       )}
