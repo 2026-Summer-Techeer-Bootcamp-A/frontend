@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { ChevronDown, ChevronRight, Search, Plus, Check, X } from 'lucide-react'
+import { ChevronDown, ChevronRight, Search, Plus, Check, X, Settings2 } from 'lucide-react'
 import {
   siPython, siJavascript, siTypescript, siReact, siNodedotjs, siPostgresql, siGit,
   siDocker, siHtml5, siCss, siMysql, siLinux, siKubernetes, siGooglecloud, siTerraform,
@@ -8,6 +8,7 @@ import {
   siFlutter, siJira, siNextdotjs, siExpress, siMariadb,
 } from 'simple-icons'
 import { Sparkline } from './charts'
+import { useDashboardConfig, toggleWidget, type WidgetSection } from './dashboardConfig'
 import './kit.css'
 
 // 실제 브랜드 아이콘 (simple-icons). 상표 이슈로 없는 것은 이니셜 배지로 폴백.
@@ -490,6 +491,59 @@ export function SectionHeader({ title, hint, right }: { title: string; hint?: st
         {hint && <span className="kit-sec__h">{hint}</span>}
       </div>
       {right}
+    </div>
+  )
+}
+
+/* ---------- 5b. 위젯 표시/숨김 설정 — 기어 버튼 + 팝오버 ---------- */
+export function WidgetSettingsMenu({ section, items }: { section: WidgetSection; items: { id: string; label: string }[] }) {
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+  const config = useDashboardConfig()
+  const hidden = config.hidden[section]
+
+  useEffect(() => {
+    if (!open) return
+    const onPointerDown = (e: PointerEvent) => {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [open])
+
+  return (
+    <div className="kit-wset" ref={rootRef}>
+      <button
+        type="button"
+        className="kit-wset__btn"
+        aria-label="위젯 표시 설정"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+      >
+        <Settings2 size={16} />
+      </button>
+      {open && (
+        <div className="kit-wset__pop" role="menu">
+          <div className="kit-wset__pop-title">위젯 표시</div>
+          {items.map((it) => (
+            <label key={it.id} className="kit-wset__row">
+              <input
+                type="checkbox"
+                checked={!hidden.includes(it.id)}
+                onChange={() => toggleWidget(section, it.id)}
+              />
+              <span>{it.label}</span>
+            </label>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

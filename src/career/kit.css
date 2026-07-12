@@ -986,3 +986,32 @@ button.kit-wcard:active { opacity: 0.6; }
   color: var(--dataviz-warn, #d9822b); background: var(--warning-bg, #fbeee2);
   border-radius: 999px; padding: 3px 8px;
 }
+
+/* ---- 16. WidgetSettingsMenu — 기어 버튼 + 표시/숨김 팝오버 ---- */
+.kit-wset { position: relative; flex: none; }
+.kit-wset__btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 10px;
+  background: var(--c-card); border: 1px solid var(--line); color: var(--c-muted);
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+.kit-wset__btn:hover { background: var(--accent-50); color: var(--c-ink); }
+.kit-wset__btn:active { transform: scale(0.96); }
+.kit-wset__btn[aria-expanded='true'] { background: var(--accent-50); color: var(--c-ink); border-color: var(--c-ink); }
+.kit-wset__pop {
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: 40;
+  min-width: 232px; max-height: 320px; overflow-y: auto;
+  background: var(--c-card); border: 1px solid var(--line); border-radius: 14px;
+  box-shadow: var(--e3); padding: 8px;
+}
+.kit-wset__pop-title {
+  font-size: 11px; font-weight: 800; letter-spacing: 0.2px; color: var(--c-muted);
+  text-transform: uppercase; padding: 6px 8px 8px;
+}
+.kit-wset__row {
+  display: flex; align-items: center; gap: 9px; padding: 7px 8px; border-radius: 9px;
+  font-size: 13px; font-weight: 600; color: var(--c-ink); cursor: pointer;
+  transition: background 0.15s ease;
+}
+.kit-wset__row:hover { background: var(--accent-50); }
+.kit-wset__row input[type='checkbox'] { flex: none; width: 15px; height: 15px; accent-color: var(--c-accent); }

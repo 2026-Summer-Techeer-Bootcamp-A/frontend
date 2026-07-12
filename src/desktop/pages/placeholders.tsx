@@ -5,7 +5,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import {
   MiniScore, SectionHeader, SegmentedControl, SkillChip,
-  TechIcon, HeroStat, PreviewBadge,
+  TechIcon, HeroStat, PreviewBadge, WidgetSettingsMenu,
 } from '../../career/kit'
 import {
   TechCoNetworkGraph, TrendPropagationGraph, TechYearlyTrendChart,
@@ -15,11 +15,25 @@ import { useWidgetData } from '../../career/useWidgetData'
 import CompanyLogo from '../../career/CompanyLogo'
 import { useResumesState, getDynamicPostings, calculateCoverage, ddayInfo } from '../../career/state'
 import { useAuth } from '../../career/authStore'
+import { useDashboardConfig, isWidgetHidden } from '../../career/dashboardConfig'
 import marketData from '../../data/marketData.json'
 import data from '../../data/careerData.json'
 import './placeholders.css'
 import './market.css'
 import './jobs.css'
+
+/* 시장 페이지 위젯 카탈로그 — WidgetSettingsMenu 팝오버에 노출되는 한글 라벨. */
+const MARKET_WIDGETS = [
+  { id: 'hero-demand', label: '수요 리더보드' },
+  { id: 'leaderboard', label: '상위 요구 기술 Top14' },
+  { id: 'network', label: '기술 공동출현 네트워크' },
+  { id: 'propagation', label: '트렌드 전파 네트워크' },
+  { id: 'yearly-trend', label: '연도별 점유율 추이' },
+  { id: 'movers', label: '급상승 · 급감 Top' },
+  { id: 'tier-compare', label: '기업 규모별 요구 차이' },
+  { id: 'generation-trend', label: '레거시 → 신진 스택 변화' },
+  { id: 'scatter', label: '수요 × 빈도 분포' },
+]
 
 /* 데스크톱 페이지 — 모바일 단일컬럼과 분리된 PC 레이아웃 틀.
    대시보드(홈)는 DesktopOverview.tsx가 담당. 여기는 공고·시장·지도·마이. */
@@ -386,6 +400,7 @@ function SkillShareSparkline({ items }: { items: ShareItem[] }) {
 
 export function DesktopMarket() {
   const navigate = useNavigate()
+  useDashboardConfig() // 위젯 표시/숨김 변경 시 리렌더 트리거
   const domestic = marketData.skillShare['국내'] as { asOf: string; N: number; items: ShareItem[] }
   const top14Mock = useMemo(() => domestic.items.slice(0, 14), [])
 
@@ -403,78 +418,99 @@ export function DesktopMarket() {
   return (
     <div className="dpage dmkt2">
       <header className="dmkt2__head">
-        <h1 className="dmkt2__title">채용 시장</h1>
-        <div className="dmkt2__sub">국내 채용공고 {domestic.N.toLocaleString()}건 기준 시장 흐름 · 기준일 {domestic.asOf}</div>
+        <div className="dmkt2__head-l">
+          <h1 className="dmkt2__title">채용 시장</h1>
+          <div className="dmkt2__sub">국내 채용공고 {domestic.N.toLocaleString()}건 기준 시장 흐름 · 기준일 {domestic.asOf}</div>
+        </div>
+        <WidgetSettingsMenu section="market" items={MARKET_WIDGETS} />
       </header>
 
       <div className="dmkt2__grid">
         {/* 1. 수요 리더보드 — 검정 히어로 */}
-        <section className="dmkt2__cell dmkt2__cell--hero">
-          <HeroStat
-            eyebrow="수요 리더보드 1위"
-            value={leader?.share ?? 0}
-            unit="%"
-            chart={<SkillShareSparkline items={top} />}
-            caption={leader && <>가장 많이 요구되는 기술은 <b>{leader.tech}</b> · 공고 <b>{leader.count.toLocaleString()}건</b></>}
-            footChips={leaderboard.source === 'mock' && <PreviewBadge />}
-          />
-        </section>
+        {!isWidgetHidden('market', 'hero-demand') && (
+          <section className="dmkt2__cell dmkt2__cell--hero">
+            <HeroStat
+              eyebrow="수요 리더보드 1위"
+              value={leader?.share ?? 0}
+              unit="%"
+              chart={<SkillShareSparkline items={top} />}
+              caption={leader && <>가장 많이 요구되는 기술은 <b>{leader.tech}</b> · 공고 <b>{leader.count.toLocaleString()}건</b></>}
+              footChips={leaderboard.source === 'mock' && <PreviewBadge />}
+            />
+          </section>
+        )}
 
-        <section className="dcard dmkt2__cell dmkt2__cell--bars">
-          <SectionHeader title="상위 요구 기술 Top14" hint="국내" />
-          <div className="dmkt2__bars">
-            {top.map((i) => (
-              <button key={i.tech} className="dmkt2__bar" onClick={() => navigate(`/tech/${encodeURIComponent(i.tech)}`)}>
-                <TechIcon tech={i.tech} size={20} />
-                <span className="dmkt2__bar-t">{i.tech}</span>
-                <span className="dmkt2__bar-track"><i style={{ width: `${(i.share / maxShare) * 100}%` }} /></span>
-                <span className="dmkt2__bar-v">{i.share}%</span>
-              </button>
-            ))}
-          </div>
-        </section>
+        {!isWidgetHidden('market', 'leaderboard') && (
+          <section className="dcard dmkt2__cell dmkt2__cell--bars">
+            <SectionHeader title="상위 요구 기술 Top14" hint="국내" />
+            <div className="dmkt2__bars">
+              {top.map((i) => (
+                <button key={i.tech} className="dmkt2__bar" onClick={() => navigate(`/tech/${encodeURIComponent(i.tech)}`)}>
+                  <TechIcon tech={i.tech} size={20} />
+                  <span className="dmkt2__bar-t">{i.tech}</span>
+                  <span className="dmkt2__bar-track"><i style={{ width: `${(i.share / maxShare) * 100}%` }} /></span>
+                  <span className="dmkt2__bar-v">{i.share}%</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* 2. 기술 공동출현 네트워크 */}
-        <section className="dcard dmkt2__cell dmkt2__cell--net">
-          <SectionHeader title="기술 공동출현 네트워크" hint="함께 요구되는 기술 · force graph" />
-          <TechCoNetworkGraph skills={NO_SKILLS} />
-        </section>
+        {!isWidgetHidden('market', 'network') && (
+          <section className="dcard dmkt2__cell dmkt2__cell--net">
+            <SectionHeader title="기술 공동출현 네트워크" hint="함께 요구되는 기술 · force graph" />
+            <TechCoNetworkGraph skills={NO_SKILLS} />
+          </section>
+        )}
 
         {/* 3. 트렌드 전파 네트워크 */}
-        <section className="dcard dmkt2__cell dmkt2__cell--prop">
-          <SectionHeader title="트렌드 전파 네트워크" hint="선행 기술 → 후행 기술 시차" />
-          <TrendPropagationGraph />
-        </section>
+        {!isWidgetHidden('market', 'propagation') && (
+          <section className="dcard dmkt2__cell dmkt2__cell--prop">
+            <SectionHeader title="트렌드 전파 네트워크" hint="선행 기술 → 후행 기술 시차" />
+            <TrendPropagationGraph />
+          </section>
+        )}
 
         {/* 4. 연도별 점유율 추이 */}
-        <section className="dcard dmkt2__cell dmkt2__cell--third">
-          <SectionHeader title="연도별 점유율 추이" hint="국내 · 단일 소스" />
-          <TechYearlyTrendChart skills={NO_SKILLS} />
-        </section>
+        {!isWidgetHidden('market', 'yearly-trend') && (
+          <section className="dcard dmkt2__cell dmkt2__cell--third">
+            <SectionHeader title="연도별 점유율 추이" hint="국내 · 단일 소스" />
+            <TechYearlyTrendChart skills={NO_SKILLS} />
+          </section>
+        )}
 
         {/* 5. 급상승 · 급감 */}
-        <section className="dcard dmkt2__cell dmkt2__cell--third">
-          <SectionHeader title="급상승 · 급감 Top" />
-          <TechMoversBar />
-        </section>
+        {!isWidgetHidden('market', 'movers') && (
+          <section className="dcard dmkt2__cell dmkt2__cell--third">
+            <SectionHeader title="급상승 · 급감 Top" />
+            <TechMoversBar />
+          </section>
+        )}
 
         {/* 6. 기업 규모별 요구 차이 */}
-        <section className="dcard dmkt2__cell dmkt2__cell--third">
-          <SectionHeader title="기업 규모별 요구 차이" hint="대기업 · 중견 · 중소" />
-          <TierCompareChart />
-        </section>
+        {!isWidgetHidden('market', 'tier-compare') && (
+          <section className="dcard dmkt2__cell dmkt2__cell--third">
+            <SectionHeader title="기업 규모별 요구 차이" hint="대기업 · 중견 · 중소" />
+            <TierCompareChart />
+          </section>
+        )}
 
         {/* 7. 레거시 → 신진 스택 변화 */}
-        <section className="dcard dmkt2__cell dmkt2__cell--half">
-          <SectionHeader title="레거시 → 신진 스택 변화" hint="설립 세대별" />
-          <GenerationTrendChart skills={NO_SKILLS} />
-        </section>
+        {!isWidgetHidden('market', 'generation-trend') && (
+          <section className="dcard dmkt2__cell dmkt2__cell--half">
+            <SectionHeader title="레거시 → 신진 스택 변화" hint="설립 세대별" />
+            <GenerationTrendChart skills={NO_SKILLS} />
+          </section>
+        )}
 
         {/* 8. 수요 × 빈도 분포 — 순수 시장 산점도(보유 개념 없음) */}
-        <section className="dcard dmkt2__cell dmkt2__cell--half">
-          <SectionHeader title="수요 × 빈도 분포" hint="국내 · 상위 16개 기술" />
-          <MarketScatter items={scatterItems} />
-        </section>
+        {!isWidgetHidden('market', 'scatter') && (
+          <section className="dcard dmkt2__cell dmkt2__cell--half">
+            <SectionHeader title="수요 × 빈도 분포" hint="국내 · 상위 16개 기술" />
+            <MarketScatter items={scatterItems} />
+          </section>
+        )}
       </div>
     </div>
   )
