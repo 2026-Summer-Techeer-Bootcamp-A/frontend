@@ -6,7 +6,6 @@ import CompanyLogo from './CompanyLogo'
 import { matchGrad } from './kit'
 import { THEME, themeVars } from './themes'
 import { useIsDesktop } from '../shared/useMediaQuery'
-import DesktopShell from '../desktop/DesktopShell'
 import data from '../data/careerData.json'
 import { useResumesState } from './state'
 import './career.css'
@@ -170,18 +169,17 @@ export default function JobDetail() {
     </>
   )
 
+  // 데스크톱 셸 크롬은 라우트 레이아웃(ResponsiveProductLayout)이 씌운다
   if (isDesktop) {
     return (
-      <DesktopShell>
-        <div className="dsub">
-          <button className="dsub__back" onClick={() => navigate(-1)}><ChevronLeft size={17} /> 뒤로</button>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <h1 className="dsub__title" style={{ marginBottom: 0 }}>채용 상세</h1>
-            {bookmarkBtn}
-          </div>
-          <div className="dsub__content crd" style={{ maxWidth: 760 }}>{detail}</div>
+      <div className="dsub">
+        <button className="dsub__back" onClick={() => navigate(-1)}><ChevronLeft size={17} /> 뒤로</button>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+          <h1 className="dsub__title" style={{ marginBottom: 0 }}>채용 상세</h1>
+          {bookmarkBtn}
         </div>
-      </DesktopShell>
+        <div className="dsub__content crd" style={{ maxWidth: 760 }}>{detail}</div>
+      </div>
     )
   }
 
