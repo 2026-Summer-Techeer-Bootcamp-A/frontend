@@ -1,7 +1,8 @@
 /* 데스크톱 대시보드 — 검정 히어로 2 + stat 타일 4 + 개인화 위젯 다수의 촘촘한 커맨드센터.
    모바일 단일컬럼과 완전히 분리된 메인+사이드 멀티컬럼 레이아웃. */
 .dov {
-  max-width: 1360px;
+  max-width: 1520px;
+  margin: 0 auto;
   /* DesktopShell(.dshell)에는 .career 확장 토큰이 없어 보강한다. */
   --line: #e6e9ef;
   --accent-50: #f0f0f1;

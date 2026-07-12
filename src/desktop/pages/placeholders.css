@@ -1,7 +1,8 @@
 /* 데스크톱 페이지(공고·시장·지도·마이) — PC 최적화 레이아웃 틀. */
 
 .dpage {
-  max-width: 1360px;
+  max-width: 1520px;
+  margin: 0 auto;
   /* DesktopShell(.dshell)에는 .career 확장 토큰이 없어 보강한다. */
   --line: #e6e9ef;
   --accent-50: #f0f0f1;
