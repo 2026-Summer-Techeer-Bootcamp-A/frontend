@@ -8,8 +8,9 @@ import {
   OpportunityQuadrant, TechIcon, type QuadItem,
 } from '../../career/kit'
 import CompanyLogo from '../../career/CompanyLogo'
-import { useResumesState, getDynamicPostings, calculateCoverage } from '../../career/state'
-import { useAuth } from '../../career/authStore'
+import { useResumesState, calculateCoverage } from '../../career/state'
+import { getAuthToken, useAuth } from '../../career/authStore'
+import { recruitmentApi, type PostingCardDto } from '../../career/recruitmentApi'
 import marketData from '../../data/marketData.json'
 import './placeholders.css'
 
@@ -25,15 +26,35 @@ function careerLabel(min: number | null, max: number | null) {
 
 /* ───────────────── 맞춤 공고 — 마스터-디테일 ───────────────── */
 export function DesktopJobs() {
-  const navigate = useNavigate()
   const { activeResume } = useResumesState()
   const skills = activeResume?.skills ?? []
   const [pool, setPool] = useState<'국내' | '국외'>('국내')
   const [q, setQ] = useState('')
   const [sort, setSort] = useState<'match' | 'tier' | 'latest'>('match')
   const [selId, setSelId] = useState<string | null>(null)
+  const [remotePostings, setRemotePostings] = useState<PostingCardDto[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
-  const postings = useMemo(() => getDynamicPostings(skills), [skills])
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true); setError('')
+    const resumeId = Number(activeResume?.id)
+    const hasMatchedResume = Number.isInteger(resumeId) && !!getAuthToken()
+    recruitmentApi.postings({
+      pool: pool === '국내' ? 'domestic' : 'global', page_size: 100, sort: 'latest',
+      ...(hasMatchedResume ? { resume_id: resumeId, match_only: true } : {}),
+    })
+      .then((result) => { if (!cancelled) setRemotePostings(result.items) })
+      .catch((reason) => { if (!cancelled) setError(reason instanceof Error ? reason.message : '공고를 불러오지 못했습니다.') })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [pool, activeResume?.id])
+  const postings = useMemo(() => remotePostings.map((p) => {
+    const held = p.skills.filter((skill) => skills.includes(skill))
+    const matched = p.matched_count ?? held.length
+    return { id: String(p.id), title: p.title, company: p.company ?? '회사명 미상', pool, postDate: p.post_date ?? '', closeDate: p.close_date ?? '', techs: p.skills, matchPct: p.skills.length ? Math.round(matched / p.skills.length * 100) : 0, careerMin: null, careerMax: null, tier: null, region: null, logo: '', url: p.url }
+  }), [remotePostings, skills, pool])
   const list = useMemo(() => {
     const s = q.trim().toLowerCase()
     let arr = postings.filter((p) => p.pool === pool)
@@ -78,7 +99,9 @@ export function DesktopJobs() {
 
         {/* 결과 리스트 */}
         <div className="dcard djobs__list">
-          {list.slice(0, 40).map((p) => (
+          {loading ? <div className="dpage__empty">채용공고를 불러오는 중입니다.</div>
+            : error ? <div className="dpage__empty" role="alert">{error}</div>
+              : list.slice(0, 40).map((p) => (
             <button
               key={p.id}
               className={`djobs__row${sel?.id === p.id ? ' on' : ''}`}
@@ -91,7 +114,7 @@ export function DesktopJobs() {
               </span>
               <MiniScore pct={p.matchPct} size={40} />
             </button>
-          ))}
+              ))}
         </div>
 
         {/* 상세 프리뷰 */}
@@ -112,7 +135,7 @@ export function DesktopJobs() {
                   </span>
                 ))}
               </div>
-              <button className="djobs__pv-cta" onClick={() => navigate(`/job/${encodeURIComponent(sel.id)}`)}>
+              <button className="djobs__pv-cta" onClick={() => window.open(sel.url, '_blank', 'noopener,noreferrer')}>
                 상세 보기 <ArrowUpRight size={16} />
               </button>
             </>
@@ -180,7 +203,20 @@ type Pin = { id: string; lat: number; lng: number; company: string; title: strin
 export function DesktopMap() {
   const elRef = useRef<HTMLDivElement>(null)
   const [sel, setSel] = useState<Pin | null>(null)
-  const pins = marketData.map.pins as Pin[]
+  const [pins, setPins] = useState<Pin[]>([])
+  const { activeResume } = useResumesState()
+
+  useEffect(() => {
+    let cancelled = false
+    const resumeId = Number(activeResume?.id)
+    recruitmentApi.map(Number.isInteger(resumeId) ? { resume_id: resumeId } : {})
+      .then((result) => {
+        if (cancelled) return
+        setPins(result.pins.map((p) => ({ id: String(p.id), lat: p.lat, lng: p.lng, company: p.company ?? '회사명 미상', title: p.title, district: '', matchPct: Math.round(p.match_pct ?? 0), tier: '', logo: '' })))
+      })
+      .catch(() => { if (!cancelled) setPins([]) })
+    return () => { cancelled = true }
+  }, [activeResume?.id])
 
   useEffect(() => {
     if (!elRef.current) return
