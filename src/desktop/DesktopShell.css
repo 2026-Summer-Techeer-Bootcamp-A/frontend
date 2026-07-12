@@ -172,17 +172,17 @@
   overflow-y: auto;
   /* 스크롤바 — .screen-scroll(index.css)과 동일한 시스템 스타일. 라운드 카드 안쪽에 머문다 */
   scrollbar-width: thin;
-  scrollbar-color: rgba(47, 97, 184, 0.26) transparent;
+  scrollbar-color: rgba(0, 0, 0, 0.24) transparent;
 }
 .dshell__content::-webkit-scrollbar {
   width: 5px;
 }
 .dshell__content::-webkit-scrollbar-thumb {
-  background: rgba(47, 97, 184, 0.26);
+  background: rgba(0, 0, 0, 0.24);
   border-radius: 5px;
 }
 .dshell__content::-webkit-scrollbar-thumb:hover {
-  background: rgba(47, 97, 184, 0.45);
+  background: rgba(0, 0, 0, 0.4);
 }
 .dshell__content::-webkit-scrollbar-track {
   background: transparent;

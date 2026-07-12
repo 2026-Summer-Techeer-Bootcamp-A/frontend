@@ -179,7 +179,7 @@ export function DesktopMap() {
     pins.forEach((p) => {
       const marker = L.circleMarker([p.lat, p.lng], {
         radius: 7, weight: 2, color: '#fff',
-        fillColor: p.matchPct >= 50 ? '#2f61b8' : '#8fa0b8', fillOpacity: 0.9,
+        fillColor: p.matchPct >= 50 ? '#0b0b0c' : '#a1a1aa', fillOpacity: 0.9,
       }).addTo(map)
       marker.on('click', () => setSel(p))
     })
@@ -192,8 +192,8 @@ export function DesktopMap() {
         <div className="dcard dmap__map">
           <div ref={elRef} className="dmap__leaflet" />
           <div className="dmap__legend">
-            <span><i style={{ background: '#2f61b8' }} /> 매칭 50% 이상</span>
-            <span><i style={{ background: '#8fa0b8' }} /> 50% 미만</span>
+            <span><i style={{ background: '#0b0b0c' }} /> 매칭 50% 이상</span>
+            <span><i style={{ background: '#a1a1aa' }} /> 50% 미만</span>
           </div>
         </div>
         <aside className="dcard dmap__list">

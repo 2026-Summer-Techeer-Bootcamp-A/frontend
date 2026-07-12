@@ -57,7 +57,7 @@ export default function Stage({ spec }: { spec: StageSpec }) {
       return (
         <div className="stage-bars">
           {(spec.values ?? []).map((v, i) => (
-            <i key={i} style={{ height: `${v}%`, background: spec.colors?.[i] ?? '#2f61b8' }} />
+            <i key={i} style={{ height: `${v}%`, background: spec.colors?.[i] ?? '#0b0b0c' }} />
           ))}
         </div>
       )

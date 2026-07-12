@@ -10,7 +10,7 @@ const Y = raw as unknown as {
 }
 
 const CAT_COLOR: Record<string, string> = {
-  language: '#2f61b8', frontend: '#4fa88a', backend: '#8a6fc4', data_db: '#d68a3c',
+  language: '#0b0b0c', frontend: '#4fa88a', backend: '#8a6fc4', data_db: '#d68a3c',
   cloud_services: '#2f9bd6', devops: '#6b7280', ai_llm: '#b8892b', mobile: '#c0568a',
 }
 

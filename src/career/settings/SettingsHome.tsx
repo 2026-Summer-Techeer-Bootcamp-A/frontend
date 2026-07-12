@@ -23,7 +23,7 @@ export default function SettingsHome() {
     <SubScreen title="설정">
       <SectionHeader title="계정" />
       <div className="kit-menulist">
-        <MenuRow icon={<User size={18} />} tint="#2f61b8" label="계정 관리" onClick={() => navigate('/settings/account')} />
+        <MenuRow icon={<User size={18} />} tint="#0b0b0c" label="계정 관리" onClick={() => navigate('/settings/account')} />
         <MenuRow icon={<Bell size={18} />} tint="#c76a2e" label="알림 설정" onClick={() => navigate('/settings/notifications')} />
       </div>
 

@@ -21,18 +21,18 @@ export default function StatsSection() {
 
               <div className="ds-card">
                 <div className="demo-label">추이 라인·에어리어</div>
-                <LineChart series={[{ color: '#2f61b8', pts: [12, 18, 15, 24, 22, 31, 28, 37] }]} />
-                <div className="sx-legend"><span><i style={{ background: '#2f61b8' }} />주간 신규 공고</span></div>
+                <LineChart series={[{ color: '#0b0b0c', pts: [12, 18, 15, 24, 22, 31, 28, 37] }]} />
+                <div className="sx-legend"><span><i style={{ background: '#0b0b0c' }} />주간 신규 공고</span></div>
               </div>
 
               <div className="ds-card">
                 <div className="demo-label">멀티 라인 (내 위치 vs 시장)</div>
                 <LineChart series={[
-                  { color: '#2f61b8', pts: [40, 44, 43, 52, 58, 61, 66, 73] },
+                  { color: '#0b0b0c', pts: [40, 44, 43, 52, 58, 61, 66, 73] },
                   { color: '#a2a6b0', pts: [50, 51, 52, 53, 55, 56, 57, 58] },
                 ]} />
                 <div className="sx-legend">
-                  <span><i style={{ background: '#2f61b8' }} />내 커버리지</span>
+                  <span><i style={{ background: '#0b0b0c' }} />내 커버리지</span>
                   <span><i style={{ background: '#a2a6b0' }} />지원자 평균</span>
                 </div>
               </div>
@@ -40,7 +40,7 @@ export default function StatsSection() {
               <div className="ds-card">
                 <div className="demo-label">세로 막대 (요일별 공고)</div>
                 <div className="sx-bars">
-                  {[['월', 62, '#5a86cf'], ['화', 88, '#2f61b8'], ['수', 74, '#2f61b8'], ['목', 95, '#21447c'], ['금', 58, '#5a86cf'], ['토', 22, '#cdd2db'], ['일', 15, '#e2e5ec']].map(([d, h, c]) => (
+                  {[['월', 62, '#5a86cf'], ['화', 88, '#0b0b0c'], ['수', 74, '#0b0b0c'], ['목', 95, '#21447c'], ['금', 58, '#5a86cf'], ['토', 22, '#cdd2db'], ['일', 15, '#e2e5ec']].map(([d, h, c]) => (
                     <div className="col" key={d as string}>
                       <span className="val">{h as number}</span>
                       <div className="bar" style={{ height: `${h as number}%`, background: c as string }} />
@@ -52,7 +52,7 @@ export default function StatsSection() {
 
               <div className="ds-card">
                 <div className="demo-label">수평 랭킹 바 (기술 수요)</div>
-                {[['React', 88, '482', '#21447c'], ['TypeScript', 72, '394', '#2f61b8'], ['Python', 61, '331', '#2f61b8'], ['AWS', 44, '241', '#5a86cf'], ['Go', 28, '152', '#8fb0e2']].map(([k, w, v, c]) => (
+                {[['React', 88, '482', '#21447c'], ['TypeScript', 72, '394', '#0b0b0c'], ['Python', 61, '331', '#0b0b0c'], ['AWS', 44, '241', '#5a86cf'], ['Go', 28, '152', '#8fb0e2']].map(([k, w, v, c]) => (
                   <div className="sx-hbar" key={k as string}>
                     <span className="k">{k}</span>
                     <div className="track"><i style={{ width: `${w}%`, background: c as string }} /></div>
@@ -64,10 +64,10 @@ export default function StatsSection() {
               <div className="ds-card">
                 <div className="demo-label">도넛 (고용 형태 비중)</div>
                 <div className="ds-demo-stage" style={{ flexDirection: 'column' }}>
-                  <Donut segs={[{ v: 58, c: '#21447c' }, { v: 26, c: '#2f61b8' }, { v: 16, c: '#8fb0e2' }]} mid="58%" sub="정규직" />
+                  <Donut segs={[{ v: 58, c: '#21447c' }, { v: 26, c: '#0b0b0c' }, { v: 16, c: '#8fb0e2' }]} mid="58%" sub="정규직" />
                   <div className="sx-legend" style={{ justifyContent: 'center' }}>
                     <span><i style={{ background: '#21447c' }} />정규직</span>
-                    <span><i style={{ background: '#2f61b8' }} />계약직</span>
+                    <span><i style={{ background: '#0b0b0c' }} />계약직</span>
                     <span><i style={{ background: '#8fb0e2' }} />인턴</span>
                   </div>
                 </div>
@@ -103,7 +103,7 @@ export default function StatsSection() {
                     <div className="hrow" key={lab as string}>
                       <span className="hlabel">{lab}</span>
                       {(vals as number[]).map((v, i) => (
-                        <div className="cell" key={i} style={{ background: `rgba(47,97,184,${0.08 + (v / 100) * 0.82})` }} />
+                        <div className="cell" key={i} style={{ background: `rgba(11, 11, 12,${0.08 + (v / 100) * 0.82})` }} />
                       ))}
                     </div>
                   ))}
@@ -114,7 +114,7 @@ export default function StatsSection() {
               <div className="ds-card">
                 <div className="demo-label">펀넬 (지원 → 합격)</div>
                 <div className="sx-funnel">
-                  {[['지원', '1,204', 100, '#21447c'], ['서류 통과', '486', 78, '#2f61b8'], ['면접', '152', 54, '#5a86cf'], ['합격', '38', 32, '#8fb0e2']].map(([s, v, w, c]) => (
+                  {[['지원', '1,204', 100, '#21447c'], ['서류 통과', '486', 78, '#0b0b0c'], ['면접', '152', 54, '#5a86cf'], ['합격', '38', 32, '#8fb0e2']].map(([s, v, w, c]) => (
                     <div className="step" key={s as string} style={{ width: `${w}%`, background: c as string }}>
                       <span>{s}</span><span className="v">{v}</span>
                     </div>

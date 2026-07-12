@@ -112,7 +112,7 @@ const AI_INFLECTION = 3 // 2023 = years[3]
 /* on-dark 대비용 밝은 변형 (다크 히어로에서 선/라벨 가독) */
 const ON_DARK: Record<string, string> = {
   '#6b5bd6': '#8f7ff0', // AI 바이올렛
-  '#2f61b8': '#6f9bd8', // 블루
+  '#0b0b0c': '#6f9bd8', // 블루
   '#2a9db0': '#4dc0d2', // 틸
   '#d9932f': '#e0a53b', // 앰버
   '#c8506a': '#d47089', // 로즈

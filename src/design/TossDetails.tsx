@@ -502,7 +502,7 @@ function CheckmarkDraw() {
 function ConfettiSubtle() {
   const [burst, setBurst] = useState<{ id: number; dx: number; dy: number; rot: number; color: string }[] | null>(null)
   const fire = () => {
-    const colors = ['#2f61b8', '#5a86cf', '#a2a6b0', '#218a58']
+    const colors = ['#0b0b0c', '#5a86cf', '#a2a6b0', '#218a58']
     setBurst(Array.from({ length: 10 }, (_, i) => ({
       id: i,
       dx: (Math.random() - 0.5) * 90,

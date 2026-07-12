@@ -365,8 +365,8 @@
 .scr-map__grid {
   position: absolute;
   inset: 0;
-  background-image: linear-gradient(rgba(47, 97, 184, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(47, 97, 184, 0.05) 1px, transparent 1px);
+  background-image: linear-gradient(rgba(11, 11, 12, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(11, 11, 12, 0.05) 1px, transparent 1px);
   background-size: 32px 32px;
 }
 .scr-pin {
@@ -380,7 +380,7 @@
   font-weight: 800;
   color: #fff;
   background: var(--c-accent);
-  box-shadow: 0 3px 8px -1px rgba(47, 97, 184, 0.55), 0 0 0 3px rgba(255, 255, 255, 0.9);
+  box-shadow: 0 3px 8px -1px rgba(11, 11, 12, 0.55), 0 0 0 3px rgba(255, 255, 255, 0.9);
   cursor: pointer;
   font-variant-numeric: tabular-nums;
   z-index: 2;
@@ -393,7 +393,7 @@
   position: absolute;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(47, 97, 184, 0.5) 0%, rgba(47, 97, 184, 0) 70%);
+  background: radial-gradient(circle, rgba(11, 11, 12, 0.5) 0%, rgba(11, 11, 12, 0) 70%);
   pointer-events: none;
 }
 .scr-map__banner {
@@ -629,7 +629,7 @@
 .lpin:active { transform: scale(0.9); }
 .lpin.strong {
   background: var(--c-accent);
-  box-shadow: 0 4px 11px -2px rgba(47, 97, 184, 0.55), 0 0 0 3px rgba(255, 255, 255, 0.96);
+  box-shadow: 0 4px 11px -2px rgba(11, 11, 12, 0.55), 0 0 0 3px rgba(255, 255, 255, 0.96);
 }
 .lpin--me {
   width: 22px; height: 22px; border-radius: 50%;
@@ -693,7 +693,7 @@
   transition: transform 0.12s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 .lfab:active { transform: scale(0.92); }
-.lfab.primary { background: var(--c-primary); color: #fff; border-color: transparent; box-shadow: 0 6px 16px -4px rgba(47, 97, 184, 0.6); }
+.lfab.primary { background: var(--c-primary); color: #fff; border-color: transparent; box-shadow: 0 6px 16px -4px rgba(11, 11, 12, 0.6); }
 
 /* ---- 검색 입력 + 자동완성 드롭다운 ---- */
 .lmap__search input {
@@ -1059,7 +1059,7 @@
 .demo-remote__gallery {
   display: flex; align-items: center; justify-content: center; gap: 6px;
   width: 100%; margin-top: 6px; padding: 10px; border-radius: 9px;
-  font-size: 12.5px; font-weight: 700; color: #fff; background: #2f61b8;
+  font-size: 12.5px; font-weight: 700; color: #fff; background: #0b0b0c;
   border-top: none;
 }
 .demo-remote__gallery:hover { background: #28539c; }
@@ -1074,7 +1074,7 @@
   transition: transform 0.12s cubic-bezier(0.25, 0.1, 0.25, 1), background 0.2s;
 }
 .demo-mode-fab:active { transform: scale(0.95); }
-.demo-mode-fab.on { background: var(--c-accent, #2f61b8); }
+.demo-mode-fab.on { background: var(--c-accent, #0b0b0c); }
 .demo-mode-fab.on svg { animation: demo-fab-pulse 1.4s ease-in-out infinite; }
 @keyframes demo-fab-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
 

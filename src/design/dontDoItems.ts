@@ -30,16 +30,16 @@ export const DONT_DO_ITEMS: DontDoItem[] = [
     dont: '역할이나 팀마다 다른 원색을 배지에 입히는 방식이다. 색이 정보 구분 이상의 의미를 갖지 못해 장식처럼 보이고, AI 생성 UI의 전형적인 팔레트 남용으로 읽힌다.',
     do: '액센트인 슬레이트 블루 한 가지만 강조가 필요한 항목에 쓰고 나머지는 뉴트럴 톤 하나로 통일한다. 색은 위계를 표현할 때만 사용한다.',
     dontStage: { kind: 'swatches', colors: ['#a855f7', '#3b82f6', '#22c55e', '#eab308', '#ef4444'] },
-    doStage: { kind: 'swatches', colors: ['#2f61b8', '#eef1f6', '#e2e5ec', '#7c7f88'] },
+    doStage: { kind: 'swatches', colors: ['#0b0b0c', '#eef1f6', '#e2e5ec', '#7c7f88'] },
   },
   {
     id: 'tailwind-default-blue',
     category: '색상',
     title: '기본 블루 남용',
     dont: 'Tailwind 기본 팔레트의 #3B82F6 계열을 그대로 쓰는 것은 어느 AI 코딩 툴로 만들었는지 색만 보고 알 수 있을 정도로 흔한 패턴이다.',
-    do: '브랜드 고유의 액센트인 슬레이트 블루 #2f61b8 한 톤으로 통일해 어디에서도 본 적 없는 우리만의 색 정체성을 만든다.',
+    do: '브랜드 고유의 액센트인 슬레이트 블루 #0b0b0c 한 톤으로 통일해 어디에서도 본 적 없는 우리만의 색 정체성을 만든다.',
     dontStage: { kind: 'swatches', colors: ['#3b82f6', '#60a5fa', '#93c5fd'] },
-    doStage: { kind: 'swatches', colors: ['#2f61b8', '#1c1d21', '#7c7f88'] },
+    doStage: { kind: 'swatches', colors: ['#0b0b0c', '#1c1d21', '#7c7f88'] },
   },
   {
     id: 'pastel-gradient-cards',
@@ -57,7 +57,7 @@ export const DONT_DO_ITEMS: DontDoItem[] = [
     dont: "보라에서 핑크로 흐르는 그라디언트는 생성형 AI 서비스들이 약속이라도 한 듯 쓰는 '우리는 AI입니다' 표식이 되어버렸다.",
     do: 'AI 관련 기능이라고 해서 색을 바꾸지 않는다. 같은 액센트, 같은 뉴트럴로 나머지 화면과 한 몸처럼 보이게 한다.',
     dontStage: { kind: 'swatches', colors: ['#a855f7', '#ec4899'] },
-    doStage: { kind: 'swatches', colors: ['#2f61b8', '#1c1d21'] },
+    doStage: { kind: 'swatches', colors: ['#0b0b0c', '#1c1d21'] },
   },
   {
     id: 'trend-color-inconsistency',
@@ -154,7 +154,7 @@ export const DONT_DO_ITEMS: DontDoItem[] = [
     doStage: {
       kind: 'pill',
       content: '지원하기',
-      style: { background: '#2f61b8', color: '#ffffff', borderRadius: 10, fontWeight: 700, padding: '12px 24px', border: 'none', boxShadow: 'none' },
+      style: { background: '#0b0b0c', color: '#ffffff', borderRadius: 10, fontWeight: 700, padding: '12px 24px', border: 'none', boxShadow: 'none' },
     },
   },
   {
@@ -171,7 +171,7 @@ export const DONT_DO_ITEMS: DontDoItem[] = [
     doStage: {
       kind: 'pill',
       content: '전체 공고 보기',
-      style: { borderRadius: 10, background: '#2f61b8', color: '#ffffff', fontWeight: 700, padding: '10px 20px', border: 'none' },
+      style: { borderRadius: 10, background: '#0b0b0c', color: '#ffffff', fontWeight: 700, padding: '10px 20px', border: 'none' },
     },
   },
   {
@@ -188,7 +188,7 @@ export const DONT_DO_ITEMS: DontDoItem[] = [
     doStage: {
       kind: 'pill',
       content: '지원하기',
-      style: { background: '#2f61b8', color: '#ffffff', borderRadius: 10, fontWeight: 700, padding: '12px 24px', boxShadow: 'none' },
+      style: { background: '#0b0b0c', color: '#ffffff', borderRadius: 10, fontWeight: 700, padding: '12px 24px', boxShadow: 'none' },
     },
   },
   {
@@ -218,7 +218,7 @@ export const DONT_DO_ITEMS: DontDoItem[] = [
     dontStage: {
       kind: 'pill',
       content: '지원하기',
-      style: { background: '#2f61b8', color: '#ffffff', borderRadius: 10, fontWeight: 700, padding: '12px 24px', boxShadow: 'none', opacity: 1 },
+      style: { background: '#0b0b0c', color: '#ffffff', borderRadius: 10, fontWeight: 700, padding: '12px 24px', boxShadow: 'none', opacity: 1 },
     },
     doStage: {
       kind: 'pill',
@@ -470,7 +470,7 @@ export const DONT_DO_ITEMS: DontDoItem[] = [
     dont: '막대마다 빨강·주황·노랑·초록·파랑을 순서대로 칠하면 색이 값의 크기가 아니라 순서만 나타내는 장식이 된다.',
     do: '값이 클수록 진한 액센트, 작을수록 옅은 뉴트럴을 써서 색 자체가 크기를 설명하게 한다.',
     dontStage: { kind: 'bars', colors: ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6'], values: [40, 90, 55, 70, 30] },
-    doStage: { kind: 'bars', colors: ['#2f61b8', '#2f61b8', '#7c7f88', '#7c7f88', '#e2e5ec'], values: [82, 64, 48, 35, 20] },
+    doStage: { kind: 'bars', colors: ['#0b0b0c', '#0b0b0c', '#7c7f88', '#7c7f88', '#e2e5ec'], values: [82, 64, 48, 35, 20] },
   },
   {
     id: 'rainbow-progress-bar',
@@ -479,7 +479,7 @@ export const DONT_DO_ITEMS: DontDoItem[] = [
     dont: '하나의 진행률 막대 안에 여러 색을 그라디언트로 흘려 넣으면 진행률이 몇 퍼센트인지보다 색이 먼저 눈에 들어온다.',
     do: '진행률은 액센트 한 색으로 채운 부분과 뉴트럴 트랙 두 톤으로만 표현한다.',
     dontStage: { kind: 'bars', colors: ['#f472b6', '#a855f7', '#38bdf8'], values: [100, 100, 100] },
-    doStage: { kind: 'bars', colors: ['#2f61b8', '#e2e5ec'], values: [62, 100] },
+    doStage: { kind: 'bars', colors: ['#0b0b0c', '#e2e5ec'], values: [62, 100] },
   },
 
   // ---------- 랜딩·히어로 ----------
@@ -551,7 +551,7 @@ export const DONT_DO_ITEMS: DontDoItem[] = [
     doStage: {
       kind: 'pill',
       content: 'NEW',
-      style: { background: '#eef1f6', color: '#2f61b8', border: '1px solid #e2e5ec', borderRadius: 8, fontWeight: 700, padding: '4px 10px' },
+      style: { background: '#eef1f6', color: '#0b0b0c', border: '1px solid #e2e5ec', borderRadius: 8, fontWeight: 700, padding: '4px 10px' },
     },
   },
   {
@@ -638,7 +638,7 @@ export const DONT_DO_ITEMS: DontDoItem[] = [
     doStage: {
       kind: 'pill',
       content: '알림 3',
-      style: { background: '#2f61b8', color: '#ffffff', borderRadius: 8, fontWeight: 700, padding: '4px 10px' },
+      style: { background: '#0b0b0c', color: '#ffffff', borderRadius: 8, fontWeight: 700, padding: '4px 10px' },
     },
   },
   {
@@ -683,7 +683,7 @@ export const DONT_DO_ITEMS: DontDoItem[] = [
     doStage: {
       kind: 'box',
       content: '이메일 입력',
-      style: { background: '#ffffff', border: '2px solid #2f61b8', borderRadius: 10, padding: '12px 16px', color: '#1c1d21' },
+      style: { background: '#ffffff', border: '2px solid #0b0b0c', borderRadius: 10, padding: '12px 16px', color: '#1c1d21' },
     },
   },
   {
@@ -738,6 +738,6 @@ export const DONT_DO_ITEMS: DontDoItem[] = [
     dont: "보라색을 쓰면 자동으로 'AI 기능'처럼 읽힌다는 업계의 암묵적 규칙을 그대로 따르면 브랜드 색 체계가 두 갈래로 쪼개진다.",
     do: 'AI 기능에도 별도의 브랜드 색을 만들지 않고 기존 액센트와 뉴트럴 팔레트를 그대로 적용한다.',
     dontStage: { kind: 'swatches', colors: ['#8b5cf6', '#a78bfa', '#c4b5fd'] },
-    doStage: { kind: 'swatches', colors: ['#2f61b8', '#1c1d21', '#7c7f88'] },
+    doStage: { kind: 'swatches', colors: ['#0b0b0c', '#1c1d21', '#7c7f88'] },
   },
 ]
