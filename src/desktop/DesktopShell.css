@@ -5,7 +5,7 @@
 .dshell {
   display: flex;
   height: 100dvh;
-  background: var(--c-card);
+  background: #f6f8fc; /* 셸 크롬은 옅은 회색(= THEME.screenBg), 콘텐츠 카드가 흰색 */
   color: var(--c-ink);
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
   letter-spacing: var(--c-ls);
@@ -20,7 +20,6 @@
   align-items: center;
   gap: 4px;
   padding: 18px 0;
-  border-right: 1px solid #eef1f6;
 }
 
 .dshell__brand-dot {
@@ -54,7 +53,7 @@
   transition: background 0.15s ease, color 0.15s ease;
 }
 .dshell__railbtn:hover {
-  background: #f2f5fb;
+  background: #eef1f6;
   color: var(--c-ink);
 }
 .dshell__railbtn.on {
@@ -133,7 +132,7 @@
   transition: background 0.15s ease, color 0.15s ease;
 }
 .dshell__navitem:hover {
-  background: #f2f5fb;
+  background: #eef1f6;
   color: var(--c-ink);
 }
 .dshell__navitem.on {
@@ -167,7 +166,8 @@
   width: min(420px, 40vw);
   padding: 9px 14px;
   border-radius: 12px;
-  background: #f2f5fb;
+  background: var(--c-card);
+  border: 1px solid #eef1f6;
   color: var(--c-muted);
   font-size: 13.5px;
   text-align: left;
@@ -219,6 +219,23 @@
   padding: 28px;
   border-radius: 24px;
   border: 1px solid #eef1f6;
-  background: #f6f8fc; /* = THEME.screenBg */
+  background: var(--c-card); /* 콘텐츠는 흰색 카드 */
   overflow-y: auto;
+  /* 스크롤바 — .screen-scroll(index.css)과 동일한 시스템 스타일. 라운드 카드 안쪽에 머문다 */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(47, 97, 184, 0.26) transparent;
+}
+.dshell__content::-webkit-scrollbar {
+  width: 5px;
+}
+.dshell__content::-webkit-scrollbar-thumb {
+  background: rgba(47, 97, 184, 0.26);
+  border-radius: 5px;
+}
+.dshell__content::-webkit-scrollbar-thumb:hover {
+  background: rgba(47, 97, 184, 0.45);
+}
+.dshell__content::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 12px 0; /* 라운딩 모서리와 트랙이 겹치지 않게 위아래를 비운다 */
 }
