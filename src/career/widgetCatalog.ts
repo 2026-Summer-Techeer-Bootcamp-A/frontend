@@ -29,6 +29,9 @@ export const DASHBOARD_WIDGETS: WidgetCatalogItem[] = [
   { id: 'gap-chips', label: '자주 요구되는 미보유 기술', shape: 'list', allowedSizes: ['1x1', '2x1'], defaultSize: '2x1' },
   { id: 'industry-fit', label: '업종 적합도', shape: 'radar', allowedSizes: ['2x1', '2x2'], defaultSize: '2x2' },
   { id: 'roadmap', label: '추천 로드맵', shape: 'list', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
+  { id: 'bookmarks', label: '북마크한 공고', shape: 'list', allowedSizes: ['1x1', '2x1', '2x2'], defaultSize: '2x1' },
+  { id: 'recent-views', label: '최근 본 공고', shape: 'list', allowedSizes: ['1x1', '2x1'], defaultSize: '1x1' },
+  { id: 'skill-momentum', label: '내 스킬 시장 모멘텀', shape: 'bars', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
 ]
 
 export const MARKET_WIDGETS: WidgetCatalogItem[] = [

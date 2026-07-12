@@ -50,17 +50,16 @@
 }
 .dov__cta-btn:active { transform: scale(0.97); opacity: 0.85; }
 
-.dov__body { display: flex; gap: 18px; align-items: flex-start; }
-.dov__main { flex: 2; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
-.dov__aside { flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 16px; }
+/* 통일 위젯그리드(.wgrid) 위에 얹는 보정 — 그리드 자체 규칙은 widgetGrid.css가 담당. */
+.dov__grid { margin-top: 4px; }
 
-.dov__card {
-  background: var(--c-card);
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  box-shadow: var(--e1);
-  padding: 20px;
-}
+/* 히어로 위젯(HeroStat)이 2x1/2x2 셀을 꽉 채우도록 */
+.dov__grid .wcell--2x1 .kit-heroStat, .dov__grid .wcell--2x2 .kit-heroStat { height: 100%; }
+
+/* 리스트형 카드 콘텐츠가 .wcell(overflow hidden) 안에서 잘리지 않도록 스크롤 허용 */
+.dov__grid .dcard { overflow: hidden; }
+.dov__grid .dcard .dov__jobs, .dov__grid .dcard .dov__dl, .dov__grid .dcard .dov__gap { overflow-y: auto; }
+
 .dov__card-eyebrow {
   display: inline-flex;
   align-items: center;
@@ -69,12 +68,6 @@
   font-weight: 700;
   color: var(--c-muted);
 }
-
-/* 히어로 행 (검정 위젯 2개) */
-.dov__heroRow { display: grid; grid-template-columns: repeat(2, minmax(220px, 1fr)); gap: 14px; }
-
-/* stat 타일 행 (4개) */
-.dov__statRow { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: 12px; }
 
 /* 매치 분포 미니 바 (HeroStat B 그래프 슬롯) */
 .dov__distro { display: flex; align-items: flex-end; gap: 4px; height: 44px; }
@@ -153,16 +146,7 @@
 
 .dov__empty { font-size: 13px; color: var(--c-muted); padding: 8px 2px; }
 
-/* 좁은 데스크톱: 사이드 아래로 + 촘촘 그리드 접힘 */
-@media (max-width: 1280px) {
-  .dov__statRow { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
-}
-@media (max-width: 1120px) {
-  .dov__body { flex-direction: column; }
-  .dov__aside { width: 100%; flex-direction: row; flex-wrap: wrap; }
-  .dov__aside .dov__card { flex: 1; min-width: 260px; }
-}
+/* 좁은 화면: 맞춤 공고 그리드 1열로 접힘(그리드 자체 컬럼 접힘은 widgetGrid.css가 담당) */
 @media (max-width: 720px) {
-  .dov__heroRow { grid-template-columns: 1fr; }
   .dov__jobs { grid-template-columns: 1fr; }
 }
