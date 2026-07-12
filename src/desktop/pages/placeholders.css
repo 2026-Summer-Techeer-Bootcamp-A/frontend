@@ -164,23 +164,65 @@
 .dmap__sel { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px; margin: 8px 0; border-radius: 12px; background: var(--accent-50); text-align: left; }
 .dmap__rows { flex: 1; min-height: 0; margin-top: 6px; }
 
-/* ── 마이 ── */
-.dmy__grid { display: flex; flex-direction: column; gap: 16px; max-width: 880px; }
-.dmy__profile { display: flex; align-items: center; gap: 14px; }
-.dmy__avatar {
+/* ── 마이 — 대시보드/시장과 통일된 커맨드센터 톤: 큰 타이틀 + 검정 히어로 + 2컬럼 본문 ── */
+.dmy__head { display: flex; flex-direction: column; gap: 4px; margin-bottom: 16px; }
+.dmy__title { font-size: 34px; font-weight: 800; letter-spacing: -1px; line-height: 1.15; color: var(--c-ink); }
+.dmy__sub { font-size: 12.5px; color: var(--c-muted); }
+
+/* 프로필 히어로 — 대시보드 검정 히어로(kit-heroStat)와 톤 일치. 슬레이트블루 금지, 순수 흑백. */
+.dmy__hero {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  background: #0d0d0d;
+  color: #fff;
+  border-radius: 20px;
+  padding: 22px 24px;
+  margin-bottom: 16px;
+}
+.dmy__hero-avatar {
   flex: none; width: 56px; height: 56px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: 18px; font-weight: 800; color: #fff;
-  background: linear-gradient(140deg, var(--c-accent), var(--accent-700)); box-shadow: var(--e1);
+  font-size: 18px; font-weight: 800; color: #0d0d0d; background: #fff;
 }
-.dmy__id { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.dmy__nm { font-size: 17px; font-weight: 800; color: var(--c-ink); }
-.dmy__em { font-size: 13px; color: var(--c-muted); }
-.dmy__edit { flex: none; font-size: 12.5px; font-weight: 700; color: var(--accent-700); border: 1px solid var(--accent-200); border-radius: 10px; padding: 8px 13px; transition: transform 0.12s ease; }
-.dmy__edit:active { transform: scale(0.96); }
-.dmy__resume { display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; margin-top: 4px; }
+.dmy__hero-id { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.dmy__hero-nm { font-size: 20px; font-weight: 800; letter-spacing: -0.3px; color: #fff; }
+.dmy__hero-em { font-size: 13px; color: rgba(255, 255, 255, 0.6); }
+.dmy__hero-stats { display: flex; align-items: center; gap: 16px; margin-top: 4px; }
+.dmy__hero-stats span { font-size: 12.5px; color: rgba(255, 255, 255, 0.6); }
+.dmy__hero-stats b { font-size: 13.5px; font-weight: 800; color: #fff; margin-right: 3px; }
+.dmy__hero-edit {
+  flex: none; font-size: 12.5px; font-weight: 700; color: #fff;
+  background: rgba(255, 255, 255, 0.14); border-radius: 10px; padding: 9px 16px;
+  transition: transform 0.12s ease, background 0.14s ease;
+}
+.dmy__hero-edit:hover { background: rgba(255, 255, 255, 0.22); }
+.dmy__hero-edit:active { transform: scale(0.96); }
+
+/* 2컬럼 본문 */
+.dmy__body { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; align-items: start; }
+.dmy__main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.dmy__aside { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+
+.dmy__resume { display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; margin-top: 12px; }
 .dmy__resume-ic { flex: none; width: 40px; height: 40px; border-radius: 11px; display: flex; align-items: center; justify-content: center; color: var(--accent-700); background: var(--accent-50); }
+.dmy__resume-empty { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 12px; }
+.dmy__resume-empty span { font-size: 13px; color: var(--c-muted); }
+.dmy__resume-btn { flex: none; font-size: 12.5px; font-weight: 700; color: #fff; background: var(--c-accent); border-radius: 10px; padding: 9px 15px; transition: transform 0.12s ease, opacity 0.12s ease; }
+.dmy__resume-btn:active { transform: scale(0.96); opacity: 0.85; }
+
 .dmy__skills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
+/* 북마크한 공고 — 맞춤 공고와 동일한 2열 컴팩트 카드 그리드 */
+.dmy__jobs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+.dmy__jobs > * { min-width: 0; }
+.dmy__more-txt { font-size: 12px; color: var(--c-muted); text-align: center; margin-top: 10px; }
+
+/* 활동 요약 stat 타일 */
+.dmy__stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+
+/* 최근 본 공고 — 컴팩트 리스트 */
+.dmy__recent { display: flex; flex-direction: column; margin-top: 10px; }
 
 /* 좁은 폭 대응 */
 @media (max-width: 1180px) {
@@ -188,4 +230,5 @@
   .djobs__filters { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; align-items: center; height: auto; overflow-y: visible; }
   .dmkt__grid, .dmap__grid { grid-template-columns: 1fr; }
   .dmkt__quad { grid-row: auto; }
+  .dmy__body { grid-template-columns: 1fr; }
 }
