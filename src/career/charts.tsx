@@ -28,17 +28,22 @@ export function CareerScreen({ active, children }: { active: CareerTab; children
 }
 
 /** 하위(푸시) 화면 셸: 뒤로가기 헤더 + 스크롤 바디.
-    데스크톱 셸 크롬은 라우트 레이아웃(ResponsiveProductLayout)이 씌우므로 여기선 본문만 그린다. */
-export function SubScreen({ title, children }: { title: string; children: ReactNode }) {
+    데스크톱 셸 크롬은 라우트 레이아웃(ResponsiveProductLayout)이 씌우므로 여기선 본문만 그린다.
+    desktopBack: 데스크톱에서 뒤로 버튼을 보여줄지 여부 — 패널에서 바로 진입하는 화면은
+    돌아갈 이전 화면 개념이 없어 기본값 false. 상세 페이지처럼 목록에서 밀고 들어온
+    화면만 true로 켠다. */
+export function SubScreen({ title, children, desktopBack = false }: { title: string; children: ReactNode; desktopBack?: boolean }) {
   const t = THEME
   const navigate = useNavigate()
   const isDesktop = useIsDesktop()
   if (isDesktop) {
     return (
       <div className="dsub">
-        <button className="dsub__back" onClick={() => navigate(-1)}>
-          <ChevronLeft size={17} /> 뒤로
-        </button>
+        {desktopBack && (
+          <button className="dsub__back" onClick={() => navigate(-1)}>
+            <ChevronLeft size={17} /> 뒤로
+          </button>
+        )}
         <h1 className="dsub__title">{title}</h1>
         <div className="dsub__content">{children}</div>
       </div>
