@@ -32,6 +32,16 @@
 }
 .djobs__resume-cta button:active { transform: scale(0.97); }
 
+.djobs__resume-active {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--c-muted);
+  line-height: 1.4;
+}
+.djobs__resume-active svg { flex-shrink: 0; }
+
 .djobs__chiprow {
   display: flex;
   flex-wrap: wrap;

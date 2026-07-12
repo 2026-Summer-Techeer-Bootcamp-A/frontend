@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Award, ChevronRight, Plus, UploadCloud } from 'lucide-react'
+import { Award, ChevronRight, UploadCloud } from 'lucide-react'
 import { CareerScreen, ScreenHead, PoolToggle, AsOf, Card, HBars } from './charts'
 import {
   SectionHeader, DisclosureCard, OpportunityQuadrant,
@@ -23,7 +23,7 @@ export default function MarketScreen() {
   const [searchParams] = useSearchParams()
   const emptyParam = searchParams.get('empty') === 'true'
 
-  const { resumes, activeId, activeResume, selectResume } = useResumesState()
+  const { resumes, activeResume } = useResumesState()
   const hasResume = !emptyParam && resumes.length > 0
 
   const [pool, setPool] = useState<Pool>('국내')
@@ -97,30 +97,6 @@ export default function MarketScreen() {
         </Card>
       ) : (
         <>
-          {/* 이력서 셀렉터 */}
-          <div className="scr-chipsel" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
-            {resumes.map((x, i) => (
-              <button
-                key={x.id}
-                className={activeId === x.id ? 'on' : ''}
-                onClick={() => selectResume(x.id)}
-                style={{ fontSize: 12, padding: '5px 12px', borderRadius: '16px' }}
-              >
-                이력서 {i + 1}
-              </button>
-            ))}
-            <button
-              onClick={() => navigate('/resume/submit')}
-              style={{
-                fontSize: 12, padding: '5px 12px', borderRadius: '16px',
-                background: 'none', border: '1px dashed var(--line)', color: 'var(--c-muted)',
-                display: 'inline-flex', alignItems: 'center', gap: 4
-              }}
-            >
-              <Plus size={12} /> 추가
-            </button>
-          </div>
-
           <ResumeHeroCard
             title={activeResume.title}
             position={activeResume.position}
