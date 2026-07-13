@@ -7,6 +7,7 @@ import { SectionHeader, useCountUp, MiniScore } from './kit'
 import { FONT, tooltipStyle } from '../pages/widgets/base'
 import type { WidgetSize } from './dashboardConfig'
 import { useResumesState, getDynamicPostings } from './state'
+import CompanyLogo from './CompanyLogo'
 import feedRaw from '../data/feedData.json'
 import y1Raw from '../data/pearl/y1.json'
 import matchRaw from '../data/matchData.json'
@@ -110,12 +111,16 @@ export function LatestJobsTimeline({ size = '2x2' }: { size?: WidgetSize }) {
                         onClick={() => navigate(`/job/${encodeURIComponent(p.id)}`)}
                       >
                         <div className="wow-joblist__top">
+                          <CompanyLogo logo={p.logo} name={p.company} size={34} radius={9} />
                           <div className="wow-joblist__main">
                             <div className="wow-joblist__meta">
                               <span className="wow-joblist__co">{p.company} · {p.tier}</span>
                               <span className="wow-joblist__date">{p.postDate.slice(5)}</span>
                             </div>
-                            <span className="wow-joblist__title">{p.title}</span>
+                            <span className="wow-joblist__title">
+                              <span className="wow-joblist__title-text">{p.title}</span>
+                              {p.matchPct >= 80 && <span className="wow-jobbadge">추천</span>}
+                            </span>
                             {(p.region || p.district) && <span className="wow-joblist__loc">{p.region || p.district}</span>}
                           </div>
                           <MiniScore pct={p.matchPct} size={40} />

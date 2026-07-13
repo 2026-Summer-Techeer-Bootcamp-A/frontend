@@ -196,7 +196,8 @@ export function DesktopJobs() {
     return next
   })
 
-  // 링크드인/사람인식 스킬 매치 미니 줄 — "요구 N개 중 M개 보유" + 보유(그린)/미보유(그레이) 칩.
+  // 링크드인/사람인식 스킬 매치 미니 줄 — "요구 N개 중 M개 보유" 텍스트 +
+  // 보유(그린) > 필터에서 고름(중립) > 안 고름(옅게+옅은 빨강) 3단 칩.
   const renderSkillMatch = (techs: string[]) => {
     const held = techs.filter((t) => skills.includes(t))
     const missing = techs.filter((t) => !skills.includes(t))
@@ -207,7 +208,9 @@ export function DesktopJobs() {
         <span className="djobs__matchline-txt">요구 {techs.length}개 중 {held.length}개 보유</span>
         {heldShown.map((t) => <span key={`h-${t}`} className="djobs__mtech held">{t}</span>)}
         {held.length > heldShown.length && <span className="djobs__mtech more">+{held.length - heldShown.length}</span>}
-        {missingShown.map((t) => <span key={`m-${t}`} className="djobs__mtech">{t}</span>)}
+        {missingShown.map((t) => (
+          <span key={`m-${t}`} className={`djobs__mtech ${techFilter.has(t) ? 'picked' : 'extra'}`}>{t}</span>
+        ))}
         {missing.length > missingShown.length && <span className="djobs__mtech more">+{missing.length - missingShown.length}</span>}
       </span>
     )
@@ -384,7 +387,10 @@ export function DesktopJobs() {
               <div className="djobs__pv-sec">요구 기술</div>
               <div className="djobs__pv-techs">
                 {sel.techs.map((t) => (
-                  <span key={t} className={`djobs__tech${skills.includes(t) ? ' held' : ''}`}>
+                  <span
+                    key={t}
+                    className={`djobs__tech ${skills.includes(t) ? 'held' : techFilter.has(t) ? 'picked' : 'extra'}`}
+                  >
                     <TechIcon tech={t} size={18} />{t}
                   </span>
                 ))}
