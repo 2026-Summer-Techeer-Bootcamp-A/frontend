@@ -210,13 +210,28 @@
 .wow-unlock-row__req { flex: none; font-size: 10.5px; color: var(--c-muted); width: 56px; text-align: right; }
 
 /* ---------- 위젯 4: Hype vs Hire ---------- */
-.wow-scatter-split { display: flex; gap: 14px; flex: 1; min-height: 0; }
-.wow-scatter-split > div:first-child { flex: 1.5; min-width: 0; }
-.wow-pearls { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; }
-.wow-pearls__title { font-size: 11px; font-weight: 700; color: var(--c-muted); }
-.wow-pearls__row { display: flex; flex-direction: column; gap: 1px; padding: 6px 8px; border-radius: 10px; background: #fbeee2; }
+.wow-scatter-stack { display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0; }
+.wow-scatter-stack > div:first-child { width: 100%; min-width: 0; flex: none; }
+.wow-scatter-detail { padding: 14px 16px; border: 1px solid #ead8c6; border-radius: 14px; background: #fcf5ed; }
+.wow-scatter-detail__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.wow-scatter-detail__tech { font-size: 15px; font-weight: 800; color: var(--c-ink); }
+.wow-scatter-detail__summary { font-size: 11px; font-weight: 700; color: #a85f1f; text-align: right; }
+.wow-scatter-detail__metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.wow-scatter-detail__metrics span { display: flex; flex-direction: column; gap: 3px; padding: 9px 10px; border-radius: 10px; background: rgba(255,255,255,.7); }
+.wow-scatter-detail__metrics small { font-size: 10px; font-weight: 600; color: var(--c-muted); }
+.wow-scatter-detail__metrics b { font-size: 13px; color: var(--c-ink); }
+.wow-pearls { min-width: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 6px; }
+.wow-pearls__row { display: flex; flex-direction: column; gap: 1px; padding: 8px 10px; border: 1px solid transparent; border-radius: 10px; background: #fbeee2; text-align: left; cursor: pointer; }
+.wow-pearls__row:hover { border-color: #e5c4a3; }
+.wow-pearls__row.on { border-color: #d9822b; box-shadow: 0 0 0 1px rgba(217,130,43,.08); }
 .wow-pearls__tech { font-size: 12.5px; font-weight: 800; color: var(--c-ink); }
 .wow-pearls__sub { font-size: 10.5px; color: #b56a24; font-weight: 600; }
+
+@media (max-width: 640px) {
+  .wow-scatter-detail__head { align-items: flex-start; flex-direction: column; gap: 4px; }
+  .wow-scatter-detail__summary { text-align: left; }
+  .wow-scatter-detail__metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 
 /* ---------- 위젯 5: 회사가 원하는 역량 ---------- */
 .wow-comp-list { display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 0; overflow-y: auto; }
