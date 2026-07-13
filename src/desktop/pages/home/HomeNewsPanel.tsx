@@ -82,6 +82,27 @@ function NewsItemView({ source, item }: { source: NewsSource; item: NewsItemDto 
           {item.title}
         </a>
         <div className="hfeed-news__source">{hostnameOf(item.url)}</div>
+        {(item.points != null || item.comments_count != null) && (
+          <div className="hfeed-news__meta tnum">
+            {item.points != null && (
+              <>
+                포인트 <b className="hfeed-news__stat">{item.points}</b>
+              </>
+            )}
+            {item.points != null && item.comments_count != null && ' · '}
+            {item.comments_count != null && (
+              <>
+                {item.comments_url ? (
+                  <a className="hfeed-news__thread" href={item.comments_url} target="_blank" rel="noreferrer">
+                    댓글 {item.comments_count}
+                  </a>
+                ) : (
+                  <span>댓글 {item.comments_count}</span>
+                )}
+              </>
+            )}
+          </div>
+        )}
       </div>
     )
   }
