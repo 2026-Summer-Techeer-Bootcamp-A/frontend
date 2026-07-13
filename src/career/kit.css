@@ -579,6 +579,32 @@ button.kit-wcard:active { opacity: 0.6; }
   background: #dfe2e8; margin: 6px auto 14px;
 }
 
+/* 데스크톱(.dshell 안)에서는 하단 바텀시트가 아니라 화면 중앙 모달로 띄운다 —
+   모바일 감성의 슬라이드업 시트가 PC에서 어색해 보이는 문제를 해결. 오버레이는
+   뷰포트 전체를 덮도록 fixed, 카드는 중앙 정렬. 그립 핸들은 감춘다. */
+.dshell .kit-sheet__wrap { position: fixed; z-index: 200; }
+.dshell .kit-sheet__ov { position: fixed; }
+.dshell .kit-sheet {
+  position: fixed;
+  left: 50%; top: 50%; right: auto; bottom: auto;
+  width: min(560px, calc(100vw - 48px));
+  max-height: min(78vh, 720px);
+  display: flex; flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 18px 20px 20px;
+  transform: translate(-50%, calc(-50% + 12px));
+  opacity: 0;
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.28s ease;
+}
+.dshell .kit-sheet__wrap.show .kit-sheet {
+  transform: translate(-50%, -50%);
+  opacity: 1;
+}
+.dshell .kit-sheet__grip { display: none; }
+/* 중앙 모달에선 리스트가 카드 높이에 맞춰 늘고 내부 스크롤만 남도록 조정 */
+.dshell .kit-sheet .kit-picker__list { max-height: none; flex: 1; min-height: 0; }
+
 /* ---- 10. PageTransition (진입=decelerate) ---- */
 @keyframes kit-tab-in {
   from { opacity: 0; transform: translateY(8px); }
