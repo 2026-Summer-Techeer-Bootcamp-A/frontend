@@ -7,6 +7,9 @@ import { SectionHeader, useCountUp, MiniScore } from './kit'
 import { FONT, tooltipStyle } from '../pages/widgets/base'
 import type { WidgetSize } from './dashboardConfig'
 import { useResumesState, getDynamicPostings } from './state'
+import { getAuthToken } from './authStore'
+import { dashboardApi, type UnlockData } from './api'
+import { useWidgetData } from './useWidgetData'
 import CompanyLogo from './CompanyLogo'
 import { marketApi } from './api'
 import feedRaw from '../data/feedData.json'
@@ -48,6 +51,14 @@ export function LatestJobsTimeline({ size = '2x2' }: { size?: WidgetSize }) {
   const navigate = useNavigate()
   const { activeResume } = useResumesState()
   const skills = useMemo(() => activeResume?.skills ?? [], [activeResume])
+  const resumeId = Number(activeResume?.id)
+  const token = getAuthToken()
+  const identity = Number.isInteger(resumeId) && resumeId > 0 && token ? { resumeId, token } : null
+  const timeline = useWidgetData(
+    identity ? () => dashboardApi.timeline(identity) : null,
+    { daily: FEED_DAILY, as_of: FEED._meta.asOf },
+  )
+  const daily = timeline.value.daily.map((item) => ({ ...item, matched: item.matched ?? 0 }))
   // 하단 리스트는 careerData 기반(getDynamicPostings)으로 만든다 — feedData의 id는
   // 상세 페이지(careerData) id와 달라 클릭해도 /job/{id}로 갈 수 없기 때문.
   // 상단 36일 일별 차트는 계속 feedData를 쓴다(시계열 소스는 그대로 유지).
@@ -55,9 +66,10 @@ export function LatestJobsTimeline({ size = '2x2' }: { size?: WidgetSize }) {
     () => getDynamicPostings(skills).filter((p) => p.pool === '국내').sort((a, b) => b.matchPct - a.matchPct),
     [skills],
   )
-  const maxTotal = useMemo(() => Math.max(...FEED_DAILY.map((d) => d.total), 1), [])
+  const maxTotal = Math.max(...daily.map((d) => d.total), 1)
   const listCount = size === '2x2' ? 14 : size === '2x1' ? 3 : 0
-  const matchedCount = useCountUp(size === '1x1' ? FEED._meta.matchedN : 0)
+  const matchedTotal = daily.reduce((sum, item) => sum + item.matched, 0)
+  const matchedCount = useCountUp(size === '1x1' ? matchedTotal : 0)
 
   return (
     <div className="dcard wow-card">
@@ -70,7 +82,7 @@ export function LatestJobsTimeline({ size = '2x2' }: { size?: WidgetSize }) {
               <span className="wow-mini__lbl">건 내게 맞았어요</span>
             </div>
             <div className="wow-timeline wow-timeline--mini">
-              {FEED_DAILY.map((d) => (
+              {daily.map((d) => (
                 <div key={d.date} className="wow-timeline__col">
                   <div className="wow-timeline__bar" style={{ height: `${(d.total / maxTotal) * 100}%` }}>
                     <i style={{ height: `${d.total ? (d.matched / d.total) * 100 : 0}%` }} />
@@ -82,10 +94,10 @@ export function LatestJobsTimeline({ size = '2x2' }: { size?: WidgetSize }) {
         ) : (
           <>
             <p className="wow-headline">
-              최근 36일 <b>{FEED._meta.matchedN.toLocaleString()}</b>건이 내게 맞았어요 · 매일 뜨는 공고를 내 기술로 필터링
+              최근 36일 <b>{matchedTotal.toLocaleString()}</b>건이 내 기술과 겹쳐요 · 매일 뜨는 공고를 내 기술로 필터링
             </p>
             <div className="wow-timeline">
-              {FEED_DAILY.map((d, i) => (
+              {daily.map((d, i) => (
                 <div key={d.date} className="wow-timeline__col" title={`${d.date} · 전체 ${d.total} · 매칭 ${d.matched}`}>
                   <div className="wow-timeline__bar" style={{ height: `${(d.total / maxTotal) * 100}%` }}>
                     <i style={{ height: `${d.total ? (d.matched / d.total) * 100 : 0}%` }} />
@@ -141,7 +153,7 @@ export function LatestJobsTimeline({ size = '2x2' }: { size?: WidgetSize }) {
           </>
         )}
       </div>
-      <AsOf asOf={FEED._meta.asOf} n={FEED._meta.N} />
+      <AsOf asOf={timeline.value.as_of} n={daily.reduce((sum, item) => sum + item.total, 0)} />
     </div>
   )
 }
@@ -155,7 +167,20 @@ type Y1Data = { start_matched: number; total: number; threshold: number; steps: 
 const Y1 = y1Raw as unknown as { as_of: string; sample_size: number; data: Y1Data }
 
 export function LearningPathWidget({ size = '2x1' }: { size?: WidgetSize }) {
-  const D = Y1.data
+  const { activeResume } = useResumesState()
+  const resumeId = Number(activeResume?.id)
+  const token = getAuthToken()
+  const identity = Number.isInteger(resumeId) && resumeId > 0 && token ? { resumeId, token } : null
+  const mockData = {
+    start_matched: Y1.data.start_matched, total: Y1.data.total,
+    steps: Y1.data.steps.map((step) => ({ ...step, canonical: step.tech })),
+    as_of: Y1.as_of, sample_size: Y1.sample_size,
+  }
+  const roadmap = useWidgetData(
+    identity ? () => dashboardApi.roadmap(identity, activeResume?.position) : null,
+    mockData,
+  )
+  const D = roadmap.value.steps.length ? roadmap.value : mockData
   const stepCount = size === '2x2' ? D.steps.length : 3
   const steps = D.steps.slice(0, stepCount)
   const last = D.steps[D.steps.length - 1]
@@ -165,14 +190,14 @@ export function LearningPathWidget({ size = '2x1' }: { size?: WidgetSize }) {
       <SectionHeader title="학습 로드맵" hint="최적 순서" />
       <div className="wow-body">
         <p className="wow-headline">
-          이 순서로 배우면 지원 가능 공고가 <b>{D.start_matched.toLocaleString()}→{last.matched_after.toLocaleString()}</b>건
+          이 순서로 배우면 기술 연결 공고가 <b>{D.start_matched.toLocaleString()}→{last.matched_after.toLocaleString()}</b>건
         </p>
         <div className="wow-steps">
           {steps.map((s) => (
             <div key={s.step} className="wow-steps__row">
               <span className="wow-steps__badge">{s.step}</span>
               <div className="wow-steps__body">
-                <div className="wow-steps__t"><b>{s.tech}</b><span className="wow-steps__cat">{s.category}</span></div>
+                <div className="wow-steps__t"><b>{s.canonical}</b><span className="wow-steps__cat">{s.category}</span></div>
                 <div className="wow-steps__track"><i style={{ width: `${(s.matched_after / D.total) * 100}%` }} /></div>
               </div>
               <span className="wow-steps__delta">+{s.delta.toLocaleString()}건</span>
@@ -186,7 +211,7 @@ export function LearningPathWidget({ size = '2x1' }: { size?: WidgetSize }) {
           </div>
         )}
       </div>
-      <AsOf asOf={Y1.as_of} n={Y1.sample_size} />
+      <AsOf asOf={D.as_of} n={D.sample_size} />
     </div>
   )
 }
@@ -203,11 +228,51 @@ const MATCH = matchRaw as unknown as { _meta: UnlockMeta; byRole: Record<string,
 
 export function SkillUnlockWidget({ size = '2x1' }: { size?: WidgetSize }) {
   const [role, setRole] = useState('all')
-  const roleData = MATCH.byRole[role] ?? MATCH.byRole.all
+  const { activeResume } = useResumesState()
+  const resumeId = Number(activeResume?.id)
+  const token = getAuthToken()
+  const [liveData, setLiveData] = useState<UnlockData | null>(null)
+
+  useEffect(() => {
+    if (!Number.isInteger(resumeId) || resumeId <= 0 || !token) {
+      setLiveData(null)
+      return
+    }
+    let cancelled = false
+    setLiveData(null)
+    dashboardApi.unlock({ resumeId, token }, role === 'all' ? undefined : role)
+      .then((data) => { if (!cancelled && data.candidates.length) setLiveData(data) })
+      .catch(() => { if (!cancelled) setLiveData(null) })
+    return () => { cancelled = true }
+  }, [resumeId, role, token])
+
+  const roleData: UnlockRole = liveData ? {
+    n: liveData.sample_size,
+    funnel: liveData.funnel,
+    applyPct: liveData.sample_size ? Number((liveData.funnel.apply / liveData.sample_size * 100).toFixed(1)) : 0,
+    coverageNow: 0,
+    candidates: liveData.candidates.map((candidate) => ({
+      tech: candidate.canonical,
+      reqCount: candidate.req_count,
+      reqPct: liveData.sample_size ? Number((candidate.req_count / liveData.sample_size * 100).toFixed(1)) : 0,
+      marginalApply: candidate.marginal_apply,
+      newApplyPct: 0,
+    })),
+  } : (MATCH.byRole[role] ?? MATCH.byRole.all)
   const candidates = useMemo(() => [...roleData.candidates].sort((a, b) => b.marginalApply - a.marginalApply).slice(0, 5), [roleData])
   const top = candidates[0]
   const maxMarginal = Math.max(...candidates.map((c) => c.marginalApply), 1)
   const funnelTotal = roleData.funnel.apply + roleData.funnel.near1 + roleData.funnel.near2_3 + roleData.funnel.far || 1
+
+  if (!top) {
+    return (
+      <div className="dcard wow-card">
+        <SectionHeader title="한계 해금" />
+        <div className="wow-body"><div className="dov__empty">추천할 기술 데이터가 없어요.</div></div>
+        <AsOf asOf={liveData?.as_of ?? MATCH._meta.asOf} n={roleData.n} />
+      </div>
+    )
+  }
 
   if (size === '1x1') {
     return (
@@ -219,7 +284,7 @@ export function SkillUnlockWidget({ size = '2x1' }: { size?: WidgetSize }) {
             <span className="wow-unlock-mini__delta">+{top.marginalApply}건</span>
           </div>
         </div>
-        <AsOf asOf={MATCH._meta.asOf} n={roleData.n} />
+        <AsOf asOf={liveData?.as_of ?? MATCH._meta.asOf} n={roleData.n} />
       </div>
     )
   }
@@ -264,7 +329,7 @@ export function SkillUnlockWidget({ size = '2x1' }: { size?: WidgetSize }) {
           ))}
         </div>
       </div>
-      <AsOf asOf={MATCH._meta.asOf} n={roleData.n} />
+      <AsOf asOf={liveData?.as_of ?? MATCH._meta.asOf} n={roleData.n} />
     </div>
   )
 }
