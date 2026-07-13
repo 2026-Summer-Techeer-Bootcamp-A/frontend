@@ -393,6 +393,15 @@
 }
 
 /* 상세 설명 섹션 소제목 (accent 바 강조) */
+.crd-skeleton { display: flex; flex-direction: column; gap: 10px; padding: 4px 2px; }
+.crd-skel { height: 13px; border-radius: 6px; background: var(--c-line); animation: crd-skel-pulse 1.3s ease-in-out infinite; }
+.crd-skel--lg { height: 22px; }
+.crd-skel--block { height: 120px; border-radius: 12px; margin-top: 6px; width: 100%; }
+@keyframes crd-skel-pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .crd-skel { animation-duration: 0.001ms; }
+}
+
 .crd-sec {
   position: relative;
   font-weight: 700;

@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Search, MapPin, ArrowUpRight, FileText, Settings, Award } from 'lucide-react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import catData from '../../data/pearl/n.json'
 import {
   MiniScore, SectionHeader, SegmentedControl, SkillChip,
   TechIcon, WidgetSettingsMenu,
@@ -102,6 +103,29 @@ type PositionCat = typeof POSITION_CATS[number]
 const POSITION_API: Record<PositionCat, string> = {
   '백엔드': 'backend', '프론트엔드': 'frontend', '풀스택': 'fullstack', '데이터/AI': 'data',
   '모바일': 'mobile', '인프라/DevOps': 'devops', '기획/PM': 'pm', '디자인': 'design', 'QA': 'qa', '기타': 'other',
+}
+
+/* 기술 스택 필터 카테고리 그룹핑 — SkillManagerModal.tsx와 동일하게 pearl/n.json(기술
+   코-네트워크 그래프 데이터)의 {tech, category} 노드를 재사용한다. 별도 매핑 새로 안 만듦. */
+const TECH_CATEGORY_NODES = (catData as { data: { nodes: { tech: string; category: string }[] } }).data.nodes
+const TECH_CATEGORY: Record<string, string> = Object.fromEntries(TECH_CATEGORY_NODES.map((n) => [n.tech, n.category]))
+const TECH_CATEGORY_LABEL: Record<string, string> = {
+  language: '언어', backend: '백엔드', frontend: '프론트엔드', data_db: '데이터·DB',
+  cloud_services: '클라우드', devops: 'DevOps', mobile: '모바일', ai_llm: 'AI·LLM',
+}
+const TECH_CATEGORY_ORDER = ['language', 'backend', 'frontend', 'data_db', 'cloud_services', 'devops', 'mobile', 'ai_llm', 'etc']
+function techCategoryOf(tech: string): string { return TECH_CATEGORY[tech] ?? 'etc' }
+function techCategoryLabel(cat: string): string { return TECH_CATEGORY_LABEL[cat] ?? '기타' }
+function groupTechOptions(options: string[]): Array<{ cat: string; label: string; techs: string[] }> {
+  const byCat = new Map<string, string[]>()
+  options.forEach((t) => {
+    const cat = techCategoryOf(t)
+    if (!byCat.has(cat)) byCat.set(cat, [])
+    byCat.get(cat)!.push(t)
+  })
+  return TECH_CATEGORY_ORDER
+    .filter((cat) => byCat.has(cat))
+    .map((cat) => ({ cat, label: techCategoryLabel(cat), techs: byCat.get(cat)! }))
 }
 
 function derivePosition(title: string, techs: string[]): PositionCat {
@@ -218,7 +242,7 @@ export function DesktopJobs() {
         closeDate: card.close_date ?? '',
         techs,
         url: card.url,
-        logo: '',
+        logo: card.logo_url ?? '',
         matchHeld: card.matched_count ?? held.length,
         matchTotal: techs.length,
         matchPct: techs.length ? Math.round(((card.matched_count ?? held.length) / techs.length) * 100) : 0,
@@ -230,6 +254,7 @@ export function DesktopJobs() {
     () => [...new Set([...techFilter, ...postings.flatMap((posting) => posting.techs)])].sort((a, b) => a.localeCompare(b)),
     [postings, techFilter],
   )
+  const techGroups = useMemo(() => groupTechOptions(techOptions), [techOptions])
   const list = postings
 
   const positionFacets = useMemo(() => {
@@ -313,9 +338,16 @@ export function DesktopJobs() {
 
           <div className="djobs__fld">
             <span className="djobs__fld-l">기술 스택</span>
-            <div className="djobs__chiprow">
-              {techOptions.map((t) => (
-                <button key={t} className={techFilter.has(t) ? 'on' : ''} onClick={() => toggleTech(t)}>{t}</button>
+            <div className="djobs__techgroups">
+              {techGroups.map((g) => (
+                <div className="djobs__techgroup" key={g.cat}>
+                  <span className="djobs__techgroup-l">{g.label}</span>
+                  <div className="djobs__chiprow">
+                    {g.techs.map((t) => (
+                      <button key={t} className={techFilter.has(t) ? 'on' : ''} onClick={() => toggleTech(t)}>{t}</button>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           </div>
@@ -429,7 +461,16 @@ export function DesktopJobs() {
               <div className="djobs__pv-body">
                 {pvTab === 'desc' ? (
                   <>
-                    <p>실제 공고 API가 제공한 요구 기술을 기준으로 매칭도를 계산했어요.</p>
+                    {String(selectedDetail?.id) === String(sel.id) && selectedDetail?.desc_sections?.length ? (
+                      selectedDetail.desc_sections.map((s, i) => (
+                        <div key={i} style={{ marginBottom: 10 }}>
+                          <div className="djobs__pv-dsec">{s.title}</div>
+                          <p style={{ whiteSpace: 'pre-line' }}>{s.text}</p>
+                        </div>
+                      ))
+                    ) : (
+                      <p>실제 공고 API가 제공한 요구 기술을 기준으로 매칭도를 계산했어요.</p>
+                    )}
                     <div className="djobs__pv-dsec">요구 기술</div>
                     <p>{sel.techs.join(' · ')}</p>
                   </>
