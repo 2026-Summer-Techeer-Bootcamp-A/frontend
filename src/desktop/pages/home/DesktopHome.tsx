@@ -76,29 +76,48 @@ export default function DesktopHome() {
   const [district, setDistrict] = useState('')
   const [deadlineWithinDays, setDeadlineWithinDays] = useState<number | undefined>(undefined)
   const [minMatch, setMinMatch] = useState<number | undefined>(undefined)
+  const [industry, setIndustry] = useState<string | undefined>(undefined)
+  const [skills, setSkills] = useState<string[]>([])
   const [filterPopoverOpen, setFilterPopoverOpen] = useState(false)
+  // 정렬 — 최신순/매칭순. 매칭순은 로그인 + 활성 이력서가 있을 때만 의미가 있다(표시 모드라 필터 카운트에는 안 잡힘).
+  const [sort, setSort] = useState<'latest' | 'match'>('latest')
   // min_match는 로그인 + 활성 이력서가 있을 때만 의미가 있다.
   const showMinMatch = isAuthed && !!activeResume
   const appliedFilterCount =
-    (district.trim() ? 1 : 0) + (deadlineWithinDays != null ? 1 : 0) + (showMinMatch && minMatch != null ? 1 : 0)
+    (district.trim() ? 1 : 0) +
+    (deadlineWithinDays != null ? 1 : 0) +
+    (showMinMatch && minMatch != null ? 1 : 0) +
+    (industry != null ? 1 : 0) +
+    (skills.length > 0 ? 1 : 0)
 
   const applyFilterPopover = (next: HomeFilterValues) => {
     setDistrict(next.district)
     setDeadlineWithinDays(next.deadlineWithinDays)
     setMinMatch(showMinMatch ? next.minMatch : undefined)
+    setIndustry(next.industry)
+    setSkills(next.skills)
   }
 
+  // 매칭순 옵션이 사라지면(로그아웃 등) 정렬 상태를 최신순으로 강제 복귀한다.
+  useEffect(() => {
+    if (!showMinMatch) setSort('latest')
+  }, [showMinMatch])
+
+  // 카테고리 칩은 선택된 풀(국내/해외/전체)에 실제로 존재하는 카테고리만 보여줘야 한다 —
+  // pool을 안 넘기면 전체 어휘가 섞여 국내 탭에도 해외 전용 카테고리가 노출되는 버그가 있었다.
   useEffect(() => {
     jobsApi
-      .categories()
+      .categories(pool === 'all' ? undefined : pool)
       .then((res) => {
         const names = res.categories.map((c) => c.name).filter(Boolean)
         if (names.length > 0) setCategories(names)
+        // 풀이 바뀌어 현재 선택된 카테고리가 새 목록에 없으면 필터가 조용히 빈 결과로 새지 않도록 리셋한다.
+        setCategory((prev) => (prev && names.length > 0 && !names.includes(prev) ? undefined : prev))
       })
       .catch(() => {
         // 실패 시 기본 카테고리 목록을 그대로 유지한다.
       })
-  }, [])
+  }, [pool])
 
   const loadPage = useCallback(
     async (nextPage: number, reset: boolean) => {
@@ -113,6 +132,9 @@ export default function DesktopHome() {
           district: district.trim() || undefined,
           deadline_within_days: deadlineWithinDays,
           min_match: showMinMatch ? minMatch : undefined,
+          sort,
+          industry,
+          skills: skills.length > 0 ? skills.join(',') : undefined,
         })
         setItems((prev) => (reset ? res.items : [...prev, ...res.items]))
         setTotal(res.total)
@@ -124,14 +146,14 @@ export default function DesktopHome() {
         setLoading(false)
       }
     },
-    [pool, category, district, deadlineWithinDays, minMatch, showMinMatch],
+    [pool, category, district, deadlineWithinDays, minMatch, showMinMatch, sort, industry, skills],
   )
 
   useEffect(() => {
     loadPage(1, true)
-    // pool/category/상세 필터 변경 시 목록을 리셋해서 1페이지부터 다시 불러온다.
+    // pool/category/상세 필터/정렬 변경 시 목록을 리셋해서 1페이지부터 다시 불러온다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pool, category, district, deadlineWithinDays, minMatch])
+  }, [pool, category, district, deadlineWithinDays, minMatch, sort, industry, skills])
 
   useEffect(() => {
     const node = sentinelRef.current
@@ -150,6 +172,12 @@ export default function DesktopHome() {
   }, [loading, error, items.length, total, page, loadPage])
 
   const groups = useMemo(() => groupByDate(items), [items])
+  // 기술스택 필터 옵션은 API에서 따로 안 받아오고, 현재 로드된 공고들의 skills 합집합 +
+  // 이미 선택된 스킬(현재 화면엔 없어도 칩이 사라지지 않도록)로 구성한다 — placeholders.tsx의 techOptions와 동일 패턴.
+  const skillOptions = useMemo(
+    () => [...new Set([...skills, ...items.flatMap((item) => item.skills)])].sort((a, b) => a.localeCompare(b)),
+    [items, skills],
+  )
   const showInitialSkeleton = loading && items.length === 0 && !error
   const showEmpty = !loading && !error && items.length === 0
   const showInitialError = error && items.length === 0
@@ -168,6 +196,16 @@ export default function DesktopHome() {
               <button type="button" className={pool === 'global' ? 'is-on' : ''} onClick={() => setPool('global')}>해외</button>
               <button type="button" className={pool === 'all' ? 'is-on' : ''} onClick={() => setPool('all')}>전체</button>
             </div>
+            <div className="hfeed-filter__sort">
+              {showMinMatch ? (
+                <>
+                  <button type="button" className={sort === 'latest' ? 'is-on' : ''} onClick={() => setSort('latest')}>최신순</button>
+                  <button type="button" className={sort === 'match' ? 'is-on' : ''} onClick={() => setSort('match')}>매칭순</button>
+                </>
+              ) : (
+                <span className="hfeed-filter__sort-static">최신순</span>
+              )}
+            </div>
             <div className="hfeed-filter__more-wrap">
               <button
                 type="button"
@@ -182,8 +220,9 @@ export default function DesktopHome() {
               </button>
               {filterPopoverOpen && (
                 <HomeFilterPopover
-                  values={{ district, deadlineWithinDays, minMatch }}
+                  values={{ district, deadlineWithinDays, minMatch, industry, skills }}
                   showMinMatch={showMinMatch}
+                  skillOptions={skillOptions}
                   onClose={() => setFilterPopoverOpen(false)}
                   onApply={applyFilterPopover}
                 />
