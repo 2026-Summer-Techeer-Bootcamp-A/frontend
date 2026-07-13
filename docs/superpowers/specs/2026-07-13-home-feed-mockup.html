@@ -25,6 +25,21 @@
     --e1: 0 1px 2px rgba(20,30,60,.05), 0 1px 1px rgba(20,30,60,.04);
     --e2: 0 2px 8px rgba(20,30,60,.06), 0 1px 2px rgba(20,30,60,.05);
     --e3: 0 8px 24px rgba(20,30,60,.08), 0 2px 6px rgba(20,30,60,.05);
+    /* 시각화 저채도 팔레트 (2026-07-13 피드백 반영, 스펙 1.1절) */
+    --hf-viz-blue: #5b7d9e;
+    --hf-viz-blue-soft: #e9eff5;
+    --hf-viz-blue-line: #d5e2ee;
+    --hf-viz-blue-text: #3d5a78;
+    --hf-viz-sage: #74957f;
+    --hf-viz-sage-soft: #e9f1ec;
+    --hf-viz-sage-text: #47705a;
+    --hf-viz-violet: #8a7fa8;
+    --hf-viz-violet-soft: #efecf5;
+    --hf-viz-violet-text: #5e5580;
+    --hf-viz-clay: #b08968;
+    --hf-viz-clay-soft: #f5ede6;
+    --hf-viz-clay-text: #8a6247;
+    --hf-viz-slate: #8a94a3;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -65,9 +80,11 @@
     background: var(--c-accent); color: #fff; font-size: 13px; font-weight: 700;
     display: grid; place-items: center;
   }
+  /* 홈 라우트 전용 배경 오버라이드(.dshell__content--home 상당) —
+     바탕은 옅은 회색, 카드는 흰색으로 면 분리 (2026-07-13 피드백 반영) */
   .content {
     flex: 1; margin: 0 8px 8px; padding: 18px; border-radius: 24px;
-    border: 1px solid #eef1f6; background: #fff;
+    border: 1px solid #eef1f6; background: #f7f7f8;
   }
 
   /* ===== 3컬럼 그리드 ===== */
@@ -112,7 +129,7 @@
   .hfeed-resume__meter-cap { font-size: 12.5px; color: var(--c-muted); margin: 12px 0 6px; }
   .hfeed-resume__meter-cap b { color: var(--c-ink); font-weight: 700; }
   .hfeed-meter { height: 8px; border-radius: 5px; background: var(--track); overflow: hidden; }
-  .hfeed-meter > i { display: block; height: 100%; border-radius: 5px; background: var(--c-accent); }
+  .hfeed-meter > i { display: block; height: 100%; border-radius: 5px; background: var(--hf-viz-blue); }
   .hfeed-resume__skillcap { font-size: 12px; color: var(--c-muted); margin: 14px 0 8px; }
   .hfeed-resume__skillcap b { color: var(--c-ink); font-weight: 700; }
   .hfeed-chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -123,7 +140,7 @@
     border-radius: 9px; padding: 6px 11px; font-size: 12.5px; font-weight: 650; letter-spacing: -.1px;
   }
   .hfeed-chip { background: var(--accent-50); color: var(--accent-700); border: 1px solid var(--accent-100); }
-  .hfeed-chip--owned { background: var(--c-accent); color: #fff; border: 1px solid transparent; }
+  .hfeed-chip--owned { background: var(--hf-viz-blue-soft); color: var(--hf-viz-blue-text); border: 1px solid var(--hf-viz-blue-line); }
   .hfeed-chip--missing { background: transparent; color: var(--c-muted); border: 1px solid var(--line); }
   .hfeed-chip--cat { background: #f2f3f6; color: #5b5e66; border: 1px solid var(--line); }
   .hfeed-chip--more { background: transparent; color: var(--c-muted); border: none; padding-left: 4px; }
@@ -133,7 +150,7 @@
   .hfeed-links__row {
     display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px;
   }
-  .hfeed-links__row:hover { background: #f7f7f8; }
+  .hfeed-links__row:hover { background: #f2f2f4; }
   .hfeed-links__row .lb { flex: 1; font-size: 14px; font-weight: 600; }
   .hfeed-links__row .ct { font-size: 13px; font-weight: 700; color: var(--c-muted); }
   .hfeed-links__row .chev { color: var(--c-muted); font-size: 15px; }
@@ -159,7 +176,7 @@
   /* ===== 필터 바 ===== */
   .hfeed-filter {
     position: sticky; top: 0; z-index: 5; padding: 4px 0 12px;
-    background: rgba(255,255,255,.92); backdrop-filter: blur(8px);
+    background: rgba(247,247,248,.92); backdrop-filter: blur(8px);
   }
   .hfeed-filter__pool { display: inline-flex; background: #eef0f4; border-radius: 20px; padding: 3px; }
   .hfeed-filter__pool button {
@@ -213,6 +230,10 @@
     background: #fff; box-shadow: inset 0 0 0 1px var(--line);
   }
   .hfeed-ring b { position: relative; z-index: 1; font-size: 14px; font-weight: 800; letter-spacing: -.5px; }
+  /* 매치 수준별 링 채움색 (저채도 3단계, 스펙 4.9) */
+  .hfeed-ring--high { --ring-c: var(--hf-viz-sage); }
+  .hfeed-ring--mid  { --ring-c: var(--hf-viz-blue); }
+  .hfeed-ring--low  { --ring-c: var(--hf-viz-slate); }
   .hfeed-ring__wrap { display: flex; flex-direction: column; align-items: center; }
   .hfeed-ring__cap { font-size: 10px; color: var(--c-muted); margin-top: 4px; }
   .hfeed-card__timerow { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
@@ -256,9 +277,10 @@
     border-radius: 12px; border-bottom: 1px solid var(--line2);
   }
   .hfeed-news__item:last-child { border-bottom: none; }
-  .hfeed-news__item:hover { background: #f7f7f8; }
+  .hfeed-news__item:hover { background: #f2f2f4; }
   .hfeed-news__title { font-size: 13px; font-weight: 650; line-height: 1.4; }
   .hfeed-news__meta { margin-top: 6px; font-size: 11.5px; color: var(--c-muted); }
+  .hfeed-news__stat { color: var(--hf-viz-clay-text); font-weight: 700; }
   .hfeed-news__thread { color: var(--accent-700); font-weight: 700; }
   .hfeed-news__source { margin-top: 4px; font-size: 11.5px; color: var(--c-muted); }
   .hfeed-news__repo { font-size: 13px; }
@@ -267,8 +289,12 @@
   .hfeed-news__desc { font-size: 12px; color: var(--c-muted); line-height: 1.4; margin-top: 2px; }
   .hfeed-news__langdot {
     display: inline-block; width: 8px; height: 8px; border-radius: 50%;
-    background: var(--accent-300); vertical-align: -1px; margin-right: 3px;
+    background: var(--hf-viz-slate); vertical-align: -1px; margin-right: 3px;
   }
+  /* 언어점 저채도 매핑 (브랜드 원색 금지, 스펙 4.10) */
+  .hfeed-news__langdot--ts { background: var(--hf-viz-blue); }
+  .hfeed-news__langdot--py { background: var(--hf-viz-sage); }
+  .hfeed-news__langdot--sys { background: var(--hf-viz-clay); }
 
   /* ===== 미니 요약 카드 ===== */
   .hfeed-mini {
@@ -281,6 +307,9 @@
   .hfeed-mini__label { font-size: 12px; font-weight: 650; color: var(--c-muted); }
   .hfeed-mini__num { font-size: 24px; font-weight: 800; letter-spacing: -.5px; }
   .hfeed-mini__num span { font-size: 13px; font-weight: 700; color: var(--c-muted); margin-left: 2px; }
+  /* 수치 강조색 — 시장 데이터=블루, 개인화 데이터=바이올렛 (스펙 4.11) */
+  .hfeed-mini__num--market { color: var(--hf-viz-blue-text); }
+  .hfeed-mini__num--personal { color: var(--hf-viz-violet-text); }
   .hfeed-mini__hint {
     font-size: 11.5px; font-weight: 700; color: var(--accent-700);
     margin-top: 6px; display: flex; align-items: center; gap: 4px;
@@ -291,7 +320,7 @@
   .hfeed-mini--list .hfeed-mini__row:last-of-type { border-bottom: none; }
   .hfeed-mini__rank { width: 16px; font-size: 12px; font-weight: 800; color: var(--c-muted); }
   .hfeed-mini__name { flex: 1; font-size: 13px; font-weight: 700; }
-  .hfeed-mini__delta { font-size: 11.5px; font-weight: 800; color: #1f9d57; }
+  .hfeed-mini__delta { font-size: 11.5px; font-weight: 800; color: var(--hf-viz-sage-text); }
 
   /* ===== 스켈레톤 ===== */
   .hfeed-skel { background: linear-gradient(90deg,#eef1f6 25%,#e2e7f0 37%,#eef1f6 63%); background-size: 400% 100%; animation: hfeed-shimmer 1.2s ease-in-out infinite; border-radius: 6px; }
@@ -306,7 +335,7 @@
   .hfeed-card--skel .chip { width: 64px; height: 24px; border-radius: 9px; }
 
   /* ===== 빈 상태 ===== */
-  .hfeed-empty { text-align: center; padding: 40px 20px; background: #f6f8fc; border-radius: 20px; }
+  .hfeed-empty { text-align: center; padding: 40px 20px; background: #fff; border: 1.5px dashed var(--line); border-radius: 20px; }
   .hfeed-empty__glyph {
     width: 52px; height: 52px; border-radius: 16px; background: var(--accent-50);
     color: var(--c-accent); display: grid; place-items: center; margin: 0 auto 14px;
@@ -355,6 +384,7 @@
 
       <div class="mock-note-top">
         디자인 목업 (프로덕션 코드 아님) · 1440px 데스크톱 · 상단 = 로그인 상태(매치 링 · 보유/미보유 칩) · 하단 = 게스트 상태(다크 CTA + 익명 카드)
+        · 2026-07-13 피드백 반영: 시각화 요소 저채도 팔레트(hf-viz: 링 3단계 sage/blue/slate, 보유 칩 블루 틴트, 메트릭 클레이, 증가율 세이지) + 회색 바탕(#f7f7f8) 위 흰 카드 분리
       </div>
 
       <!-- =========================================================
@@ -460,8 +490,8 @@
                 <div class="hfeed-card__title">결제 시스템 백엔드 엔지니어 (Python)</div>
               </div>
               <div class="hfeed-ring__wrap">
-                <div class="hfeed-ring" role="img" aria-label="이력서 매치율 86%"
-                     style="background:conic-gradient(var(--c-accent) 0 86%, var(--track) 86%)">
+                <div class="hfeed-ring hfeed-ring--high" role="img" aria-label="이력서 매치율 86%"
+                     style="background:conic-gradient(var(--ring-c) 0 86%, var(--track) 86%)">
                   <b class="tnum">86%</b>
                 </div>
                 <span class="hfeed-ring__cap">매치</span>
@@ -502,8 +532,8 @@
                 <div class="hfeed-card__title">서버 개발자 (검색/추천 플랫폼)</div>
               </div>
               <div class="hfeed-ring__wrap">
-                <div class="hfeed-ring" role="img" aria-label="이력서 매치율 61%"
-                     style="background:conic-gradient(var(--c-accent) 0 61%, var(--track) 61%)">
+                <div class="hfeed-ring hfeed-ring--mid" role="img" aria-label="이력서 매치율 61%"
+                     style="background:conic-gradient(var(--ring-c) 0 61%, var(--track) 61%)">
                   <b class="tnum">61%</b>
                 </div>
                 <span class="hfeed-ring__cap">매치</span>
@@ -550,9 +580,9 @@
                 <div class="hfeed-card__title">Platform Backend Engineer</div>
               </div>
               <div class="hfeed-ring__wrap">
-                <div class="hfeed-ring" role="img" aria-label="이력서 매치율 74%"
-                     style="background:conic-gradient(var(--c-accent) 0 74%, var(--track) 74%)">
-                  <b class="tnum">74%</b>
+                <div class="hfeed-ring hfeed-ring--low" role="img" aria-label="이력서 매치율 40%"
+                     style="background:conic-gradient(var(--ring-c) 0 40%, var(--track) 40%)">
+                  <b class="tnum">40%</b>
                 </div>
                 <span class="hfeed-ring__cap">매치</span>
               </div>
@@ -566,12 +596,12 @@
               <span class="hfeed-chip--cat">DevOps</span>
               <span class="hfeed-chip--owned">Docker</span>
               <span class="hfeed-chip--owned">PostgreSQL</span>
-              <span class="hfeed-chip--owned">Redis</span>
               <span class="hfeed-chip--missing">Kubernetes</span>
               <span class="hfeed-chip--missing">Terraform</span>
+              <span class="hfeed-chip--missing">Go</span>
             </div>
             <div class="hfeed-card__foot">
-              <span class="hfeed-card__matchsum">보유 <b class="tnum">3</b> · 부족 <b class="tnum">2</b></span>
+              <span class="hfeed-card__matchsum">보유 <b class="tnum">2</b> · 부족 <b class="tnum">3</b></span>
               <div class="hfeed-card__actions">
                 <a class="hfeed-card__detail" href="#">상세보기</a>
                 <button class="hfeed-card__bookmark" aria-label="북마크 추가">
@@ -614,22 +644,22 @@
             <div class="hfeed-news__list">
               <a class="hfeed-news__item hfeed-news__item--hn" href="#">
                 <div class="hfeed-news__title">Postgres is eating the database world: why teams consolidate on one engine</div>
-                <div class="hfeed-news__meta tnum">포인트 342 · <span class="hfeed-news__thread">댓글 128</span></div>
+                <div class="hfeed-news__meta tnum">포인트 <b class="hfeed-news__stat">342</b> · <span class="hfeed-news__thread">댓글 128</span></div>
               </a>
               <a class="hfeed-news__item hfeed-news__item--hn" href="#">
                 <div class="hfeed-news__title">Show HN: A tiny type-safe RPC layer for FastAPI and TypeScript clients</div>
-                <div class="hfeed-news__meta tnum">포인트 211 · <span class="hfeed-news__thread">댓글 74</span></div>
+                <div class="hfeed-news__meta tnum">포인트 <b class="hfeed-news__stat">211</b> · <span class="hfeed-news__thread">댓글 74</span></div>
               </a>
               <a class="hfeed-news__item hfeed-news__item--hn" href="#">
                 <div class="hfeed-news__title">The cost of async: benchmarking Python 3.13 free-threading in production</div>
-                <div class="hfeed-news__meta tnum">포인트 189 · <span class="hfeed-news__thread">댓글 63</span></div>
+                <div class="hfeed-news__meta tnum">포인트 <b class="hfeed-news__stat">189</b> · <span class="hfeed-news__thread">댓글 63</span></div>
               </a>
             </div>
           </section>
 
           <section class="hfeed-mini" role="link" tabindex="0">
             <span class="hfeed-mini__label">오늘 신규 공고</span>
-            <span class="hfeed-mini__num tnum">128<span>건</span></span>
+            <span class="hfeed-mini__num hfeed-mini__num--market tnum">128<span>건</span></span>
             <span class="hfeed-mini__hint">시장에서 보기 &rsaquo;</span>
           </section>
 
@@ -655,7 +685,7 @@
 
           <section class="hfeed-mini" role="link" tabindex="0">
             <span class="hfeed-mini__label">내 매치 상위 공고</span>
-            <span class="hfeed-mini__num tnum">23<span>건</span></span>
+            <span class="hfeed-mini__num hfeed-mini__num--personal tnum">23<span>건</span></span>
             <span class="hfeed-mini__hint">대시보드에서 보기 &rsaquo;</span>
           </section>
         </aside>
@@ -769,17 +799,17 @@
               <a class="hfeed-news__item hfeed-news__item--gh" href="#">
                 <div class="hfeed-news__repo"><span class="owner">vercel/</span><b>ai</b></div>
                 <div class="hfeed-news__desc">Build AI-powered applications with React, Svelte, Vue, and Solid.</div>
-                <div class="hfeed-news__meta tnum"><span class="hfeed-news__langdot"></span>TypeScript · 스타 11.2k</div>
+                <div class="hfeed-news__meta tnum"><span class="hfeed-news__langdot hfeed-news__langdot--ts"></span>TypeScript · 스타 <b class="hfeed-news__stat">11.2k</b></div>
               </a>
               <a class="hfeed-news__item hfeed-news__item--gh" href="#">
                 <div class="hfeed-news__repo"><span class="owner">pydantic/</span><b>logfire</b></div>
                 <div class="hfeed-news__desc">Uncomplicated observability for Python and beyond, from the Pydantic team.</div>
-                <div class="hfeed-news__meta tnum"><span class="hfeed-news__langdot"></span>Python · 스타 4.8k</div>
+                <div class="hfeed-news__meta tnum"><span class="hfeed-news__langdot hfeed-news__langdot--py"></span>Python · 스타 <b class="hfeed-news__stat">4.8k</b></div>
               </a>
               <a class="hfeed-news__item hfeed-news__item--gh" href="#">
                 <div class="hfeed-news__repo"><span class="owner">tokio-rs/</span><b>axum</b></div>
                 <div class="hfeed-news__desc">Ergonomic and modular web framework built with Tokio, Tower, and Hyper.</div>
-                <div class="hfeed-news__meta tnum"><span class="hfeed-news__langdot"></span>Rust · 스타 19.6k</div>
+                <div class="hfeed-news__meta tnum"><span class="hfeed-news__langdot hfeed-news__langdot--sys"></span>Rust · 스타 <b class="hfeed-news__stat">19.6k</b></div>
               </a>
             </div>
           </section>
@@ -813,7 +843,7 @@
 
           <section class="hfeed-mini" role="link" tabindex="0">
             <span class="hfeed-mini__label">오늘 신규 공고</span>
-            <span class="hfeed-mini__num tnum">128<span>건</span></span>
+            <span class="hfeed-mini__num hfeed-mini__num--market tnum">128<span>건</span></span>
             <span class="hfeed-mini__hint">시장에서 보기 &rsaquo;</span>
           </section>
           <!-- 게스트: "내 매치 상위 공고" 미니카드는 렌더하지 않음 -->
