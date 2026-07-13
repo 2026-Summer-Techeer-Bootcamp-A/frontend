@@ -6,7 +6,11 @@ import { searchApi } from '../career/api'
 type Results = Awaited<ReturnType<typeof searchApi.search>>
 const EMPTY: Results = { postings: [], skills: [], companies: [], query: '' }
 
-export default function GlobalSearch() {
+type GlobalSearchProps = {
+  variant?: 'default' | 'large'
+}
+
+export default function GlobalSearch({ variant = 'default' }: GlobalSearchProps) {
   const navigate = useNavigate()
   const rootRef = useRef<HTMLDivElement>(null)
   const [query, setQuery] = useState('')
@@ -38,23 +42,28 @@ export default function GlobalSearch() {
 
   const go = (path: string) => { setOpen(false); setQuery(''); navigate(path) }
   const hasResults = results.postings.length + results.skills.length + results.companies.length > 0
+  const isLarge = variant === 'large'
 
   return (
-    <div ref={rootRef} style={{ position: 'relative', width: 320 }}>
-      <div style={{ height: 36, display: 'flex', alignItems: 'center', gap: 8, padding: '0 12px', border: '1px solid var(--c-line, #dedee3)', borderRadius: 10, background: 'var(--c-surface, #fff)' }}>
-        <Search size={15} color="var(--c-muted)" />
+    <div ref={rootRef} style={isLarge ? { position: 'relative', width: '100%', maxWidth: 560 } : { position: 'relative', width: 320 }}>
+      <div style={isLarge
+        ? { height: 50, display: 'flex', alignItems: 'center', gap: 10, padding: '0 18px', border: '1px solid var(--c-line, #dedee3)', borderRadius: 999, background: 'var(--c-surface, #fff)' }
+        : { height: 36, display: 'flex', alignItems: 'center', gap: 8, padding: '0 12px', border: '1px solid var(--c-line, #dedee3)', borderRadius: 10, background: 'var(--c-surface, #fff)' }}>
+        <Search size={isLarge ? 16 : 15} color="var(--c-muted)" />
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           onFocus={() => query.trim() && setOpen(true)}
           placeholder="공고 · 기술 · 기업 검색"
           aria-label="통합 검색"
-          style={{ width: '100%', border: 0, outline: 0, background: 'transparent', font: 'inherit', fontSize: 13 }}
+          style={{ width: '100%', border: 0, outline: 0, background: 'transparent', font: 'inherit', fontSize: isLarge ? 14 : 13 }}
         />
         {loading && <span style={{ color: 'var(--c-muted)', fontSize: 11 }}>검색 중</span>}
       </div>
       {open && (
-        <div style={{ position: 'absolute', zIndex: 300, top: 42, right: 0, width: 380, maxHeight: 480, overflowY: 'auto', padding: 8, border: '1px solid var(--c-line, #dedee3)', borderRadius: 14, background: 'var(--c-surface, #fff)', boxShadow: '0 18px 48px rgba(0,0,0,.16)' }}>
+        <div style={isLarge
+          ? { position: 'absolute', zIndex: 300, top: 56, left: 0, width: '100%', maxHeight: 480, overflowY: 'auto', padding: 8, border: '1px solid var(--c-line, #dedee3)', borderRadius: 14, background: 'var(--c-surface, #fff)', boxShadow: '0 18px 48px rgba(0,0,0,.16)' }
+          : { position: 'absolute', zIndex: 300, top: 42, right: 0, width: 380, maxHeight: 480, overflowY: 'auto', padding: 8, border: '1px solid var(--c-line, #dedee3)', borderRadius: 14, background: 'var(--c-surface, #fff)', boxShadow: '0 18px 48px rgba(0,0,0,.16)' }}>
           {!hasResults && !loading && <div style={{ padding: 18, color: 'var(--c-muted)', fontSize: 13 }}>검색 결과가 없어요.</div>}
           {results.postings.length > 0 && <SearchSection title="공고">
             {results.postings.map((item) => <ResultButton key={item.id} onClick={() => go(`/job/${item.id}`)} title={item.title} meta={`${item.company} · ${item.pool}`} />)}
