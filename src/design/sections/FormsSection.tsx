@@ -60,7 +60,7 @@ export default function FormsSection() {
               <div className="ds-card">
                 <div className="demo-label">별점 (인터랙티브)</div>
                 <div className="ds-rating">
-                  {[1, 2, 3, 4].map((i) => <Star key={i} size={22} fill="#2f61b8" color="#2f61b8" />)}
+                  {[1, 2, 3, 4].map((i) => <Star key={i} size={22} fill="#0b0b0c" color="#0b0b0c" />)}
                   <Star size={22} color="#cdd2db" />
                 </div>
               </div>

@@ -1,0 +1,165 @@
+/* 채용 시장 — 시장 흐름 인텔리전스 보드. placeholders.css의 .dpage/.dcard 토큰을 그대로 쓴다.
+   위계형 커맨드센터: 라벨 섹션 4개(수요 · 트렌드 · 기업·역량 · 구조·탐색) + featured 히어로 1개
+   + "내 직무/전체" 스코프 탭. 대시보드(DesktopOverview .dov__sec)와 동일한 섹션 패턴을 미러링한다. */
+
+.dmkt2__head { margin-bottom: 18px; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.dmkt2__head-l { min-width: 0; }
+.dmkt2__title { font-size: 34px; font-weight: 800; letter-spacing: -1px; line-height: 1.15; color: var(--c-ink); }
+.dmkt2__sub { margin-top: 6px; font-size: 12.5px; color: var(--c-muted); }
+
+/* 우측 헤더 존 — "내 직무/전체" 스코프 탭 + 위젯 설정 기어 */
+.dmkt2__head-r { flex: none; display: flex; align-items: center; gap: 12px; padding-top: 2px; }
+.dmkt2__scopetabs { flex: none; }
+
+/* 전역 집계 위젯 배지 — scope='mine'일 때 "전체 시장 기준"을 알림(카드 안 직무 필터가 안 먹는다는 신호) */
+.dmkt2__scopebadge {
+  display: inline-flex; align-items: center; flex: none;
+  font-size: 10.5px; font-weight: 700; color: var(--c-muted);
+  background: var(--accent-50); border-radius: 7px; padding: 3px 7px; margin-bottom: 8px;
+}
+
+/* ───────────────── 라벨 섹션 — 4개(수요 · 트렌드 · 기업·역량 · 구조·탐색), 섹션간 32px ───────────────── */
+.dmkt2__sec { margin-bottom: 32px; }
+.dmkt2__sec:last-child { margin-bottom: 0; }
+.dmkt2__sec-h { margin-bottom: 16px; }
+.dmkt2__sec-h h2 { font-size: 18px; font-weight: 800; letter-spacing: -0.3px; color: var(--c-ink); }
+.dmkt2__sec-h span { display: block; margin-top: 4px; font-size: 12.5px; color: var(--c-muted); font-weight: 500; }
+.dmkt2__sec-h span b { color: var(--c-ink); font-weight: 700; }
+
+/* 구조·탐색 섹션 헤더 — 토글 버튼을 우측에 붙이는 flex row 변형 */
+.dmkt2__sec-h--toggle { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.dmkt2__sec-toggle {
+  flex: none; font-size: 12px; font-weight: 700; color: var(--c-muted);
+  background: var(--accent-50); border-radius: 9px; padding: 6px 12px;
+  transition: color 0.13s ease, background 0.13s ease;
+}
+.dmkt2__sec-toggle:hover { color: var(--c-ink); background: var(--accent-100); }
+.dmkt2__sec-collapsed { font-size: 12.5px; color: var(--c-muted); padding: 4px 2px; }
+
+/* 섹션 내부 그리드 — 섹션마다 열 수가 다르고, 카드 높이는 같은 행에서 stretch로 통일한다.
+   리스트/그래프형 카드는 내부 overflow-y:auto로 흡수(대시보드 .dov__sec-grid와 동일 원칙). */
+.dmkt2__sec-grid { display: grid; gap: 16px; align-items: stretch; }
+.dmkt2__sec-grid > * { min-width: 0; height: 100%; }
+.dmkt2__card-item { display: flex; flex-direction: column; min-width: 0; height: 100%; }
+.dmkt2__card-item > .dcard,
+.dmkt2__card-item > .wow-card { flex: 1; height: 100%; display: flex; flex-direction: column; }
+.dmkt2__card-item .kit-heroStat { flex: 1; }
+
+/* 수요 — 상위 요구 기술(1) : 신입에게 열린 기술(2), 같은 폭 2열 */
+.dmkt2__sec-grid--demand { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+/* 검정 히어로를 대체한 소형 스탯 한 줄 — "가장 많이 요구되는 기술" 요약만, 카드 없이 텍스트로 */
+.dmkt2__demandstat {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  font-size: 12.5px; font-weight: 600; color: var(--c-muted); margin-bottom: 14px;
+}
+.dmkt2__demandstat b { color: var(--c-ink); font-weight: 800; }
+.dmkt2__demandstat-v { font-weight: 800; color: var(--c-ink); }
+.dmkt2__demandstat-n { color: var(--c-muted); }
+
+/* 신입에게 열린 기술 — 기존 .dmkt2__bars/.dmkt2__bar 막대를 그대로 쓰되 채움만 그린(열림 신호) */
+.dmkt2__bars--open .dmkt2__bar-track i { background: #1f9d57; }
+
+/* 지금 뜨는 기술 — 수요 섹션 하단의 얇은 상승 칩 줄. delta 상위 3개만, 그린 상승폭 */
+.dmkt2__rising {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin-top: 16px; padding: 12px 14px;
+  border: 1px solid var(--line); border-radius: 12px;
+}
+.dmkt2__rising-label { flex: none; font-size: 11.5px; font-weight: 700; color: var(--c-muted); }
+.dmkt2__rising-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.dmkt2__rising-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 600; color: var(--c-ink);
+  background: var(--accent-50); border-radius: 999px; padding: 5px 10px 5px 8px;
+}
+.dmkt2__rising-delta { color: #1f9d57; font-weight: 800; }
+
+/* 트렌드 — Hype vs Hire · 연도별 추이 · 무버스, 3등분 같은 높이 */
+.dmkt2__sec-grid--trend { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+/* 기업 · 역량 — 카드 크기에 맞춰 2~3열로 채워지는 auto-fill */
+.dmkt2__sec-grid--company { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+
+/* 구조 · 탐색 — 무거운 탐색 그래프 2등분(진행적 공개로 펼쳤을 때만 렌더) */
+.dmkt2__sec-grid--explore { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+/* ───────────────── 하단 "글로벌 · 해외 트렌드" 섹션 — 국내 섹션과 확실히 분리 ─────────────────
+   상단(수요·트렌드·기업·역량·구조·탐색)은 국내 기준, 이 섹션만 HN·GitHub 기준 전역 데이터.
+   .dmkt2__sec의 기본 margin-bottom(32px) 위에 구분선 + 여백을 더 얹어 상단↔하단을 시각적으로
+   가른다. scope("내 직무/전체") 탭은 이 섹션엔 적용하지 않는다(전역 데이터라 항상 같은 값). */
+.dmkt2__sec--global {
+  margin-top: 8px; padding-top: 32px;
+  border-top: 1px solid var(--line);
+}
+/* 카드 크기에 맞춰 2~3열로 채워지는 auto-fill — 전파 네트워크(netcell)가 넓게 자리잡도록
+   기업·역량 섹션(300px)보다 조금 넓은 최소폭을 준다. */
+.dmkt2__sec-grid--global { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
+
+@media (max-width: 1180px) {
+  .dmkt2__sec-grid--demand,
+  .dmkt2__sec-grid--trend,
+  .dmkt2__sec-grid--explore { grid-template-columns: 1fr; }
+  .dmkt2__sec-grid--company,
+  .dmkt2__sec-grid--global { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .dmkt2__sec-grid--company,
+  .dmkt2__sec-grid--global { grid-template-columns: 1fr; }
+  .dmkt2__head { flex-direction: column; }
+  .dmkt2__head-r { padding-top: 0; }
+}
+
+/* 위젯 takeaway 캡션 — SectionHeader 바로 아래, 차트 위에 붙는 강조 한 줄. 데이터에서 뽑은
+   "그래서 나한테 뭔데?" 문장. 기본은 near-black 볼드 텍스트고, 상승/기회 신호에만 절제해서
+   그린/앰버를 얹는다(과용 금지). 파랑은 쓰지 않는다. */
+.dmkt2__takeaway { font-size: 12.5px; font-weight: 600; color: var(--c-ink); line-height: 1.45; margin: 6px 0 10px; }
+.dmkt2__takeaway b,
+.dmkt2__takeaway strong { color: #0b0b0c; font-weight: 800; }
+.dmkt2__takeaway-up { color: #1f9d57; }
+.dmkt2__takeaway-amber { color: #d9822b; }
+
+/* 상위 요구 기술 Top14 바 — 2x1(기본)에서는 상위 8개만, "더 보기"로 14개 전체 펼침 */
+.dmkt2__bars { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.dmkt2__bar { display: flex; align-items: center; gap: 10px; padding: 4px 4px; border-radius: 9px; transition: background 0.13s ease; text-align: left; }
+.dmkt2__bar:hover { background: var(--accent-50); }
+.dmkt2__bar-t { flex: none; width: 96px; font-size: 12.5px; font-weight: 600; color: var(--c-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dmkt2__bar-track { flex: 1; height: 8px; border-radius: 999px; background: #eef1f6; overflow: hidden; }
+.dmkt2__bar-track i { display: block; height: 100%; border-radius: 999px; background: var(--accent-300); }
+.dmkt2__bar-v { flex: none; width: 40px; text-align: right; font-size: 12px; font-weight: 700; color: var(--c-muted); }
+.dmkt2__more {
+  margin-top: 8px; align-self: flex-start; font-size: 12px; font-weight: 700;
+  color: var(--c-muted); padding: 4px 6px; border-radius: 6px; transition: color 0.13s ease, background 0.13s ease;
+}
+.dmkt2__more:hover { color: var(--c-ink); background: var(--accent-50); }
+
+/* 네트워크/전파 그래프 옆 요약패널 — 그래프 62% : 요약 38% */
+.dmkt2__netcell { display: flex; flex-direction: column; }
+.dmkt2__netsplit { display: flex; gap: 14px; flex: 1; min-height: 0; }
+.dmkt2__netgraph { flex: 1.6; min-width: 0; max-height: 300px; overflow: hidden; }
+.dmkt2__netsummary { flex: 1; min-width: 0; border-left: 1px solid var(--line); padding-left: 14px; display: flex; flex-direction: column; gap: 6px; }
+.dmkt2__netsummary-t { font-size: 11.5px; font-weight: 700; color: var(--c-muted); margin-bottom: 4px; }
+.dmkt2__netsummary-row { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
+.dmkt2__netsummary-rank { flex: none; width: 16px; font-weight: 800; color: var(--c-muted); }
+.dmkt2__netsummary-tech { flex: 1; min-width: 0; font-weight: 600; color: var(--c-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dmkt2__netsummary-n { flex: none; font-weight: 700; color: var(--c-muted); }
+
+/* 기업 규모 분포 도넛 — 모노톤 3단계 */
+.dmkt2__donut { display: flex; align-items: center; gap: 14px; margin-top: 8px; }
+.dmkt2__donut-legend { display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 600; color: var(--c-muted); }
+.dmkt2__donut-legend span { display: flex; align-items: center; gap: 6px; }
+.dmkt2__donut-legend i { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+
+/* 수요 × 빈도 분포 — 순수 시장 산점도(보유/미보유 이분법 없음) */
+.dmkt2__scatter { display: flex; flex-direction: column; flex: 1; margin-top: 6px; }
+.dmkt2__scatter-svg { width: 100%; height: auto; flex: 1; }
+.dmkt2__scatter-ax { font-size: 10px; fill: var(--c-muted); font-weight: 600; }
+.dmkt2__scatter-lbl { font-size: 9.5px; fill: var(--c-ink); font-weight: 700; }
+.dmkt2__scatter-legend {
+  display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px;
+}
+.dmkt2__scatter-legend span {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11.5px; font-weight: 600; color: var(--c-muted);
+}
+.dmkt2__scatter-legend i { width: 8px; height: 8px; border-radius: 50%; flex: none; }

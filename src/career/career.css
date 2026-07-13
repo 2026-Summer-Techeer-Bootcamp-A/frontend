@@ -2,11 +2,11 @@
 .career {
   /* 디자인 시스템 정본 토큰(src/design) — 쿨톤 라인·레이어드 섀도·accent 스케일 */
   --line: #e6e9ef;
-  --accent-50: #eef3fb;
-  --accent-100: #dde8f9;
-  --accent-200: #bcd0f0;
-  --accent-300: #8fb0e2;
-  --accent-700: #21447c;
+  --accent-50: #f0f0f1;
+  --accent-100: #e4e4e7;
+  --accent-200: #e4e4e7;
+  --accent-300: #a1a1aa;
+  --accent-700: #18181b;
   --e1: 0 1px 2px rgba(20, 30, 60, 0.05), 0 1px 1px rgba(20, 30, 60, 0.04);
   --e2: 0 2px 8px rgba(20, 30, 60, 0.06), 0 1px 2px rgba(20, 30, 60, 0.05);
   --e3: 0 8px 24px rgba(20, 30, 60, 0.08), 0 2px 6px rgba(20, 30, 60, 0.05);
@@ -620,7 +620,7 @@
 .cr-check.on .box {
   background: linear-gradient(180deg, #3a6fca, var(--c-primary));
   border-color: transparent;
-  box-shadow: 0 2px 6px -1px rgba(47, 97, 184, 0.5);
+  box-shadow: 0 2px 6px -1px rgba(11, 11, 12, 0.5);
 }
 .cr-sheet__apply {
   width: 100%;
@@ -636,7 +636,7 @@
   transition: background 0.12s ease, transform 0.12s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 .cr-sheet__apply:hover {
-  background: #28539c;
+  background: #3f3f46;
 }
 .cr-sheet__apply:active {
   transform: scale(0.97);
@@ -842,7 +842,7 @@
   background: var(--c-nav);
   color: #fff;
   /* accent 글로우 — 활성 탭만 살짝 떠 보이게 */
-  box-shadow: 0 6px 14px -4px rgba(47, 97, 184, 0.6);
+  box-shadow: 0 6px 14px -4px rgba(11, 11, 12, 0.6);
 }
 
 /* ---------- 상세 (A + 탭) ---------- */
@@ -956,6 +956,320 @@
   margin-left: 14px;
   min-width: 0;
 }
+/* 공고 상세 — 근무 위치 미니 지도 카드 */
+.crd-map {
+  background: #fff;
+  border: 1px solid var(--line, #e6e9ef);
+  border-radius: 18px;
+  padding: 14px;
+  margin-top: 16px;
+  overflow: hidden;
+}
+.crd-map__label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--c-muted);
+  margin-bottom: 2px;
+}
+.crd-map__addr {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--c-ink);
+  margin-bottom: 10px;
+}
+.crd-map__canvas {
+  width: 100%;
+  height: 150px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f0f0f1;
+}
+.crd-map__pin {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #0b0b0c;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+/* ==========================================================
+   공고 상세 — 데스크톱 커맨드센터 레이아웃 (.djd*)
+   PC 2열(본문/사이드) 톤 정리 + 위치 지도 강화 전용.
+   `.dsub`(screens.css)가 이미 그리드 뼈대를 잡아 두므로, 여기서는
+   `.dsub .djd*` 처럼 두 클래스로 명시해 카드 톤 오버라이드가 항상
+   먼저 로드되는 규칙을 이기도록 한다(임포트 순서에 기대지 않음).
+   ========================================================== */
+/* 공고 상세(3열)는 넓은 데스크톱 폭을 쓴다 — screens.css .dsub 기본 max-width(920px)를
+   :has()로 공고 상세일 때만 확장(설정·이력서제출 등 다른 .dsub 페이지는 920px 그대로). */
+.dsub:has(.djd) {
+  max-width: 1440px;
+}
+.dsub .djd {
+  grid-template-columns: minmax(0, 1.7fr) 330px 340px;
+  gap: 20px;
+}
+.dsub .djd-main {
+  background: var(--c-card, #fff);
+  border: 1px solid var(--line, #e6e9ef);
+  border-radius: 18px;
+  box-shadow: var(--e1, 0 1px 2px rgba(20, 30, 60, 0.05));
+  padding: 26px 28px 32px;
+  max-width: none;
+}
+.dsub .djd-card {
+  border-radius: 18px;
+}
+/* 3열째 추천 레일 — 사이드(2열)와 같은 sticky 톤, 1280px 미만에서는 본문 아래로 전체 폭 배치 */
+.dsub .djd-reco {
+  position: sticky;
+  top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+@media (max-width: 1280px) {
+  .dsub .djd { grid-template-columns: minmax(0, 1fr) 340px; }
+  .dsub .djd-reco { grid-column: 1 / -1; position: static; top: auto; }
+}
+@media (max-width: 1180px) {
+  .dsub .djd { grid-template-columns: 1fr; }
+}
+
+/* 본문 헤더 — 로고 크게 + 큰 제목 */
+.djd-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.djd-head__meta { min-width: 0; }
+.djd-title {
+  font-size: 27px;
+  font-weight: 800;
+  letter-spacing: -0.7px;
+  line-height: 1.28;
+  margin: 4px 0 0;
+  color: var(--c-ink);
+}
+.djd-main .crd__tabs { margin-top: 24px; }
+.djd-main .crd__body p {
+  max-width: 640px;
+  line-height: 1.75;
+}
+
+/* 매칭 카드 — 원형 링(MiniScore) + 보유(그린)/미보유(회색) 칩 */
+.djd-match {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.djd-match__head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.djd-match__sub {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-ink);
+  line-height: 1.4;
+}
+.djd-match__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.djd-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 11.5px;
+  font-weight: 650;
+  letter-spacing: -0.1px;
+  border: 1px solid transparent;
+}
+/* 보유 — 모노크롬 그린 */
+.djd-chip--held {
+  background: #e6f5ec;
+  color: #1f9d57;
+  border-color: #bfe6ce;
+}
+/* 미보유 — 그레이(파랑/레드 없음) */
+.djd-chip--gap {
+  background: #f0f0f1;
+  color: #71717a;
+  border-color: #e4e4e7;
+}
+
+/* 위치 지도 카드 — 크게 + 마커/주소 강조 (Leaflet 초기화는 JS 쪽 유지, 여기선 크기/톤만) */
+.djd-map {
+  display: flex;
+  flex-direction: column;
+}
+.djd-map .crd-map {
+  margin-top: 0;
+  border-radius: 18px;
+  padding: 16px;
+}
+.djd-map .crd-map__label {
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.djd-map .crd-map__addr {
+  font-size: 15.5px;
+  font-weight: 800;
+  margin-bottom: 12px;
+}
+.djd-map .crd-map__canvas {
+  height: 300px;
+  border-radius: 16px;
+}
+/* 마커 강조 — near-black 원 + 흰 테두리 + pulse 링 */
+.djd-map .crd-map__pin {
+  width: 18px;
+  height: 18px;
+  border: 3px solid #fff;
+  box-shadow:
+    0 2px 10px rgba(0, 0, 0, 0.4),
+    0 0 0 7px rgba(11, 11, 12, 0.12);
+}
+.djd-map__cap {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-muted);
+  margin-top: 9px;
+  padding-left: 2px;
+}
+
+/* 추천 레일 카드 — 주변/비슷한 채용공고 (.djd-card 톤 재사용, 모노크롬) */
+.djd-reco-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.djd-reco-card__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.djd-reco-card__head h4 {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  color: var(--c-ink);
+  margin: 0;
+}
+.djd-reco-card__hint {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--c-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+.djd-reco-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.djd-reco-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px;
+  border-radius: 14px;
+  text-align: left;
+  transition: background 0.12s ease;
+}
+.djd-reco-row:hover {
+  background: #f2f2f3;
+}
+.djd-reco-row__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.djd-reco-row__title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--c-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.djd-reco-row__co {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--c-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* 회사명 + 위치/거리 뱃지를 한 줄에 같이 놓을 때 — 회사명만 말줄임, 뱃지는 고정 폭 유지 */
+.djd-reco-row__co--badged {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+}
+.djd-reco-row__co-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* 위치 뱃지(구) — 옅은 회색 pill, 모노크롬 */
+.djd-reco-badge {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: #f0f0f1;
+  color: #71717a;
+  border: 1px solid #e4e4e7;
+  white-space: nowrap;
+}
+/* 거리 뱃지 — 텍스트만, muted */
+.djd-reco-dist {
+  flex: none;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--c-muted);
+  white-space: nowrap;
+}
+.djd-reco-row__techs {
+  display: flex;
+  gap: 4px;
+  margin-top: 2px;
+}
+/* 겹치는 기술 칩 — 모노크롬 그린(.djd-chip--held와 동일 톤) */
+.djd-reco-tech {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 7px;
+  background: #e6f5ec;
+  color: #1f9d57;
+  border: 1px solid #bfe6ce;
+  white-space: nowrap;
+}
+.djd-reco-empty {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--c-muted);
+  padding: 12px 2px;
+  text-align: center;
+}
+
 .crd__actions {
   display: flex;
   gap: 12px;

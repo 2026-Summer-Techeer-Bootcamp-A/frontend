@@ -64,9 +64,9 @@ export function IndustryFitRadar({ skills = RESUME }: { skills?: string[] }) {
       type: 'radar',
       data: [{
         value: industryFit.map((d) => d.pct), name: '내 적합도',
-        areaStyle: { color: 'rgba(47,97,184,0.22)' },
-        lineStyle: { color: '#2f61b8', width: 2.5 },
-        itemStyle: { color: '#2f61b8', borderColor: '#fff', borderWidth: 1.5 },
+        areaStyle: { color: 'rgba(11, 11, 12,0.22)' },
+        lineStyle: { color: '#0b0b0c', width: 2.5 },
+        itemStyle: { color: '#0b0b0c', borderColor: '#fff', borderWidth: 1.5 },
         symbolSize: 5,
       }],
     }],
@@ -143,14 +143,14 @@ export function TechChainRoadmap({ skills = RESUME, limit = 4 }: { skills?: stri
    통계 탭 — 기술 공동출현 네트워크 그래프 (WidgetN 적응)
    ============================================================ */
 const CAT_COLOR: Record<string, string> = {
-  language: '#2f61b8', frontend: '#4fa88a', backend: '#8a6fc4', data_db: '#d68a3c',
+  language: '#0b0b0c', frontend: '#4fa88a', backend: '#8a6fc4', data_db: '#d68a3c',
   cloud_services: '#2f9bd6', devops: '#6b7280', ai_llm: '#b8892b', mobile: '#c0568a',
 }
 const CAT_LABEL: Record<string, string> = {
   language: '언어', frontend: '프론트엔드', backend: '백엔드', data_db: '데이터·DB',
   cloud_services: '클라우드', devops: '데브옵스', ai_llm: 'AI/LLM', mobile: '모바일',
 }
-const OWNED_RING = '#21447c'
+const OWNED_RING = '#18181b'
 
 export function TechCoNetworkGraph({ skills = RESUME }: { skills?: string[] }) {
   const resumeSet = useMemo(() => new Set(skills), [skills])
@@ -168,7 +168,7 @@ export function TechCoNetworkGraph({ skills = RESUME }: { skills?: string[] }) {
         }
         const n = p.data.raw as NNode
         const isOwned = resumeSet.has(n.tech)
-        return `<b>${n.tech}</b> <span style="color:${CAT_COLOR[n.category]}">· ${CAT_LABEL[n.category]}</span>${isOwned ? ' <span style="color:#21447c">· 보유</span>' : ''}<br/>공고 ${n.n.toLocaleString()}건`
+        return `<b>${n.tech}</b> <span style="color:${CAT_COLOR[n.category]}">· ${CAT_LABEL[n.category]}</span>${isOwned ? ' <span style="color:#18181b">· 보유</span>' : ''}<br/>공고 ${n.n.toLocaleString()}건`
       },
     },
     series: [{
@@ -261,6 +261,18 @@ export function TrendPropagationGraph() {
       <AsOf asOf={Y4.as_of} n={Y4.sample_size} note={Y4.sample_note} />
     </div>
   )
+}
+
+/** 네트워크 그래프 옆 요약패널용 — 연결강도(n) 상위 기술. */
+export function getNetworkTopConnections(limit = 5): { tech: string; n: number }[] {
+  return [...N_DATA.data.nodes].sort((a, b) => b.n - a.n).slice(0, limit).map((n) => ({ tech: n.tech, n: n.n }))
+}
+
+/** 트렌드 전파 그래프 옆 요약패널용 — 선도 기술(출발 엣지 수) 상위. */
+export function getPropagationTopLeaders(limit = 5): { tech: string; count: number }[] {
+  const outdeg: Record<string, number> = {}
+  Y4.data.edges.forEach((e) => { outdeg[e.leader] = (outdeg[e.leader] ?? 0) + 1 })
+  return Object.entries(outdeg).sort((a, b) => b[1] - a[1]).slice(0, limit).map(([tech, count]) => ({ tech, count }))
 }
 
 /* ============================================================
@@ -379,7 +391,7 @@ export function GenerationTrendChart({ skills = RESUME }: { skills?: string[] })
       ...tooltipStyle, trigger: 'item',
       formatter: (p: { seriesName: string }) => {
         const m = D.matrix.find((x) => x.tech === p.seriesName)!
-        return `<b>${m.tech}</b> ${resumeSet.has(m.tech) ? '<span style="color:#2f61b8">· 보유</span>' : ''}<br/>${D.generations.map((g, i) => `${g.label.replace('\n', ' ')} <b>${m.shares[i]}%</b>`).join('<br/>')}`
+        return `<b>${m.tech}</b> ${resumeSet.has(m.tech) ? '<span style="color:#0b0b0c">· 보유</span>' : ''}<br/>${D.generations.map((g, i) => `${g.label.replace('\n', ' ')} <b>${m.shares[i]}%</b>`).join('<br/>')}`
       },
     },
     xAxis: {
@@ -393,7 +405,7 @@ export function GenerationTrendChart({ skills = RESUME }: { skills?: string[] })
     },
     series: D.matrix.map((m) => {
       const rising = m.trend >= 0
-      const col = rising ? '#2f61b8' : '#c8382d'
+      const col = rising ? '#0b0b0c' : '#c8382d'
       const isMine = resumeSet.has(m.tech)
       return {
         name: m.tech, type: 'line', data: m.shares, smooth: false,
@@ -410,7 +422,7 @@ export function GenerationTrendChart({ skills = RESUME }: { skills?: string[] })
     <div className="ins-gen">
       <ReactECharts option={option} style={{ height: 260 }} notMerge />
       <div className="ins-legend" style={{ marginTop: 4 }}>
-        <span><i style={{ background: '#2f61b8' }} /> 신생일수록 상승</span>
+        <span><i style={{ background: '#0b0b0c' }} /> 신생일수록 상승</span>
         <span><i style={{ background: '#c8382d' }} /> 신생일수록 하락</span>
       </div>
       <div className="ins-gen__panel">
@@ -451,7 +463,7 @@ export function TechYearlyTrendChart({ skills = RESUME }: { skills?: string[] })
       ...tooltipStyle, trigger: 'item',
       formatter: (p: { seriesName: string }) => {
         const m = rows.find((x) => x.tech === p.seriesName)!
-        return `<b>${m.tech}</b>${m.owned ? ' <span style="color:#2f61b8">· 보유</span>' : ''}<br/>${YEARLY.years.map((y, i) => `${y} <b>${m.shares[i]}%</b>`).join('<br/>')}`
+        return `<b>${m.tech}</b>${m.owned ? ' <span style="color:#0b0b0c">· 보유</span>' : ''}<br/>${YEARLY.years.map((y, i) => `${y} <b>${m.shares[i]}%</b>`).join('<br/>')}`
       },
     },
     xAxis: {
@@ -465,7 +477,7 @@ export function TechYearlyTrendChart({ skills = RESUME }: { skills?: string[] })
     },
     series: rows.map((m) => {
       const rising = m.delta >= 0
-      const col = rising ? '#2f61b8' : '#c8382d'
+      const col = rising ? '#0b0b0c' : '#c8382d'
       return {
         name: m.tech, type: 'line', data: m.shares, smooth: 0.2,
         symbol: 'circle', symbolSize: m.owned ? 7 : 5,
@@ -482,7 +494,7 @@ export function TechYearlyTrendChart({ skills = RESUME }: { skills?: string[] })
     <div>
       <ReactECharts option={option} style={{ height: 260 }} notMerge />
       <div className="ins-legend" style={{ marginTop: 4 }}>
-        <span><i style={{ background: '#2f61b8' }} /> 상승 · 보유는 굵은 선</span>
+        <span><i style={{ background: '#0b0b0c' }} /> 상승 · 보유는 굵은 선</span>
         <span><i style={{ background: '#c8382d' }} /> 하락</span>
       </div>
       <AsOf asOf={YEARLY.asOf} n={YEARLY.N} note={`${YEARLY.source} 단일 소스 · 소스 믹스 왜곡 배제`} />

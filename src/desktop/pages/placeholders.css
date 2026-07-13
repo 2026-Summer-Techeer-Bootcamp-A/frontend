@@ -1,20 +1,18 @@
 /* 데스크톱 페이지(공고·시장·지도·마이) — PC 최적화 레이아웃 틀. */
 
 .dpage {
-  max-width: 1360px;
+  max-width: 1520px;
+  margin: 0 auto;
   /* DesktopShell(.dshell)에는 .career 확장 토큰이 없어 보강한다. */
   --line: #e6e9ef;
-  --accent-50: #eef3fb;
-  --accent-100: #dde8f9;
-  --accent-200: #bcd0f0;
-  --accent-300: #8fb0e2;
-  --accent-700: #21447c;
+  --accent-50: #f0f0f1;
+  --accent-100: #e4e4e7;
+  --accent-200: #e4e4e7;
+  --accent-300: #a1a1aa;
+  --accent-700: #18181b;
   --e1: 0 1px 2px rgba(20, 30, 60, 0.05), 0 1px 1px rgba(20, 30, 60, 0.04);
   --e2: 0 2px 8px rgba(20, 30, 60, 0.06), 0 1px 2px rgba(20, 30, 60, 0.05);
 }
-.dpage__head { margin-bottom: 20px; }
-.dpage__title { font-size: 25px; font-weight: 800; letter-spacing: -0.8px; color: var(--c-ink); }
-.dpage__desc { margin-top: 6px; font-size: 14px; color: var(--c-muted); }
 .dpage__empty { font-size: 13.5px; color: var(--c-muted); padding: 20px 4px; text-align: center; }
 .dpage__more { font-size: 12.5px; font-weight: 700; color: var(--accent-700); }
 
@@ -40,14 +38,23 @@
 }
 .djobs__row + .djobs__row { margin-top: 2px; }
 .djobs__row:hover { background: var(--accent-50); }
-.djobs__row.on { background: var(--accent-100); }
+.djobs__row.on {
+  background: var(--accent-100);
+  border-left: 3px solid var(--c-accent);
+  padding-left: 7px;
+}
+.djobs__row.on .djobs__row-t { font-weight: 800; }
 .djobs__row-b { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .djobs__row-t { font-size: 13.5px; font-weight: 700; color: var(--c-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .djobs__row-c { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--c-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ── 공고 마스터-디테일 ── */
-.djobs__grid { display: grid; grid-template-columns: 264px minmax(0, 1fr) 360px; gap: 16px; align-items: start; }
-.djobs__filters { display: flex; flex-direction: column; gap: 16px; position: sticky; top: 0; }
+.djobs__grid { display: grid; grid-template-columns: 264px minmax(0, 1fr) 360px; gap: 16px; align-items: stretch; }
+.djobs__filters {
+  display: flex; flex-direction: column; gap: 16px;
+  height: calc(100dvh - 172px); overflow-y: auto; min-height: 0;
+  scrollbar-width: thin;
+}
 .djobs__search {
   display: flex; align-items: center; gap: 8px;
   border: 1px solid var(--line); border-radius: 11px; padding: 10px 12px; color: var(--c-muted);
@@ -62,9 +69,22 @@
 }
 .djobs__sorts button.on { color: var(--accent-700); background: var(--accent-50); border-color: var(--accent-200); }
 .djobs__count { font-size: 12.5px; color: var(--c-muted); }
-.djobs__list { max-height: calc(100dvh - 200px); overflow-y: auto; }
-.djobs__preview { position: sticky; top: 0; }
+.djobs__list {
+  height: calc(100dvh - 172px); overflow-y: auto; min-height: 0;
+  scrollbar-width: thin;
+}
+.djobs__preview {
+  height: calc(100dvh - 172px); overflow-y: auto; min-height: 0;
+  scrollbar-width: thin;
+}
 .djobs__pv-head { display: flex; align-items: center; justify-content: space-between; }
+.djobs__pv-head-r { display: flex; align-items: center; gap: 10px; }
+.djobs__pv-full {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: 8px; color: var(--c-muted);
+  cursor: pointer; transition: color 0.14s ease, background 0.14s ease;
+}
+.djobs__pv-full:hover { color: var(--c-ink); background: var(--accent-50); }
 .djobs__pv-title { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; color: var(--c-ink); margin-top: 14px; line-height: 1.3; }
 .djobs__pv-meta { font-size: 13px; color: var(--c-muted); margin-top: 6px; }
 .djobs__pv-sec { font-size: 12.5px; font-weight: 700; color: var(--c-muted); margin: 18px 0 10px; }
@@ -75,14 +95,32 @@
   background: var(--c-card); border: 1px solid var(--line); border-radius: 9px; padding: 5px 9px;
 }
 .djobs__tech.held { color: #1c7a4a; background: #eafaf1; border-color: #bfe7d0; }
-.djobs__pv-cta {
-  display: flex; align-items: center; justify-content: center; gap: 6px;
-  width: 100%; margin-top: 22px; height: 46px; border-radius: 13px;
-  font-size: 14.5px; font-weight: 700; color: #fff; background: var(--c-accent); box-shadow: var(--e2);
-  transition: transform 0.13s ease, background 0.15s ease;
+
+/* ── 프리뷰 인라인 탭(상세 공고 / 회사 정보) ── */
+.djobs__pv-tabs {
+  display: flex; gap: 20px;
+  border-bottom: 1px solid var(--line);
+  margin: 18px 0 12px;
 }
-.djobs__pv-cta:active { transform: scale(0.98); }
-.djobs__pv-cta:hover { background: var(--accent-700); }
+.djobs__pv-tab { font-size: 13px; color: var(--c-muted); padding-bottom: 9px; cursor: pointer; }
+.djobs__pv-tab.on { color: var(--c-ink); font-weight: 700; border-bottom: 2px solid var(--c-accent); }
+.djobs__pv-body p { font-size: 13px; line-height: 1.6; color: var(--c-muted); }
+.djobs__pv-dsec {
+  position: relative; font-weight: 700; font-size: 13.5px;
+  margin: 16px 0 8px; padding-left: 11px; color: var(--c-ink); letter-spacing: -0.3px;
+}
+.djobs__pv-dsec:first-child { margin-top: 0; }
+.djobs__pv-dsec::before {
+  content: ''; position: absolute; left: 0; top: 3px; bottom: 2px;
+  width: 3px; border-radius: 3px; background: var(--c-accent);
+}
+.djobs__pv-kv {
+  display: flex; justify-content: space-between; gap: 14px;
+  padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 13px;
+}
+.djobs__pv-kv span { color: var(--c-muted); flex: none; }
+.djobs__pv-kv b { text-align: right; overflow-wrap: anywhere; word-break: keep-all; min-width: 0; font-weight: 700; color: var(--c-ink); }
+.djobs__pv-link { color: var(--c-accent); font-weight: 600; }
 
 /* ── 시장 분석 보드 ── */
 .dmkt__grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; align-items: start; }
@@ -126,28 +164,84 @@
 .dmap__sel { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px; margin: 8px 0; border-radius: 12px; background: var(--accent-50); text-align: left; }
 .dmap__rows { flex: 1; min-height: 0; margin-top: 6px; }
 
-/* ── 마이 ── */
-.dmy__grid { display: flex; flex-direction: column; gap: 16px; max-width: 880px; }
-.dmy__profile { display: flex; align-items: center; gap: 14px; }
-.dmy__avatar {
-  flex: none; width: 56px; height: 56px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px; font-weight: 800; color: #fff;
-  background: linear-gradient(140deg, var(--c-accent), var(--accent-700)); box-shadow: var(--e1);
+/* ── 마이 — 대시보드/시장과 통일된 커맨드센터 톤: 큰 타이틀 + 검정 히어로 + 2컬럼 본문 ── */
+.dmy__head { display: flex; flex-direction: column; gap: 4px; margin-bottom: 16px; }
+.dmy__title { font-size: 34px; font-weight: 800; letter-spacing: -1px; line-height: 1.15; color: var(--c-ink); }
+.dmy__sub { font-size: 12.5px; color: var(--c-muted); }
+
+/* 상단 행 — 좌측 컴팩트 프로필 히어로 + 우측 활동 스탯을 한 줄에 나눠 배치(프로필 히어로가
+   더 이상 폭 전체를 차지하지 않도록). 좁은 화면에서는 세로로 쌓인다(아래 미디어쿼리). */
+.dmy__top { display: grid; grid-template-columns: minmax(0, 520px) 1fr; gap: 16px; align-items: stretch; margin-bottom: 16px; }
+
+/* 프로필 히어로 — 대시보드 검정 히어로(kit-heroStat)와 톤 일치. 슬레이트블루 금지, 순수 흑백.
+   컴팩트화: 폭을 520px로 제한하고 패딩·아바타 크기를 줄여 슬림한 프로필 바로 만든다. */
+.dmy__hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #0d0d0d;
+  color: #fff;
+  border-radius: 16px;
+  padding: 16px 18px;
+  min-width: 0;
 }
-.dmy__id { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.dmy__nm { font-size: 17px; font-weight: 800; color: var(--c-ink); }
-.dmy__em { font-size: 13px; color: var(--c-muted); }
-.dmy__edit { flex: none; font-size: 12.5px; font-weight: 700; color: var(--accent-700); border: 1px solid var(--accent-200); border-radius: 10px; padding: 8px 13px; transition: transform 0.12s ease; }
-.dmy__edit:active { transform: scale(0.96); }
-.dmy__resume { display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; margin-top: 4px; }
+.dmy__hero-avatar {
+  flex: none; width: 44px; height: 44px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 800; color: #0d0d0d; background: #fff;
+}
+.dmy__hero-id { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.dmy__hero-nm { font-size: 16px; font-weight: 800; letter-spacing: -0.3px; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dmy__hero-em { font-size: 12px; color: rgba(255, 255, 255, 0.6); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dmy__hero-stats { display: flex; align-items: center; gap: 12px; margin-top: 3px; flex-wrap: wrap; }
+.dmy__hero-stats span { font-size: 11.5px; color: rgba(255, 255, 255, 0.6); white-space: nowrap; }
+.dmy__hero-stats b { font-size: 12.5px; font-weight: 800; color: #fff; margin-right: 2px; }
+.dmy__hero-edit {
+  flex: none; font-size: 12px; font-weight: 700; color: #fff;
+  background: rgba(255, 255, 255, 0.14); border-radius: 9px; padding: 8px 13px;
+  transition: transform 0.12s ease, background 0.14s ease;
+}
+.dmy__hero-edit:hover { background: rgba(255, 255, 255, 0.22); }
+.dmy__hero-edit:active { transform: scale(0.96); }
+
+/* 2컬럼 본문 */
+.dmy__body { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; align-items: start; }
+.dmy__main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.dmy__aside { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+
+.dmy__resume { display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; margin-top: 12px; }
 .dmy__resume-ic { flex: none; width: 40px; height: 40px; border-radius: 11px; display: flex; align-items: center; justify-content: center; color: var(--accent-700); background: var(--accent-50); }
+.dmy__resume-empty { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 12px; }
+.dmy__resume-empty span { font-size: 13px; color: var(--c-muted); }
+.dmy__resume-btn { flex: none; font-size: 12.5px; font-weight: 700; color: #fff; background: var(--c-accent); border-radius: 10px; padding: 9px 15px; transition: transform 0.12s ease, opacity 0.12s ease; }
+.dmy__resume-btn:active { transform: scale(0.96); opacity: 0.85; }
+
 .dmy__skills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.dmy__manage {
+  font-size: 12.5px; font-weight: 700; color: var(--accent-700);
+  background: var(--accent-50); border-radius: 999px; padding: 6px 12px;
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+.dmy__manage:hover { background: var(--accent-100); }
+.dmy__manage:active { transform: scale(0.96); }
+
+/* 북마크한 공고 — 맞춤 공고와 동일한 2열 컴팩트 카드 그리드 */
+.dmy__jobs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+.dmy__jobs > * { min-width: 0; }
+.dmy__more-txt { font-size: 12px; color: var(--c-muted); text-align: center; margin-top: 10px; }
+
+/* 활동 요약 stat 타일 — 상단 행에서 프로필 히어로 옆자리를 차지(.dmy__top 참고) */
+.dmy__stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; min-width: 0; }
+
+/* 최근 본 공고 — 컴팩트 리스트 */
+.dmy__recent { display: flex; flex-direction: column; margin-top: 10px; }
 
 /* 좁은 폭 대응 */
 @media (max-width: 1180px) {
   .djobs__grid { grid-template-columns: 1fr 340px; }
-  .djobs__filters { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; position: static; align-items: center; }
+  .djobs__filters { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; align-items: center; height: auto; overflow-y: visible; }
   .dmkt__grid, .dmap__grid { grid-template-columns: 1fr; }
   .dmkt__quad { grid-row: auto; }
+  .dmy__top { grid-template-columns: 1fr; }
+  .dmy__body { grid-template-columns: 1fr; }
 }

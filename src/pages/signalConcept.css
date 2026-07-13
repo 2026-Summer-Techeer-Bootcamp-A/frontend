@@ -20,7 +20,7 @@
   --on: #f4f6fb;
   --on-muted: #8b90a0;
   /* 블루 */
-  --blue: #2f61b8;
+  --blue: #0b0b0c;
   --blue-hover: #28539c;
   --blue-tint: #eef3fb;
   --blue-on: #5a86cf;
@@ -347,7 +347,7 @@
   flex: none;
 }
 .scm-chip--strong i {
-  background: radial-gradient(circle at 38% 34%, #7ba0dd, #2f61b8);
+  background: radial-gradient(circle at 38% 34%, #7ba0dd, #0b0b0c);
   box-shadow: 0 0 0 2px rgba(90, 134, 207, 0.25);
 }
 .scm-chip--partial i {
@@ -452,14 +452,14 @@
 .scm-ring--1 { stroke-dasharray: 2 4; }
 .scm-spoke { stroke: var(--hair); stroke-width: 1; }
 .scm-poly {
-  fill: rgba(47, 97, 184, 0.16);
+  fill: rgba(11, 11, 12, 0.16);
   stroke: var(--blue);
   stroke-width: 2;
   stroke-linejoin: round;
   animation: scm-fade 300ms cubic-bezier(0, 0, 0.2, 1) both;
 }
 .scm-node--2 {
-  fill: #2f61b8;
+  fill: #0b0b0c;
   stroke: #fff;
   stroke-width: 1.5;
 }
@@ -490,7 +490,7 @@
   color: var(--muted);
 }
 .scm-rl i { width: 9px; height: 9px; border-radius: 50%; flex: none; }
-.scm-rl .l2 { background: #2f61b8; }
+.scm-rl .l2 { background: #0b0b0c; }
 .scm-rl .l1 { background: #6f9ad8; }
 .scm-rl .l0 { background: #b7bdc8; }
 

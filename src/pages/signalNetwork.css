@@ -20,7 +20,7 @@
   --on: #f4f6fb;
   --on-muted: #8b90a0;
   /* 블루 */
-  --blue: #2f61b8;
+  --blue: #0b0b0c;
   --blue-hover: #28539c;
   --blue-tint: #eef3fb;
   --blue-on: #5a86cf;
@@ -225,7 +225,7 @@
   border-color: #34405a;
 }
 .sn-toggle.is-on .sn-toggle__dot {
-  background: radial-gradient(circle at 38% 34%, #7ba0dd, #2f61b8);
+  background: radial-gradient(circle at 38% 34%, #7ba0dd, #0b0b0c);
   box-shadow: 0 0 0 3px rgba(90, 134, 207, 0.22);
 }
 
@@ -351,7 +351,7 @@
   flex: none;
 }
 .sn-pill__dot.is-owned {
-  background: radial-gradient(circle at 38% 34%, #7ba0dd, #2f61b8);
+  background: radial-gradient(circle at 38% 34%, #7ba0dd, #0b0b0c);
   box-shadow: 0 0 0 2px rgba(90, 134, 207, 0.25);
 }
 .sn-pill__dot.is-gap {
@@ -449,7 +449,7 @@
   flex: none;
 }
 .sg-chip--owned i {
-  background: radial-gradient(circle at 38% 34%, #7ba0dd, #2f61b8);
+  background: radial-gradient(circle at 38% 34%, #7ba0dd, #0b0b0c);
   box-shadow: 0 0 0 2px rgba(90, 134, 207, 0.25);
 }
 .sg-chip--gap i {

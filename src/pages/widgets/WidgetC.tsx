@@ -105,7 +105,7 @@ export default function WidgetC() {
           </div>
           <svg viewBox={`0 0 ${W} ${H}`} className="wg-c__svg" preserveAspectRatio="none">
             {/* 문턱 오른쪽 음영 */}
-            <rect x={thrX} y={PAD_T} width={PAD_L + plotW - thrX} height={plotH} fill="rgba(47,97,184,0.05)" />
+            <rect x={thrX} y={PAD_T} width={PAD_L + plotW - thrX} height={plotH} fill="rgba(11, 11, 12,0.05)" />
             {/* y축 그리드라인 + 눈금(공고 수) */}
             {yTicks.map((t) => (
               <g key={t.frac}>

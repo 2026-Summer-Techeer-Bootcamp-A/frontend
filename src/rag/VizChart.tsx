@@ -4,7 +4,7 @@ import type { EChartsOption } from 'echarts'
 import type { Viz } from './demoScenarios'
 
 // 슬레이트 블루 단일 액센트 + 쿨 그레이. 순회 서브그래프 대신 시나리오별 정적 차트를 담담히 보여준다.
-const ACCENT = '#2f61b8'
+const ACCENT = '#0b0b0c'
 const SERIES = [ACCENT, '#8fb0e2', '#bcd0f0', '#dde8f9']
 const GRID = '#eef1f6'
 const AXIS = '#e2e5ec'
@@ -23,7 +23,7 @@ function buildOption(v: Viz): EChartsOption {
         yAxis: { type: 'value', scale: true, splitLine: { lineStyle: { color: GRID } }, axisLabel: { color: MUTED, fontSize: 10 } },
         series: [{ type: 'line', smooth: true, symbol: 'circle', symbolSize: 5, data: v.points.map((p) => p.y),
           lineStyle: { color: ACCENT, width: 2.4 }, itemStyle: { color: ACCENT },
-          areaStyle: { color: 'rgba(47,97,184,0.08)' } }],
+          areaStyle: { color: 'rgba(11, 11, 12,0.08)' } }],
       }
     case 'bar':
       return {
@@ -40,7 +40,7 @@ function buildOption(v: Viz): EChartsOption {
           splitLine: { lineStyle: { color: AXIS } }, axisLine: { lineStyle: { color: AXIS } },
           splitArea: { show: false }, axisName: { color: MUTED, fontSize: 10 } },
         series: [{ type: 'radar', data: [{ value: v.values,
-          areaStyle: { color: 'rgba(47,97,184,0.14)' }, lineStyle: { color: ACCENT }, itemStyle: { color: ACCENT } }] }],
+          areaStyle: { color: 'rgba(11, 11, 12,0.14)' }, lineStyle: { color: ACCENT }, itemStyle: { color: ACCENT } }] }],
       }
     case 'donut':
       return {

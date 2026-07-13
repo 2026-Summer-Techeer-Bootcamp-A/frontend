@@ -19,7 +19,7 @@ export default function SettingsAbout() {
       <div className="kit-menulist" style={{ marginTop: 8 }}>
         <MenuRow icon={<Star size={18} />} tint="#c76a2e" label="앱 평가하기" onClick={() => show('준비 중이에요')} />
         <MenuRow icon={<ScrollText size={18} />} tint="#7c7f88" label="오픈소스 라이선스" onClick={() => show('준비 중이에요')} />
-        <MenuRow icon={<Mail size={18} />} tint="#2f61b8" label="문의하기" onClick={() => show('준비 중이에요')} />
+        <MenuRow icon={<Mail size={18} />} tint="#0b0b0c" label="문의하기" onClick={() => show('준비 중이에요')} />
       </div>
 
       <div className="ss-about__note">

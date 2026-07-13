@@ -16,17 +16,18 @@ export type Resume = {
 const STORAGE_KEY_RESUMES = 'techeer_resumes'
 const STORAGE_KEY_ACTIVE_ID = 'techeer_active_resume_id'
 
+// 이력서는 1개만 유지한다(단일화). 저장된 배열이 여러 개여도 첫 항목만 사용한다.
 // Initialize local storage if empty
 export function getSavedResumes(): Resume[] {
   const saved = localStorage.getItem(STORAGE_KEY_RESUMES)
   if (saved) {
     try {
-      return JSON.parse(saved)
+      return (JSON.parse(saved) as Resume[]).slice(0, 1)
     } catch (e) {
       // ignore
     }
   }
-  return data.resumes as Resume[]
+  return (data.resumes as Resume[]).slice(0, 1)
 }
 
 export function saveResumes(resumes: Resume[]) {
@@ -151,8 +152,9 @@ export function useResumesState() {
     saveActiveResumeId(id)
   }
 
+  // 단일화: 새 이력서는 기존 것을 대체한다(추가하지 않음).
   const addResume = (newResume: Resume) => {
-    const updated = [...resumes, newResume]
+    const updated = [newResume]
     saveResumes(updated)
     saveActiveResumeId(newResume.id)
   }

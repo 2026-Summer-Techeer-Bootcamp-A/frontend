@@ -365,8 +365,8 @@
 .scr-map__grid {
   position: absolute;
   inset: 0;
-  background-image: linear-gradient(rgba(47, 97, 184, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(47, 97, 184, 0.05) 1px, transparent 1px);
+  background-image: linear-gradient(rgba(11, 11, 12, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(11, 11, 12, 0.05) 1px, transparent 1px);
   background-size: 32px 32px;
 }
 .scr-pin {
@@ -380,7 +380,7 @@
   font-weight: 800;
   color: #fff;
   background: var(--c-accent);
-  box-shadow: 0 3px 8px -1px rgba(47, 97, 184, 0.55), 0 0 0 3px rgba(255, 255, 255, 0.9);
+  box-shadow: 0 3px 8px -1px rgba(11, 11, 12, 0.55), 0 0 0 3px rgba(255, 255, 255, 0.9);
   cursor: pointer;
   font-variant-numeric: tabular-nums;
   z-index: 2;
@@ -393,7 +393,7 @@
   position: absolute;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(47, 97, 184, 0.5) 0%, rgba(47, 97, 184, 0) 70%);
+  background: radial-gradient(circle, rgba(11, 11, 12, 0.5) 0%, rgba(11, 11, 12, 0) 70%);
   pointer-events: none;
 }
 .scr-map__banner {
@@ -629,7 +629,7 @@
 .lpin:active { transform: scale(0.9); }
 .lpin.strong {
   background: var(--c-accent);
-  box-shadow: 0 4px 11px -2px rgba(47, 97, 184, 0.55), 0 0 0 3px rgba(255, 255, 255, 0.96);
+  box-shadow: 0 4px 11px -2px rgba(11, 11, 12, 0.55), 0 0 0 3px rgba(255, 255, 255, 0.96);
 }
 .lpin--me {
   width: 22px; height: 22px; border-radius: 50%;
@@ -693,7 +693,7 @@
   transition: transform 0.12s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 .lfab:active { transform: scale(0.92); }
-.lfab.primary { background: var(--c-primary); color: #fff; border-color: transparent; box-shadow: 0 6px 16px -4px rgba(47, 97, 184, 0.6); }
+.lfab.primary { background: var(--c-primary); color: #fff; border-color: transparent; box-shadow: 0 6px 16px -4px rgba(11, 11, 12, 0.6); }
 
 /* ---- 검색 입력 + 자동완성 드롭다운 ---- */
 .lmap__search input {
@@ -803,11 +803,11 @@
 .dsub {
   max-width: 920px;
   --line: #e6e9ef;
-  --accent-50: #eef3fb;
-  --accent-100: #dde8f9;
-  --accent-200: #bcd0f0;
-  --accent-300: #8fb0e2;
-  --accent-700: #21447c;
+  --accent-50: #f0f0f1;
+  --accent-100: #e4e4e7;
+  --accent-200: #e4e4e7;
+  --accent-300: #a1a1aa;
+  --accent-700: #18181b;
   --e1: 0 1px 2px rgba(20, 30, 60, 0.05), 0 1px 1px rgba(20, 30, 60, 0.04);
   --e2: 0 2px 8px rgba(20, 30, 60, 0.06), 0 1px 2px rgba(20, 30, 60, 0.05);
   --e3: 0 8px 24px rgba(20, 30, 60, 0.08), 0 2px 6px rgba(20, 30, 60, 0.05);
@@ -862,7 +862,7 @@
   font-weight: 700;
   transition: transform 0.12s ease, background 0.15s ease;
 }
-.djd-apply:hover { background: var(--accent-700, #21447c); }
+.djd-apply:hover { background: var(--accent-700, #18181b); }
 .djd-apply:active { transform: scale(0.98); }
 .djd-bookmark {
   flex: none;
@@ -1050,19 +1050,19 @@
   display: flex; align-items: center; gap: 8px; width: 100%; text-align: left;
   padding: 8px 9px; border-radius: 8px;
 }
-.demo-remote__item:hover { background: #eef3fb; }
+.demo-remote__item:hover { background: #f0f0f1; }
 .demo-remote__label { flex: 1; min-width: 0; font-size: 13px; color: #1c1d21; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .demo-remote__path {
   flex: none; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 10.5px; color: #4a7bd0; background: #eef3fb; border-radius: 5px; padding: 2px 6px;
+  font-size: 10.5px; color: #a1a1aa; background: #f0f0f1; border-radius: 5px; padding: 2px 6px;
 }
 .demo-remote__gallery {
   display: flex; align-items: center; justify-content: center; gap: 6px;
   width: 100%; margin-top: 6px; padding: 10px; border-radius: 9px;
-  font-size: 12.5px; font-weight: 700; color: #fff; background: #2f61b8;
+  font-size: 12.5px; font-weight: 700; color: #fff; background: #0b0b0c;
   border-top: none;
 }
-.demo-remote__gallery:hover { background: #28539c; }
+.demo-remote__gallery:hover { background: #3f3f46; }
 
 /* 데모 모드(오토플레이) — 프레임 밖 뷰포트 우하단 고정 */
 .demo-mode-fab {
@@ -1074,7 +1074,7 @@
   transition: transform 0.12s cubic-bezier(0.25, 0.1, 0.25, 1), background 0.2s;
 }
 .demo-mode-fab:active { transform: scale(0.95); }
-.demo-mode-fab.on { background: var(--c-accent, #2f61b8); }
+.demo-mode-fab.on { background: var(--c-accent, #0b0b0c); }
 .demo-mode-fab.on svg { animation: demo-fab-pulse 1.4s ease-in-out infinite; }
 @keyframes demo-fab-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
 
