@@ -12,9 +12,9 @@ import JobSheet from './JobSheet'
 import { MiniJobCard, MiniJobSkeleton, DynamicDock, BottomSheet, SegmentedControl } from './kit'
 import { LocationPermissionSheet } from './states'
 import { THEME, themeVars } from './themes'
-import { useResumesState, getDynamicPostings, useSavedJobs, jobKey, ddayInfo } from './state'
-import market from '../data/marketData.json'
+import { useResumesState, getDynamicPostings, useSavedJobs, jobKey } from './state'
 import data from '../data/careerData.json'
+import { recruitmentApi, type PostingMapDto } from './recruitmentApi'
 import './career.css'
 import './screens.css'
 
@@ -23,9 +23,7 @@ type Pin = {
   district: string; matchPct: number; tier: string | null; held: number; total: number; logo: string
   dday: number | null
 }
-type Cluster = { district: string; count: number; avgMatch: number; lat: number; lng: number }
 type Entry = { key: string; lat: number; lng: number; jobs: Pin[] }
-const MAP = market.map as { asOf: string; N: number; note: string; pins: Omit<Pin, 'dday'>[]; clusters: Cluster[] }
 // 서울+수도권(경기)까지 포함하도록 확장 — 공고 50건 추가분 중 성남/화성/용인/수원 등이 여기 포함된다.
 const B = { latMin: 37.20, latMax: 37.75, lngMin: 126.70, lngMax: 127.30 }
 const ME: [number, number] = [37.503, 127.045]
@@ -37,8 +35,6 @@ const CLUSTER_RADIUS_PX = 60
 const JITTER_Y: Record<number, number[]> = { 2: [-15, 15], 3: [-22, 0, 22] }
 type Job = (typeof data.postings)[number]
 const tierClass = (t: string | null) => (t === '대기업' ? 't1' : t === '중견' ? 't2' : 't3')
-const POSTINGS_BY_ID = new Map(data.postings.map((p) => [p.id, p]))
-const AS_OF = data.meta.asOf
 const TIERS = ['대기업', '중견', '중소'] as const
 const MATCH_STEPS = [0, 30, 50, 70] as const
 
@@ -84,6 +80,7 @@ export default function MapScreen() {
   const [sel, setSel] = useState<Job | null>(null)
   const [visible, setVisible] = useState<Pin[]>([])
   const [loading, setLoading] = useState(false)
+  const [mapData, setMapData] = useState<PostingMapDto | null>(null)
   const [menu, setMenu] = useState<{ pins: Pin[] } | null>(null)
   const [menuSort, setMenuSort] = useState<'match' | 'deadline'>('match')
   // 독이 접히는 동안에도 리스트가 유지되도록 마지막 값을 붙잡아 둔다(내용이 먼저 사라지는 점프 방지).
@@ -109,22 +106,38 @@ export default function MapScreen() {
   const dynamicPostings = useMemo(() => getDynamicPostings(activeSkills), [activeSkills])
   const { savedKeys } = useSavedJobs()
 
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    const numericResumeId = Number(activeResume?.id)
+    recruitmentApi.map(Number.isInteger(numericResumeId) ? { resume_id: numericResumeId } : {})
+      .then((result) => { if (!cancelled) setMapData(result) })
+      .catch(() => { if (!cancelled) setMapData({ pins: [], heatmap: [], clusters: [], as_of: '' }) })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [activeResume?.id])
+
   // 핀 → 실제 공고 찾아 리치 시트 열기
   const openPin = (p: Pin) => {
-    setSel(dynamicPostings.find((x) => x.company === p.company && x.title === p.title) ?? null)
+    setSel((dynamicPostings.find((x) => x.company === p.company && x.title === p.title) ?? {
+      id: p.id, company: p.company, title: p.title, pool: '국내', tier: null, logo: '',
+      techs: [], matchHeld: p.held, matchTotal: p.total, matchPct: p.matchPct, gap: [],
+      postDate: '', closeDate: '', careerMin: null, careerMax: null, region: p.district,
+    }) as Job)
     setMenu(null)
   }
 
   const pins = useMemo(() => {
-    return MAP.pins.filter((p) => p.lat >= B.latMin && p.lat <= B.latMax && p.lng >= B.lngMin && p.lng <= B.lngMax)
-      .map((p) => {
-        const post = dynamicPostings.find((x) => x.company === p.company && x.title === p.title)
-        const dd = ddayInfo(POSTINGS_BY_ID.get(p.id)?.closeDate || '', AS_OF)
-        return { ...p, matchPct: post ? post.matchPct : p.matchPct, dday: dd?.d ?? null }
-      })
-  }, [dynamicPostings])
+    return (mapData?.pins ?? []).filter((p) => p.lat >= B.latMin && p.lat <= B.latMax && p.lng >= B.lngMin && p.lng <= B.lngMax)
+      .map((p) => ({
+        id: String(p.id), lat: p.lat, lng: p.lng, company: p.company ?? '회사명 미상', title: p.title,
+        district: '', matchPct: Math.round(p.match_pct ?? 0), tier: null, held: p.matched_count ?? 0,
+        total: p.required_count ?? 0, logo: '', dday: null,
+      }))
+  }, [mapData])
 
-  const clusters = useMemo(() => MAP.clusters.filter((c) => c.lat >= B.latMin && c.lat <= B.latMax), [])
+  const clusters = useMemo(() => (mapData?.clusters ?? []).filter((c) => c.lat >= B.latMin && c.lat <= B.latMax)
+    .map((c) => ({ district: c.district, count: c.count, avgMatch: Math.round(c.avg_match_pct ?? 0), lat: c.lat, lng: c.lng })), [mapData])
 
   // 필터 적용(기업 규모 · 매칭 최소치 · 마감임박만)
   const filteredPins = useMemo(() => pins.filter((p) => (
