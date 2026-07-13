@@ -50,6 +50,15 @@
 }
 .djobs__resume-active svg { flex-shrink: 0; }
 
+.djobs__techgroups { display: flex; flex-direction: column; gap: 10px; }
+.djobs__techgroup-l {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--c-muted);
+  margin-bottom: 5px;
+}
 .djobs__chiprow {
   display: flex;
   flex-wrap: wrap;
