@@ -271,14 +271,18 @@ export function DesktopJobs() {
   useEffect(() => setPvTab('desc'), [sel?.id])
 
   useEffect(() => {
-    if (pvTab !== 'company' || !sel?.id) return
+    if (!sel?.id) {
+      setSelectedDetail(null)
+      return
+    }
     let cancelled = false
     setSelectedDetail(null)
+
     jobsApi.detail(sel.id)
       .then((result) => { if (!cancelled) setSelectedDetail(result) })
       .catch(() => undefined)
     return () => { cancelled = true }
-  }, [pvTab, sel?.id])
+  }, [sel?.id])
 
   const toggleTech = (t: string) => setTechFilter((s) => {
     const next = new Set(s)
