@@ -154,6 +154,26 @@
   flex-wrap: wrap;
 }
 
+.jobs-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 16px 10px 4px;
+  border-top: 1px solid var(--line);
+}
+.jobs-pagination__size { display: flex; align-items: center; gap: 7px; color: var(--c-muted); font-size: 12px; }
+.jobs-pagination__size select { border: 1px solid var(--line); border-radius: 8px; background: var(--c-card); padding: 6px 8px; color: var(--c-ink); }
+.jobs-pagination__pages { display: flex; align-items: center; gap: 4px; }
+.jobs-pagination__pages button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 2px;
+  min-width: 30px; height: 30px; padding: 0 7px; border: 1px solid var(--line);
+  border-radius: 8px; background: var(--c-card); color: var(--c-muted); font-size: 12px;
+}
+.jobs-pagination__pages button.on { border-color: var(--accent-200); background: var(--accent-50); color: var(--accent-700); font-weight: 700; }
+.jobs-pagination__pages button:disabled { cursor: default; opacity: .4; }
+
 .djobs__badge {
   display: inline-flex;
   align-items: center;
