@@ -45,6 +45,7 @@ export const MARKET_WIDGETS: WidgetCatalogItem[] = [
   { id: 'hot-companies', label: '이번 달 활발 기업', shape: 'bars', allowedSizes: ['1x1', '2x1'], defaultSize: '2x1' },
   { id: 'region-density', label: '지역별 공고 밀도', shape: 'bars', allowedSizes: ['1x1', '2x1'], defaultSize: '2x1' },
   { id: 'tier-donut', label: '기업 규모 분포', shape: 'ring', allowedSizes: ['1x1'], defaultSize: '1x1' },
+  { id: 'posting-calendar', label: '채용 공고 등록 캘린더', shape: 'line', allowedSizes: ['2x1'], defaultSize: '2x1' },
   { id: 'hype-vs-hire', label: 'Hype vs Hire', shape: 'scatter', allowedSizes: ['2x1', '2x2'], defaultSize: '2x2' },
   { id: 'competency', label: '회사가 원하는 역량', shape: 'bars', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
   { id: 'response-rate', label: '응답 잘 오는 회사', shape: 'stat', allowedSizes: ['1x1', '2x1'], defaultSize: '2x1' },

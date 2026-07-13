@@ -80,6 +80,9 @@
 
 /* 기업 · 역량 — 카드 크기에 맞춰 2~3열로 채워지는 auto-fill */
 .dmkt2__sec-grid--company { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+.dmkt2__card-item--calendar { grid-column: 1 / -1; height: auto; }
+.dmkt2__card-item--calendar > .dcard { flex: none; height: auto; }
+.dcard--posting-calendar { padding: 14px 16px 12px; }
 
 /* 구조 · 탐색 — 무거운 탐색 그래프 2등분(진행적 공개로 펼쳤을 때만 렌더) */
 .dmkt2__sec-grid--explore { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -149,6 +152,48 @@
 .dmkt2__donut-legend { display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 600; color: var(--c-muted); }
 .dmkt2__donut-legend span { display: flex; align-items: center; gap: 6px; }
 .dmkt2__donut-legend i { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+
+/* 채용 공고 등록 캘린더 — GitHub contribution graph처럼 주(열) × 요일(행)로 날짜별 공고량을 표시. */
+.dmkt2__calendar { display: flex; flex-direction: column; min-width: 0; margin-top: 8px; }
+.dmkt2__calendar-state { display: flex; min-height: 112px; align-items: center; justify-content: center; gap: 10px; color: var(--c-muted); font-size: 12px; }
+.dmkt2__calendar-state--error { color: #a33a3a; }
+.dmkt2__calendar-state button { border: 1px solid var(--line-strong, #cfd3da); border-radius: 7px; padding: 5px 9px; background: #fff; color: var(--c-ink); font: inherit; font-weight: 700; cursor: pointer; }
+.dmkt2__calendar-state button:hover { background: #f5f6f8; }
+.dmkt2__calendar-summary { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; color: var(--c-muted); font-size: 11px; }
+.dmkt2__calendar-summary strong { color: var(--c-ink); font-size: 16px; font-weight: 800; letter-spacing: -0.3px; }
+.dmkt2__calendar-summary span + span::before { content: '·'; margin-right: 10px; color: var(--line-strong, #cfd3da); }
+.dmkt2__calendar-scroll { min-width: 0; overflow-x: auto; padding: 1px 0 4px; outline: none; scrollbar-width: thin; }
+.dmkt2__calendar-scroll:focus-visible { border-radius: 8px; box-shadow: 0 0 0 2px var(--accent-100); }
+.dmkt2__calendar-chart { width: max-content; min-width: 100%; }
+.dmkt2__calendar-months { display: grid; column-gap: 3px; min-height: 15px; font-size: 10px; color: var(--c-muted); }
+.dmkt2__calendar-months span { white-space: nowrap; }
+.dmkt2__calendar-month-spacer { width: 26px; }
+.dmkt2__calendar-body { display: flex; gap: 5px; }
+.dmkt2__calendar-weekdays { flex: none; width: 21px; display: grid; grid-template-rows: repeat(7, 11px); row-gap: 3px; font-size: 9px; line-height: 11px; color: var(--c-muted); }
+.dmkt2__calendar-weeks { display: flex; gap: 3px; }
+.dmkt2__calendar-week { display: grid; grid-template-rows: repeat(7, 11px); row-gap: 3px; }
+.dmkt2__calendar-day,
+.dmkt2__calendar-legend i { width: 11px; height: 11px; border: 1px solid rgba(27, 31, 36, 0.08); border-radius: 2px; background: #eef1f4; }
+.dmkt2__calendar-day { display: block; transition: transform 0.12s ease, box-shadow 0.12s ease; }
+.dmkt2__calendar-day:hover { position: relative; z-index: 1; transform: scale(1.18); box-shadow: 0 0 0 2px #fff, 0 1px 5px rgba(0, 0, 0, 0.2); }
+.dmkt2__calendar-day.level-1,
+.dmkt2__calendar-legend i.level-1 { background: #b7e4c7; }
+.dmkt2__calendar-day.level-2,
+.dmkt2__calendar-legend i.level-2 { background: #74c69d; }
+.dmkt2__calendar-day.level-3,
+.dmkt2__calendar-legend i.level-3 { background: #2d9d5b; }
+.dmkt2__calendar-day.level-4,
+.dmkt2__calendar-legend i.level-4 { background: #116329; }
+.dmkt2__calendar-day.has-postings { border-color: rgba(17, 99, 41, 0.38); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18); }
+.dmkt2__calendar-day.is-future { visibility: hidden; }
+.dmkt2__calendar-foot { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 2px; color: var(--c-muted); font-size: 10px; }
+.dmkt2__calendar-legend { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.dmkt2__calendar-legend i { display: inline-block; width: 11px; height: 11px; }
+
+@media (max-width: 720px) {
+  .dmkt2__calendar-summary { flex-wrap: wrap; gap: 6px 10px; }
+  .dmkt2__calendar-foot { align-items: flex-start; flex-direction: column; gap: 8px; }
+}
 
 /* 수요 × 빈도 분포 — 순수 시장 산점도(보유/미보유 이분법 없음) */
 .dmkt2__scatter { display: flex; flex-direction: column; flex: 1; margin-top: 6px; }
