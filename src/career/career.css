@@ -1391,3 +1391,16 @@
   font-weight: 700; font-size: 13px; padding: 6px 4px;
 }
 .cr-morebtn:active { opacity: 0.6; }
+
+/* 이력서 편집 — 데스크톱 2단(좌 설정 / 우 실 이력서 미리보기) */
+.rpv-grid { display: grid; grid-template-columns: minmax(0, 560px) minmax(320px, 420px); gap: 28px; align-items: start; }
+.rpv-settings { min-width: 0; }
+.rpv-preview { position: sticky; top: 24px; }
+.rpv-card { background: #fff; border: 1px solid var(--c-border, #e5e5e8); border-radius: 16px; padding: 28px 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+.rpv-title { font-size: 20px; font-weight: 700; }
+.rpv-meta { margin-top: 4px; color: var(--c-muted, #6b6b70); font-size: 13px; }
+.rpv-section { margin-top: 20px; }
+.rpv-section__label { font-size: 12px; font-weight: 600; color: var(--c-muted, #6b6b70); text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 8px; }
+.rpv-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.rpv-chip { background: #f2f2f4; border-radius: 999px; padding: 4px 10px; font-size: 12.5px; }
+.rpv-empty { color: var(--c-muted, #6b6b70); font-size: 12.5px; }
