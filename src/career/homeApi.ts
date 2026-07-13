@@ -23,6 +23,9 @@ export type FeedPostingDto = {
   skills: string[]
   url: string
   match: FeedMatchDto | null
+  career_min: number | null
+  career_max: number | null
+  response_rate: number | null
 }
 
 export type FeedResponseDto = {
@@ -94,8 +97,17 @@ async function get<T>(path: string, params: Record<string, string | number | boo
 }
 
 export const homeApi = {
-  feed: (params: { page?: number; page_size?: number; pool?: string; category?: string } = {}) =>
-    get<FeedResponseDto>('/feed/postings', params),
+  feed: (
+    params: {
+      page?: number
+      page_size?: number
+      pool?: string
+      category?: string
+      district?: string
+      deadline_within_days?: number
+      min_match?: number
+    } = {},
+  ) => get<FeedResponseDto>('/feed/postings', params),
   news: (source: NewsSource, limit = 15) => get<NewsResponseDto>('/news', { source, limit }),
   postingTimeline: (pool: string, days = 7, resumeId?: number) =>
     get<PostingTimelineDto>('/stats/posting-timeline', { pool, days, resume_id: resumeId }),

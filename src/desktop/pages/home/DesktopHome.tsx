@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Search } from 'lucide-react'
+import { Search, SlidersHorizontal } from 'lucide-react'
 import { useAuth } from '../../../career/authStore'
+import { useResumesState } from '../../../career/state'
 import { homeApi, type FeedPostingDto } from '../../../career/homeApi'
 import { jobsApi } from '../../../career/api'
 import HomeLeftColumn from './HomeLeftColumn'
 import HomeFeedCard from './HomeFeedCard'
 import HomeNewsPanel from './HomeNewsPanel'
+import HomeFilterPopover, { type HomeFilterValues } from './HomeFilterPopover'
 import './DesktopHome.css'
 
 const PAGE_SIZE = 20
@@ -57,7 +59,9 @@ function FeedCardSkeleton() {
 
 export default function DesktopHome() {
   const { isAuthed } = useAuth()
-  const [pool, setPool] = useState<PoolFilter>('all')
+  const { activeResume } = useResumesState()
+  // 기본 풀은 국내 — 순서도 국내/해외/전체로 노출한다(2026-07-13 사용자 피드백).
+  const [pool, setPool] = useState<PoolFilter>('domestic')
   const [category, setCategory] = useState<string | undefined>(undefined)
   const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES)
   const [items, setItems] = useState<FeedPostingDto[]>([])
@@ -67,6 +71,22 @@ export default function DesktopHome() {
   const [error, setError] = useState(false)
   const [asOf, setAsOf] = useState<string>(() => new Date().toISOString().slice(0, 10))
   const sentinelRef = useRef<HTMLDivElement>(null)
+
+  // 상세 필터 — 검색 페이지(DesktopJobs)의 지역/마감임박/매치율 하한 파라미터를 그대로 미러링.
+  const [district, setDistrict] = useState('')
+  const [deadlineWithinDays, setDeadlineWithinDays] = useState<number | undefined>(undefined)
+  const [minMatch, setMinMatch] = useState<number | undefined>(undefined)
+  const [filterPopoverOpen, setFilterPopoverOpen] = useState(false)
+  // min_match는 로그인 + 활성 이력서가 있을 때만 의미가 있다.
+  const showMinMatch = isAuthed && !!activeResume
+  const appliedFilterCount =
+    (district.trim() ? 1 : 0) + (deadlineWithinDays != null ? 1 : 0) + (showMinMatch && minMatch != null ? 1 : 0)
+
+  const applyFilterPopover = (next: HomeFilterValues) => {
+    setDistrict(next.district)
+    setDeadlineWithinDays(next.deadlineWithinDays)
+    setMinMatch(showMinMatch ? next.minMatch : undefined)
+  }
 
   useEffect(() => {
     jobsApi
@@ -90,6 +110,9 @@ export default function DesktopHome() {
           page_size: PAGE_SIZE,
           pool: pool === 'all' ? undefined : pool,
           category,
+          district: district.trim() || undefined,
+          deadline_within_days: deadlineWithinDays,
+          min_match: showMinMatch ? minMatch : undefined,
         })
         setItems((prev) => (reset ? res.items : [...prev, ...res.items]))
         setTotal(res.total)
@@ -101,14 +124,14 @@ export default function DesktopHome() {
         setLoading(false)
       }
     },
-    [pool, category],
+    [pool, category, district, deadlineWithinDays, minMatch, showMinMatch],
   )
 
   useEffect(() => {
     loadPage(1, true)
-    // pool/category 변경 시 목록을 리셋해서 다시 불러온다.
+    // pool/category/상세 필터 변경 시 목록을 리셋해서 1페이지부터 다시 불러온다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pool, category])
+  }, [pool, category, district, deadlineWithinDays, minMatch])
 
   useEffect(() => {
     const node = sentinelRef.current
@@ -139,10 +162,33 @@ export default function DesktopHome() {
 
       <main className="hfeed__center">
         <div className="hfeed-filter">
-          <div className="hfeed-filter__pool">
-            <button type="button" className={pool === 'all' ? 'is-on' : ''} onClick={() => setPool('all')}>전체</button>
-            <button type="button" className={pool === 'domestic' ? 'is-on' : ''} onClick={() => setPool('domestic')}>국내</button>
-            <button type="button" className={pool === 'global' ? 'is-on' : ''} onClick={() => setPool('global')}>해외</button>
+          <div className="hfeed-filter__row1">
+            <div className="hfeed-filter__pool">
+              <button type="button" className={pool === 'domestic' ? 'is-on' : ''} onClick={() => setPool('domestic')}>국내</button>
+              <button type="button" className={pool === 'global' ? 'is-on' : ''} onClick={() => setPool('global')}>해외</button>
+              <button type="button" className={pool === 'all' ? 'is-on' : ''} onClick={() => setPool('all')}>전체</button>
+            </div>
+            <div className="hfeed-filter__more-wrap">
+              <button
+                type="button"
+                className={`hfeed-filter__more${appliedFilterCount > 0 ? ' is-active' : ''}`}
+                onClick={() => setFilterPopoverOpen((v) => !v)}
+                aria-haspopup="dialog"
+                aria-expanded={filterPopoverOpen}
+              >
+                <SlidersHorizontal size={14} />
+                상세 필터
+                {appliedFilterCount > 0 && <span className="hfeed-filter__badge tnum">{appliedFilterCount}</span>}
+              </button>
+              {filterPopoverOpen && (
+                <HomeFilterPopover
+                  values={{ district, deadlineWithinDays, minMatch }}
+                  showMinMatch={showMinMatch}
+                  onClose={() => setFilterPopoverOpen(false)}
+                  onApply={applyFilterPopover}
+                />
+              )}
+            </div>
           </div>
           <div className="hfeed-filter__cats">
             <button

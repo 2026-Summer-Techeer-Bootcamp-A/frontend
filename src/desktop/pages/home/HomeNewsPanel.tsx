@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import {
   homeApi,
   type NewsItemDto,
@@ -18,6 +18,7 @@ const TAB_LABEL: Record<NewsSource, string> = {
   github: 'GitHub',
 }
 const TAB_ORDER: NewsSource[] = ['hackernews', 'geeknews', 'github']
+const NEWS_PAGE_SIZE = 5
 
 function formatUpdatedCaption(iso: string): string {
   const diffMin = Math.floor((Date.now() - Date.parse(iso)) / 60000)
@@ -40,6 +41,18 @@ function formatStars(n: number | null): string {
   return String(n)
 }
 
+// 언어점 저채도 매핑 — 브랜드 원색 대신 팔레트 안에서만 매핑(비주얼 스펙 4.10).
+// TypeScript/JavaScript는 blue, Python은 sage, Rust/Go 등 시스템 계열은 clay, 그 외는 기본 slate.
+const SYSTEMS_LANGUAGES = new Set(['rust', 'go', 'c', 'c++', 'zig'])
+
+function langDotClass(language: string | null): string {
+  const lang = (language ?? '').toLowerCase()
+  if (lang === 'typescript' || lang === 'javascript') return ' hfeed-news__langdot--ts'
+  if (lang === 'python') return ' hfeed-news__langdot--py'
+  if (SYSTEMS_LANGUAGES.has(lang)) return ' hfeed-news__langdot--sys'
+  return ''
+}
+
 function NewsItemView({ source, item }: { source: NewsSource; item: NewsItemDto }) {
   if (source === 'hackernews') {
     return (
@@ -48,7 +61,7 @@ function NewsItemView({ source, item }: { source: NewsSource; item: NewsItemDto 
           {item.title}
         </a>
         <div className="hfeed-news__meta tnum">
-          포인트 {item.points ?? 0}
+          포인트 <b className="hfeed-news__stat">{item.points ?? 0}</b>
           {' · '}
           {item.comments_url ? (
             <a className="hfeed-news__thread" href={item.comments_url} target="_blank" rel="noreferrer">
@@ -83,8 +96,8 @@ function NewsItemView({ source, item }: { source: NewsSource; item: NewsItemDto 
       </a>
       {item.description && <div className="hfeed-news__desc">{item.description}</div>}
       <div className="hfeed-news__meta tnum">
-        <span className="hfeed-news__langdot" />
-        {item.language ?? '알 수 없음'} · 스타 {formatStars(item.stars)}
+        <span className={`hfeed-news__langdot${langDotClass(item.language)}`} />
+        {item.language ?? '알 수 없음'} · 스타 <b className="hfeed-news__stat">{formatStars(item.stars)}</b>
       </div>
     </div>
   )
@@ -110,8 +123,18 @@ export default function HomeNewsPanel({ isAuthed, pool }: { isAuthed: boolean; p
   const [cache, setCache] = useState<Partial<Record<NewsSource, NewsResponseDto>>>({})
   const [newsLoading, setNewsLoading] = useState(false)
   const [newsFetchFailed, setNewsFetchFailed] = useState(false)
+  const [newsPage, setNewsPage] = useState(1)
 
   const current = cache[activeTab]
+  const newsTotalPages = current ? Math.max(1, Math.ceil(current.items.length / NEWS_PAGE_SIZE)) : 1
+  const pagedNewsItems = current
+    ? current.items.slice((newsPage - 1) * NEWS_PAGE_SIZE, newsPage * NEWS_PAGE_SIZE)
+    : []
+
+  const changeTab = (src: NewsSource) => {
+    setActiveTab(src)
+    setNewsPage(1)
+  }
 
   useEffect(() => {
     if (cache[activeTab]) return
@@ -142,6 +165,7 @@ export default function HomeNewsPanel({ isAuthed, pool }: { isAuthed: boolean; p
       delete next[source]
       return next
     })
+    setNewsPage(1)
   }
 
   // 미니 요약 카드 — 오늘 신규 공고 / 수요 Top3 스킬 / (로그인) 내 매치 상위 공고.
@@ -195,7 +219,7 @@ export default function HomeNewsPanel({ isAuthed, pool }: { isAuthed: boolean; p
               key={src}
               type="button"
               className={activeTab === src ? 'is-on' : ''}
-              onClick={() => setActiveTab(src)}
+              onClick={() => changeTab(src)}
             >
               {TAB_LABEL[src]}
             </button>
@@ -222,18 +246,40 @@ export default function HomeNewsPanel({ isAuthed, pool }: { isAuthed: boolean; p
             <>
               {current.stale && <div className="hfeed-news__stale">이전에 받아온 정보예요.</div>}
               {current.items.length === 0 && <div className="hfeed-news__source">표시할 뉴스가 없어요.</div>}
-              {current.items.map((item, idx) => (
+              {pagedNewsItems.map((item, idx) => (
                 <NewsItemView key={`${activeTab}-${idx}-${item.url}`} source={activeTab} item={item} />
               ))}
             </>
           )}
         </div>
+
+        {current && !current.error && current.items.length > NEWS_PAGE_SIZE && (
+          <div className="hfeed-news__pager">
+            <button
+              type="button"
+              onClick={() => setNewsPage((p) => Math.max(1, p - 1))}
+              disabled={newsPage <= 1}
+              aria-label="이전 뉴스"
+            >
+              <ChevronLeft size={14} />
+            </button>
+            <span className="tnum">{newsPage} / {newsTotalPages}</span>
+            <button
+              type="button"
+              onClick={() => setNewsPage((p) => Math.min(newsTotalPages, p + 1))}
+              disabled={newsPage >= newsTotalPages}
+              aria-label="다음 뉴스"
+            >
+              <ChevronRight size={14} />
+            </button>
+          </div>
+        )}
       </section>
 
       {!timelineFailed && todayNew != null && (
         <section className="hfeed-mini" role="link" tabIndex={0} onClick={() => navigate('/market')}>
           <span className="hfeed-mini__label">오늘 신규 공고</span>
-          <span className="hfeed-mini__num tnum">{todayNew}<span>건</span></span>
+          <span className="hfeed-mini__num hfeed-mini__num--market tnum">{todayNew}<span>건</span></span>
           <span className="hfeed-mini__hint">시장에서 보기 <ChevronRight size={13} /></span>
         </section>
       )}
@@ -255,7 +301,7 @@ export default function HomeNewsPanel({ isAuthed, pool }: { isAuthed: boolean; p
       {isAuthed && matchedToday != null && (
         <section className="hfeed-mini" role="link" tabIndex={0} onClick={() => navigate('/')}>
           <span className="hfeed-mini__label">내 매치 상위 공고</span>
-          <span className="hfeed-mini__num tnum">{matchedToday}<span>건</span></span>
+          <span className="hfeed-mini__num hfeed-mini__num--personal tnum">{matchedToday}<span>건</span></span>
           <span className="hfeed-mini__hint">대시보드에서 보기 <ChevronRight size={13} /></span>
         </section>
       )}
