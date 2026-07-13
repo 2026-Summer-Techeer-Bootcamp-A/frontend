@@ -57,7 +57,8 @@ LinkedIn 피드처럼 채용 공고를 최신순 타임라인으로 흘려보고
 - 공고 카드 필드:
   - 회사명, 회사 종류(industry), 회사 위치(region)
   - 공고 제목
-  - 게시일(상대시간, 예: "2시간 전") + 마감일(D-day 뱃지)
+  - 게시일(상대 표기: "오늘 / 어제 / N일 전" — post_date가 date 단위라 시간 단위 표기는 불가)
+    + 마감일(D-day 뱃지)
   - 직무 카테고리 칩, 기술 스택 칩
   - 로그인 시: 매치율 % 링/뱃지, 기술 칩을 보유(filled)/미보유(outline)로 구분
   - 액션: 상세보기(기존 `/job/:id`로 이동), 북마크 토글
@@ -73,9 +74,10 @@ LinkedIn 피드처럼 채용 공고를 최신순 타임라인으로 흘려보고
   - GitHub Trending: repo 이름, 설명, 언어, 스타 지표
   - 패널 상단/하단에 "N분 전 갱신" (응답 `fetched_at` 기반)
 - 미니 요약 카드 2~3개 (기존 위젯을 넣지 않고 컴팩트 신규 카드):
-  - 오늘 신규 공고 수 -> 시장 페이지 딥링크
-  - 이번 주 급상승 스킬 Top3 -> 시장 페이지 딥링크
-  - (로그인 시) 내 매치 상위 공고 수 -> 대시보드 딥링크
+  - 오늘 신규 공고 수 (`GET /api/v1/stats/posting-timeline`) -> 시장 페이지 딥링크
+  - 수요 Top 3 스킬 (`GET /api/v1/stats/skill-share`, top_k=3) -> 시장 페이지 딥링크
+    (시계열 트렌드 데이터가 없어 "급상승" 대신 "수요 Top"으로 표기)
+  - (로그인 시) 내 매치 공고 수 (posting-timeline의 matched 필드) -> 대시보드 딥링크
   - 데이터는 기존 insight/stats 엔드포인트 재사용. 신규 API 없음.
 
 ### 3.4 반응형
@@ -112,8 +114,9 @@ LinkedIn 피드처럼 채용 공고를 최신순 타임라인으로 흘려보고
   - HackerNews: Algolia API (`hn.algolia.com/api/v1/search?tags=front_page`).
     title, points, num_comments, url, HN 스레드 링크(objectID).
   - GeekNews: `news.hada.io` RSS 파싱. title, link.
-  - GitHub Trending: 공식 API 없음. 1차 HTML 파싱, 실패 시 GitHub Search API
-    (최근 N일 생성 repo star 순) 폴백. repo, description, language, stars.
+  - GitHub Trending: 공식 API 없음. GitHub Search API로 대체
+    (최근 7일 생성 repo를 star 순 정렬). repo, description, language, stars.
+    HTML 파싱은 취약성 때문에 채택하지 않는다.
 - 응답: `{ source, items: [...], fetched_at }`. item 스키마는 소스별 필드 옵셔널.
 
 ## 5. 에러 처리
