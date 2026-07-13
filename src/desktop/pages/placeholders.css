@@ -169,31 +169,36 @@
 .dmy__title { font-size: 34px; font-weight: 800; letter-spacing: -1px; line-height: 1.15; color: var(--c-ink); }
 .dmy__sub { font-size: 12.5px; color: var(--c-muted); }
 
-/* 프로필 히어로 — 대시보드 검정 히어로(kit-heroStat)와 톤 일치. 슬레이트블루 금지, 순수 흑백. */
+/* 상단 행 — 좌측 컴팩트 프로필 히어로 + 우측 활동 스탯을 한 줄에 나눠 배치(프로필 히어로가
+   더 이상 폭 전체를 차지하지 않도록). 좁은 화면에서는 세로로 쌓인다(아래 미디어쿼리). */
+.dmy__top { display: grid; grid-template-columns: minmax(0, 520px) 1fr; gap: 16px; align-items: stretch; margin-bottom: 16px; }
+
+/* 프로필 히어로 — 대시보드 검정 히어로(kit-heroStat)와 톤 일치. 슬레이트블루 금지, 순수 흑백.
+   컴팩트화: 폭을 520px로 제한하고 패딩·아바타 크기를 줄여 슬림한 프로필 바로 만든다. */
 .dmy__hero {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 14px;
   background: #0d0d0d;
   color: #fff;
-  border-radius: 18px;
-  padding: 22px 24px;
-  margin-bottom: 16px;
+  border-radius: 16px;
+  padding: 16px 18px;
+  min-width: 0;
 }
 .dmy__hero-avatar {
-  flex: none; width: 56px; height: 56px; border-radius: 50%;
+  flex: none; width: 44px; height: 44px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: 18px; font-weight: 800; color: #0d0d0d; background: #fff;
+  font-size: 15px; font-weight: 800; color: #0d0d0d; background: #fff;
 }
-.dmy__hero-id { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
-.dmy__hero-nm { font-size: 20px; font-weight: 800; letter-spacing: -0.3px; color: #fff; }
-.dmy__hero-em { font-size: 13px; color: rgba(255, 255, 255, 0.6); }
-.dmy__hero-stats { display: flex; align-items: center; gap: 16px; margin-top: 4px; }
-.dmy__hero-stats span { font-size: 12.5px; color: rgba(255, 255, 255, 0.6); }
-.dmy__hero-stats b { font-size: 13.5px; font-weight: 800; color: #fff; margin-right: 3px; }
+.dmy__hero-id { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.dmy__hero-nm { font-size: 16px; font-weight: 800; letter-spacing: -0.3px; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dmy__hero-em { font-size: 12px; color: rgba(255, 255, 255, 0.6); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dmy__hero-stats { display: flex; align-items: center; gap: 12px; margin-top: 3px; flex-wrap: wrap; }
+.dmy__hero-stats span { font-size: 11.5px; color: rgba(255, 255, 255, 0.6); white-space: nowrap; }
+.dmy__hero-stats b { font-size: 12.5px; font-weight: 800; color: #fff; margin-right: 2px; }
 .dmy__hero-edit {
-  flex: none; font-size: 12.5px; font-weight: 700; color: #fff;
-  background: rgba(255, 255, 255, 0.14); border-radius: 10px; padding: 9px 16px;
+  flex: none; font-size: 12px; font-weight: 700; color: #fff;
+  background: rgba(255, 255, 255, 0.14); border-radius: 9px; padding: 8px 13px;
   transition: transform 0.12s ease, background 0.14s ease;
 }
 .dmy__hero-edit:hover { background: rgba(255, 255, 255, 0.22); }
@@ -225,8 +230,8 @@
 .dmy__jobs > * { min-width: 0; }
 .dmy__more-txt { font-size: 12px; color: var(--c-muted); text-align: center; margin-top: 10px; }
 
-/* 활동 요약 stat 타일 */
-.dmy__stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+/* 활동 요약 stat 타일 — 상단 행에서 프로필 히어로 옆자리를 차지(.dmy__top 참고) */
+.dmy__stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; min-width: 0; }
 
 /* 최근 본 공고 — 컴팩트 리스트 */
 .dmy__recent { display: flex; flex-direction: column; margin-top: 10px; }
@@ -237,5 +242,6 @@
   .djobs__filters { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; align-items: center; height: auto; overflow-y: visible; }
   .dmkt__grid, .dmap__grid { grid-template-columns: 1fr; }
   .dmkt__quad { grid-row: auto; }
+  .dmy__top { grid-template-columns: 1fr; }
   .dmy__body { grid-template-columns: 1fr; }
 }

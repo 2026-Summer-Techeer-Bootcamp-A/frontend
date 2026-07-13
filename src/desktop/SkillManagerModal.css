@@ -150,6 +150,26 @@
   .skm__results { border-left: none; padding-left: 0; border-top: 1px solid var(--line, #e6e9ef); padding-top: 10px; }
 }
 
+/* 검색 결과 카테고리 섹션 헤더 — 직무별(언어/백엔드/프론트엔드 등) 그룹 라벨.
+   스크롤 중에도 소속 카테고리를 알 수 있도록 sticky. */
+.skm__cat-group + .skm__cat-group { margin-top: 6px; }
+.skm__cat {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 6px 6px 4px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c-muted, #71717a);
+  background: #fff;
+}
+.skm__cat span { font-weight: 600; text-transform: none; letter-spacing: normal; }
+
 .skm__row {
   display: flex;
   align-items: center;
