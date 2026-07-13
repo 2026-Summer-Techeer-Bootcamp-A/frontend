@@ -15,6 +15,7 @@ import { isBookmarked, toggleBookmark, useBookmarks } from './bookmarkStore'
 import { recordView } from './viewHistoryStore'
 import { jobsApi, type PostingCard } from './api'
 import { getAuthToken } from './authStore'
+import { addMapTileLayer } from './mapTiles'
 import './career.css'
 
 type MapPin = { id: string; lat: number; lng: number }
@@ -51,9 +52,11 @@ function distanceLabel(a: MapPin | undefined, b: MapPin | undefined): string | u
  * 그대로 이식하되, 단일 pin만 그리는 축소판(정적 미리보기 톤 — 드래그/줌 비활성)이다. */
 function LocationMapCard({ lat, lng, address }: { lat: number; lng: number; address: string }) {
   const elRef = useRef<HTMLDivElement>(null)
+  const [tileStatus, setTileStatus] = useState<'loading' | 'ready' | 'error'>('loading')
 
   useEffect(() => {
     if (!elRef.current) return
+    setTileStatus('loading')
     const map = L.map(elRef.current, {
       center: [lat, lng],
       zoom: 15,
@@ -66,13 +69,14 @@ function LocationMapCard({ lat, lng, address }: { lat: number; lng: number; addr
       boxZoom: false,
       keyboard: false,
     })
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map)
+    const removeTiles = addMapTileLayer(map, setTileStatus)
     L.marker([lat, lng], {
       icon: L.divIcon({ className: 'lpin-wrap', html: '<div class="crd-map__pin"></div>', iconSize: [18, 18], iconAnchor: [9, 9] }),
     }).addTo(map)
     const tid = window.setTimeout(() => map.invalidateSize(), 60)
     return () => {
       window.clearTimeout(tid)
+      removeTiles()
       map.remove()
     }
   }, [lat, lng])
@@ -81,7 +85,12 @@ function LocationMapCard({ lat, lng, address }: { lat: number; lng: number; addr
     <div className="crd-map">
       <div className="crd-map__label">근무 위치</div>
       <div className="crd-map__addr">{address}</div>
-      <div ref={elRef} className="crd-map__canvas" />
+      <div className="crd-map__viewport">
+        <div ref={elRef} className="crd-map__canvas" />
+        {tileStatus === 'error' && (
+          <div className="crd-map__error" role="status">지도를 불러오지 못했습니다. 네트워크 연결을 확인해 주세요.</div>
+        )}
+      </div>
     </div>
   )
 }

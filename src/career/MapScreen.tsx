@@ -13,6 +13,7 @@ import { MiniJobCard, MiniJobSkeleton, DynamicDock, BottomSheet, SegmentedContro
 import { LocationPermissionSheet } from './states'
 import { THEME, themeVars } from './themes'
 import { useResumesState, getDynamicPostings, useSavedJobs, jobKey } from './state'
+import { addMapTileLayer } from './mapTiles'
 import data from '../data/careerData.json'
 import { recruitmentApi, type PostingMapDto } from './recruitmentApi'
 import './career.css'
@@ -177,7 +178,7 @@ export default function MapScreen() {
   useEffect(() => {
     if (!elRef.current || mapRef.current) return
     const map = L.map(elRef.current, { center: [37.525, 127.02], zoom: 12, zoomControl: false, attributionControl: false })
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map)
+    const removeTiles = addMapTileLayer(map)
     mapRef.current = map
 
     const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
@@ -283,6 +284,7 @@ export default function MapScreen() {
       destroyed = true
       window.clearTimeout(tid)
       window.clearTimeout(initTid)
+      removeTiles()
       map.remove()
       mapRef.current = null
     }
