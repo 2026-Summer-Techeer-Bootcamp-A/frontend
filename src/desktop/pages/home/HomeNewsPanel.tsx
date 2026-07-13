@@ -75,12 +75,17 @@ function NewsItemView({ source, item }: { source: NewsSource; item: NewsItemDto 
   }
 
   if (source === 'geeknews') {
+    // 긱뉴스는 제목이 원문(유튜브 등 외부 링크)으로 바로 나가면 안 되고, 긱뉴스 자체
+    // 본문(topic 페이지)으로 가야 한다 — comments_url이 그 본문 URL이다(services/news.py 참고).
+    const bodyUrl = item.comments_url ?? item.url
     return (
       <div className="hfeed-news__item hfeed-news__item--gn">
-        <a className="hfeed-news__title" href={item.url} target="_blank" rel="noreferrer">
+        <a className="hfeed-news__title" href={bodyUrl} target="_blank" rel="noreferrer">
           {item.title}
         </a>
-        <div className="hfeed-news__source">{hostnameOf(item.url)}</div>
+        <a className="hfeed-news__source" href={item.url} target="_blank" rel="noreferrer">
+          {hostnameOf(item.url)}
+        </a>
         {(item.points != null || item.comments_count != null) && (
           <div className="hfeed-news__meta tnum">
             {item.points != null && (
@@ -89,17 +94,7 @@ function NewsItemView({ source, item }: { source: NewsSource; item: NewsItemDto 
               </>
             )}
             {item.points != null && item.comments_count != null && ' · '}
-            {item.comments_count != null && (
-              <>
-                {item.comments_url ? (
-                  <a className="hfeed-news__thread" href={item.comments_url} target="_blank" rel="noreferrer">
-                    댓글 {item.comments_count}
-                  </a>
-                ) : (
-                  <span>댓글 {item.comments_count}</span>
-                )}
-              </>
-            )}
+            {item.comments_count != null && <span>댓글 {item.comments_count}</span>}
           </div>
         )}
       </div>
