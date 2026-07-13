@@ -3,7 +3,7 @@ import { formatApiError } from './api'
 
 const API_BASE = '/api/v1'
 
-export type PostingCardDto = { id: number; title: string; company: string | null; post_date: string | null; close_date: string | null; skills: string[]; url: string; matched_count?: number | null }
+export type PostingCardDto = { id: number; title: string; company: string | null; post_date: string | null; close_date: string | null; skills: string[]; url: string; logo_url?: string | null; matched_count?: number | null }
 export type PostingListDto = { items: PostingCardDto[]; page: number; page_size: number; total: number; as_of: string }
 export type PostingMapDto = {
   pins: Array<{ id: number; lat: number; lng: number; title: string; company: string | null; matched_count: number | null; required_count: number | null; match_pct: number | null }>

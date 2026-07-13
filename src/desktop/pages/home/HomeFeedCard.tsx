@@ -6,6 +6,7 @@ import type { FeedPostingDto } from '../../../career/homeApi'
 import { ddayInfo } from '../../../career/state'
 import { toggleBookmark, useBookmarks } from '../../../career/bookmarkStore'
 import { recordView } from '../../../career/viewHistoryStore'
+import CompanyLogo from '../../../career/CompanyLogo'
 
 const MAX_SKILL_CHIPS = 6
 const MAX_CONCEPT_CHIPS = 8
@@ -95,7 +96,7 @@ export default function HomeFeedCard({ posting, asOf }: { posting: FeedPostingDt
   const visibleSkillChips = skillChips.slice(0, MAX_SKILL_CHIPS)
   const extraSkillCount = skillChips.length - visibleSkillChips.length
 
-  const logoChar = (posting.company ?? posting.title ?? '?').trim().slice(0, 1) || '?'
+  const companyName = (posting.company ?? posting.title ?? '?').trim() || '?'
   const career = careerLabel(posting.career_min, posting.career_max)
   const subLine = [posting.industry, posting.region, career].filter(Boolean).join(' · ')
   // response_rate는 match.rate와 동일하게 0~100 스케일로 내려온다(백엔드 계약 확인, 프론트 목 데이터 기준).
@@ -120,7 +121,7 @@ export default function HomeFeedCard({ posting, asOf }: { posting: FeedPostingDt
       onKeyDown={handleKeyDown}
     >
       <div className="hfeed-card__head">
-        <div className="hfeed-card__logo">{logoChar}</div>
+        <CompanyLogo logo={posting.logo_url ?? undefined} name={companyName} size={44} radius={12} />
         <div className="hfeed-card__meta">
           <div className="hfeed-card__company">{posting.company ?? '기업명 미상'}</div>
           {(subLine || seniority) && (
@@ -178,9 +179,6 @@ export default function HomeFeedCard({ posting, asOf }: { posting: FeedPostingDt
       {hasDetail && (
         <div className="hfeed-card__detail-wrap">
           <div className={`hfeed-card__detail-content${expanded ? ' is-expanded' : ''}`}>
-            {posting.description_snippet && (
-              <p className="hfeed-card__detail-desc">{posting.description_snippet}</p>
-            )}
             {concepts.length > 0 && (
               <div className="hfeed-card__detail-block">
                 <span className="hfeed-card__detail-label">핵심 키워드</span>
@@ -191,6 +189,9 @@ export default function HomeFeedCard({ posting, asOf }: { posting: FeedPostingDt
                   {extraConceptCount > 0 && <span className="hfeed-chip--more">+{extraConceptCount}</span>}
                 </div>
               </div>
+            )}
+            {posting.description_snippet && (
+              <p className="hfeed-card__detail-desc">{posting.description_snippet}</p>
             )}
             {certs.length > 0 && (
               <div className="hfeed-card__detail-block">

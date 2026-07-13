@@ -362,6 +362,9 @@
 }
 .hfeed-card__detail-desc {
   font-size: 13px; line-height: 1.5; color: var(--c-ink); margin: 0 0 10px;
+  /* description_snippet은 원문 불릿의 줄바꿈(\n)을 그대로 담아 온다.
+     white-space: pre-line으로 \n은 줄바꿈으로, 줄 내부 연속 공백은 한 칸으로 렌더링한다. */
+  white-space: pre-line;
 }
 .hfeed-card__detail-block { margin-bottom: 10px; }
 .hfeed-card__detail-block:last-child { margin-bottom: 0; }
