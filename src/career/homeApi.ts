@@ -26,6 +26,10 @@ export type FeedPostingDto = {
   career_min: number | null
   career_max: number | null
   response_rate: number | null
+  concepts: string[]
+  certs: string[]
+  seniority: string | null
+  description_snippet: string | null
 }
 
 export type FeedResponseDto = {

@@ -304,9 +304,14 @@
 .hfeed-card__company {
   font-size: 13px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+.hfeed-card__subrow { display: flex; align-items: center; gap: 6px; margin-top: 1px; min-width: 0; }
 .hfeed-card__sub {
-  font-size: 12px; color: var(--c-muted); margin-top: 1px;
+  flex: 1; min-width: 0; font-size: 12px; color: var(--c-muted);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.hfeed-card__seniority {
+  flex: none; font-size: 10.5px; font-weight: 700; color: #5b5e66;
+  background: #f2f3f6; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px;
 }
 .hfeed-card__title {
   font-size: 15.5px; font-weight: 700; line-height: 1.3; margin-top: 6px; color: var(--c-ink);
@@ -342,6 +347,41 @@
 .hfeed-badge--always { background: #f2f3f6; color: #5b5e66; }
 
 .hfeed-card__chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+
+/* ===== 공고 카드 상세 미리보기 (더보기/접기) ===== */
+.hfeed-card__detail-wrap { margin-top: 12px; }
+.hfeed-card__detail-content {
+  position: relative; max-height: 120px; overflow: hidden;
+  transition: max-height 0.2s ease;
+}
+.hfeed-card__detail-content.is-expanded { max-height: 2000px; }
+.hfeed-card__detail-content:not(.is-expanded)::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 36px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0), #fff);
+  pointer-events: none;
+}
+.hfeed-card__detail-desc {
+  font-size: 13px; line-height: 1.5; color: var(--c-ink); margin: 0 0 10px;
+}
+.hfeed-card__detail-block { margin-bottom: 10px; }
+.hfeed-card__detail-block:last-child { margin-bottom: 0; }
+.hfeed-card__detail-label {
+  display: block; font-size: 11.5px; font-weight: 700; color: var(--c-muted); margin-bottom: 6px;
+}
+.hfeed-card__detail-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.hfeed-card__detail-certs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.hfeed-card__detail-certs li { font-size: 12.5px; color: var(--c-ink); padding-left: 14px; position: relative; }
+.hfeed-card__detail-certs li::before {
+  content: ''; position: absolute; left: 0; top: 7px;
+  width: 4px; height: 4px; border-radius: 50%; background: var(--c-muted);
+}
+.hfeed-card__more-toggle {
+  margin-top: 8px; font-size: 12.5px; font-weight: 700; color: var(--accent-700);
+  background: none; border: none; padding: 0; cursor: pointer;
+}
+.hfeed-card__more-toggle:hover { text-decoration: underline; }
+.hfeed-card__more-toggle:focus-visible { outline: 2px solid var(--c-ink); outline-offset: 2px; }
+
 .hfeed-card__foot {
   display: flex; align-items: center; justify-content: space-between;
   margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line);
@@ -425,6 +465,33 @@
 .hfeed-news__pager button:focus-visible { outline: 2px solid var(--c-ink); outline-offset: 2px; }
 .hfeed-news__pager span { font-size: 11.5px; font-weight: 700; color: var(--c-muted); }
 
+/* ===== 우측 컬럼 공고 리스트 (마감 임박 / 추천) ===== */
+.hfeed-plist { border-radius: 18px; padding: 16px; }
+.hfeed-plist__head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.hfeed-plist__head h3 { font-size: 14px; font-weight: 800; margin: 0; color: var(--c-ink); }
+.hfeed-plist__viewall { font-size: 11.5px; font-weight: 700; color: var(--accent-700); }
+.hfeed-plist__viewall:hover { text-decoration: underline; }
+.hfeed-plist__viewall:focus-visible { outline: 2px solid var(--c-ink); outline-offset: 2px; }
+.hfeed-plist__list { margin-top: 8px; }
+.hfeed-plist__row {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  padding: 10px 8px; margin: 0 -8px; border-radius: 12px; border-bottom: 1px solid var(--line2, #f0f0f1);
+  transition: background 0.15s;
+}
+.hfeed-plist__row:last-child { border-bottom: none; }
+.hfeed-plist__row:hover { background: #f2f2f4; }
+.hfeed-plist__row:focus-visible { outline: 2px solid var(--c-ink); outline-offset: 2px; }
+.hfeed-plist__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.hfeed-plist__company {
+  font-size: 11.5px; color: var(--c-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.hfeed-plist__title {
+  font-size: 13px; font-weight: 650; color: var(--c-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.hfeed-plist__match {
+  flex: none; font-size: 12px; font-weight: 800; color: var(--hf-viz-sage-text);
+}
+
 /* ===== 미니 요약 카드 ===== */
 .hfeed-mini {
   border-radius: 14px; padding: 14px 16px; cursor: pointer;
@@ -501,6 +568,8 @@
   .hfeed-mini,
   .hfeed-card__bookmark,
   .hfeed-guest__btn,
+  .hfeed-card__detail-content,
+  .hfeed-plist__row,
   .hfeed-skel {
     transition: none !important;
     animation: none !important;
