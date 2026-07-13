@@ -109,6 +109,8 @@ export default function App() {
         <Route path="/resume" element={<Adaptive mobile={ResumeScreen} desktop={DesktopMy} />} />
         {/* 아직 모바일 스타일 화면 — 데스크톱에선 셸 안에서 렌더되고, 페이지 데스크톱화는 다음 단계 */}
         <Route path="/resume/submit" element={<ResumeSubmit />} />
+        <Route path="/resume/new" element={<ResumeSubmit />} />
+        <Route path="/resume/:id/edit" element={<ResumeSubmit />} />
         <Route path="/cert-gap" element={<CertGap />} />
         <Route path="/settings" element={<SettingsHome />} />
         <Route path="/settings/account" element={<SettingsAccount />} />
