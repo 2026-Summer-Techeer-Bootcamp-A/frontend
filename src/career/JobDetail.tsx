@@ -5,7 +5,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import PhoneFrame from '../components/PhoneFrame'
 import CompanyLogo from './CompanyLogo'
-import { matchGrad } from './kit'
+import { matchGrad, MiniScore } from './kit'
 import { THEME, themeVars } from './themes'
 import { useIsDesktop } from '../shared/useMediaQuery'
 import data from '../data/careerData.json'
@@ -262,14 +262,38 @@ export default function JobDetail() {
         <button className="dsub__back" onClick={() => navigate(-1)}><ChevronLeft size={17} /> 뒤로</button>
         <div className="djd">
           <div className="djd-main crd">
-            {headerBlock}
+            <div className="djd-head">
+              <CompanyLogo logo={p.logo} name={p.company} size={60} radius={16} />
+              <div className="djd-head__meta">
+                <div className="crd__co">{p.company} · {p.pool}</div>
+                <h1 className="djd-title">{p.title}</h1>
+              </div>
+            </div>
             {tabsNavBlock}
             {tabsBodyBlock}
-            {mapBlock}
           </div>
           <aside className="djd-side">
-            {matchBlock}
+            <div className="djd-card djd-match">
+              <div className="djd-match__head">
+                <MiniScore pct={matchPct} size={60} />
+                <div className="djd-match__sub">요구 {matchTotal}개 중 {matchHeld}개 보유</div>
+              </div>
+              <div className="djd-match__chips">
+                {held.map((s) => (
+                  <span key={s} className="djd-chip djd-chip--held">{s}</span>
+                ))}
+                {gap.map((s) => (
+                  <span key={s} className="djd-chip djd-chip--gap">+{s}</span>
+                ))}
+              </div>
+            </div>
             <div className="djd-card djd-meta">{pillsBlock}</div>
+            {mapBlock && (
+              <div className="djd-map">
+                {mapBlock}
+                <div className="djd-map__cap">{p.region || ci.location || '위치 정보 없음'}</div>
+              </div>
+            )}
             <div className="djd-applyrow">
               <button className="djd-apply">지원하기</button>
               <button
