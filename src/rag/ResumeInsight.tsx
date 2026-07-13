@@ -63,6 +63,7 @@ export default function ResumeInsight() {
   const [selectedResumeId, setSelectedResumeId] = useState<number | 'manual'>('manual')
   const [resumeLoadError, setResumeLoadError] = useState('')
   const [loadingResume, setLoadingResume] = useState(false)
+  const [selectedMemo, setSelectedMemo] = useState<string | null>(null)
 
   useEffect(() => {
     if (!isAuthed) return
@@ -76,6 +77,7 @@ export default function ResumeInsight() {
   const selectSavedResume = (value: string) => {
     if (value === 'manual') {
       setSelectedResumeId('manual')
+      setSelectedMemo(null)
       return
     }
     const resumeId = Number(value)
@@ -87,6 +89,7 @@ export default function ResumeInsight() {
         setPosition(mapSavedPosition(detail.position))
         setPool(detail.pool)
         setSkills(detail.skills.map((s) => s.canonical))
+        setSelectedMemo(detail.memo)
       })
       .catch((err: unknown) => {
         setResumeLoadError(err instanceof Error ? err.message : '이력서를 불러오지 못했어요.')
@@ -121,6 +124,7 @@ export default function ResumeInsight() {
       careerMin: null,
       careerMax: null,
       pool,
+      memo: selectedMemo,
     })
       .then((res) => {
         setResult(res)

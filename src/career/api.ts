@@ -238,3 +238,105 @@ export const dashboardApi = {
     request<{ total: number }>(path('/postings', { ...personal(id, position), min_match: 50, page_size: 1 }), auth(id.token)),
   skillShare: () => request<SkillShareData>(path('/stats/skill-share', { pool: 'domestic', top_k: 100 })),
 }
+
+export type ParsedSkillDto = { canonical: string; category: string; in_dict: boolean }
+export type ParsedCertDto = { name: string; in_dict: boolean }
+export type ResumeListItemDto = { resume_id: number; title: string; position: string | null; is_primary: boolean }
+export type ResumeDetailDto = {
+  resume_id: number
+  title: string
+  skills: ParsedSkillDto[]
+  certs: ParsedCertDto[]
+  position: string
+  career_min: number
+  career_max: number
+  pool: ApiPool
+  memo: string | null
+  is_primary: boolean
+}
+export type ResumeUpsertPayload = {
+  title: string
+  skills: ParsedSkillDto[]
+  certs: ParsedCertDto[]
+  position: string
+  career_min: number
+  career_max: number
+  pool: ApiPool
+  memo: string | null
+}
+export type ResumeParseResult = {
+  skills: ParsedSkillDto[]
+  certs: ParsedCertDto[]
+  position: string | null
+  career_min: number | null
+  career_max: number | null
+}
+export type ResumePreferencesDto = {
+  level?: 'intern' | 'junior' | 'mid' | 'senior' | 'lead' | 'director'
+  jobSearchStatus?: 'active' | 'casual' | 'none'
+  companyStagePrefs: Record<string, 'hide' | 'show' | 'boost'>
+  sectorInterests: string[]
+  location: { remote: boolean; onsite: boolean; regions: string[] }
+}
+
+export const resumeApi = {
+  list(token: string) {
+    return request<{ items: ResumeListItemDto[] }>('/resume', auth(token))
+  },
+  detail(id: number, token: string) {
+    return request<ResumeDetailDto>(`/resume/${id}`, auth(token))
+  },
+  create(payload: ResumeUpsertPayload, token: string) {
+    return request<{ resume_id: number }>('/resume', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      ...auth(token),
+    })
+  },
+  update(id: number, payload: ResumeUpsertPayload, token: string) {
+    return request<{ resume_id: number }>(`/resume/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+      ...auth(token),
+    })
+  },
+  remove(id: number, token: string) {
+    return request<void>(`/resume/${id}`, { method: 'DELETE', ...auth(token) })
+  },
+  setPrimary(id: number, token: string) {
+    return request<{ items: ResumeListItemDto[] }>(`/resume/${id}/primary`, {
+      method: 'POST',
+      ...auth(token),
+    })
+  },
+  async parse(file: File, token?: string | null): Promise<ResumeParseResult> {
+    const form = new FormData()
+    form.append('file', file)
+    const response = await fetch('/api/v1/resume/parse', {
+      method: 'POST',
+      body: form,
+      headers: authHeaders(token),
+    })
+    if (!response.ok) {
+      const data = await response.json().catch(() => null)
+      throw new Error(formatApiError(data?.detail))
+    }
+    return response.json() as Promise<ResumeParseResult>
+  },
+  getPreferences(resumeId: number, token: string) {
+    return request<ResumePreferencesDto>(`/resume/${resumeId}/preferences`, auth(token))
+  },
+  updatePreferences(resumeId: number, payload: ResumePreferencesDto, token: string) {
+    return request<ResumePreferencesDto>(`/resume/${resumeId}/preferences`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+      ...auth(token),
+    })
+  },
+}
+
+export const certApi = {
+  search(q: string) {
+    return request<{ certs: { name: string }[] }>(withQuery('/certs', { q }))
+  },
+}
