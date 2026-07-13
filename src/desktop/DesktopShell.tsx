@@ -12,6 +12,7 @@ import {
   LogOut,
   LogIn,
   Home,
+  User,
 } from 'lucide-react'
 import { THEME, themeVars } from '../career/themes'
 import { useAuth } from '../career/authStore'
@@ -133,7 +134,7 @@ export default function DesktopShell({ children }: { children: ReactNode }) {
       : { icon: <LogIn size={16} />, label: '로그인', onClick: () => navigate('/login') },
   ]
 
-  const avatarInitial = (user?.nickname || user?.email || '리버').slice(0, 2).toUpperCase()
+  const avatarInitial = (user?.nickname || user?.email || '').slice(0, 2).toUpperCase()
 
   return (
     <div className="dshell" style={themeVars(THEME)}>
@@ -206,7 +207,7 @@ export default function DesktopShell({ children }: { children: ReactNode }) {
                 aria-expanded={accountOpen}
                 onClick={() => setAccountOpen((v) => !v)}
               >
-                {avatarInitial}
+                {isAuthed && avatarInitial ? avatarInitial : <User size={18} strokeWidth={2} />}
               </button>
               <MacMenu open={accountOpen} onClose={() => setAccountOpen(false)} items={accountItems} anchor="right" />
             </div>
