@@ -19,6 +19,7 @@ export interface ResumeConfirmRequestBody {
   career_min: number | null
   career_max: number | null
   pool: Pool
+  memo?: string | null
 }
 
 export interface ResumeConfirmResponse {
@@ -39,6 +40,7 @@ export interface ResumeFeedbackInput {
   careerMin: number | null
   careerMax: number | null
   pool: Pool
+  memo?: string | null
 }
 
 export interface SavedResumeListItem {
@@ -55,6 +57,7 @@ export interface SavedResumeDetail {
   career_min: number
   career_max: number
   pool: Pool
+  memo: string | null
 }
 
 async function parseError(response: Response, fallback: string): Promise<never> {
@@ -125,6 +128,7 @@ export async function postResumeFeedback(input: ResumeFeedbackInput): Promise<Re
     career_min: input.careerMin,
     career_max: input.careerMax,
     pool: input.pool,
+    memo: input.memo ?? null,
   })
 
   return postFeedback(confirmed.session_id, input.position)
