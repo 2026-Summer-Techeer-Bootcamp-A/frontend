@@ -1,0 +1,156 @@
+/* === 통합 어시스턴트 워크스페이스 — 좌: 이력서 분석, 우: AI 콘솔, 가운데 접이식 디바이더 ===
+   셸(.dshell__content)이 이미 흰 카드이므로 여기서도 카드를 다시 두르지 않는다.
+   각 pane 안의 ResumeInsight/RagConsole은 자체 rc__head/rc__body를 그대로 쓰고,
+   워크스페이스는 오직 좌우 배치·높이·접기만 담당한다. */
+.aw {
+  height: 100%;
+}
+.aw__row {
+  height: 100%;
+  display: flex;
+  align-items: stretch;
+}
+
+.aw__pane {
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+  transition: flex-basis 300ms cubic-bezier(0.25,0.1,0.25,1),
+              min-width 300ms cubic-bezier(0.25,0.1,0.25,1),
+              padding 300ms cubic-bezier(0.25,0.1,0.25,1),
+              opacity 200ms cubic-bezier(0.4,0,1,1);
+}
+.aw__pane--left {
+  flex: 0 1 40%;
+  min-width: 320px;
+  padding-right: 16px;
+}
+.aw__pane--right {
+  flex: 1 1 60%;
+  min-width: 360px;
+  padding-left: 16px;
+}
+.aw__pane--solo {
+  flex: 1 1 100%;
+  padding-left: 0;
+  padding-right: 0;
+}
+.aw__pane--collapsed {
+  flex-basis: 0 !important;
+  min-width: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* 디바이더 — 얇은 세로선 + 위/아래 접기 버튼 + 가운데 그립 아이콘.
+   장식이 아니라 실제로 누를 수 있는 컨트롤이라는 걸 버튼 보더로 드러낸다. */
+.aw__divider {
+  flex: none;
+  width: 28px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+.aw__divider::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  background: #e2e5ec;
+  transform: translateX(-50%);
+}
+.aw__divider-btn {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  border: 1px solid #e2e5ec;
+  background: #fff;
+  color: #7c7f88;
+  cursor: pointer;
+}
+.aw__divider-btn:hover { color: #1c1d21; border-color: #cdd2db; background: #f6f8fc; }
+.aw__divider-btn:active { transform: scale(0.92); }
+.aw__divider-btn:focus-visible { outline: 2px solid #28539c; outline-offset: 1px; }
+.aw__divider-grip {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  color: #cdd2db;
+  background: #fff;
+}
+
+/* 접힌 패널 — 슬림 레일로 축소되고, 세로 라벨 + 펼치기 화살표만 남는다 */
+.aw__rail {
+  flex: none;
+  width: 34px;
+  align-self: center;
+  min-height: 132px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  background: #f6f8fc;
+  border: 1px solid #e2e5ec;
+  border-radius: 12px;
+  color: #5b5e66;
+  cursor: pointer;
+  padding: 16px 6px;
+  font-family: 'Pretendard', sans-serif;
+  animation: aw-rail-in 300ms cubic-bezier(0,0,0.2,1) both;
+  animation-delay: 120ms;
+}
+@keyframes aw-rail-in { from { opacity: 0; transform: translateX(6px); } to { opacity: 1; transform: none; } }
+.aw__rail:hover { background: #eef1f6; color: #1c1d21; }
+.aw__rail:active { transform: scale(0.98); }
+.aw__rail:focus-visible { outline: 2px solid #28539c; outline-offset: 1px; }
+.aw__rail-label {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.aw__rail-label::before,
+.aw__rail-label::after {
+  content: '';
+  display: block;
+  width: 1px;
+  height: 14px;
+  margin: 0 auto 8px;
+  background: #e2e5ec;
+  border-radius: 1px;
+}
+.aw__rail-label::after { margin: 8px auto 0; }
+
+/* 모바일 — 접기 컨트롤은 데스크톱 전용 어포던스라 감추고, 두 패널을 세로로 쌓아
+   각자 프레임리스 화면(rc/ri 자체의 max-width:1023px 보정)으로 자연스럽게 흐르게 둔다. */
+@media (max-width: 1023px) {
+  .aw__row { flex-direction: column; height: auto; }
+  .aw__pane, .aw__pane--left, .aw__pane--right, .aw__pane--solo {
+    flex: none; width: 100%; height: auto; overflow: visible; padding: 0;
+  }
+  .aw__divider, .aw__rail { display: none; }
+  .aw__pane--left { border-bottom: 1px solid #e2e5ec; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aw, .aw *, .aw *::before, .aw *::after {
+    animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important;
+  }
+}

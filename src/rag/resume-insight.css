@@ -1,0 +1,103 @@
+/* === 이력서 분석 — rag-console.css와 같은 토큰(뉴트럴 + 슬레이트블루 액센트)을 그대로 쓴다.
+   셸(.dshell__content)이 이미 흰 카드이므로 여기서도 카드를 다시 두르지 않는다. .rc__head/.rc__body/
+   .rc__seg/.rc__skeleton/.rc__error/.rc__retry/.rc__degraded/.rc__ev-k/.rc__empty/.rc__meta는
+   rag-console.css의 클래스를 그대로 재사용한다. */
+.ri {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* 입력 폼 */
+.ri__form { display: flex; flex-direction: column; gap: 14px; flex: none; }
+.ri__field { display: flex; flex-direction: column; gap: 7px; }
+.ri__label { font-size: 12px; font-weight: 700; color: #5b5e66; }
+.ri__count { font-weight: 500; color: #a2a6b0; margin-left: 2px; }
+
+/* 저장된 이력서 선택 */
+.ri__select {
+  font-family: 'Pretendard', sans-serif; font-size: 13px; font-weight: 600; color: #1c1d21;
+  background: #fff; border: 1px solid #e2e5ec; border-radius: 10px; padding: 8px 10px; cursor: pointer;
+}
+.ri__select:disabled { opacity: 0.5; cursor: not-allowed; }
+.ri__select:focus-visible { outline: 2px solid #28539c; outline-offset: 1px; }
+.ri__hint--error { color: #8f2a22; }
+
+/* 포지션 선택 — 단일 선택 필 로우 */
+.ri__pillrow { display: flex; flex-wrap: wrap; gap: 6px; }
+.ri__pill {
+  font-family: 'Pretendard', sans-serif; font-size: 12.5px; font-weight: 600; color: #5b5e66;
+  background: #f6f8fc; border: 1px solid #e2e5ec; border-radius: 999px; padding: 6px 13px; cursor: pointer;
+}
+.ri__pill.on { color: #fff; background: #0b0b0c; border-color: #0b0b0c; }
+.ri__pill:active { transform: scale(0.97); }
+.ri__pill:disabled { opacity: 0.5; cursor: not-allowed; }
+.ri__pill:focus-visible { outline: 2px solid #28539c; outline-offset: 1px; }
+
+/* 기술 칩 입력 */
+.ri__skillbox {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+  border: 1px solid #e2e5ec; border-radius: 10px; padding: 8px 9px; background: #fff;
+}
+.ri__skillchip {
+  display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 600; color: #1c1d21;
+  background: #eef3fb; border-radius: 999px; padding: 4px 6px 4px 11px;
+}
+.ri__skillchip-x {
+  display: grid; place-items: center; width: 16px; height: 16px; border-radius: 999px; border: none;
+  background: transparent; color: #7c7f88; cursor: pointer;
+}
+.ri__skillchip-x:hover { background: #dde8f9; color: #21447c; }
+.ri__skillchip-x:active { transform: scale(0.9); }
+.ri__skillinput {
+  flex: 1; min-width: 140px; border: none; outline: none; font-size: 13px; color: #1c1d21;
+  background: transparent; padding: 4px 2px;
+}
+.ri__skillinput::placeholder { color: #a2a6b0; }
+
+/* 제출 버튼 — 프레스 피드백 유지 */
+.ri__submit {
+  align-self: flex-start; font-size: 13px; font-weight: 700; color: #fff; background: #0b0b0c;
+  border: none; border-radius: 10px; padding: 10px 20px; cursor: pointer;
+}
+.ri__submit:active { transform: scale(0.97); }
+.ri__submit:disabled { opacity: 0.45; cursor: not-allowed; }
+.ri__submit:focus-visible { outline: 2px solid #28539c; outline-offset: 1px; }
+
+/* 결과 영역 */
+.ri__results { display: flex; flex-direction: column; gap: 16px; margin-top: 18px; }
+.ri__out { display: flex; flex-direction: column; gap: 16px; animation: rc-fade .4s ease both; }
+.ri__section + .ri__section { padding-top: 14px; border-top: 1px dashed #e2e5ec; }
+.ri__hint { font-size: 11.5px; color: #a2a6b0; margin: -2px 0 8px; }
+
+.ri__list, .ri__qlist { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.ri__list li {
+  position: relative; padding-left: 14px; font-size: 13.5px; line-height: 1.6; color: #1c1d21;
+}
+.ri__list li::before {
+  content: ''; position: absolute; left: 0; top: 8px; width: 5px; height: 5px; border-radius: 999px; background: #28539c;
+}
+.ri__qlist { counter-reset: ri-q; }
+.ri__qlist li {
+  position: relative; padding-left: 24px; font-size: 13.5px; line-height: 1.6; color: #1c1d21;
+  counter-increment: ri-q;
+}
+.ri__qlist li::before {
+  content: counter(ri-q); position: absolute; left: 0; top: 0; width: 17px; height: 17px; border-radius: 6px;
+  background: #eef1f6; color: #28539c; font-family: 'SF Mono', ui-monospace, monospace; font-size: 10px; font-weight: 700;
+  display: grid; place-items: center;
+}
+
+.ri__model { font-size: 10.5px; color: #a2a6b0; font-family: 'SF Mono', ui-monospace, monospace; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ri, .ri *, .ri *::before, .ri *::after {
+    animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important;
+  }
+}
+
+/* 모바일 — 셸 카드 없이 프레임리스로 렌더되므로 자체 여백을 확보한다 */
+@media (max-width: 1023px) {
+  .ri { padding: 16px; min-height: 100dvh; }
+}
