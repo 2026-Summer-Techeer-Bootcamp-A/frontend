@@ -84,14 +84,28 @@
 /* 구조 · 탐색 — 무거운 탐색 그래프 2등분(진행적 공개로 펼쳤을 때만 렌더) */
 .dmkt2__sec-grid--explore { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
+/* ───────────────── 하단 "글로벌 · 해외 트렌드" 섹션 — 국내 섹션과 확실히 분리 ─────────────────
+   상단(수요·트렌드·기업·역량·구조·탐색)은 국내 기준, 이 섹션만 HN·GitHub 기준 전역 데이터.
+   .dmkt2__sec의 기본 margin-bottom(32px) 위에 구분선 + 여백을 더 얹어 상단↔하단을 시각적으로
+   가른다. scope("내 직무/전체") 탭은 이 섹션엔 적용하지 않는다(전역 데이터라 항상 같은 값). */
+.dmkt2__sec--global {
+  margin-top: 8px; padding-top: 32px;
+  border-top: 1px solid var(--line);
+}
+/* 카드 크기에 맞춰 2~3열로 채워지는 auto-fill — 전파 네트워크(netcell)가 넓게 자리잡도록
+   기업·역량 섹션(300px)보다 조금 넓은 최소폭을 준다. */
+.dmkt2__sec-grid--global { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
+
 @media (max-width: 1180px) {
   .dmkt2__sec-grid--demand,
   .dmkt2__sec-grid--trend,
   .dmkt2__sec-grid--explore { grid-template-columns: 1fr; }
-  .dmkt2__sec-grid--company { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dmkt2__sec-grid--company,
+  .dmkt2__sec-grid--global { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 720px) {
-  .dmkt2__sec-grid--company { grid-template-columns: 1fr; }
+  .dmkt2__sec-grid--company,
+  .dmkt2__sec-grid--global { grid-template-columns: 1fr; }
   .dmkt2__head { flex-direction: column; }
   .dmkt2__head-r { padding-top: 0; }
 }

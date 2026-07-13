@@ -15,6 +15,7 @@ import {
 } from '../../career/insights'
 import {
   HypeVsHireWidget, CompetencyWidget, ResponseRateWidget, ConceptSignalWidget,
+  TrendChronicleWidget, GithubChronicleWidget, GlobalDomesticGapWidget, GithubTopicsWidget,
 } from '../../career/wowWidgets'
 import { useWidgetData } from '../../career/useWidgetData'
 import CompanyLogo from '../../career/CompanyLogo'
@@ -683,14 +684,23 @@ export function DesktopMarket() {
 
   // 라벨 섹션 표시 여부 — 섹션 내 위젯이 전부 숨겨지면 섹션 헤더째로 렌더하지 않는다(대시보드와 동일 패턴).
   const secDemandVisible = !isWidgetHidden('market', 'hero-demand') || !isWidgetHidden('market', 'leaderboard')
-  const secTrendVisible = !isWidgetHidden('market', 'hype-vs-hire')
-    || !isWidgetHidden('market', 'yearly-trend') || !isWidgetHidden('market', 'movers')
+  // Hype vs Hire는 글로벌·HN 기준이라 하단 "글로벌 · 해외 트렌드" 섹션으로 이동했다 — 여기 트렌드
+  // 섹션은 국내 추이(연도별·무버스) + 개념 연대기(트렌드 크로니클, 전역 집계지만 국내 트렌드 문맥과
+  // 함께 두는 게 자연스러워 상단 유지)로 국내 중심을 지킨다.
+  const secTrendVisible = !isWidgetHidden('market', 'yearly-trend') || !isWidgetHidden('market', 'movers')
+    || !isWidgetHidden('market', 'trend-chronicle')
   const secCompanyVisible = !isWidgetHidden('market', 'competency') || !isWidgetHidden('market', 'response-rate')
     || !isWidgetHidden('market', 'concept-signal') || !isWidgetHidden('market', 'tier-compare')
     || !isWidgetHidden('market', 'hot-companies') || !isWidgetHidden('market', 'region-density')
     || !isWidgetHidden('market', 'tier-donut')
-  const secExploreVisible = !isWidgetHidden('market', 'network') || !isWidgetHidden('market', 'propagation')
+  // 트렌드 전파 네트워크(propagation)는 글로벌·HN 선행지표 성격이라 하단 글로벌 섹션으로 이동 —
+  // 여기 구조·탐색엔 국내 구조(공동출현 네트워크)와 세대별 변화·수요×빈도만 남는다.
+  const secExploreVisible = !isWidgetHidden('market', 'network')
     || !isWidgetHidden('market', 'generation-trend') || !isWidgetHidden('market', 'scatter')
+  // 하단 신규 섹션 — 글로벌·HN·GitHub 기준 위젯 전용. scope(내 직무/전체) 미적용(전역 데이터).
+  const secGlobalVisible = !isWidgetHidden('market', 'hype-vs-hire') || !isWidgetHidden('market', 'propagation')
+    || !isWidgetHidden('market', 'github-chronicle') || !isWidgetHidden('market', 'global-domestic-gap')
+    || !isWidgetHidden('market', 'github-topics')
 
   return (
     <div className="dpage dmkt2">
@@ -796,20 +806,15 @@ export function DesktopMarket() {
         </section>
       )}
 
-      {/* 섹션 2 — 트렌드: 흐름과 거품. Hype vs Hire · 연도별 추이 · 무버스, 같은 높이 3열. */}
+      {/* 섹션 2 — 트렌드: 국내 흐름. 연도별 추이 · 무버스 · 트렌드 연대기, 같은 높이 3열.
+          Hype vs Hire는 글로벌·HN 기준이라 하단 "글로벌 · 해외 트렌드" 섹션으로 이동했다. */}
       {secTrendVisible && (
         <section className="dmkt2__sec">
           <header className="dmkt2__sec-h">
             <h2>트렌드</h2>
-            <span>지금 배우면 늦었나? — 뜨는 기술과 지는 기술, 관심과 수요의 괴리</span>
+            <span>지금 배우면 늦었나? — 국내 뜨는 기술과 지는 기술, 연도별 흐름</span>
           </header>
           <div className="dmkt2__sec-grid dmkt2__sec-grid--trend">
-            {!isWidgetHidden('market', 'hype-vs-hire') && (
-              <div className="dmkt2__card-item">
-                {scopeBadge}
-                <HypeVsHireWidget size={widgetSize('hype-vs-hire')} />
-              </div>
-            )}
             {!isWidgetHidden('market', 'yearly-trend') && (
               <div className="dmkt2__card-item">
                 <section className="dcard">
@@ -830,6 +835,12 @@ export function DesktopMarket() {
                   </p>
                   <TechMoversBar />
                 </section>
+              </div>
+            )}
+            {!isWidgetHidden('market', 'trend-chronicle') && (
+              <div className="dmkt2__card-item">
+                {scopeBadge}
+                <TrendChronicleWidget size={widgetSize('trend-chronicle')} />
               </div>
             )}
           </div>
@@ -919,21 +930,22 @@ export function DesktopMarket() {
         </section>
       )}
 
-      {/* 섹션 4 — 구조 · 탐색: 깊이 보기. 무거운 탐색 그래프(네트워크·전파)라 리서치 플레이북대로
-          기본 접힘 + 진행적 공개. */}
+      {/* 섹션 4 — 구조 · 탐색: 깊이 보기(국내 구조). 무거운 탐색 그래프(공동출현 네트워크)라
+          리서치 플레이북대로 기본 접힘 + 진행적 공개. 전파 네트워크는 글로벌·HN 선행지표라
+          하단 "글로벌 · 해외 트렌드" 섹션으로 이동했다. */}
       {secExploreVisible && (
         <section className="dmkt2__sec dmkt2__sec--explore">
           <header className="dmkt2__sec-h dmkt2__sec-h--toggle">
             <div>
               <h2>구조 · 탐색</h2>
-              <span>깊이 파보기 — 기술이 어떻게 얽혀 있고 어디로 흐르나</span>
+              <span>깊이 파보기 — 국내 기술이 어떻게 얽혀 있나</span>
             </div>
             <button className="dmkt2__sec-toggle" onClick={() => setExploreOpen((v) => !v)}>
               {exploreOpen ? '접기' : '더 보기'}
             </button>
           </header>
           {!exploreOpen ? (
-            <div className="dmkt2__sec-collapsed">탐색적 분석 4종(공동출현 네트워크 · 전파 경로 · 세대별 변화 · 수요×빈도) · 펼쳐서 보기</div>
+            <div className="dmkt2__sec-collapsed">탐색적 분석 3종(공동출현 네트워크 · 세대별 변화 · 수요×빈도) · 펼쳐서 보기</div>
           ) : (
             <div className="dmkt2__sec-grid dmkt2__sec-grid--explore">
               {!isWidgetHidden('market', 'network') && (
@@ -950,27 +962,6 @@ export function DesktopMarket() {
                             <span className="dmkt2__netsummary-rank">{i + 1}</span>
                             <span className="dmkt2__netsummary-tech">{it.tech}</span>
                             <span className="dmkt2__netsummary-n">{it.n.toLocaleString()}건</span>
-                          </div>
-                        ))}
-                      </aside>
-                    </div>
-                  </section>
-                </div>
-              )}
-              {!isWidgetHidden('market', 'propagation') && (
-                <div className="dmkt2__card-item">
-                  <section className="dcard dmkt2__netcell">
-                    <SectionHeader title="트렌드 전파 네트워크" hint="선행 기술 → 후행 기술 시차" right={scopeBadge} />
-                    <p className="dmkt2__takeaway"><b>먼저 뜨는 기술이 다음 유행을 예고</b> — 남보다 앞서 준비할 단서.</p>
-                    <div className="dmkt2__netsplit">
-                      <div className="dmkt2__netgraph"><TrendPropagationGraph /></div>
-                      <aside className="dmkt2__netsummary">
-                        <div className="dmkt2__netsummary-t">선도 기술 Top 5</div>
-                        {getPropagationTopLeaders(5).map((it, i) => (
-                          <div key={it.tech} className="dmkt2__netsummary-row">
-                            <span className="dmkt2__netsummary-rank">{i + 1}</span>
-                            <span className="dmkt2__netsummary-tech">{it.tech}</span>
-                            <span className="dmkt2__netsummary-n">{it.count.toLocaleString()}건 파급</span>
                           </div>
                         ))}
                       </aside>
@@ -998,6 +989,61 @@ export function DesktopMarket() {
               )}
             </div>
           )}
+        </section>
+      )}
+
+      {/* 섹션 5 — 글로벌 · 해외 트렌드: HN·GitHub 기준, 국내 시장과 분리된 별도 신호.
+          scope("내 직무/전체")는 여기 적용하지 않는다 — 전역 데이터라 "전체 시장 기준" 성격.
+          Hype vs Hire(트렌드에서 이동) · 전파 네트워크(구조·탐색에서 이동) + 신규 3위젯. */}
+      {secGlobalVisible && (
+        <section className="dmkt2__sec dmkt2__sec--global">
+          <header className="dmkt2__sec-h">
+            <h2>글로벌 · 해외 트렌드</h2>
+            <span>HN·GitHub 기준 · 해외 채용/커뮤니티 흐름</span>
+          </header>
+          <div className="dmkt2__sec-grid dmkt2__sec-grid--global">
+            {!isWidgetHidden('market', 'hype-vs-hire') && (
+              <div className="dmkt2__card-item">
+                <HypeVsHireWidget size={widgetSize('hype-vs-hire')} />
+              </div>
+            )}
+            {!isWidgetHidden('market', 'propagation') && (
+              <div className="dmkt2__card-item">
+                <section className="dcard dmkt2__netcell">
+                  <SectionHeader title="트렌드 전파 네트워크" hint="선행 기술 → 후행 기술 시차 · 글로벌 기준" />
+                  <p className="dmkt2__takeaway"><b>먼저 뜨는 기술이 다음 유행을 예고</b> — 남보다 앞서 준비할 단서.</p>
+                  <div className="dmkt2__netsplit">
+                    <div className="dmkt2__netgraph"><TrendPropagationGraph /></div>
+                    <aside className="dmkt2__netsummary">
+                      <div className="dmkt2__netsummary-t">선도 기술 Top 5</div>
+                      {getPropagationTopLeaders(5).map((it, i) => (
+                        <div key={it.tech} className="dmkt2__netsummary-row">
+                          <span className="dmkt2__netsummary-rank">{i + 1}</span>
+                          <span className="dmkt2__netsummary-tech">{it.tech}</span>
+                          <span className="dmkt2__netsummary-n">{it.count.toLocaleString()}건 파급</span>
+                        </div>
+                      ))}
+                    </aside>
+                  </div>
+                </section>
+              </div>
+            )}
+            {!isWidgetHidden('market', 'github-chronicle') && (
+              <div className="dmkt2__card-item">
+                <GithubChronicleWidget size={widgetSize('github-chronicle')} />
+              </div>
+            )}
+            {!isWidgetHidden('market', 'global-domestic-gap') && (
+              <div className="dmkt2__card-item">
+                <GlobalDomesticGapWidget size={widgetSize('global-domestic-gap')} />
+              </div>
+            )}
+            {!isWidgetHidden('market', 'github-topics') && (
+              <div className="dmkt2__card-item">
+                <GithubTopicsWidget size={widgetSize('github-topics')} />
+              </div>
+            )}
+          </div>
         </section>
       )}
     </div>
