@@ -93,7 +93,7 @@ export default function JobsScreen() {
       postDate: p.post_date ?? '', closeDate: p.close_date ?? '', techs: p.skills,
       matchHeld: matched, matchTotal: total, matchPct: total ? Math.round(matched / total * 100) : 0,
       gap: p.skills.filter((skill) => !activeSkills.includes(skill)), careerMin: null, careerMax: null,
-      tier: null, region: null, logo: '', url: p.url,
+      tier: null, region: null, logo: p.logo_url ?? '', url: p.url,
     }
   }), [postings, activeSkills, pool])
 
