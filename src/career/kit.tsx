@@ -225,11 +225,12 @@ export function CoverageHistogram({
       </div>
       <div className="kit-hist__axis"><span>0%</span><span className="thr">문턱 {threshold}%</span><span>100%</span></div>
       <div className="kit-hist__whatif-label">이 기술을 배우면? (커버리지 상승순)</div>
-      <div className="kit-whatif__chips" style={{ marginTop: 6 }}>
+      <div className="kit-hist__whatif-chips" style={{ marginTop: 6 }}>
         {sortedGap.map((g) => (
-          <button key={g.tech} className={`kit-whatif__chip${added.includes(g.tech) ? ' on' : ''}`}
+          <button key={g.tech} className={`kit-hist__whatif-chip${added.includes(g.tech) ? ' on' : ''}`}
             onClick={() => toggle(g.tech)}>
-            +{g.tech} (+{g.pctIncrease}%)
+            <TechIcon tech={g.tech} size={14} />
+            <span>{g.tech}</span>
           </button>
         ))}
       </div>
