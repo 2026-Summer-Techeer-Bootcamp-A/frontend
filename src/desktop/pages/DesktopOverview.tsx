@@ -1,5 +1,6 @@
 import { useMemo, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
+import ReactECharts from 'echarts-for-react'
 import { Clock, ArrowUpRight, Sparkles, FileText } from 'lucide-react'
 import {
   ActivityRings, useCountUp, JobCardCompact, SectionHeader, CoverageHistogram,
@@ -10,7 +11,10 @@ import { HBars } from '../../career/charts'
 import { LatestJobsTimeline, LearningPathWidget, SkillUnlockWidget } from '../../career/wowWidgets'
 import CompanyLogo from '../../career/CompanyLogo'
 import { useResumesState, getDynamicPostings, calculateCoverage, ddayInfo } from '../../career/state'
-import { useAuth } from '../../career/authStore'
+import { getAuthToken, useAuth } from '../../career/authStore'
+import {
+  dashboardApi, type DistributionData, type PivotData,
+} from '../../career/api'
 import { useWidgetData } from '../../career/useWidgetData'
 import { useDashboardConfig, isWidgetHidden, getWidgetSize } from '../../career/dashboardConfig'
 import { DASHBOARD_WIDGETS } from '../../career/widgetCatalog'
@@ -37,6 +41,65 @@ function daysSince(dateStr: string, ref: string) {
   return d >= 0 ? d : null
 }
 
+function LiveIndustryRadar({ data }: { data: PivotData }) {
+  const targets = data.targets.slice(0, 6)
+  const best = targets[0]
+  const worst = targets[targets.length - 1]
+  const option = useMemo(() => ({
+    radar: {
+      indicator: targets.map((item) => ({ name: item.name, max: 100 })),
+      shape: 'polygon', radius: '68%', splitNumber: 4,
+      axisName: { color: '#43454c', fontSize: 11, fontWeight: 700 },
+      splitLine: { lineStyle: { color: '#e6e9ef' } },
+      splitArea: { areaStyle: { color: ['#fbfcfe', '#f4f7fb'] } },
+      axisLine: { lineStyle: { color: '#e2e5ec' } },
+    },
+    series: [{
+      type: 'radar',
+      data: [{
+        value: targets.map((item) => item.coverage),
+        areaStyle: { color: 'rgba(11,11,12,.22)' },
+        lineStyle: { color: '#0b0b0c', width: 2.5 },
+        itemStyle: { color: '#0b0b0c' },
+      }],
+    }],
+  }), [targets])
+
+  if (!best || !worst) return <div className="dov__empty">업종 적합도 데이터가 없어요.</div>
+  return (
+    <div>
+      <ReactECharts option={option} style={{ height: 232 }} notMerge />
+      <div className="ins-radar__cap">
+        가장 잘 맞는 업종은 <b>{best.name}</b>({best.coverage}%) · 가장 낮은 업종은{' '}
+        <b>{worst.name}</b>({worst.coverage}%)
+        {worst.missing[0] && <> — <b>{worst.missing[0].canonical}</b>을 보완해보세요</>}
+      </div>
+    </div>
+  )
+}
+
+function LiveCoverageHistogram({ data }: { data: DistributionData }) {
+  const max = Math.max(...data.histogram.map((bin) => bin.count), 1)
+  return (
+    <div className="kit-hist">
+      <div className="kit-hist__headline">
+        국내 공고 {data.total.toLocaleString()}건 중 <b>{data.matched.toLocaleString()}건</b>이 기준을 넘어요
+        <div className="kit-hist__sample">내 백분위 {data.my_percentile}%</div>
+      </div>
+      <div className="kit-hist__chart">
+        <div className="kit-hist__thr" style={{ left: `${data.threshold}%` }} />
+        <div className="kit-hist__thr" style={{ left: `${data.coverage_score}%`, borderColor: '#0b0b0c' }} />
+        {data.histogram.map((bin) => (
+          <div key={bin.range_start} className="kit-hist__col">
+            <i className={bin.range_start >= data.threshold ? 'on' : ''} style={{ height: `${(bin.count / max) * 100}%` }} />
+          </div>
+        ))}
+      </div>
+      <div className="kit-hist__axis"><span>0%</span><span className="thr">문턱 {data.threshold}%</span><span>100%</span></div>
+    </div>
+  )
+}
+
 /** 데스크톱 대시보드 — 히어로 1개(커리어 점수) + KPI stat 4개 + 라벨 섹션 3개(내 시장 진단 ·
  * 무엇을 배울까 · 내 공고)로 구성한 위계형 커맨드센터. 좌측 인사이트 존은 [히어로존] +
  * [라벨 섹션들]로 나뉘며, 섹션 내부는 CSS grid로 카드 높이를 통일한다(우측 레일은 유지). */
@@ -47,13 +110,17 @@ export default function DesktopOverview() {
   const { user } = useAuth()
   const hasResume = resumes.length > 0 && !!activeResume
   const skills = activeResume?.skills ?? []
+  const identity = useMemo(() => {
+    const resumeId = Number(activeResume?.id)
+    const token = getAuthToken()
+    return Number.isInteger(resumeId) && resumeId > 0 && token ? { resumeId, token } : null
+  }, [activeResume?.id])
 
   const postings = useMemo(() => getDynamicPostings(skills), [skills])
   const domestic = useMemo(() => postings.filter((p) => p.pool === '국내'), [postings])
 
   const coverage = activeResume?.coveragePct ?? calculateCoverage(skills, '국내')
   const applicable = domestic.filter((p) => p.matchPct >= 50).length
-  const applicablePct = domestic.length ? Math.round((applicable / domestic.length) * 100) : 0
 
   const topJobs = useMemo(() => [...postings].sort((a, b) => b.matchPct - a.matchPct).slice(0, 6), [postings])
 
@@ -78,22 +145,40 @@ export default function DesktopOverview() {
     return [...count.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8)
   }, [domestic])
 
-  // 하이브리드 데이터 훅 — 이번 Phase는 전부 fetchLive=null(mock)로 넘기되,
-  // 위젯별 훅 경계는 그대로 마련해 향후 라이브 엔드포인트 연결 시 이 지점만 바꾸면 된다.
-  const scoreData = useWidgetData(null, { coverage, applicable, domesticTotal: domestic.length })
-  const applicableData = useWidgetData(null, { applicable, applicablePct })
-  const statsData = useWidgetData(null, { coverage, applicablePct, deadlineSoonCount, recentCount })
+  const coverageData = useWidgetData(
+    identity ? () => dashboardApi.coverage(identity, activeResume?.position) : null,
+    { coverage_score: coverage, top_skills: [] },
+  )
+  const countData = useWidgetData(
+    identity ? () => dashboardApi.applicableCount(identity, activeResume?.position) : null,
+    { total: applicable },
+  )
+  const distributionData = useWidgetData<DistributionData | null>(
+    identity ? () => dashboardApi.distribution(identity, activeResume?.position) : null,
+    null,
+  )
+  const pivotData = useWidgetData<PivotData | null>(identity ? () => dashboardApi.pivot(identity) : null, null)
+  const shareData = useWidgetData(identity ? () => dashboardApi.skillShare() : null, { items: [] })
+  const shownCoverage = Math.round(coverageData.value.coverage_score)
+  const shownApplicable = countData.value.total
+  const shownTotal = distributionData.value?.total ?? domestic.length
+  const shownApplicablePct = shownTotal ? Math.round((shownApplicable / shownTotal) * 100) : 0
+  const scoreData = {
+    value: { coverage: shownCoverage, applicable: shownApplicable, domesticTotal: shownTotal },
+    source: coverageData.source,
+  }
+  const statsData = { value: { recentCount } }
   const jobsData = useWidgetData(null, topJobs)
   const deadlinesData = useWidgetData(null, deadlines)
 
   const previewA = !hasResume && scoreData.source === 'mock'
 
   const rings: RingMetric[] = [
-    { key: 'cov', label: '기술 보유율', pct: coverage, color: '#fff' },
-    { key: 'app', label: '지원 가능', pct: applicablePct, color: '#1f9d57' },
+    { key: 'cov', label: '기술 보유율', pct: shownCoverage, color: '#fff' },
+    { key: 'app', label: '지원 가능', pct: shownApplicablePct, color: '#1f9d57' },
   ]
   const covNum = useCountUp(scoreData.value.coverage)
-  const applicableNum = useCountUp(applicableData.value.applicable)
+  const applicableNum = useCountUp(shownApplicable)
 
   // 개인화 위젯 3종(북마크 · 최근 조회 · 스킬 모멘텀)
   const bookmarkIds = useBookmarks()
@@ -110,10 +195,15 @@ export default function DesktopOverview() {
   )
 
   const domesticShare = marketData.skillShare['국내'] as { items: { tech: string; count: number; share: number; owned: boolean }[] }
-  const skillMomentum = useMemo(
-    () => domesticShare.items.filter((i) => skills.includes(i.tech)).sort((a, b) => b.share - a.share).slice(0, 6),
-    [skills],
-  )
+  const skillMomentum = useMemo(() => {
+    const live = shareData.source === 'live'
+      ? shareData.value.items.map((item) => ({ tech: item.canonical, share: item.share * 100 }))
+      : null
+    return (live ?? domesticShare.items)
+      .filter((item) => skills.includes(item.tech))
+      .sort((a, b) => b.share - a.share)
+      .slice(0, 6)
+  }, [shareData.source, shareData.value, skills])
   const maxMomentumShare = Math.max(...skillMomentum.map((i) => i.share), 1)
 
   // 위젯 리사이즈 헬퍼 — 시장 페이지(DesktopMarket)와 동일 패턴.
@@ -132,7 +222,7 @@ export default function DesktopOverview() {
   const briefSize = wsize('brief')
   const briefLines: ReactNode[] = [
     <li key="dl"><b>{deadlineSoonCount}건</b>이 곧 마감돼요</li>,
-    <li key="app">지원 가능 공고 <b>{applicable.toLocaleString()}건</b> · 커버리지 <b>{coverage}%</b></li>,
+    <li key="app">지원 가능 공고 <b>{shownApplicable.toLocaleString()}건</b> · 커버리지 <b>{shownCoverage}%</b></li>,
     topGap[0] && <li key="gap">가장 자주 요구되는 미보유 기술: <b>{topGap[0][0]}</b></li>,
   ].filter(Boolean) as ReactNode[]
   const briefVisible = briefSize === '1x1' ? briefLines.slice(0, 2) : briefLines
@@ -215,7 +305,11 @@ export default function DesktopOverview() {
                   <div className="dov__card-item">
                     <section className="dcard">
                       <SectionHeader title="업종 적합도" right={!hasResume && <PreviewBadge />} />
-                      <div className="dov__aside-chart"><IndustryFitRadar skills={skills} /></div>
+                      <div className="dov__aside-chart">
+                        {pivotData.source === 'live' && pivotData.value
+                          ? <LiveIndustryRadar data={pivotData.value} />
+                          : <IndustryFitRadar skills={skills} />}
+                      </div>
                     </section>
                   </div>
                 )}
@@ -223,12 +317,16 @@ export default function DesktopOverview() {
                   <div className="dov__card-item">
                     <section className="dcard">
                       <SectionHeader title="커버리지 분포" hint="내 백분위" right={!hasResume && <PreviewBadge />} />
-                      <CoverageHistogram
-                        postings={domestic.map((p) => ({ techs: p.techs, held: p.matchHeld, total: p.matchTotal }))}
-                        mySkills={skills}
-                        gap={topGap.map(([tech, count]) => ({ tech, count }))}
-                        poolLabel="국내"
-                      />
+                      {distributionData.source === 'live' && distributionData.value ? (
+                        <LiveCoverageHistogram data={distributionData.value} />
+                      ) : (
+                        <CoverageHistogram
+                          postings={domestic.map((p) => ({ techs: p.techs, held: p.matchHeld, total: p.matchTotal }))}
+                          mySkills={skills}
+                          gap={topGap.map(([tech, count]) => ({ tech, count }))}
+                          poolLabel="국내"
+                        />
+                      )}
                     </section>
                   </div>
                 )}
