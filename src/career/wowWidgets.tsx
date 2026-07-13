@@ -345,6 +345,7 @@ const A = aRaw as unknown as { as_of: string; sample_size: number; data: AData }
 
 export function HypeVsHireWidget({ size = '2x2' }: { size?: WidgetSize }) {
   const [live, setLive] = useState<AData | null>(null)
+  const [selectedTech, setSelectedTech] = useState(A.data.pearls[0]?.tech ?? A.data.series[0]?.tech ?? '')
   useEffect(() => {
     let cancelled = false
     marketApi.skillShare({ pool: 'global', top_k: 10 }).then(async (share) => {
@@ -364,36 +365,45 @@ export function HypeVsHireWidget({ size = '2x2' }: { size?: WidgetSize }) {
   }, [])
   const series = live?.series ?? A.data.series
   const pearls = live?.pearls.length ? live.pearls : A.data.pearls
+  const selected = series.find((item) => item.tech === selectedTech) ?? pearls[0] ?? series[0]
+
+  useEffect(() => {
+    if (selected && selected.tech !== selectedTech) setSelectedTech(selected.tech)
+  }, [selected, selectedTech])
 
   const option = useMemo(() => ({
     animationDuration: 600, animationEasing: 'cubicOut',
-    grid: { left: 46, right: 20, top: 20, bottom: 34 },
+    grid: { left: 52, right: 28, top: 30, bottom: 44 },
     tooltip: {
       ...tooltipStyle,
+      confine: true,
+      enterable: true,
+      extraCssText: 'max-width:260px;white-space:normal;line-height:1.55;',
       formatter: (p: { data: { raw: AItem } }) => {
         const d = p.data.raw
-        return `<b>${d.tech}</b>${d.owned ? ' <span style="color:#0b0b0c">· 보유</span>' : ''}<br/>관심 상위 ${100 - d.i_pct}% · 수요 상위 ${100 - d.d_pct}%`
+        return `<b>${d.tech}</b>${d.owned ? ' <span style="color:#0b0b0c">· 보유</span>' : ''}<br/>그래프 좌표 · 관심 ${d.i_pct}% / 수요 ${d.d_pct}%<br/>관심 하위 ${d.i_pct}% · 수요 상위 ${100 - d.d_pct}%<br/>HN 언급률 ${d.i_now}% · 채용 수요 비중 ${d.d_now}%`
       },
     },
     xAxis: {
-      type: 'value', name: '관심 →', min: 0, max: 100, nameTextStyle: { color: '#7c7f88', fontFamily: FONT, fontSize: 10 },
+      type: 'value', name: '관심 백분위 →', min: -20, max: 120, interval: 20, nameTextStyle: { color: '#7c7f88', fontFamily: FONT, fontSize: 10 },
       splitLine: { lineStyle: { color: '#eef1f6' } }, axisLine: { lineStyle: { color: '#e6e9ef' } },
-      axisLabel: { color: '#7c7f88', fontFamily: FONT, fontSize: 10, formatter: '{value}%' },
+      axisLabel: { color: '#7c7f88', fontFamily: FONT, fontSize: 10, formatter: (value: number) => value >= 0 && value <= 100 ? `${value}%` : '' },
     },
     yAxis: {
-      type: 'value', name: '수요 →', min: 0, max: 100, nameTextStyle: { color: '#7c7f88', fontFamily: FONT, fontSize: 10 },
+      type: 'value', name: '수요 백분위 →', min: -20, max: 120, interval: 20, nameTextStyle: { color: '#7c7f88', fontFamily: FONT, fontSize: 10 },
       splitLine: { lineStyle: { color: '#eef1f6' } }, axisLine: { lineStyle: { color: '#e6e9ef' } },
-      axisLabel: { color: '#7c7f88', fontFamily: FONT, fontSize: 10, formatter: '{value}%' },
+      axisLabel: { color: '#7c7f88', fontFamily: FONT, fontSize: 10, formatter: (value: number) => value >= 0 && value <= 100 ? `${value}%` : '' },
     },
     series: [{
       type: 'scatter',
+      clip: true,
       data: series.map((d) => ({
         value: [d.i_pct, d.d_pct], raw: d,
-        symbolSize: 6 + Math.log(d.n + 1) * 2.2,
+        symbolSize: Math.min(34, 7 + Math.log(d.n + 1) * 2.35),
         itemStyle: {
           color: d.cat === '진주' ? '#d9822b' : '#c9c9cf',
-          borderColor: d.owned ? '#0b0b0c' : 'transparent',
-          borderWidth: d.owned ? 2 : 0,
+          borderColor: d.tech === selectedTech ? '#0b0b0c' : d.owned ? '#52525b' : 'transparent',
+          borderWidth: d.tech === selectedTech ? 3 : d.owned ? 2 : 0,
           opacity: d.cat === '진주' ? 0.92 : 0.72,
         },
       })),
@@ -404,24 +414,48 @@ export function HypeVsHireWidget({ size = '2x2' }: { size?: WidgetSize }) {
         data: [{ xAxis: 50 }, { yAxis: 50 }],
       },
     }],
-  }), [series])
+  }), [selectedTech, series])
+
+  const chartEvents = useMemo(() => ({
+    click: (params: { data?: { raw?: AItem } }) => {
+      if (params.data?.raw) setSelectedTech(params.data.raw.tech)
+    },
+  }), [])
 
   return (
     <div className="dcard wow-card">
       <SectionHeader title="Hype vs Hire" hint="관심 × 수요" />
       <div className="wow-body">
         <span className="wow-scope">글로벌·HN 기준</span>
-        <p className="wow-headline">개발자가 떠드는 기술 ≠ 회사가 뽑는 기술. <b>좌상단이 숨은 기회</b> — 예: Power BI는 관심 하위 <b>6%</b>인데 수요 상위 <b>24%</b>.</p>
-        <div className={size === '2x2' ? 'wow-scatter-split' : undefined}>
-          <ReactECharts option={option} style={{ height: size === '1x1' ? 160 : 220 }} notMerge />
-          {size === '2x2' && (
-            <div className="wow-pearls">
-              <div className="wow-pearls__title">기회 사분면</div>
+        <p className="wow-headline">개발자가 많이 이야기하는 기술과 회사가 많이 찾는 기술은 다를 수 있어요. <b>원을 누르면 실제 그래프 좌표와 해석</b>을 확인할 수 있습니다.</p>
+        <div className="wow-scatter-stack">
+          <ReactECharts
+            option={option}
+            onEvents={chartEvents}
+            style={{ height: size === '1x1' ? 210 : size === '2x1' ? 280 : 340 }}
+            notMerge
+          />
+          {selected && (
+            <div className="wow-scatter-detail" aria-live="polite">
+              <div className="wow-scatter-detail__head">
+                <span className="wow-scatter-detail__tech">{selected.tech}</span>
+                <span className="wow-scatter-detail__summary">관심 하위 {selected.i_pct}% · 수요 상위 {100 - selected.d_pct}%</span>
+              </div>
+              <div className="wow-scatter-detail__metrics">
+                <span><small>관심 좌표</small><b>{selected.i_pct}%</b></span>
+                <span><small>수요 좌표</small><b>{selected.d_pct}%</b></span>
+                <span><small>HN 언급률</small><b>{selected.i_now}%</b></span>
+                <span><small>채용 수요 비중</small><b>{selected.d_now}%</b></span>
+              </div>
+            </div>
+          )}
+          {size === '2x2' && pearls.length > 1 && (
+            <div className="wow-pearls" aria-label="기회 기술 빠른 선택">
               {pearls.map((p) => (
-                <div key={p.tech} className="wow-pearls__row">
+                <button key={p.tech} type="button" className={`wow-pearls__row${selected?.tech === p.tech ? ' on' : ''}`} onClick={() => setSelectedTech(p.tech)}>
                   <span className="wow-pearls__tech">{p.tech}</span>
-                  <span className="wow-pearls__sub">수요상위 {100 - p.d_pct}% · 관심하위 {p.i_pct}%</span>
-                </div>
+                  <span className="wow-pearls__sub">수요 상위 {100 - p.d_pct}% · 관심 하위 {p.i_pct}%</span>
+                </button>
               ))}
             </div>
           )}
