@@ -1,58 +1,103 @@
 import { useEffect, useRef, useState } from 'react'
-import { ChevronRight, Compass, Send, Terminal } from 'lucide-react'
+import type { ChangeEvent, FormEvent } from 'react'
+import { ChevronRight, Compass, RotateCcw, Send } from 'lucide-react'
 import { SCENARIOS } from './demoScenarios'
-import VizChart from './VizChart'
+import { streamChat } from './chatStream'
+import { normalizeStreamResult } from './chatContract'
+import type { Citation, Confidence, Plan, Route, ToolResult, StreamStepKind } from './chatContract'
 import './rag-console.css'
 
-// Gemini / Claude Code / Codex 느낌 — 프롬프트를 받고 생각 → 쿼리 → 답변으로 부드럽게 흐른다.
-// 라벨 붙은 파이프라인 단계나 순회 서브그래프를 노출하지 않는다. 과정은 담담한 사고 문장으로 흘리고,
-// 근거는 시나리오별 정적 차트 하나로 조용히 붙인다.
+// 실 백엔드(POST /api/v1/chat/stream) 라이브 스트리밍 콘솔.
+// plan → step(tool/eval/synth) → result → final 프레임이 도착하는 즉시 상태에 반영해서,
+// 전체 응답이 끝나야 뭔가 보이는 게 아니라 파이프라인이 실제로 진행되는 걸 그대로 보여준다.
+// 기본 모드: 답변 + 인용 + 신뢰도 + 진행 중엔 한 줄짜리 라이브 상태. Verbose: 단계·도구 결과까지 실시간 노출.
+// 데모 시나리오는 가짜 답변을 재생하지 않는다 — 칩은 실제 질문을 보내는 시드일 뿐이다.
+
+type Mode = 'basic' | 'verbose'
+type TurnStatus = 'loading' | 'done' | 'error'
+
+interface StepEntry {
+  kind: StreamStepKind
+  tool?: string
+  label: string
+  detail?: string
+}
+
+interface FinalPayload {
+  answer: string
+  citations: Citation[]
+  confidence: Confidence
+  degraded: boolean
+}
+
+interface Turn {
+  id: number
+  question: string
+  status: TurnStatus
+  route?: Route
+  plan?: Plan
+  steps: StepEntry[]
+  results: ToolResult[]
+  final?: FinalPayload
+  error?: string
+}
+
+let nextTurnId = 1
 
 export default function RagConsole() {
-  const [idx, setIdx] = useState(0)
-  const [ti, setTi] = useState(0)        // 드러난 사고 문장 수
-  const [queried, setQueried] = useState(false)
-  const [segIdx, setSegIdx] = useState(0)
-  const [runId, setRunId] = useState(0)
-  const timers = useRef<number[]>([])
+  const [turns, setTurns] = useState<Turn[]>([])
+  const [mode, setMode] = useState<Mode>('basic')
+  const [input, setInput] = useState('')
+  const bodyRef = useRef<HTMLDivElement>(null)
 
-  const scn = SCENARIOS[idx]
-  const thinkingDone = ti >= scn.thinking.length
-  const answering = queried
-  const done = queried && segIdx >= scn.answer.length
-
-  const play = (i: number) => { setIdx(i); setRunId((n) => n + 1) }
+  const busy = turns.some((t) => t.status === 'loading')
 
   useEffect(() => {
-    setTi(0); setQueried(false); setSegIdx(0)
-    timers.current.forEach(clearTimeout)
-    timers.current = []
-    return () => timers.current.forEach(clearTimeout)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [runId])
+    bodyRef.current?.scrollTo({ top: bodyRef.current.scrollHeight, behavior: 'smooth' })
+  }, [turns])
 
-  // 생각: 사고 문장이 하나씩 부드럽게 떠오른다 → 다 뜨면 쿼리로
-  useEffect(() => {
-    if (ti < scn.thinking.length) {
-      const t = window.setTimeout(() => setTi((n) => n + 1), 780)
-      timers.current.push(t); return () => clearTimeout(t)
-    }
-    if (!queried) {
-      const t = window.setTimeout(() => setQueried(true), 640)
-      timers.current.push(t); return () => clearTimeout(t)
-    }
-  }, [ti, queried, scn.thinking.length])
+  const patchTurn = (id: number, patch: Partial<Turn> | ((t: Turn) => Partial<Turn>)) => {
+    setTurns((prev) => prev.map((t) => (t.id === id ? { ...t, ...(typeof patch === 'function' ? patch(t) : patch) } : t)))
+  }
 
-  // 답변: 세그먼트가 왼쪽부터 페이드로 나타난다(타이핑 아님)
-  useEffect(() => {
-    if (!answering || segIdx >= scn.answer.length) return
-    const t = window.setTimeout(() => setSegIdx((n) => n + 1), 760)
-    timers.current.push(t); return () => clearTimeout(t)
-  }, [answering, segIdx, scn.answer.length])
+  const runTurn = (id: number, question: string) => {
+    streamChat(question, undefined, {
+      onPlan: (e) => patchTurn(id, { route: e.route, plan: e.plan }),
+      onStep: (e) => patchTurn(id, (t) => ({ steps: [...t.steps, { kind: e.kind, tool: e.tool, label: e.label, detail: e.detail }] })),
+      onResult: (e) => patchTurn(id, (t) => ({ results: [...t.results, normalizeStreamResult(e.result)] })),
+      onFinal: (e) =>
+        patchTurn(id, {
+          status: 'done',
+          final: { answer: e.answer, citations: e.citations, confidence: e.confidence, degraded: e.degraded },
+          error: undefined,
+        }),
+      onError: (message) => patchTurn(id, { status: 'error', error: message }),
+    }).then(() => {
+      // final도 error도 없이 스트림이 그냥 끝난 경우(연결이 조용히 끊긴 케이스) 대비.
+      patchTurn(id, (t) => (t.status === 'loading' ? { status: 'error', error: '스트림이 예기치 않게 끊겼어요.' } : {}))
+    })
+  }
 
-  const status = done ? '완료' : answering ? '답변 작성 중' : thinkingDone ? '조회하는 중' : '생각하는 중'
-  const level = scn.n >= 500 ? 5 : scn.n >= 200 ? 4 : scn.n >= 50 ? 3 : 2
-  const dots = Array.from({ length: 5 }, (_, i) => i < level)
+  const submit = (question: string) => {
+    const q = question.trim()
+    if (!q || busy) return
+    const id = nextTurnId++
+    setTurns((prev) => [...prev, { id, question: q, status: 'loading', steps: [], results: [] }])
+    runTurn(id, q)
+  }
+
+  const retry = (turn: Turn) => {
+    patchTurn(turn.id, { status: 'loading', error: undefined, route: undefined, plan: undefined, steps: [], results: [], final: undefined })
+    runTurn(turn.id, turn.question)
+  }
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault()
+    submit(input)
+    setInput('')
+  }
+
+  const status = busy ? '답변 작성 중' : turns.length ? '대기 중' : '질문을 기다리는 중'
 
   return (
     <div className="rc">
@@ -60,82 +105,273 @@ export default function RagConsole() {
         <span className="rc__avatar"><Compass size={15} /></span>
         <div>
           <div className="rc__nm">커리어 어시스턴트</div>
-          <div className={`rc__st${done ? '' : ' rc__st--live'}`}>{status}</div>
+          <div className={`rc__st${busy ? ' rc__st--live' : ''}`}>{status}</div>
         </div>
       </div>
 
-      <div className="rc__body">
-        <div className="rc__q">{scn.userQ}</div>
-
-        {/* 생각 — 부드럽게 떠오르는 사고 문장들 */}
-        <div className="rc__think">
-          {scn.thinking.slice(0, ti).map((step, i) => {
-            const active = !thinkingDone && i === ti - 1
-            return (
-              <div className={`rc__think-line${active ? ' is-active' : ''}`} key={i}>
-                <span className="rc__think-dot" />
-                <span className="rc__think-text">{step.text}</span>
-                <span className="rc__think-res">{step.result}</span>
-              </div>
-            )
-          })}
+      <div className="rc__toolbar">
+        <span className="rc__toolbar-label">대화</span>
+        <div className="rc__seg" role="group" aria-label="답변 과정 표시 수준">
+          <button type="button" aria-pressed={mode === 'basic'} onClick={() => setMode('basic')}>기본 과정 보기</button>
+          <button type="button" aria-pressed={mode === 'verbose'} onClick={() => setMode('verbose')}>모든 과정 보기 · Verbose</button>
         </div>
-
-        {/* 쿼리 — 실제로 도는 조회 한 줄 (어떤 도구로 라우팅됐는지 함께) */}
-        {queried && (
-          <div className="rc__query">
-            <Terminal size={12} />
-            <span className={`rc__route rc__route--${scn.route}`}>{scn.route}</span>
-            <code>{scn.query}</code>
-          </div>
-        )}
-
-        {/* 답변 + 시각화 */}
-        {answering && (
-          <div className="rc__out">
-            <div className="rc__viz">
-              <div className="rc__viz-cap">{scn.vizLabel}</div>
-              <VizChart viz={scn.viz} />
-            </div>
-
-            <div className="rc__answer">
-              {scn.answer.map((seg, i) => {
-                if (i > segIdx) return null
-                const words = seg.text.split(' ')
-                return (
-                  <p className="rc__seg" key={i}>
-                    {words.map((w, wi) => (
-                      <span className="rc__w" key={wi} style={{ animationDelay: `${wi * 26}ms` }}>{w}</span>
-                    ))}
-                    {i < segIdx && <span className="rc__cite"><span className="dot" />{seg.cite}</span>}
-                  </p>
-                )
-              })}
-            </div>
-
-            {done && (
-              <div className="rc__foot">
-                <span className="rc__dots">{dots.map((on, i) => <i key={i} className={on ? 'on' : ''} />)}</span>
-                근거 <b>{scn.n.toLocaleString()}</b>건 기반
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
-      <div className="rc__composer">
+      <div className="rc__body" ref={bodyRef}>
+        {turns.length === 0 && (
+          <div className="rc__empty">궁금한 걸 물어보거나, 아래 추천 질문을 눌러보세요.</div>
+        )}
+        {turns.map((turn) => (
+          <TurnBlock key={turn.id} turn={turn} mode={mode} onRetry={() => retry(turn)} />
+        ))}
+      </div>
+
+      <form className="rc__composer" onSubmit={handleSubmit}>
         <div className="rc__input">
-          <input readOnly value={scn.userQ} />
-          <button className="rc__send" onClick={() => play(idx)} aria-label="다시 실행"><Send size={16} /></button>
+          <input
+            value={input}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
+            placeholder="채용 시장에 대해 무엇이든 물어보세요"
+            disabled={busy}
+          />
+          <button className="rc__send" type="submit" disabled={busy || !input.trim()} aria-label="질문 보내기">
+            <Send size={16} />
+          </button>
         </div>
         <div className="rc__chips">
-          {SCENARIOS.map((s, i) => (
-            <button key={s.id} className={`rc__chip${i === idx ? ' active' : ''}`} onClick={() => play(i)}>
+          {SCENARIOS.map((s) => (
+            <button key={s.id} type="button" className="rc__chip" onClick={() => submit(s.userQ)} disabled={busy}>
               {s.chip} <ChevronRight size={13} className="chev" />
             </button>
           ))}
         </div>
+      </form>
+    </div>
+  )
+}
+
+// 기본 모드에서 보여줄 한 줄짜리 라이브 상태. 아직 도착한 게 없으면 "계획 중", plan은 왔는데
+// step이 아직 없으면 도구 조회 직전으로 보고, step이 있으면 가장 최근 step.kind를 그대로 반영한다.
+const PHASE_LABEL: Record<StreamStepKind, string> = {
+  tool: '도구 조회 중…',
+  eval: '근거 검증 중…',
+  synth: '답변 작성 중…',
+}
+
+function basicPhaseLabel(turn: Turn): string {
+  if (turn.steps.length > 0) return PHASE_LABEL[turn.steps[turn.steps.length - 1].kind] ?? '처리 중…'
+  if (turn.plan) return '도구 조회 중…'
+  return '계획 중…'
+}
+
+function TurnBlock({ turn, mode, onRetry }: { turn: Turn; mode: Mode; onRetry: () => void }) {
+  const nothingYet = !turn.plan && turn.steps.length === 0 && turn.status === 'loading'
+
+  return (
+    <div className="rc__turn">
+      <div className="rc__q">{turn.question}</div>
+
+      {/* plan 프레임 도착 즉시(진행 중이든 완료든) 라우트·의도를 바로 보여준다 */}
+      {turn.plan && turn.route && (
+        <div className="rc__meta">
+          <span className={`rc__route rc__route--${turn.route}`}>{turn.route}</span>
+          <span className="rc__badge rc__badge--intent">{turn.plan.intent}</span>
+          {turn.final?.degraded && <span className="rc__degraded">근거가 얕아 규칙 기반으로 보완됐어요</span>}
+        </div>
+      )}
+
+      {nothingYet && (
+        <div className="rc__skeleton" aria-live="polite" aria-busy="true">
+          <span className="rc__skel-line" style={{ width: '86%' }} />
+          <span className="rc__skel-line" style={{ width: '64%' }} />
+          <span className="rc__skel-line" style={{ width: '72%' }} />
+        </div>
+      )}
+
+      {mode === 'basic' && turn.status === 'loading' && !nothingYet && (
+        <div className="rc__livestatus" aria-live="polite">{basicPhaseLabel(turn)}</div>
+      )}
+
+      {mode === 'verbose' && turn.steps.length > 0 && (
+        <div className="rc__ev-group">
+          <div className="rc__ev-k">답변을 만든 방식</div>
+          <div className="rc__steps">
+            {turn.steps.map((s, i) => <StepRow key={i} step={s} />)}
+          </div>
+        </div>
+      )}
+
+      {mode === 'verbose' && turn.results.length > 0 && (
+        <div className="rc__ev-group">
+          <div className="rc__ev-k">도구 결과</div>
+          <div className="rc__tool-results">
+            {turn.results.map((r, i) => <ToolResultCard key={i} result={r} />)}
+          </div>
+        </div>
+      )}
+
+      {turn.status === 'error' && (
+        <div className="rc__error">
+          <span className="rc__error-text">{turn.error ?? '답변을 가져오지 못했어요.'}</span>
+          <button type="button" className="rc__retry" onClick={onRetry}>
+            <RotateCcw size={13} /> 다시 시도
+          </button>
+        </div>
+      )}
+
+      {turn.status === 'done' && turn.final && <FinalBlock final={turn.final} mode={mode} />}
+    </div>
+  )
+}
+
+function FinalBlock({ final, mode }: { final: FinalPayload; mode: Mode }) {
+  const paragraphs = final.answer.split(/\n+/).filter(Boolean)
+  const confLabel = final.confidence.level >= 4 ? '높음' : final.confidence.level >= 2 ? '보통' : '낮음'
+  const dots = Array.from({ length: 5 }, (_, i) => i < final.confidence.level)
+
+  return (
+    <div className="rc__out">
+      <div className="rc__answer">
+        {paragraphs.length > 0
+          ? paragraphs.map((p, i) => <p className="rc__seg" key={i}>{p}</p>)
+          : <p className="rc__seg">답변 내용이 비어 있어요.</p>}
       </div>
+
+      <div className="rc__evidence">
+        <div className="rc__ev-head">이 답변의 근거</div>
+
+        <div className="rc__ev-group">
+          <div className="rc__ev-k">인용한 근거 ({final.citations.length})</div>
+          {final.citations.length === 0 ? (
+            <div className="rc__citerow-empty">이번 답변에는 특정 인용이 없어요.</div>
+          ) : (
+            <div className="rc__citerows">
+              {final.citations.map((c, i) => (
+                <div className="rc__citerow" key={i}>
+                  <span className="rc__citerow-n">[{i + 1}]</span>
+                  <span className="rc__citerow-body">
+                    <span className="rc__citerow-t">{c.label}</span>
+                    <span className="rc__citerow-tag">{c.type} · {c.ref}</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="rc__ev-group">
+          <div className="rc__ev-k">신뢰도</div>
+          <div className="rc__conf">
+            <span className="rc__dots">{dots.map((on, i) => <i key={i} className={on ? 'on' : ''} />)}</span>
+            <div className="rc__conf-txt">
+              <div className="rc__conf-v">{confLabel}</div>
+              <div className="rc__conf-n">{final.confidence.n.toLocaleString()}건 표본 기반</div>
+            </div>
+          </div>
+        </div>
+
+        {mode === 'basic' && (
+          <div className="rc__basic-hint">데이터 출처 · 답변 과정은 상단 <b>모든 과정 보기</b>에서 열려요.</div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+const STEP_KIND_LABEL: Record<StreamStepKind, string> = {
+  tool: '도구 호출', eval: '평가', synth: '종합',
+}
+
+function StepRow({ step }: { step: StepEntry }) {
+  return (
+    <div className="rc__step">
+      <span className="rc__step-i" />
+      <span className="rc__step-t">
+        <b>{STEP_KIND_LABEL[step.kind] ?? step.kind}</b> {step.label}
+        {step.detail && <span className="rc__step-detail"> · {step.detail}</span>}
+        {step.tool && <span className="rc__step-tool">{step.tool}</span>}
+      </span>
+    </div>
+  )
+}
+
+// tool_results는 kind가 다양해도 실제로 채워진 필드(items/value/nodes)를 기준으로 렌더링한다.
+// list·trend·compare 모두 items[] 랭크드 로우로, stat은 큰 숫자로, graph는 노드·엣지 요약으로 대체한다.
+function ToolResultCard({ result }: { result: ToolResult }) {
+  if (result.items.length > 0) return <RankedRows result={result} />
+  if (result.kind === 'graph' && (result.nodes.length > 0 || result.edges.length > 0)) return <GraphSummary result={result} />
+  if (result.value !== undefined && result.value !== null) return <StatBig result={result} />
+  return (
+    <div className="rc__tr">
+      <div className="rc__tr-label">{result.label}</div>
+    </div>
+  )
+}
+
+// metric 문자열("408건", "22.7%")에서 숫자만 뽑아낸다. 못 찾으면 null.
+function parseMetricNumber(metric?: string): number | null {
+  if (!metric) return null
+  const m = metric.replace(/,/g, '').match(/-?\d+(\.\d+)?/)
+  return m ? Number(m[0]) : null
+}
+
+function RankedRows({ result }: { result: ToolResult }) {
+  const pctMax = Math.max(0, ...result.items.map((it) => it.pct ?? 0))
+  const metricMax = Math.max(0, ...result.items.map((it) => parseMetricNumber(it.metric) ?? 0))
+
+  // pct가 있으면 pct 기준, 없으면(백엔드가 pct를 못 채운 예외 상황) metric에서 숫자를 뽑아
+  // 형제 항목들의 최댓값 대비 비율로 막대 폭을 대신 계산한다 — 막대가 아예 안 보이는 걸 막는 방어선.
+  const widthFor = (it: ToolResult['items'][number]) => {
+    if (it.pct !== undefined) return pctMax > 0 ? Math.min(100, (it.pct / pctMax) * 100) : 0
+    const n = parseMetricNumber(it.metric)
+    if (n !== null && metricMax > 0) return Math.min(100, (n / metricMax) * 100)
+    return 0
+  }
+
+  return (
+    <div className="rc__tr">
+      <div className="rc__tr-label">{result.label}</div>
+      <div className="rc__minichart">
+        {result.items.map((it, i) => (
+          <div className="rc__mc-row" key={i}>
+            <span className="rc__mc-label">{it.name}</span>
+            <span className="rc__mc-track">
+              <span className="rc__mc-fill" style={{ width: `${widthFor(it)}%` }} />
+            </span>
+            <span className="rc__mc-val">{it.metric ?? (it.pct !== undefined ? `${it.pct}%` : '')}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function StatBig({ result }: { result: ToolResult }) {
+  return (
+    <div className="rc__tr">
+      <div className="rc__tr-label">{result.label}</div>
+      <div className="rc__stat">
+        <span className="rc__stat-big">{result.value}</span>
+        {result.unit && <span className="rc__stat-unit">{result.unit}</span>}
+      </div>
+    </div>
+  )
+}
+
+function GraphSummary({ result }: { result: ToolResult }) {
+  const nodeLabels = result.nodes
+    .map((n) => (typeof n.label === 'string' ? n.label : typeof n.name === 'string' ? n.name : typeof n.id === 'string' ? n.id : null))
+    .filter((v): v is string => !!v)
+    .slice(0, 8)
+  return (
+    <div className="rc__tr">
+      <div className="rc__tr-label">{result.label}</div>
+      <div className="rc__graph-meta">노드 {result.nodes.length}개 · 연결 {result.edges.length}개</div>
+      {nodeLabels.length > 0 && (
+        <div className="rc__badges">
+          {nodeLabels.map((l, i) => <span className="rc__badge" key={i}>{l}</span>)}
+        </div>
+      )}
     </div>
   )
 }
