@@ -207,10 +207,15 @@ export default function JobDetail() {
   const [desktopNearby, setDesktopNearby] = useState<PostingCard[] | null>(null)
   const [desktopSimilar, setDesktopSimilar] = useState<Array<PostingCard & { overlap_count?: number }> | null>(null)
   const [desktopPin, setDesktopPin] = useState<MapPin | undefined>()
+  // 데스크톱은 실 API로 상세를 새로 불러오는데, 이 요청이 끝나기 전엔 아직 desktopDetail이
+  // 비어서 p가 mockP(대부분 매칭 안 됨=undefined)로 떨어져 "공고를 찾을 수 없어요"가
+  // 잠깐 번쩍이고 사라지는 문제가 있었다 — 로딩 중엔 그 대신 스켈레톤을 보여준다.
+  const [detailLoading, setDetailLoading] = useState(false)
 
   useEffect(() => {
     if (!isDesktop || !id) return
     let cancelled = false
+    setDetailLoading(true)
     const numericResumeId = Number(activeResume?.id)
     Promise.allSettled([
       jobsApi.detail(id),
@@ -226,6 +231,7 @@ export default function JobDetail() {
         const pin = map.value.pins.find((item) => String(item.id) === decodeURIComponent(id))
         if (pin) setDesktopPin({ id: String(pin.id), lat: pin.lat, lng: pin.lng })
       }
+      setDetailLoading(false)
     })
     return () => { cancelled = true }
   }, [isDesktop, id, activeResume?.id])
@@ -243,7 +249,7 @@ export default function JobDetail() {
     pool: desktopDetail.pool === 'domestic' ? '국내' : desktopDetail.pool === 'global' ? '국외' : fallbackP.pool,
     company: desktopDetail.company ?? '회사명 미상',
     title: desktopDetail.title,
-    logo: mockP?.logo ?? '',
+    logo: desktopDetail.logo_url ?? mockP?.logo ?? '',
     postDate: desktopDetail.post_date ?? '',
     closeDate: desktopDetail.close_date ?? '',
     careerMin: desktopDetail.career_min,
@@ -251,7 +257,15 @@ export default function JobDetail() {
     region: desktopDetail.region,
     techs: desktopDetail.skills,
     url: desktopDetail.url,
-    companyInfo: { ...fallbackP.companyInfo, industry: desktopDetail.industry ?? fallbackP.companyInfo?.industry ?? '', location: desktopDetail.region ?? fallbackP.companyInfo?.location ?? '' },
+    district: mockP?.district ?? '',
+    descSections: desktopDetail.desc_sections?.length ? desktopDetail.desc_sections : (mockP?.descSections ?? []),
+    companyInfo: {
+      industry: desktopDetail.industry ?? mockP?.companyInfo?.industry ?? '',
+      location: desktopDetail.region ?? mockP?.companyInfo?.location ?? '',
+      homepage: mockP?.companyInfo?.homepage ?? '',
+      established: mockP?.companyInfo?.established ?? '',
+      tags: mockP?.companyInfo?.tags ?? [],
+    },
   } : mockP
   const bookmarked = isBookmarked(p?.id ?? '')
 
@@ -284,12 +298,28 @@ export default function JobDetail() {
     const existing = getDynamicPostings(activeSkills).find((item) => String(item.id) === String(card.id))
     const base = existing ?? getDynamicPostings(activeSkills)[0]
     const held = card.skills.filter((skill) => activeSkills.includes(skill))
-    return { ...base, ...existing, id: String(card.id), title: card.title, company: card.company ?? '회사명 미상', logo: existing?.logo ?? '', postDate: card.post_date ?? '', closeDate: card.close_date ?? '', techs: card.skills, matchHeld: card.matched_count ?? held.length, matchTotal: card.skills.length, matchPct: card.skills.length ? Math.round(((card.matched_count ?? held.length) / card.skills.length) * 100) : 0, gap: card.skills.filter((skill) => !activeSkills.includes(skill)) }
+    return { ...base, ...existing, id: String(card.id), title: card.title, company: card.company ?? '회사명 미상', logo: card.logo_url ?? existing?.logo ?? '', postDate: card.post_date ?? '', closeDate: card.close_date ?? '', techs: card.skills, matchHeld: card.matched_count ?? held.length, matchTotal: card.skills.length, matchPct: card.skills.length ? Math.round(((card.matched_count ?? held.length) / card.skills.length) * 100) : 0, gap: card.skills.filter((skill) => !activeSkills.includes(skill)) }
   }
   const nearby = desktopNearby?.map(apiCardToPosting) ?? mockNearby
   const similar = desktopSimilar?.map(apiCardToPosting) ?? mockSimilar
 
   if (!p) {
+    if (isDesktop && detailLoading) {
+      return (
+        <div className="stage stage--app">
+          <PhoneFrame app stage="purple" bare screenBg={t.screenBg} statusTheme={t.statusTheme} homeIndicator="none">
+            <div className="crd" style={themeVars(t)}>
+              <div className="crd-skeleton" aria-busy="true" aria-live="polite">
+                <span className="crd-skel crd-skel--lg" style={{ width: '60%' }} />
+                <span className="crd-skel" style={{ width: '85%' }} />
+                <span className="crd-skel" style={{ width: '40%' }} />
+                <span className="crd-skel crd-skel--block" />
+              </div>
+            </div>
+          </PhoneFrame>
+        </div>
+      )
+    }
     return (
       <div className="stage stage--app">
         <PhoneFrame app stage="purple" bare screenBg={t.screenBg} statusTheme={t.statusTheme} homeIndicator="none">
@@ -341,9 +371,16 @@ export default function JobDetail() {
       <span className="crd__pill"><MapPin size={15} /> {p.region || 'Remote'}</span>
       <span className="crd__pill"><Briefcase size={15} /> {careerText(p.careerMin, p.careerMax)}</span>
       {p.closeDate && (() => {
-        const d = Math.round((new Date(p.closeDate).getTime() - new Date(data.meta.asOf).getTime()) / 86400000)
-        if (d < 0) return null
+        const now = isDesktop && desktopDetail ? new Date() : new Date(data.meta.asOf)
+        const d = Math.round((new Date(p.closeDate).getTime() - now.getTime()) / 86400000)
         const [, m, dd] = p.closeDate.split('-')
+        if (d < 0) {
+          return (
+            <span className="crd__pill" style={{ color: '#a2a6b0' }}>
+              <Calendar size={15} /> {Number(m)}/{Number(dd)} 마감됨
+            </span>
+          )
+        }
         return (
           <span className="crd__pill" style={{ color: '#e0693a' }}>
             <Calendar size={15} /> ~{Number(m)}/{Number(dd)} 마감 D-{d}
