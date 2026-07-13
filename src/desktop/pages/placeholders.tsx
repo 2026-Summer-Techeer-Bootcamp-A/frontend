@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Search, MapPin, ArrowUpRight, FileText, Settings, Award } from 'lucide-react'
+import { Search, MapPin, ArrowUpRight, FileText, Settings, Award, User } from 'lucide-react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import catData from '../../data/pearl/n.json'
@@ -1245,15 +1245,21 @@ export function DesktopMy() {
 
       <div className="dmy__top">
         <section className="dmy__hero">
-          <span className="dmy__hero-avatar">{initial}</span>
+          <span className="dmy__hero-avatar">{isAuthed ? initial : <User size={22} strokeWidth={2} />}</span>
           <div className="dmy__hero-id">
-            <span className="dmy__hero-nm">{name}</span>
-            <span className="dmy__hero-em">{email}</span>
-            <div className="dmy__hero-stats">
-              <span><b>{skills.length}</b> 보유 기술</span>
-              <span><b>{coverage}%</b> 커버리지</span>
-              <span><b>{bookmarkedPostings.length}</b> 북마크</span>
-            </div>
+            {isAuthed ? (
+              <>
+                <span className="dmy__hero-nm">{name}</span>
+                <span className="dmy__hero-em">{email}</span>
+                <div className="dmy__hero-stats">
+                  <span><b>{skills.length}</b> 보유 기술</span>
+                  <span><b>{coverage}%</b> 커버리지</span>
+                  <span><b>{bookmarkedPostings.length}</b> 북마크</span>
+                </div>
+              </>
+            ) : (
+              <span className="dmy__hero-nm">로그인을 해 주세요</span>
+            )}
           </div>
           <button className="dmy__hero-edit" onClick={() => navigate(isAuthed ? '/settings/account' : '/login')}>
             {isAuthed ? '내 정보 수정' : '로그인'}
