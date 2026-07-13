@@ -24,7 +24,7 @@ const poolToApi = (pool: '국내' | '국외' | undefined): 'domestic' | 'global'
 const poolFromApi = (pool: 'domestic' | 'global'): '국내' | '국외' =>
   pool === 'global' ? '국외' : '국내'
 
-function detailToResume(detail: ResumeDetailDto): Resume {
+export function detailToResume(detail: ResumeDetailDto): Resume {
   const skills = detail.skills.map((s) => s.canonical)
   return {
     id: String(detail.resume_id),

@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { UploadCloud, Plus, X } from 'lucide-react'
 import { SubScreen, PoolToggle } from './charts'
 import { SkillChip, TechSearchSheet, CertSearchSheet, SegmentedControl } from './kit'
-import { useResumesState, resumeToUpsertPayload } from './state'
+import { useResumesState, resumeToUpsertPayload, detailToResume } from './state'
 import { resumeApi } from './api'
 import type { ResumePreferencesDto } from './api'
 import { getAuthToken } from './authStore'
@@ -97,27 +97,33 @@ export default function ResumeSubmit() {
 
   useEffect(() => {
     if (!existing) return
-    setTitle(existing.title)
-    if (existing.position && POSITIONS.includes(existing.position)) setPosition(existing.position)
-    setPool(existing.pool ?? '국내')
-    setCareerMin(String(existing.careerMin ?? 0))
-    setCareerMax(String(existing.careerMax ?? 3))
-    setSkills(existing.skills)
-    setCerts(existing.certs)
-    setMemo(existing.memo ?? '')
-
     const token = getAuthToken()
-    if (token) {
-      resumeApi.getPreferences(Number(existing.id), token).then((p) => {
-        setLevel(p.level)
-        setJobSearchStatus(p.jobSearchStatus)
-        setCompanyStagePrefs({ ...DEFAULT_PREFS.companyStagePrefs, ...p.companyStagePrefs })
-        setSectorInterests(p.sectorInterests)
-        setRemote(p.location.remote)
-        setOnsite(p.location.onsite)
-        setRegions(p.location.regions)
-      }).catch(() => { /* keep defaults */ })
-    }
+    if (!token) return
+
+    // resumes 목록의 비활성 항목은 skills/certs/career가 빈 스텁이라(useResumesState 참고),
+    // 폼을 채울 때는 반드시 이 이력서의 실제 상세를 직접 불러온다 — 그렇지 않으면
+    // 비어있는 스텁으로 폼이 채워졌다가 저장 시 실제 데이터를 덮어써버린다.
+    resumeApi.detail(Number(existing.id), token).then((detail) => {
+      const full = detailToResume(detail)
+      setTitle(full.title)
+      if (full.position && POSITIONS.includes(full.position)) setPosition(full.position)
+      setPool(full.pool ?? '국내')
+      setCareerMin(String(full.careerMin ?? 0))
+      setCareerMax(String(full.careerMax ?? 3))
+      setSkills(full.skills)
+      setCerts(full.certs)
+      setMemo(full.memo ?? '')
+    }).catch(() => setParseError('이력서를 불러오지 못했어요. 잠시 후 다시 시도해주세요.'))
+
+    resumeApi.getPreferences(Number(existing.id), token).then((p) => {
+      setLevel(p.level)
+      setJobSearchStatus(p.jobSearchStatus)
+      setCompanyStagePrefs({ ...DEFAULT_PREFS.companyStagePrefs, ...p.companyStagePrefs })
+      setSectorInterests(p.sectorInterests)
+      setRemote(p.location.remote)
+      setOnsite(p.location.onsite)
+      setRegions(p.location.regions)
+    }).catch(() => { /* keep defaults */ })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [existing?.id])
 
