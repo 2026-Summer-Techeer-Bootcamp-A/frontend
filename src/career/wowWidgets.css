@@ -120,14 +120,27 @@
 .wow-joblist__row:first-child { border-top: none; }
 .wow-joblist__row:hover { background: var(--accent-50, #f5f5f6); }
 .wow-joblist__row:active { background: var(--accent-100, #e4e4e7); }
-.wow-joblist__top { display: flex; align-items: flex-start; gap: 10px; }
+.wow-joblist__top { display: flex; align-items: center; gap: 10px; }
 .wow-joblist__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .wow-joblist__meta { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .wow-joblist__co { font-size: 10.5px; font-weight: 700; color: var(--c-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.wow-joblist__date { flex: none; font-size: 10px; font-weight: 600; color: var(--c-muted); }
+.wow-joblist__date { flex: none; font-size: 11px; font-weight: 600; color: var(--c-muted); text-align: right; }
 .wow-joblist__title {
+  display: flex; align-items: center; gap: 5px; min-width: 0;
+}
+.wow-joblist__title-text {
   font-size: 13px; font-weight: 700; color: var(--c-ink);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+.wow-jobbadge {
+  flex: none;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 999px;
+  color: #1f9d57;
+  background: #e6f5ed;
 }
 .wow-joblist__loc { font-size: 10.5px; font-weight: 600; color: var(--c-muted); }
 .wow-joblist__chips { display: flex; flex-wrap: wrap; gap: 4px; }

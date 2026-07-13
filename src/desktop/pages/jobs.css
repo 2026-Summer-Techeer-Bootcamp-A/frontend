@@ -197,8 +197,36 @@
   background: rgba(31, 157, 87, 0.1);
   border-color: rgba(31, 157, 87, 0.35);
 }
+/* 필터(기술 스택)에서 고른 스킬 — 보유는 아니지만 내가 원해서 고른 조건이라 중립(근흑 텍스트 + 옅은 회색). */
+.djobs__mtech.picked {
+  color: var(--c-ink);
+  background: var(--accent-100);
+  border-color: var(--line, #e6e9ef);
+}
+/* 보유도 아니고 필터에서도 고르지 않은 스킬 — 더 옅게 + 아주 옅은 빨강(로즈) 틴트만. */
+.djobs__mtech.extra {
+  color: var(--c-muted);
+  background: rgba(200, 56, 45, 0.06);
+  border-color: rgba(200, 56, 45, 0.12);
+  opacity: 0.85;
+}
 .djobs__mtech.more {
   color: var(--c-muted);
   background: transparent;
   border-style: dashed;
+}
+
+/* ── 프리뷰 패널 요구 기술 칩(.djobs__tech, 기본 스타일은 placeholders.css) —
+   held는 placeholders.css에서 이미 그린으로 정의됨. 여기서는 필터 선택 여부에 따른
+   중립/옅은 빨강 2단만 추가로 override한다(jobs.css가 뒤에 로드되어 우선). ── */
+.djobs__tech.picked {
+  color: var(--c-ink);
+  background: var(--accent-100);
+  border-color: var(--line, #e6e9ef);
+}
+.djobs__tech.extra {
+  color: var(--c-muted);
+  background: rgba(200, 56, 45, 0.06);
+  border-color: rgba(200, 56, 45, 0.12);
+  opacity: 0.85;
 }
