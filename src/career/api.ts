@@ -16,7 +16,7 @@ export type PostingCard = {
   close_date: string | null
   skills: string[]
   url: string
-  matched_count: number | null
+  matched_count?: number | null
 }
 export type PostingList = { items: PostingCard[]; page: number; page_size: number; total: number; as_of: string }
 export type PostingDetail = PostingCard & {

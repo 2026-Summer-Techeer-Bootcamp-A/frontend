@@ -19,7 +19,7 @@ import {
 } from '../../career/wowWidgets'
 import { useWidgetData } from '../../career/useWidgetData'
 import CompanyLogo from '../../career/CompanyLogo'
-import { useResumesState, getDynamicPostings, calculateCoverage, ddayInfo } from '../../career/state'
+import { useResumesState, getDynamicPostings, calculateCoverage } from '../../career/state'
 import { getAuthToken, useAuth } from '../../career/authStore'
 import { useDashboardConfig, isWidgetHidden, getWidgetSize } from '../../career/dashboardConfig'
 import { MARKET_WIDGETS } from '../../career/widgetCatalog'
@@ -28,6 +28,7 @@ import { useRecentViews } from '../../career/viewHistoryStore'
 import { SkillManagerModal } from '../SkillManagerModal'
 import { recruitmentApi } from '../../career/recruitmentApi'
 import { jobsApi, marketApi } from '../../career/api'
+import { addMapTileLayer } from '../../career/mapTiles'
 import marketData from '../../data/marketData.json'
 import data from '../../data/careerData.json'
 import newcomerGate from '../../data/pearl/h.json'
@@ -39,8 +40,6 @@ import '../../career/widgetGrid.css'
 /* 데스크톱 페이지 — 모바일 단일컬럼과 분리된 PC 레이아웃 틀.
    대시보드(홈)는 DesktopOverview.tsx가 담당. 여기는 공고·시장·지도·마이. */
 
-const TIER_RANK: Record<string, number> = { 대기업: 0, 중견: 1, 중소: 2 }
-const tierRank = (t: string | null) => (t && t in TIER_RANK ? TIER_RANK[t] : 3)
 function careerLabel(min: number | null, max: number | null) {
   if (!min) return '신입·무관'
   return max && max !== min ? `경력 ${min}~${max}년` : `경력 ${min}년+`
@@ -48,9 +47,11 @@ function careerLabel(min: number | null, max: number | null) {
 
 function CompanyLocationMap({ lat, lng, address }: { lat: number; lng: number; address: string }) {
   const elRef = useRef<HTMLDivElement>(null)
+  const [tileStatus, setTileStatus] = useState<'loading' | 'ready' | 'error'>('loading')
 
   useEffect(() => {
     if (!elRef.current) return
+    setTileStatus('loading')
     const map = L.map(elRef.current, {
       center: [lat, lng],
       zoom: 15,
@@ -63,7 +64,7 @@ function CompanyLocationMap({ lat, lng, address }: { lat: number; lng: number; a
       boxZoom: false,
       keyboard: false,
     })
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map)
+    const removeTiles = addMapTileLayer(map, setTileStatus)
     L.marker([lat, lng], {
       icon: L.divIcon({
         className: 'djobs__company-map-marker-wrap',
@@ -75,23 +76,26 @@ function CompanyLocationMap({ lat, lng, address }: { lat: number; lng: number; a
     const resizeTimer = window.setTimeout(() => map.invalidateSize(), 60)
     return () => {
       window.clearTimeout(resizeTimer)
+      removeTiles()
       map.remove()
     }
   }, [lat, lng])
 
   return (
     <div className="djobs__company-map">
-      <div ref={elRef} className="djobs__company-map-canvas" aria-label={`${address} 근무 위치 지도`} />
+      <div className="djobs__company-map-viewport">
+        <div ref={elRef} className="djobs__company-map-canvas" aria-label={`${address} 근무 위치 지도`} />
+        {tileStatus === 'loading' && <div className="djobs__company-map-status" role="status">지도를 불러오는 중…</div>}
+        {tileStatus === 'error' && <div className="djobs__company-map-status" role="status">지도를 불러오지 못했습니다.</div>}
+      </div>
       <div className="djobs__company-map-address"><MapPin size={13} /> {address}</div>
     </div>
   )
 }
 
-/* ───────────────── 검색(구 맞춤 공고) — 필터 전면 + 이력서 자동주입 ─────────────────
-   postings에는 "직무"에 해당하는 별도 필드가 없다(careerData.json 확인 완료 — title/techs/
-   region/tier/careerMin·Max/pool 뿐). title/techs로부터 결정론적 키워드 매칭으로 직무를
-   유추한다(derivePosition) — LLM 추론이 아니라 고정 규칙이라 채용시장 통계와 항상 일관된
-   결과를 낸다. */
+/* ───────────────── 검색(구 맞춤 공고) — 실 API 전용 ─────────────────
+   목록 API가 제공하는 title/skills로 직무와 매칭도를 계산한다. API에 없는 필드는 목 데이터로
+   보완하지 않으며, 해당 필드를 요구하는 필터도 노출하지 않는다. */
 const POSITION_CATS = ['백엔드', '프론트엔드', '풀스택', '데이터/AI', '모바일', '인프라/DevOps', '기획/PM', '디자인', 'QA', '기타'] as const
 type PositionCat = typeof POSITION_CATS[number]
 
@@ -126,17 +130,6 @@ function derivePosition(title: string, techs: string[]): PositionCat {
   return '기타'
 }
 
-const TIERS = ['대기업', '중견', '중소'] as const
-const TOP_TECHS = data.topTechs.slice(0, 20).map((t) => t.tech)
-const JOBS_AS_OF = data.meta.asOf
-const CAREER_PRESETS: { key: string; label: string; min: number | null; max: number | null }[] = [
-  { key: 'all', label: '전체', min: null, max: null },
-  { key: 'new', label: '신입', min: 0, max: 0 },
-  { key: '1-3', label: '1-3년', min: 1, max: 3 },
-  { key: '3-5', label: '3-5년', min: 3, max: 5 },
-  { key: '5+', label: '5년+', min: 5, max: null },
-]
-
 /* ───────────────── 맞춤 공고 — 마스터-디테일 ───────────────── */
 export function DesktopJobs() {
   const navigate = useNavigate()
@@ -146,42 +139,22 @@ export function DesktopJobs() {
 
   const [pool, setPool] = useState<'국내' | '국외'>('국내')
   const [q, setQ] = useState(() => searchParams.get('q') ?? '')
-  const [sort, setSort] = useState<'match' | 'tier' | 'latest'>('match')
+  const [sort, setSort] = useState<'match' | 'latest'>('match')
   const [selId, setSelId] = useState<string | null>(null)
   const [techFilter, setTechFilter] = useState<Set<string>>(new Set())
-  const [region, setRegion] = useState('')
-  const [careerMin, setCareerMin] = useState<number | null>(null)
-  const [careerMax, setCareerMax] = useState<number | null>(null)
   const [deadlineOnly, setDeadlineOnly] = useState(false)
-  const [tierFilter, setTierFilter] = useState<Set<string>>(new Set(TIERS))
   const [positionFilter, setPositionFilter] = useState<PositionCat | ''>('')
   const [pvTab, setPvTab] = useState<'desc' | 'company'>('desc')
-  const mockPostings = useMemo(() => getDynamicPostings(skills), [skills])
   const [remoteCards, setRemoteCards] = useState<Awaited<ReturnType<typeof jobsApi.list>> | null>(null)
   const [jobsLoading, setJobsLoading] = useState(false)
   const [jobsError, setJobsError] = useState('')
-  const [techOptions, setTechOptions] = useState<string[]>(TOP_TECHS)
   const [selectedDetail, setSelectedDetail] = useState<Awaited<ReturnType<typeof jobsApi.detail>> | null>(null)
 
-  useEffect(() => {
-    let cancelled = false
-    jobsApi.skills(q).then((result) => {
-      if (!cancelled && result.skills.length) setTechOptions(result.skills.map((skill) => skill.canonical))
-    }).catch(() => undefined)
-    return () => { cancelled = true }
-  }, [q])
-
-  // 이력서 셀렉터 → 필터 자동주입(헤드라인 기능). 이력서를 "선택"할 때 1회만 초기값을
-  // 채워 넣고, 그 뒤로는 사용자가 자유롭게 덮어쓸 수 있어야 하므로 activeId(선택 이벤트)에만
-  // 반응한다 — activeResume 객체 참조가 다른 이유(예: 다른 화면에서 resume-state-change)로
-  // 바뀌어도 여기서 재실행되어 사용자가 손댄 필터를 되돌리면 안 된다.
+  // 이력서에 저장된 검색 풀만 반영한다. 보유 기술은 매칭도 계산에만 사용하고 기본 필터로
+  // 강제하지 않아 API가 반환한 공고가 처음부터 사라지지 않게 한다.
   useEffect(() => {
     if (!activeResume) return
-    setTechFilter(new Set(activeResume.skills))
-    setCareerMin(activeResume.careerMin)
-    setCareerMax(activeResume.careerMax)
     if (activeResume.pool) setPool(activeResume.pool)
-    // 직무(position) 필터는 위 사유로 존재하지 않아 자동주입 대상에서도 제외한다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeId])
 
@@ -189,11 +162,11 @@ export function DesktopJobs() {
     let cancelled = false
     setJobsLoading(true)
     setJobsError('')
+    setRemoteCards(null)
     jobsApi.list({
       pool: pool === '국내' ? 'domestic' : 'global',
       position: positionFilter || undefined,
-      sort: sort === 'match' ? 'latest' : deadlineOnly ? 'deadline' : 'latest',
-      district: region || undefined,
+      sort: deadlineOnly ? 'deadline' : 'latest',
       deadline_within_days: deadlineOnly ? 7 : undefined,
       page: 1,
       page_size: 100,
@@ -203,69 +176,53 @@ export function DesktopJobs() {
       if (!cancelled) setJobsError(reason instanceof Error ? reason.message : '공고를 불러오지 못했습니다.')
     }).finally(() => { if (!cancelled) setJobsLoading(false) })
     return () => { cancelled = true }
-  }, [pool, region, deadlineOnly, positionFilter, sort])
+  }, [pool, deadlineOnly, positionFilter])
 
   const postings = useMemo(() => {
-    if (!remoteCards) return mockPostings
+    if (!remoteCards) return []
     return remoteCards.items.map((card) => {
-      const existing = mockPostings.find((posting) => String(posting.id) === String(card.id))
-      const fallback = mockPostings[0]
       const techs = card.skills ?? []
       const held = techs.filter((tech) => skills.includes(tech))
       return {
-        ...fallback,
-        ...existing,
         id: String(card.id),
         title: card.title,
         company: card.company ?? '회사명 미상',
+        pool,
         postDate: card.post_date ?? '',
         closeDate: card.close_date ?? '',
         techs,
         url: card.url,
+        logo: '',
         matchHeld: card.matched_count ?? held.length,
         matchTotal: techs.length,
         matchPct: techs.length ? Math.round(((card.matched_count ?? held.length) / techs.length) * 100) : 0,
         gap: techs.filter((tech) => !skills.includes(tech)),
       }
     })
-  }, [remoteCards, mockPostings, skills])
-  const byPool = useMemo(() => postings.filter((p) => p.pool === pool), [postings, pool])
-  const regions = useMemo(
-    () => [...new Set(byPool.map((p) => p.region).filter((r): r is string => !!r))].sort((a, b) => a.localeCompare(b, 'ko')),
-    [byPool],
+  }, [remoteCards, skills, pool])
+  const techOptions = useMemo(
+    () => [...new Set(postings.flatMap((posting) => posting.techs))].sort((a, b) => a.localeCompare(b)),
+    [postings],
   )
+  const byPool = useMemo(() => postings.filter((p) => p.pool === pool), [postings, pool])
 
   const list = useMemo(() => {
     let arr = byPool
     const s = q.trim().toLowerCase()
     if (s) arr = arr.filter((p) => (p.company + ' ' + p.title).toLowerCase().includes(s))
     if (techFilter.size > 0) arr = arr.filter((p) => [...techFilter].some((t) => p.techs.includes(t)))
-    if (region) arr = arr.filter((p) => p.region === region)
-    if (careerMin != null) arr = arr.filter((p) => (p.careerMax ?? Infinity) >= careerMin)
-    if (careerMax != null) arr = arr.filter((p) => (p.careerMin ?? 0) <= careerMax)
     if (deadlineOnly) {
       arr = arr.filter((p) => {
-        const dd = ddayInfo(p.closeDate || '', JOBS_AS_OF)
-        return dd != null && dd.d <= 7
+        if (!p.closeDate || !remoteCards?.as_of) return false
+        const days = Math.round((new Date(p.closeDate).getTime() - new Date(remoteCards.as_of).getTime()) / 86400000)
+        return days >= 0 && days <= 7
       })
     }
-    arr = arr.filter((p) => tierFilter.has(p.tier || '중소'))
     if (positionFilter) arr = arr.filter((p) => derivePosition(p.title, p.techs) === positionFilter)
     return [...arr].sort((a, b) =>
-      sort === 'tier' ? tierRank(a.tier) - tierRank(b.tier) || b.matchPct - a.matchPct
-        : sort === 'latest' ? (b.postDate || '').localeCompare(a.postDate || '')
-          : b.matchPct - a.matchPct)
-  }, [byPool, q, techFilter, region, careerMin, careerMax, deadlineOnly, tierFilter, positionFilter, sort])
+      sort === 'latest' ? (b.postDate || '').localeCompare(a.postDate || '') : b.matchPct - a.matchPct)
+  }, [byPool, q, techFilter, deadlineOnly, positionFilter, sort, remoteCards?.as_of])
 
-  // facet 카운트 요약(사람인/링크드인 패턴) — 현재 필터된 list 기준 기업 규모 분포 + 상위 직무 3개.
-  const tierFacets = useMemo(() => {
-    const counts: Record<string, number> = { 대기업: 0, 중견: 0, 중소: 0 }
-    list.forEach((p) => {
-      const t = p.tier || '중소'
-      if (t in counts) counts[t] += 1
-    })
-    return counts
-  }, [list])
   const positionFacets = useMemo(() => {
     const counts = new Map<PositionCat, number>()
     list.forEach((p) => {
@@ -276,11 +233,6 @@ export function DesktopJobs() {
   }, [list])
 
   const sel = list.find((p) => p.id === selId) ?? list[0]
-  const selectedMapPin = useMemo(() => {
-    if (!sel?.id) return undefined
-    return marketData.map.pins.find((pin) => String(pin.id) === String(sel.id))
-  }, [sel?.id])
-  const activePresetKey = CAREER_PRESETS.find((c) => c.min === careerMin && c.max === careerMax)?.key ?? null
 
   useEffect(() => setPvTab('desc'), [sel?.id])
 
@@ -299,12 +251,6 @@ export function DesktopJobs() {
     if (next.has(t)) next.delete(t); else next.add(t)
     return next
   })
-  const toggleTier = (t: string) => setTierFilter((s) => {
-    const next = new Set(s)
-    if (next.has(t)) next.delete(t); else next.add(t)
-    return next
-  })
-
   // 링크드인/사람인식 스킬 매치 미니 줄 — "요구 N개 중 M개 보유" 텍스트 +
   // 보유(그린) > 필터에서 고름(중립) > 안 고름(옅게+옅은 빨강) 3단 칩.
   const renderSkillMatch = (techs: string[]) => {
@@ -365,14 +311,6 @@ export function DesktopJobs() {
           </div>
 
           <div className="djobs__fld">
-            <span className="djobs__fld-l">지역</span>
-            <select className="djobs__select" value={region} onChange={(e) => setRegion(e.target.value)}>
-              <option value="">전체</option>
-              {regions.map((r) => <option key={r} value={r}>{r}</option>)}
-            </select>
-          </div>
-
-          <div className="djobs__fld">
             <span className="djobs__fld-l">직무</span>
             <select
               className="djobs__select"
@@ -384,30 +322,6 @@ export function DesktopJobs() {
             </select>
           </div>
 
-          <div className="djobs__fld">
-            <span className="djobs__fld-l">경력</span>
-            <div className="djobs__chiprow">
-              {CAREER_PRESETS.map((c) => (
-                <button
-                  key={c.key}
-                  className={activePresetKey === c.key ? 'on' : ''}
-                  onClick={() => { setCareerMin(c.min); setCareerMax(c.max) }}
-                >
-                  {c.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="djobs__fld">
-            <span className="djobs__fld-l">기업 규모</span>
-            <div className="djobs__chiprow">
-              {TIERS.map((t) => (
-                <button key={t} className={tierFilter.has(t) ? 'on' : ''} onClick={() => toggleTier(t)}>{t}</button>
-              ))}
-            </div>
-          </div>
-
           <label className="djobs__toggle">
             <input type="checkbox" checked={deadlineOnly} onChange={(e) => setDeadlineOnly(e.target.checked)} />
             마감 임박(7일 이내)만
@@ -416,7 +330,7 @@ export function DesktopJobs() {
           <div className="djobs__fld">
             <span className="djobs__fld-l">정렬</span>
             <div className="djobs__sorts">
-              {([['match', '매칭순'], ['tier', '규모순'], ['latest', '최신순']] as const).map(([k, lb]) => (
+              {([['match', '매칭순'], ['latest', '최신순']] as const).map(([k, lb]) => (
                 <button key={k} className={sort === k ? 'on' : ''} onClick={() => setSort(k)}>{lb}</button>
               ))}
             </div>
@@ -431,20 +345,14 @@ export function DesktopJobs() {
             <div className="djobs__facets">
               <span className="djobs__facets-count">{list.length.toLocaleString()}건</span>
               <span className="djobs__facets-sep" />
-              {TIERS.map((t) => (
-                <button key={t} className={`djobs__facet${tierFilter.has(t) ? ' on' : ''}`} onClick={() => toggleTier(t)}>
-                  {t} {tierFacets[t]}
-                </button>
-              ))}
-              <span className="djobs__facets-sep" />
               {positionFacets.map(([cat, n]) => (
                 <span key={cat} className="djobs__facet djobs__facet--static">{cat} {n}</span>
               ))}
             </div>
           </div>
           {jobsLoading && <div className="dpage__empty">공고를 불러오는 중이에요.</div>}
-          {jobsError && <div className="dpage__empty">{jobsError} 기존 데이터로 표시합니다.</div>}
-          {!jobsLoading && list.length === 0 && <div className="dpage__empty">조건에 맞는 공고가 없어요.</div>}
+          {jobsError && <div className="dpage__empty">{jobsError}</div>}
+          {!jobsLoading && !jobsError && list.length === 0 && <div className="dpage__empty">조건에 맞는 공고가 없어요.</div>}
           {list.slice(0, 40).map((p) => (
             <button
               key={p.id}
@@ -455,8 +363,7 @@ export function DesktopJobs() {
               <span className="djobs__row-b">
                 <span className="djobs__row-t">{p.title}</span>
                 <span className="djobs__row-c">
-                  {p.company} · <span className="djobs__badge djobs__badge--tier">{p.tier || '중소'}</span> · <span className="djobs__badge">{derivePosition(p.title, p.techs)}</span>
-                  {p.region && <> · {p.region}</>}
+                  {p.company} · <span className="djobs__badge">{derivePosition(p.title, p.techs)}</span>
                 </span>
                 {renderSkillMatch(p.techs)}
               </span>
@@ -483,7 +390,7 @@ export function DesktopJobs() {
                 </div>
               </div>
               <h2 className="djobs__pv-title">{sel.title}</h2>
-              <div className="djobs__pv-meta">{sel.company} · {sel.region ?? '지역 미상'} · {careerLabel(sel.careerMin, sel.careerMax)}</div>
+              <div className="djobs__pv-meta">{sel.company}{sel.postDate ? ` · 등록 ${sel.postDate}` : ''}{sel.closeDate ? ` · 마감 ${sel.closeDate}` : ''}</div>
               <div className="djobs__pv-sec">요구 기술</div>
               <div className="djobs__pv-techs">
                 {sel.techs.map((t) => (
@@ -503,55 +410,27 @@ export function DesktopJobs() {
               <div className="djobs__pv-body">
                 {pvTab === 'desc' ? (
                   <>
-                    {sel.descSections && sel.descSections.length ? (
-                      sel.descSections.map((s, i) => (
-                        <div key={i}>
-                          <div className="djobs__pv-dsec">{s.title}</div>
-                          <p style={{ whiteSpace: 'pre-line' }}>{s.text}</p>
-                        </div>
-                      ))
-                    ) : (
-                      <p>이 공고의 요구 기술 스택을 기반으로 매칭도를 계산했어요.</p>
-                    )}
+                    <p>실제 공고 API가 제공한 요구 기술을 기준으로 매칭도를 계산했어요.</p>
                     <div className="djobs__pv-dsec">요구 기술</div>
                     <p>{sel.techs.join(' · ')}</p>
                   </>
-                ) : (() => {
-                  const ci = sel.companyInfo ?? { industry: '', homepage: '', established: '', location: '', tags: [] as string[] }
-                  return (
+                ) : (
                     <>
                       <div className="djobs__pv-kv"><span>회사</span><b>{sel.company}</b></div>
-                      {ci.industry && <div className="djobs__pv-kv"><span>업종</span><b>{ci.industry}</b></div>}
-                      {ci.established && <div className="djobs__pv-kv"><span>설립</span><b>{ci.established}</b></div>}
-                      <div className="djobs__pv-kv"><span>지역</span><b>{ci.location || sel.region || 'Remote'}</b></div>
-                      {ci.homepage && (
-                        <div className="djobs__pv-kv">
-                          <span>홈페이지</span>
-                          <a href={ci.homepage} target="_blank" rel="noreferrer" className="djobs__pv-link">바로가기 ↗</a>
-                        </div>
-                      )}
+                      {selectedDetail?.industry && <div className="djobs__pv-kv"><span>업종</span><b>{selectedDetail.industry}</b></div>}
+                      <div className="djobs__pv-kv"><span>지역</span><b>{selectedDetail?.region ?? '정보 없음'}</b></div>
                       <div className="djobs__pv-kv"><span>채용 풀</span><b>{sel.pool}</b></div>
-                      {(selectedMapPin || (
-                        String(selectedDetail?.id) === String(sel.id)
+                      {String(selectedDetail?.id) === String(sel.id)
                         && selectedDetail?.lat != null
-                        && selectedDetail.lng != null
-                      )) && (
+                        && selectedDetail.lng != null && (
                         <CompanyLocationMap
-                          lat={selectedMapPin?.lat ?? selectedDetail!.lat!}
-                          lng={selectedMapPin?.lng ?? selectedDetail!.lng!}
-                          address={selectedDetail?.region || ci.location || sel.region || '위치 정보 없음'}
+                          lat={selectedDetail.lat}
+                          lng={selectedDetail.lng}
+                          address={selectedDetail.region || '위치 정보 없음'}
                         />
                       )}
-                      {ci.tags && ci.tags.length > 0 && (
-                        <div className="djobs__pv-techs" style={{ marginTop: 12 }}>
-                          {ci.tags.map((tg) => (
-                            <span key={tg} className="djobs__tech held">{tg}</span>
-                          ))}
-                        </div>
-                      )}
                     </>
-                  )
-                })()}
+                  )}
               </div>
             </>
           )}
