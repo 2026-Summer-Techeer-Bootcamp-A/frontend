@@ -24,6 +24,27 @@ function findPinCoord(id: string): MapPin | undefined {
   return (marketData.map.pins as MapPin[]).find((pp) => pp.id === id)
 }
 
+/** 두 좌표 사이의 대략적인 거리(km) — haversine 공식. "주변 채용공고" 거리 뱃지 계산용. */
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371
+  const toRad = (deg: number) => (deg * Math.PI) / 180
+  const dLat = toRad(lat2 - lat1)
+  const dLng = toRad(lng2 - lng1)
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
+/** 두 pin 좌표로 거리 뱃지 문구를 만든다. 좌표가 없으면(백엔드 미연동 등) undefined —
+ * 호출부에서 거리 뱃지를 조용히 생략한다. 아주 가까우면(0.1km 미만) "인근"으로 표기. */
+function distanceLabel(a: MapPin | undefined, b: MapPin | undefined): string | undefined {
+  if (!a || !b) return undefined
+  const km = haversineKm(a.lat, a.lng, b.lat, b.lng)
+  if (km < 0.1) return '인근'
+  return `~${km.toFixed(1)}km`
+}
+
 /** 공고 상세 하단 — 근무 위치 미니 지도. MapScreen.tsx의 L.map/L.tileLayer 초기화 패턴을
  * 그대로 이식하되, 단일 pin만 그리는 축소판(정적 미리보기 톤 — 드래그/줌 비활성)이다. */
 function LocationMapCard({ lat, lng, address }: { lat: number; lng: number; address: string }) {
@@ -79,14 +100,30 @@ function renderBold(text: string) {
 
 type RecoPosting = ReturnType<typeof getDynamicPostings>[number]
 
-/** 데스크톱 3열 레일(.djd-reco) 한 행 — 로고 + 제목/회사 + 겹치는 기술(선택) + 미니 점수. */
-function JobRecoRow({ job, techChips, onOpen }: { job: RecoPosting; techChips?: string[]; onOpen: () => void }) {
+/** 데스크톱 3열 레일(.djd-reco) 한 행 — 로고 + 제목/회사(+위치·거리 뱃지) + 겹치는 기술(선택) + 미니 점수. */
+function JobRecoRow({
+  job, techChips, locationBadge, distanceBadge, onOpen,
+}: {
+  job: RecoPosting
+  techChips?: string[]
+  locationBadge?: string
+  distanceBadge?: string
+  onOpen: () => void
+}) {
   return (
     <button type="button" className="djd-reco-row" onClick={onOpen}>
       <CompanyLogo logo={job.logo} name={job.company} size={36} radius={10} />
       <div className="djd-reco-row__body">
         <div className="djd-reco-row__title">{job.title}</div>
-        <div className="djd-reco-row__co">{job.company}</div>
+        {locationBadge || distanceBadge ? (
+          <div className="djd-reco-row__co djd-reco-row__co--badged">
+            <span className="djd-reco-row__co-name">{job.company}</span>
+            {locationBadge && <span className="djd-reco-badge">{locationBadge}</span>}
+            {distanceBadge && <span className="djd-reco-dist">{distanceBadge}</span>}
+          </div>
+        ) : (
+          <div className="djd-reco-row__co">{job.company}</div>
+        )}
         {techChips && techChips.length > 0 && (
           <div className="djd-reco-row__techs">
             {techChips.slice(0, 2).map((tc) => (
@@ -102,13 +139,15 @@ function JobRecoRow({ job, techChips, onOpen }: { job: RecoPosting; techChips?: 
 
 /** 데스크톱 3열 레일 카드 — "주변 채용공고" / "비슷한 채용공고" 공용. 비면 빈 상태 문구. */
 function JobRecoCard({
-  title, hint, jobs, onOpen, techOverlap,
+  title, hint, jobs, onOpen, techOverlap, locationOf,
 }: {
   title: string
   hint: string
   jobs: RecoPosting[]
   onOpen: (id: string) => void
   techOverlap?: (job: RecoPosting) => string[]
+  /** 위치·거리 뱃지(주변 채용공고 전용) — "비슷한 채용공고"에는 넘기지 않는다. */
+  locationOf?: (job: RecoPosting) => { location?: string; distance?: string }
 }) {
   return (
     <div className="djd-card djd-reco-card">
@@ -120,9 +159,19 @@ function JobRecoCard({
         <div className="djd-reco-empty">해당 공고가 없어요</div>
       ) : (
         <div className="djd-reco-list">
-          {jobs.map((job) => (
-            <JobRecoRow key={job.id} job={job} techChips={techOverlap?.(job)} onOpen={() => onOpen(job.id)} />
-          ))}
+          {jobs.map((job) => {
+            const badge = locationOf?.(job)
+            return (
+              <JobRecoRow
+                key={job.id}
+                job={job}
+                techChips={techOverlap?.(job)}
+                locationBadge={badge?.location}
+                distanceBadge={badge?.distance}
+                onOpen={() => onOpen(job.id)}
+              />
+            )
+          })}
         </div>
       )}
     </div>
@@ -385,6 +434,10 @@ export default function JobDetail() {
                 hint={`${p.district || p.region} 인근`}
                 jobs={nearby}
                 onOpen={(jid) => navigate('/job/' + encodeURIComponent(jid))}
+                locationOf={(job) => ({
+                  location: job.district || job.region,
+                  distance: distanceLabel(pinCoord, findPinCoord(job.id)),
+                })}
               />
             )}
             <JobRecoCard
