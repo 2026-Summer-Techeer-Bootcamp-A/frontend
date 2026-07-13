@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Search, MapPin, ArrowUpRight, FileText, Settings, Award } from 'lucide-react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -20,13 +20,14 @@ import {
 import { useWidgetData } from '../../career/useWidgetData'
 import CompanyLogo from '../../career/CompanyLogo'
 import { useResumesState, getDynamicPostings, calculateCoverage, ddayInfo } from '../../career/state'
-import { useAuth } from '../../career/authStore'
+import { getAuthToken, useAuth } from '../../career/authStore'
 import { useDashboardConfig, isWidgetHidden, getWidgetSize } from '../../career/dashboardConfig'
 import { MARKET_WIDGETS } from '../../career/widgetCatalog'
 import { useBookmarks } from '../../career/bookmarkStore'
 import { useRecentViews } from '../../career/viewHistoryStore'
 import { SkillManagerModal } from '../SkillManagerModal'
 import { recruitmentApi } from '../../career/recruitmentApi'
+import { jobsApi, marketApi } from '../../career/api'
 import marketData from '../../data/marketData.json'
 import data from '../../data/careerData.json'
 import newcomerGate from '../../data/pearl/h.json'
@@ -98,13 +99,14 @@ const CAREER_PRESETS: { key: string; label: string; min: number | null; max: num
 /* ───────────────── 맞춤 공고 — 마스터-디테일 ───────────────── */
 export function DesktopJobs() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { resumes, activeId, activeResume } = useResumesState()
   const skills = activeResume?.skills ?? []
   // 내 직무 카테고리 — 이력서 보유 기술만으로 derivePosition을 태워 파생(title 없이 techs 폴백).
   const myCategory = activeResume ? derivePosition('', activeResume.skills) : null
 
   const [pool, setPool] = useState<'국내' | '국외'>('국내')
-  const [q, setQ] = useState('')
+  const [q, setQ] = useState(() => searchParams.get('q') ?? '')
   const [sort, setSort] = useState<'match' | 'tier' | 'latest'>('match')
   const [selId, setSelId] = useState<string | null>(null)
   const [techFilter, setTechFilter] = useState<Set<string>>(new Set())
@@ -117,6 +119,19 @@ export function DesktopJobs() {
   const [pvTab, setPvTab] = useState<'desc' | 'company'>('desc')
   // 이력서 있으면 "내 직무" 탭이 기본값 — 이력서 없으면 항상 전체.
   const [scope, setScope] = useState<'mine' | 'all'>(activeResume ? 'mine' : 'all')
+  const mockPostings = useMemo(() => getDynamicPostings(skills), [skills])
+  const [remoteCards, setRemoteCards] = useState<Awaited<ReturnType<typeof jobsApi.list>> | null>(null)
+  const [jobsLoading, setJobsLoading] = useState(false)
+  const [jobsError, setJobsError] = useState('')
+  const [techOptions, setTechOptions] = useState<string[]>(TOP_TECHS)
+
+  useEffect(() => {
+    let cancelled = false
+    jobsApi.skills(q).then((result) => {
+      if (!cancelled && result.skills.length) setTechOptions(result.skills.map((skill) => skill.canonical))
+    }).catch(() => undefined)
+    return () => { cancelled = true }
+  }, [q])
 
   // 이력서 셀렉터 → 필터 자동주입(헤드라인 기능). 이력서를 "선택"할 때 1회만 초기값을
   // 채워 넣고, 그 뒤로는 사용자가 자유롭게 덮어쓸 수 있어야 하므로 activeId(선택 이벤트)에만
@@ -132,7 +147,54 @@ export function DesktopJobs() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeId])
 
-  const postings = useMemo(() => getDynamicPostings(skills), [skills])
+  useEffect(() => {
+    let cancelled = false
+    const resumeId = Number(activeResume?.id)
+    const matched = scope === 'mine' && Number.isInteger(resumeId) && !!getAuthToken()
+    setJobsLoading(true)
+    setJobsError('')
+    jobsApi.list({
+      pool: pool === '국내' ? 'domestic' : 'global',
+      position: scope === 'mine' ? myCategory ?? undefined : positionFilter || undefined,
+      sort: sort === 'match' ? 'latest' : deadlineOnly ? 'deadline' : 'latest',
+      district: region || undefined,
+      deadline_within_days: deadlineOnly ? 7 : undefined,
+      match_only: matched || undefined,
+      resume_id: matched ? resumeId : undefined,
+      page: 1,
+      page_size: 100,
+    }, getAuthToken()).then((result) => {
+      if (!cancelled) setRemoteCards(result)
+    }).catch((reason) => {
+      if (!cancelled) setJobsError(reason instanceof Error ? reason.message : '공고를 불러오지 못했습니다.')
+    }).finally(() => { if (!cancelled) setJobsLoading(false) })
+    return () => { cancelled = true }
+  }, [pool, region, deadlineOnly, positionFilter, scope, myCategory, sort, activeResume?.id])
+
+  const postings = useMemo(() => {
+    if (!remoteCards) return mockPostings
+    return remoteCards.items.map((card) => {
+      const existing = mockPostings.find((posting) => String(posting.id) === String(card.id))
+      const fallback = mockPostings[0]
+      const techs = card.skills ?? []
+      const held = techs.filter((tech) => skills.includes(tech))
+      return {
+        ...fallback,
+        ...existing,
+        id: String(card.id),
+        title: card.title,
+        company: card.company ?? '회사명 미상',
+        postDate: card.post_date ?? '',
+        closeDate: card.close_date ?? '',
+        techs,
+        url: card.url,
+        matchHeld: card.matched_count ?? held.length,
+        matchTotal: techs.length,
+        matchPct: techs.length ? Math.round(((card.matched_count ?? held.length) / techs.length) * 100) : 0,
+        gap: techs.filter((tech) => !skills.includes(tech)),
+      }
+    })
+  }, [remoteCards, mockPostings, skills])
   const byPool = useMemo(() => postings.filter((p) => p.pool === pool), [postings, pool])
   const regions = useMemo(
     () => [...new Set(byPool.map((p) => p.region).filter((r): r is string => !!r))].sort((a, b) => a.localeCompare(b, 'ko')),
@@ -250,7 +312,7 @@ export function DesktopJobs() {
           <div className="djobs__fld">
             <span className="djobs__fld-l">기술 스택</span>
             <div className="djobs__chiprow">
-              {TOP_TECHS.map((t) => (
+              {techOptions.map((t) => (
                 <button key={t} className={techFilter.has(t) ? 'on' : ''} onClick={() => toggleTech(t)}>{t}</button>
               ))}
             </div>
@@ -345,7 +407,9 @@ export function DesktopJobs() {
               ))}
             </div>
           </div>
-          {list.length === 0 && <div className="dpage__empty">조건에 맞는 공고가 없어요.</div>}
+          {jobsLoading && <div className="dpage__empty">공고를 불러오는 중이에요.</div>}
+          {jobsError && <div className="dpage__empty">{jobsError} 기존 데이터로 표시합니다.</div>}
+          {!jobsLoading && list.length === 0 && <div className="dpage__empty">조건에 맞는 공고가 없어요.</div>}
           {list.slice(0, 40).map((p) => (
             <button
               key={p.id}
@@ -590,6 +654,8 @@ export function DesktopMarket() {
   const { activeResume } = useResumesState()
   const domestic = marketData.skillShare['국내'] as { asOf: string; N: number; items: ShareItem[] }
   const top14Mock = useMemo(() => domestic.items.slice(0, 14), [])
+  useWidgetData(fetchSkillShareLive, top14Mock)
+  useWidgetData(fetchCooccurrenceLive, marketData.cooccurrence)
 
   // "내 직무 / 전체" 스코프 — 이력서 보유 기술만으로 derivePosition을 태워 파생(title 없이
   // techs 폴백, DesktopJobs의 myCategory와 동일 로직). 이력서 없으면 탭 자체를 숨기고 항상 전체.
@@ -597,8 +663,32 @@ export function DesktopMarket() {
   const [scope, setScope] = useState<'mine' | 'all'>(activeResume ? 'mine' : 'all')
   const scoped = scope === 'mine' && !!myCategory
 
-  const leaderboard = useWidgetData(fetchSkillShareLive, top14Mock)
-  useWidgetData(fetchCooccurrenceLive, marketData.cooccurrence) // 배선 준비 — 아래 §우려사항
+  const [liveLeaderboard, setLiveLeaderboard] = useState<ShareItem[] | null>(null)
+  const [liveNewcomer, setLiveNewcomer] = useState<typeof newcomerGate.data.items | null>(null)
+  const [liveHotCompanies, setLiveHotCompanies] = useState<Array<{ company: string; count: number }> | null>(null)
+  const [liveRegionDensity, setLiveRegionDensity] = useState<Array<{ district: string; count: number }> | null>(null)
+  const [liveRising, setLiveRising] = useState<Array<{ tech: string; delta: number }> | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    const position = scoped ? myCategory ?? undefined : undefined
+    Promise.allSettled([
+      marketApi.skillShare({ pool: 'domestic', position, top_k: 14 }),
+      marketApi.newcomerGate(),
+      marketApi.hotCompanies({ pool: 'domestic', days: 30, limit: 5 }),
+      marketApi.regionDensity({ pool: 'domestic', limit: 6 }),
+      marketApi.cooccurrence({ pool: 'domestic', top_k: 40 }),
+      marketApi.yearlyTrend('domestic'),
+    ]).then(([share, newcomer, companies, regions, , yearly]) => {
+      if (cancelled) return
+      if (share.status === 'fulfilled' && share.value.items.length) setLiveLeaderboard(share.value.items.map((item) => ({ tech: item.canonical, count: item.posting_count, share: item.share, owned: activeResume?.skills.includes(item.canonical) ?? false })))
+      if (newcomer.status === 'fulfilled' && newcomer.value.items.length) setLiveNewcomer(newcomer.value.items.map((item) => ({ tech: item.canonical, open_rate: item.open_rate, postings: item.postings, newcomer_n: item.newcomer_postings })))
+      if (companies.status === 'fulfilled' && companies.value.items.length) setLiveHotCompanies(companies.value.items.map((item) => ({ company: item.company, count: item.posting_count })))
+      if (regions.status === 'fulfilled' && regions.value.items.length) setLiveRegionDensity(regions.value.items.map((item) => ({ district: item.region_district, count: item.posting_count })))
+      if (yearly.status === 'fulfilled' && yearly.value.movers.rising.length) setLiveRising(yearly.value.movers.rising.map((item) => ({ tech: item.canonical, delta: item.delta })).slice(0, 3))
+    })
+    return () => { cancelled = true }
+  }, [scoped, myCategory])
 
   // scope='mine'이면 marketData 전역 리더보드 대신 careerData 재집계(내 직무로 필터한 국내
   // 공고의 기술 빈도)를 리더보드로 쓴다 — "내 직무" 탭이 실제로 다른 숫자를 보여줘야 의미가 있다.
@@ -615,21 +705,22 @@ export function DesktopMarket() {
       .slice(0, 14)
   }, [myCategory])
 
-  const top = scoped ? mineLeaderboard : leaderboard.value
+  const top = liveLeaderboard ?? (scoped ? mineLeaderboard : top14Mock)
   const leader = top[0]
   const maxShare = Math.max(...top.map((i) => i.share), 1)
 
   // "신입에게 열린 기술" — pearl/h.json(신입 지원 가능 비율)을 open_rate 내림차순 상위 8개.
   // 취준생 시점에서 "뽑히는 인기 기술"과 "신입도 지원 가능한 기술"은 다르므로 별도 랭킹.
   const newcomerTop = useMemo(() => (
-    [...newcomerGate.data.items].sort((a, b) => b.open_rate - a.open_rate).slice(0, 8)
-  ), [])
+    [...(liveNewcomer ?? newcomerGate.data.items)].sort((a, b) => b.open_rate - a.open_rate).slice(0, 8)
+  ), [liveNewcomer])
   const maxOpenRate = Math.max(...newcomerTop.map((i) => i.open_rate), 1)
 
   // "지금 뜨는 기술" — techYearly(연도별 점유율) delta 상위 3개, 상승폭 큰 순.
-  const risingTop = useMemo(() => (
+  const mockRisingTop = useMemo(() => (
     [...marketData.techYearly.series].sort((a, b) => b.delta - a.delta).slice(0, 3)
   ), [])
+  const risingTop = liveRising ?? mockRisingTop
 
   const scatterItems = useMemo(() => domestic.items.slice(0, 16).map((i) => ({
     tech: i.tech, share: i.share, count: i.count,
@@ -646,7 +737,7 @@ export function DesktopMarket() {
   // careerData postings 기반 위젯(활발 기업 · 지역 밀도 · 규모 분포) — scope='mine'이면 내 직무로
   // 필터한 국내 공고만 집계한다. 나머지 위젯(네트워크·전파·hype·역량·응답률·개념·추이·무버스·
   // 티어비교·세대·산점도)은 전역 집계 데이터라 직무 필터가 없어 그대로 두고 배지만 붙인다.
-  const hotCompanies = useMemo(() => {
+  const mockHotCompanies = useMemo(() => {
     const cutoff = new Date(data.meta.asOf)
     cutoff.setDate(cutoff.getDate() - 30)
     const cutoffStr = cutoff.toISOString().slice(0, 10)
@@ -659,9 +750,10 @@ export function DesktopMarket() {
       .sort((a, b) => b.count - a.count)
       .slice(0, 5)
   }, [scoped, myCategory])
+  const hotCompanies = liveHotCompanies ?? mockHotCompanies
   const maxHot = Math.max(...hotCompanies.map((c) => c.count), 1)
 
-  const regionDensity = useMemo(() => {
+  const mockRegionDensity = useMemo(() => {
     const domesticPostings = (data.postings as { pool: string; district: string; title: string; techs: string[] }[])
       .filter((p) => p.pool === '국내' && (!scoped || derivePosition(p.title, p.techs) === myCategory))
     const counts: Record<string, number> = {}
@@ -671,6 +763,7 @@ export function DesktopMarket() {
       .sort((a, b) => b.count - a.count)
       .slice(0, 6)
   }, [scoped, myCategory])
+  const regionDensity = liveRegionDensity ?? mockRegionDensity
   const maxRegion = Math.max(...regionDensity.map((r) => r.count), 1)
 
   const tierDonut = useMemo(() => {
