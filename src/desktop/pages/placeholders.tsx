@@ -608,13 +608,35 @@ function TierDonutChart({ counts, total }: { counts: Record<string, number>; tot
 export function DesktopMarket() {
   const navigate = useNavigate()
   useDashboardConfig() // 위젯 표시/숨김 변경 시 리렌더 트리거
+  const { activeResume } = useResumesState()
   const domestic = marketData.skillShare['국내'] as { asOf: string; N: number; items: ShareItem[] }
   const top14Mock = useMemo(() => domestic.items.slice(0, 14), [])
+
+  // "내 직무 / 전체" 스코프 — 이력서 보유 기술만으로 derivePosition을 태워 파생(title 없이
+  // techs 폴백, DesktopJobs의 myCategory와 동일 로직). 이력서 없으면 탭 자체를 숨기고 항상 전체.
+  const myCategory = activeResume ? derivePosition('', activeResume.skills) : null
+  const [scope, setScope] = useState<'mine' | 'all'>(activeResume ? 'mine' : 'all')
+  const scoped = scope === 'mine' && !!myCategory
 
   const leaderboard = useWidgetData(fetchSkillShareLive, top14Mock)
   useWidgetData(fetchCooccurrenceLive, marketData.cooccurrence) // 배선 준비 — 아래 §우려사항
 
-  const top = leaderboard.value
+  // scope='mine'이면 marketData 전역 리더보드 대신 careerData 재집계(내 직무로 필터한 국내
+  // 공고의 기술 빈도)를 리더보드로 쓴다 — "내 직무" 탭이 실제로 다른 숫자를 보여줘야 의미가 있다.
+  const mineLeaderboard = useMemo<ShareItem[]>(() => {
+    if (!myCategory) return []
+    const domesticPostings = (data.postings as { pool: string; title: string; techs: string[] }[])
+      .filter((p) => p.pool === '국내' && derivePosition(p.title, p.techs) === myCategory)
+    const counts: Record<string, number> = {}
+    domesticPostings.forEach((p) => p.techs.forEach((t) => { counts[t] = (counts[t] ?? 0) + 1 }))
+    const total = domesticPostings.length || 1
+    return Object.entries(counts)
+      .map(([tech, count]) => ({ tech, count, share: Math.round((count / total) * 1000) / 10, owned: false }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 14)
+  }, [myCategory])
+
+  const top = scoped ? mineLeaderboard : leaderboard.value
   const leader = top[0]
   const maxShare = Math.max(...top.map((i) => i.share), 1)
 
@@ -623,244 +645,332 @@ export function DesktopMarket() {
   })), [])
 
   const [leaderboardExpanded, setLeaderboardExpanded] = useState(false)
+  const [exploreOpen, setExploreOpen] = useState(false)
 
   const widgetSize = (id: string) => {
     const item = MARKET_WIDGETS.find((w) => w.id === id)!
     return getWidgetSize('market', id, item.defaultSize)
   }
 
+  // careerData postings 기반 위젯(활발 기업 · 지역 밀도 · 규모 분포) — scope='mine'이면 내 직무로
+  // 필터한 국내 공고만 집계한다. 나머지 위젯(네트워크·전파·hype·역량·응답률·개념·추이·무버스·
+  // 티어비교·세대·산점도)은 전역 집계 데이터라 직무 필터가 없어 그대로 두고 배지만 붙인다.
   const hotCompanies = useMemo(() => {
     const cutoff = new Date(data.meta.asOf)
     cutoff.setDate(cutoff.getDate() - 30)
     const cutoffStr = cutoff.toISOString().slice(0, 10)
-    const domestic30 = (data.postings as { pool: string; company: string; postDate: string }[])
-      .filter((p) => p.pool === '국내' && p.postDate >= cutoffStr)
+    const domestic30 = (data.postings as { pool: string; company: string; postDate: string; title: string; techs: string[] }[])
+      .filter((p) => p.pool === '국내' && p.postDate >= cutoffStr && (!scoped || derivePosition(p.title, p.techs) === myCategory))
     const counts: Record<string, number> = {}
     domestic30.forEach((p) => { counts[p.company] = (counts[p.company] ?? 0) + 1 })
     return Object.entries(counts)
       .map(([company, count]) => ({ company, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 5)
-  }, [])
+  }, [scoped, myCategory])
   const maxHot = Math.max(...hotCompanies.map((c) => c.count), 1)
 
   const regionDensity = useMemo(() => {
-    const domesticPostings = (data.postings as { pool: string; district: string }[]).filter((p) => p.pool === '국내')
+    const domesticPostings = (data.postings as { pool: string; district: string; title: string; techs: string[] }[])
+      .filter((p) => p.pool === '국내' && (!scoped || derivePosition(p.title, p.techs) === myCategory))
     const counts: Record<string, number> = {}
     domesticPostings.forEach((p) => { if (p.district) counts[p.district] = (counts[p.district] ?? 0) + 1 })
     return Object.entries(counts)
       .map(([district, count]) => ({ district, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 6)
-  }, [])
+  }, [scoped, myCategory])
   const maxRegion = Math.max(...regionDensity.map((r) => r.count), 1)
 
   const tierDonut = useMemo(() => {
-    const domesticPostings = (data.postings as { pool: string; tier: string | null }[]).filter((p) => p.pool === '국내')
+    const domesticPostings = (data.postings as { pool: string; tier: string | null; title: string; techs: string[] }[])
+      .filter((p) => p.pool === '국내' && (!scoped || derivePosition(p.title, p.techs) === myCategory))
     const counts: Record<string, number> = { 대기업: 0, 중견: 0, 중소: 0 }
     domesticPostings.forEach((p) => { if (p.tier && p.tier in counts) counts[p.tier] += 1 })
     const total = counts['대기업'] + counts['중견'] + counts['중소']
     return { counts, total }
-  }, [])
+  }, [scoped, myCategory])
 
   const leaderboardSize = widgetSize('leaderboard')
   const leaderboardShowAll = leaderboardSize === '2x2' || leaderboardExpanded
   const leaderboardVisible = leaderboardShowAll ? top : top.slice(0, 8)
+
+  // 전역 집계 위젯에 붙이는 "전체 시장 기준" 배지 — scope='mine'일 때만 노출.
+  const scopeBadge = scoped ? <span className="dmkt2__scopebadge">전체 시장 기준</span> : undefined
+
+  // 라벨 섹션 표시 여부 — 섹션 내 위젯이 전부 숨겨지면 섹션 헤더째로 렌더하지 않는다(대시보드와 동일 패턴).
+  const secDemandVisible = !isWidgetHidden('market', 'hero-demand') || !isWidgetHidden('market', 'leaderboard')
+  const secTrendVisible = !isWidgetHidden('market', 'hype-vs-hire')
+    || !isWidgetHidden('market', 'yearly-trend') || !isWidgetHidden('market', 'movers')
+  const secCompanyVisible = !isWidgetHidden('market', 'competency') || !isWidgetHidden('market', 'response-rate')
+    || !isWidgetHidden('market', 'concept-signal') || !isWidgetHidden('market', 'tier-compare')
+    || !isWidgetHidden('market', 'hot-companies') || !isWidgetHidden('market', 'region-density')
+    || !isWidgetHidden('market', 'tier-donut')
+  const secExploreVisible = !isWidgetHidden('market', 'network') || !isWidgetHidden('market', 'propagation')
+    || !isWidgetHidden('market', 'generation-trend') || !isWidgetHidden('market', 'scatter')
 
   return (
     <div className="dpage dmkt2">
       <header className="dmkt2__head">
         <div className="dmkt2__head-l">
           <h1 className="dmkt2__title">채용 시장</h1>
-          <div className="dmkt2__sub">국내 채용공고 {domestic.N.toLocaleString()}건 기준 시장 흐름 · 기준일 {domestic.asOf} · 개인화된 내 진단은 대시보드에서 확인하세요</div>
+          <div className="dmkt2__sub">
+            {scoped && <>{myCategory} 직무 시장 흐름 · </>}
+            국내 채용공고 {domestic.N.toLocaleString()}건 기준{scoped ? '' : ' 시장 흐름'} · 기준일 {domestic.asOf} · 개인화된 내 진단은 대시보드에서 확인하세요
+          </div>
         </div>
-        <WidgetSettingsMenu section="market" items={MARKET_WIDGETS} />
+        <div className="dmkt2__head-r">
+          {myCategory && (
+            <div className="dmkt2__scopetabs">
+              <SegmentedControl
+                size="sm"
+                value={scope}
+                onChange={(v) => setScope(v as 'mine' | 'all')}
+                options={[{ key: 'mine', label: `내 직무 · ${myCategory}` }, { key: 'all', label: '전체' }]}
+              />
+            </div>
+          )}
+          <WidgetSettingsMenu section="market" items={MARKET_WIDGETS} />
+        </div>
       </header>
 
-      <div className="wgrid">
-        {/* 1. 수요 리더보드 — 검정 히어로 */}
-        {!isWidgetHidden('market', 'hero-demand') && (
-          <section className={`wcell wcell--${widgetSize('hero-demand')}`}>
-            <HeroStat
-              eyebrow="수요 리더보드 1위"
-              value={leader?.share ?? 0}
-              unit="%"
-              chart={<SkillShareSparkline items={top} />}
-              caption={leader && <>가장 많이 요구되는 기술은 <b>{leader.tech}</b> · 공고 <b>{leader.count.toLocaleString()}건</b></>}
-              footChips={leaderboard.source === 'mock' && <PreviewBadge />}
-            />
-          </section>
-        )}
-
-        {!isWidgetHidden('market', 'leaderboard') && (
-          <section className={`dcard wcell wcell--${leaderboardSize}`}>
-            <SectionHeader title="상위 요구 기술 Top14" hint="국내" />
-            <div className="dmkt2__bars">
-              {leaderboardVisible.map((i) => (
-                <button key={i.tech} className="dmkt2__bar" onClick={() => navigate(`/tech/${encodeURIComponent(i.tech)}`)}>
-                  <TechIcon tech={i.tech} size={20} />
-                  <span className="dmkt2__bar-t">{i.tech}</span>
-                  <span className="dmkt2__bar-track"><i style={{ width: `${(i.share / maxShare) * 100}%` }} /></span>
-                  <span className="dmkt2__bar-v">{i.share}%</span>
-                </button>
-              ))}
-            </div>
-            {leaderboardSize !== '2x2' && top.length > 8 && (
-              <button className="dmkt2__more" onClick={() => setLeaderboardExpanded((v) => !v)}>
-                {leaderboardExpanded ? '접기' : `더 보기 (${top.length - 8})`}
-              </button>
+      {/* 섹션 1 — 수요: 무엇이 얼마나 필요한가. featured 히어로(수요 리더보드, 2/3) + Top14(1/3).
+          페이지 히어로존(top-left) — 리서치 플레이북의 "featured 히어로 1개" 규칙. */}
+      {secDemandVisible && (
+        <section className="dmkt2__sec">
+          <header className="dmkt2__sec-h">
+            <h2>수요</h2>
+            <span>{leader ? <>무엇이 얼마나 필요한가 · 가장 많이 요구되는 기술은 <b>{leader.tech}</b></> : '무엇이 얼마나 필요한가'}</span>
+          </header>
+          <div className="dmkt2__sec-grid dmkt2__sec-grid--demand">
+            {!isWidgetHidden('market', 'hero-demand') && (
+              <div className="dmkt2__card-item dmkt2__card-item--hero">
+                <HeroStat
+                  eyebrow="수요 리더보드 1위"
+                  value={leader?.share ?? 0}
+                  unit="%"
+                  chart={<SkillShareSparkline items={top} />}
+                  caption={leader && <>가장 많이 요구되는 기술은 <b>{leader.tech}</b> · 공고 <b>{leader.count.toLocaleString()}건</b></>}
+                  footChips={!scoped && leaderboard.source === 'mock' && <PreviewBadge />}
+                />
+              </div>
             )}
-          </section>
-        )}
-
-        {/* 와우포인트: Hype vs Hire — 관심 vs 수요 산점도 */}
-        {!isWidgetHidden('market', 'hype-vs-hire') && (
-          <div className={`wcell wcell--${widgetSize('hype-vs-hire')}`}>
-            <HypeVsHireWidget size={widgetSize('hype-vs-hire')} />
-          </div>
-        )}
-
-        {/* 2. 기술 공동출현 네트워크 */}
-        {!isWidgetHidden('market', 'network') && (
-          <section className="dcard wcell wcell--2x2 dmkt2__netcell">
-            <SectionHeader title="기술 공동출현 네트워크" hint="함께 요구되는 기술 · force graph" />
-            <div className="dmkt2__netsplit">
-              <div className="dmkt2__netgraph"><TechCoNetworkGraph skills={NO_SKILLS} /></div>
-              <aside className="dmkt2__netsummary">
-                <div className="dmkt2__netsummary-t">최다 연결 기술 Top 5</div>
-                {getNetworkTopConnections(5).map((it, i) => (
-                  <div key={it.tech} className="dmkt2__netsummary-row">
-                    <span className="dmkt2__netsummary-rank">{i + 1}</span>
-                    <span className="dmkt2__netsummary-tech">{it.tech}</span>
-                    <span className="dmkt2__netsummary-n">{it.n.toLocaleString()}건</span>
+            {!isWidgetHidden('market', 'leaderboard') && (
+              <div className="dmkt2__card-item">
+                <section className="dcard">
+                  <SectionHeader title="상위 요구 기술 Top14" hint={scoped ? myCategory ?? undefined : '국내'} />
+                  <div className="dmkt2__bars">
+                    {leaderboardVisible.map((i) => (
+                      <button key={i.tech} className="dmkt2__bar" onClick={() => navigate(`/tech/${encodeURIComponent(i.tech)}`)}>
+                        <TechIcon tech={i.tech} size={20} />
+                        <span className="dmkt2__bar-t">{i.tech}</span>
+                        <span className="dmkt2__bar-track"><i style={{ width: `${(i.share / maxShare) * 100}%` }} /></span>
+                        <span className="dmkt2__bar-v">{i.share}%</span>
+                      </button>
+                    ))}
                   </div>
-                ))}
-              </aside>
-            </div>
-          </section>
-        )}
+                  {leaderboardSize !== '2x2' && top.length > 8 && (
+                    <button className="dmkt2__more" onClick={() => setLeaderboardExpanded((v) => !v)}>
+                      {leaderboardExpanded ? '접기' : `더 보기 (${top.length - 8})`}
+                    </button>
+                  )}
+                </section>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
-        {/* 3. 트렌드 전파 네트워크 */}
-        {!isWidgetHidden('market', 'propagation') && (
-          <section className="dcard wcell wcell--2x2 dmkt2__netcell">
-            <SectionHeader title="트렌드 전파 네트워크" hint="선행 기술 → 후행 기술 시차" />
-            <div className="dmkt2__netsplit">
-              <div className="dmkt2__netgraph"><TrendPropagationGraph /></div>
-              <aside className="dmkt2__netsummary">
-                <div className="dmkt2__netsummary-t">선도 기술 Top 5</div>
-                {getPropagationTopLeaders(5).map((it, i) => (
-                  <div key={it.tech} className="dmkt2__netsummary-row">
-                    <span className="dmkt2__netsummary-rank">{i + 1}</span>
-                    <span className="dmkt2__netsummary-tech">{it.tech}</span>
-                    <span className="dmkt2__netsummary-n">{it.count.toLocaleString()}건 파급</span>
+      {/* 섹션 2 — 트렌드: 흐름과 거품. Hype vs Hire · 연도별 추이 · 무버스, 같은 높이 3열. */}
+      {secTrendVisible && (
+        <section className="dmkt2__sec">
+          <header className="dmkt2__sec-h">
+            <h2>트렌드</h2>
+            <span>흐름과 거품 — 뜨는 기술과 관심·수요의 괴리</span>
+          </header>
+          <div className="dmkt2__sec-grid dmkt2__sec-grid--trend">
+            {!isWidgetHidden('market', 'hype-vs-hire') && (
+              <div className="dmkt2__card-item">
+                {scopeBadge}
+                <HypeVsHireWidget size={widgetSize('hype-vs-hire')} />
+              </div>
+            )}
+            {!isWidgetHidden('market', 'yearly-trend') && (
+              <div className="dmkt2__card-item">
+                <section className="dcard">
+                  <SectionHeader title="연도별 점유율 추이" hint="국내 · 단일 소스" right={scopeBadge} />
+                  <TechYearlyTrendChart skills={NO_SKILLS} />
+                </section>
+              </div>
+            )}
+            {!isWidgetHidden('market', 'movers') && (
+              <div className="dmkt2__card-item">
+                <section className="dcard">
+                  <SectionHeader title="급상승 · 급감 Top" right={scopeBadge} />
+                  <TechMoversBar />
+                </section>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* 섹션 3 — 기업 · 역량: 회사는 무엇을 원하나. 역량 · 응답률 · 개념시그니처 · 티어비교 ·
+          활발기업 · 지역밀도 · 규모분포. auto-fill로 카드 크기에 맞춰 2~3열. */}
+      {secCompanyVisible && (
+        <section className="dmkt2__sec">
+          <header className="dmkt2__sec-h">
+            <h2>기업 · 역량</h2>
+            <span>회사는 무엇을 원하나 — 요구 역량 · 응답률 · 규모별 격차 · 지역·기업 활동</span>
+          </header>
+          <div className="dmkt2__sec-grid dmkt2__sec-grid--company">
+            {!isWidgetHidden('market', 'competency') && (
+              <div className="dmkt2__card-item">
+                {scopeBadge}
+                <CompetencyWidget size={widgetSize('competency')} />
+              </div>
+            )}
+            {!isWidgetHidden('market', 'response-rate') && (
+              <div className="dmkt2__card-item">
+                {scopeBadge}
+                <ResponseRateWidget size={widgetSize('response-rate')} />
+              </div>
+            )}
+            {!isWidgetHidden('market', 'concept-signal') && (
+              <div className="dmkt2__card-item">
+                {scopeBadge}
+                <ConceptSignalWidget size={widgetSize('concept-signal')} />
+              </div>
+            )}
+            {!isWidgetHidden('market', 'tier-compare') && (
+              <div className="dmkt2__card-item">
+                <section className="dcard">
+                  <SectionHeader title="기업 규모별 요구 차이" hint="대기업 · 중견 · 중소" right={scopeBadge} />
+                  <TierCompareChart />
+                </section>
+              </div>
+            )}
+            {!isWidgetHidden('market', 'hot-companies') && (
+              <div className="dmkt2__card-item">
+                <section className="dcard">
+                  <SectionHeader title="이번 달 활발 기업" hint={scoped ? `최근 30일 · ${myCategory}` : '최근 30일 · 신규 공고 수'} />
+                  <div className="dmkt2__bars">
+                    {hotCompanies.map((c) => (
+                      <div key={c.company} className="dmkt2__bar">
+                        <span className="dmkt2__bar-t">{c.company}</span>
+                        <span className="dmkt2__bar-track"><i style={{ width: `${(c.count / maxHot) * 100}%` }} /></span>
+                        <span className="dmkt2__bar-v">{c.count}건</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </aside>
+                </section>
+              </div>
+            )}
+            {!isWidgetHidden('market', 'region-density') && (
+              <div className="dmkt2__card-item">
+                <section className="dcard">
+                  <SectionHeader title="지역별 공고 밀도" hint={scoped ? `구 단위 · ${myCategory}` : '구 단위 · 국내'} />
+                  <div className="dmkt2__bars">
+                    {regionDensity.map((r) => (
+                      <div key={r.district} className="dmkt2__bar">
+                        <span className="dmkt2__bar-t">{r.district}</span>
+                        <span className="dmkt2__bar-track"><i style={{ width: `${(r.count / maxRegion) * 100}%` }} /></span>
+                        <span className="dmkt2__bar-v">{r.count}건</span>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              </div>
+            )}
+            {!isWidgetHidden('market', 'tier-donut') && (
+              <div className="dmkt2__card-item">
+                <section className="dcard">
+                  <SectionHeader title="기업 규모 분포" hint={scoped ? myCategory ?? undefined : '국내'} />
+                  <TierDonutChart counts={tierDonut.counts} total={tierDonut.total} />
+                </section>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* 섹션 4 — 구조 · 탐색: 깊이 보기. 무거운 탐색 그래프(네트워크·전파)라 리서치 플레이북대로
+          기본 접힘 + 진행적 공개. */}
+      {secExploreVisible && (
+        <section className="dmkt2__sec dmkt2__sec--explore">
+          <header className="dmkt2__sec-h dmkt2__sec-h--toggle">
+            <div>
+              <h2>구조 · 탐색</h2>
+              <span>깊이 보기 — 기술 네트워크 · 전파 경로 · 세대별 변화 · 수요×빈도</span>
             </div>
-          </section>
-        )}
-
-        {/* 와우포인트: 회사가 원하는 역량 */}
-        {!isWidgetHidden('market', 'competency') && (
-          <div className={`wcell wcell--${widgetSize('competency')}`}>
-            <CompetencyWidget size={widgetSize('competency')} />
-          </div>
-        )}
-
-        {/* 와우포인트: 응답 잘 오는 회사 */}
-        {!isWidgetHidden('market', 'response-rate') && (
-          <div className={`wcell wcell--${widgetSize('response-rate')}`}>
-            <ResponseRateWidget size={widgetSize('response-rate')} />
-          </div>
-        )}
-
-        {/* 와우포인트: 개념 → 기술 시그니처 */}
-        {!isWidgetHidden('market', 'concept-signal') && (
-          <div className={`wcell wcell--${widgetSize('concept-signal')}`}>
-            <ConceptSignalWidget size={widgetSize('concept-signal')} />
-          </div>
-        )}
-
-        {/* 4. 연도별 점유율 추이 */}
-        {!isWidgetHidden('market', 'yearly-trend') && (
-          <section className={`dcard wcell wcell--${widgetSize('yearly-trend')}`}>
-            <SectionHeader title="연도별 점유율 추이" hint="국내 · 단일 소스" />
-            <TechYearlyTrendChart skills={NO_SKILLS} />
-          </section>
-        )}
-
-        {/* 5. 급상승 · 급감 */}
-        {!isWidgetHidden('market', 'movers') && (
-          <section className={`dcard wcell wcell--${widgetSize('movers')}`}>
-            <SectionHeader title="급상승 · 급감 Top" />
-            <TechMoversBar />
-          </section>
-        )}
-
-        {/* 6. 기업 규모별 요구 차이 */}
-        {!isWidgetHidden('market', 'tier-compare') && (
-          <section className={`dcard wcell wcell--${widgetSize('tier-compare')}`}>
-            <SectionHeader title="기업 규모별 요구 차이" hint="대기업 · 중견 · 중소" />
-            <TierCompareChart />
-          </section>
-        )}
-
-        {/* 7. 레거시 → 신진 스택 변화 */}
-        {!isWidgetHidden('market', 'generation-trend') && (
-          <section className={`dcard wcell wcell--${widgetSize('generation-trend')}`}>
-            <SectionHeader title="레거시 → 신진 스택 변화" hint="설립 세대별" />
-            <GenerationTrendChart skills={NO_SKILLS} />
-          </section>
-        )}
-
-        {/* 8. 수요 × 빈도 분포 — 순수 시장 산점도(보유 개념 없음) */}
-        {!isWidgetHidden('market', 'scatter') && (
-          <section className={`dcard wcell wcell--${widgetSize('scatter')}`}>
-            <SectionHeader title="수요 × 빈도 분포" hint="국내 · 상위 16개 기술" />
-            <MarketScatter items={scatterItems} />
-          </section>
-        )}
-
-        {/* 9. 이번 달 활발 기업 */}
-        {!isWidgetHidden('market', 'hot-companies') && (
-          <section className={`dcard wcell wcell--${widgetSize('hot-companies')}`}>
-            <SectionHeader title="이번 달 활발 기업" hint="최근 30일 · 신규 공고 수" />
-            <div className="dmkt2__bars">
-              {hotCompanies.map((c) => (
-                <div key={c.company} className="dmkt2__bar">
-                  <span className="dmkt2__bar-t">{c.company}</span>
-                  <span className="dmkt2__bar-track"><i style={{ width: `${(c.count / maxHot) * 100}%` }} /></span>
-                  <span className="dmkt2__bar-v">{c.count}건</span>
+            <button className="dmkt2__sec-toggle" onClick={() => setExploreOpen((v) => !v)}>
+              {exploreOpen ? '접기' : '더 보기'}
+            </button>
+          </header>
+          {!exploreOpen ? (
+            <div className="dmkt2__sec-collapsed">탐색적 분석 4종(공동출현 네트워크 · 전파 경로 · 세대별 변화 · 수요×빈도) · 펼쳐서 보기</div>
+          ) : (
+            <div className="dmkt2__sec-grid dmkt2__sec-grid--explore">
+              {!isWidgetHidden('market', 'network') && (
+                <div className="dmkt2__card-item">
+                  <section className="dcard dmkt2__netcell">
+                    <SectionHeader title="기술 공동출현 네트워크" hint="함께 요구되는 기술 · force graph" right={scopeBadge} />
+                    <div className="dmkt2__netsplit">
+                      <div className="dmkt2__netgraph"><TechCoNetworkGraph skills={NO_SKILLS} /></div>
+                      <aside className="dmkt2__netsummary">
+                        <div className="dmkt2__netsummary-t">최다 연결 기술 Top 5</div>
+                        {getNetworkTopConnections(5).map((it, i) => (
+                          <div key={it.tech} className="dmkt2__netsummary-row">
+                            <span className="dmkt2__netsummary-rank">{i + 1}</span>
+                            <span className="dmkt2__netsummary-tech">{it.tech}</span>
+                            <span className="dmkt2__netsummary-n">{it.n.toLocaleString()}건</span>
+                          </div>
+                        ))}
+                      </aside>
+                    </div>
+                  </section>
                 </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* 10. 지역별 공고 밀도 */}
-        {!isWidgetHidden('market', 'region-density') && (
-          <section className={`dcard wcell wcell--${widgetSize('region-density')}`}>
-            <SectionHeader title="지역별 공고 밀도" hint="구 단위 · 국내" />
-            <div className="dmkt2__bars">
-              {regionDensity.map((r) => (
-                <div key={r.district} className="dmkt2__bar">
-                  <span className="dmkt2__bar-t">{r.district}</span>
-                  <span className="dmkt2__bar-track"><i style={{ width: `${(r.count / maxRegion) * 100}%` }} /></span>
-                  <span className="dmkt2__bar-v">{r.count}건</span>
+              )}
+              {!isWidgetHidden('market', 'propagation') && (
+                <div className="dmkt2__card-item">
+                  <section className="dcard dmkt2__netcell">
+                    <SectionHeader title="트렌드 전파 네트워크" hint="선행 기술 → 후행 기술 시차" right={scopeBadge} />
+                    <div className="dmkt2__netsplit">
+                      <div className="dmkt2__netgraph"><TrendPropagationGraph /></div>
+                      <aside className="dmkt2__netsummary">
+                        <div className="dmkt2__netsummary-t">선도 기술 Top 5</div>
+                        {getPropagationTopLeaders(5).map((it, i) => (
+                          <div key={it.tech} className="dmkt2__netsummary-row">
+                            <span className="dmkt2__netsummary-rank">{i + 1}</span>
+                            <span className="dmkt2__netsummary-tech">{it.tech}</span>
+                            <span className="dmkt2__netsummary-n">{it.count.toLocaleString()}건 파급</span>
+                          </div>
+                        ))}
+                      </aside>
+                    </div>
+                  </section>
                 </div>
-              ))}
+              )}
+              {!isWidgetHidden('market', 'generation-trend') && (
+                <div className="dmkt2__card-item">
+                  <section className="dcard">
+                    <SectionHeader title="레거시 → 신진 스택 변화" hint="설립 세대별" right={scopeBadge} />
+                    <GenerationTrendChart skills={NO_SKILLS} />
+                  </section>
+                </div>
+              )}
+              {!isWidgetHidden('market', 'scatter') && (
+                <div className="dmkt2__card-item">
+                  <section className="dcard">
+                    <SectionHeader title="수요 × 빈도 분포" hint="국내 · 상위 16개 기술" right={scopeBadge} />
+                    <MarketScatter items={scatterItems} />
+                  </section>
+                </div>
+              )}
             </div>
-          </section>
-        )}
-
-        {/* 11. 기업 규모 분포 */}
-        {!isWidgetHidden('market', 'tier-donut') && (
-          <section className={`dcard wcell wcell--${widgetSize('tier-donut')}`}>
-            <SectionHeader title="기업 규모 분포" hint="국내" />
-            <TierDonutChart counts={tierDonut.counts} total={tierDonut.total} />
-          </section>
-        )}
-      </div>
+          )}
+        </section>
+      )}
     </div>
   )
 }
