@@ -46,6 +46,47 @@ function careerLabel(min: number | null, max: number | null) {
   return max && max !== min ? `경력 ${min}~${max}년` : `경력 ${min}년+`
 }
 
+function CompanyLocationMap({ lat, lng, address }: { lat: number; lng: number; address: string }) {
+  const elRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!elRef.current) return
+    const map = L.map(elRef.current, {
+      center: [lat, lng],
+      zoom: 15,
+      zoomControl: false,
+      attributionControl: false,
+      dragging: false,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
+      touchZoom: false,
+      boxZoom: false,
+      keyboard: false,
+    })
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map)
+    L.marker([lat, lng], {
+      icon: L.divIcon({
+        className: 'djobs__company-map-marker-wrap',
+        html: '<div class="djobs__company-map-marker"></div>',
+        iconSize: [22, 22],
+        iconAnchor: [11, 11],
+      }),
+    }).addTo(map)
+    const resizeTimer = window.setTimeout(() => map.invalidateSize(), 60)
+    return () => {
+      window.clearTimeout(resizeTimer)
+      map.remove()
+    }
+  }, [lat, lng])
+
+  return (
+    <div className="djobs__company-map">
+      <div ref={elRef} className="djobs__company-map-canvas" aria-label={`${address} 근무 위치 지도`} />
+      <div className="djobs__company-map-address"><MapPin size={13} /> {address}</div>
+    </div>
+  )
+}
+
 /* ───────────────── 검색(구 맞춤 공고) — 필터 전면 + 이력서 자동주입 ─────────────────
    postings에는 "직무"에 해당하는 별도 필드가 없다(careerData.json 확인 완료 — title/techs/
    region/tier/careerMin·Max/pool 뿐). title/techs로부터 결정론적 키워드 매칭으로 직무를
@@ -102,8 +143,6 @@ export function DesktopJobs() {
   const [searchParams] = useSearchParams()
   const { resumes, activeId, activeResume } = useResumesState()
   const skills = activeResume?.skills ?? []
-  // 내 직무 카테고리 — 이력서 보유 기술만으로 derivePosition을 태워 파생(title 없이 techs 폴백).
-  const myCategory = activeResume ? derivePosition('', activeResume.skills) : null
 
   const [pool, setPool] = useState<'국내' | '국외'>('국내')
   const [q, setQ] = useState(() => searchParams.get('q') ?? '')
@@ -117,13 +156,12 @@ export function DesktopJobs() {
   const [tierFilter, setTierFilter] = useState<Set<string>>(new Set(TIERS))
   const [positionFilter, setPositionFilter] = useState<PositionCat | ''>('')
   const [pvTab, setPvTab] = useState<'desc' | 'company'>('desc')
-  // 이력서 있으면 "내 직무" 탭이 기본값 — 이력서 없으면 항상 전체.
-  const [scope, setScope] = useState<'mine' | 'all'>(activeResume ? 'mine' : 'all')
   const mockPostings = useMemo(() => getDynamicPostings(skills), [skills])
   const [remoteCards, setRemoteCards] = useState<Awaited<ReturnType<typeof jobsApi.list>> | null>(null)
   const [jobsLoading, setJobsLoading] = useState(false)
   const [jobsError, setJobsError] = useState('')
   const [techOptions, setTechOptions] = useState<string[]>(TOP_TECHS)
+  const [selectedDetail, setSelectedDetail] = useState<Awaited<ReturnType<typeof jobsApi.detail>> | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -149,18 +187,14 @@ export function DesktopJobs() {
 
   useEffect(() => {
     let cancelled = false
-    const resumeId = Number(activeResume?.id)
-    const matched = scope === 'mine' && Number.isInteger(resumeId) && !!getAuthToken()
     setJobsLoading(true)
     setJobsError('')
     jobsApi.list({
       pool: pool === '국내' ? 'domestic' : 'global',
-      position: scope === 'mine' ? myCategory ?? undefined : positionFilter || undefined,
+      position: positionFilter || undefined,
       sort: sort === 'match' ? 'latest' : deadlineOnly ? 'deadline' : 'latest',
       district: region || undefined,
       deadline_within_days: deadlineOnly ? 7 : undefined,
-      match_only: matched || undefined,
-      resume_id: matched ? resumeId : undefined,
       page: 1,
       page_size: 100,
     }, getAuthToken()).then((result) => {
@@ -169,7 +203,7 @@ export function DesktopJobs() {
       if (!cancelled) setJobsError(reason instanceof Error ? reason.message : '공고를 불러오지 못했습니다.')
     }).finally(() => { if (!cancelled) setJobsLoading(false) })
     return () => { cancelled = true }
-  }, [pool, region, deadlineOnly, positionFilter, scope, myCategory, sort, activeResume?.id])
+  }, [pool, region, deadlineOnly, positionFilter, sort])
 
   const postings = useMemo(() => {
     if (!remoteCards) return mockPostings
@@ -216,14 +250,12 @@ export function DesktopJobs() {
       })
     }
     arr = arr.filter((p) => tierFilter.has(p.tier || '중소'))
-    // scope='mine'이면 이력서 기반 직무로 강제(빠른 토글) — 수동 select(positionFilter)보다 우선한다.
-    if (scope === 'mine' && myCategory) arr = arr.filter((p) => derivePosition(p.title, p.techs) === myCategory)
-    else if (positionFilter) arr = arr.filter((p) => derivePosition(p.title, p.techs) === positionFilter)
+    if (positionFilter) arr = arr.filter((p) => derivePosition(p.title, p.techs) === positionFilter)
     return [...arr].sort((a, b) =>
       sort === 'tier' ? tierRank(a.tier) - tierRank(b.tier) || b.matchPct - a.matchPct
         : sort === 'latest' ? (b.postDate || '').localeCompare(a.postDate || '')
           : b.matchPct - a.matchPct)
-  }, [byPool, q, techFilter, region, careerMin, careerMax, deadlineOnly, tierFilter, positionFilter, sort, scope, myCategory])
+  }, [byPool, q, techFilter, region, careerMin, careerMax, deadlineOnly, tierFilter, positionFilter, sort])
 
   // facet 카운트 요약(사람인/링크드인 패턴) — 현재 필터된 list 기준 기업 규모 분포 + 상위 직무 3개.
   const tierFacets = useMemo(() => {
@@ -244,9 +276,23 @@ export function DesktopJobs() {
   }, [list])
 
   const sel = list.find((p) => p.id === selId) ?? list[0]
+  const selectedMapPin = useMemo(() => {
+    if (!sel?.id) return undefined
+    return marketData.map.pins.find((pin) => String(pin.id) === String(sel.id))
+  }, [sel?.id])
   const activePresetKey = CAREER_PRESETS.find((c) => c.min === careerMin && c.max === careerMax)?.key ?? null
 
   useEffect(() => setPvTab('desc'), [sel?.id])
+
+  useEffect(() => {
+    if (pvTab !== 'company' || !sel?.id) return
+    let cancelled = false
+    setSelectedDetail(null)
+    jobsApi.detail(sel.id)
+      .then((result) => { if (!cancelled) setSelectedDetail(result) })
+      .catch(() => undefined)
+    return () => { cancelled = true }
+  }, [pvTab, sel?.id])
 
   const toggleTech = (t: string) => setTechFilter((s) => {
     const next = new Set(s)
@@ -327,11 +373,10 @@ export function DesktopJobs() {
           </div>
 
           <div className="djobs__fld">
-            <span className="djobs__fld-l">직무{scope === 'mine' && myCategory ? ' (내 직무 탭 사용 중)' : ''}</span>
+            <span className="djobs__fld-l">직무</span>
             <select
               className="djobs__select"
               value={positionFilter}
-              disabled={scope === 'mine' && !!myCategory}
               onChange={(e) => setPositionFilter(e.target.value as PositionCat | '')}
             >
               <option value="">전체</option>
@@ -383,16 +428,6 @@ export function DesktopJobs() {
         {/* 결과 리스트 */}
         <div className="dcard djobs__list">
           <div className="djobs__listhead">
-            {myCategory && (
-              <div className="djobs__scopetabs">
-                <SegmentedControl
-                  size="sm"
-                  value={scope}
-                  onChange={(v) => setScope(v as 'mine' | 'all')}
-                  options={[{ key: 'mine', label: `내 직무 · ${myCategory}` }, { key: 'all', label: '전체' }]}
-                />
-              </div>
-            )}
             <div className="djobs__facets">
               <span className="djobs__facets-count">{list.length.toLocaleString()}건</span>
               <span className="djobs__facets-sep" />
@@ -489,12 +524,23 @@ export function DesktopJobs() {
                       {ci.industry && <div className="djobs__pv-kv"><span>업종</span><b>{ci.industry}</b></div>}
                       {ci.established && <div className="djobs__pv-kv"><span>설립</span><b>{ci.established}</b></div>}
                       <div className="djobs__pv-kv"><span>지역</span><b>{ci.location || sel.region || 'Remote'}</b></div>
-                      <div className="djobs__pv-kv"><span>채용 풀</span><b>{sel.pool}</b></div>
                       {ci.homepage && (
                         <div className="djobs__pv-kv">
                           <span>홈페이지</span>
                           <a href={ci.homepage} target="_blank" rel="noreferrer" className="djobs__pv-link">바로가기 ↗</a>
                         </div>
+                      )}
+                      <div className="djobs__pv-kv"><span>채용 풀</span><b>{sel.pool}</b></div>
+                      {(selectedMapPin || (
+                        String(selectedDetail?.id) === String(sel.id)
+                        && selectedDetail?.lat != null
+                        && selectedDetail.lng != null
+                      )) && (
+                        <CompanyLocationMap
+                          lat={selectedMapPin?.lat ?? selectedDetail!.lat!}
+                          lng={selectedMapPin?.lng ?? selectedDetail!.lng!}
+                          address={selectedDetail?.region || ci.location || sel.region || '위치 정보 없음'}
+                        />
                       )}
                       {ci.tags && ci.tags.length > 0 && (
                         <div className="djobs__pv-techs" style={{ marginTop: 12 }}>

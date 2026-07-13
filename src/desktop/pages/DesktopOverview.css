@@ -1,8 +1,7 @@
 /* 데스크톱 대시보드 — 히어로 1개(커리어 점수) + KPI stat 4개 + 라벨 섹션 3개의 위계형 커맨드센터.
    모바일 단일컬럼과 완전히 분리된 메인+사이드 멀티컬럼 레이아웃. */
 .dov {
-  max-width: 1520px;
-  margin: 0 auto;
+  width: 100%;
   /* DesktopShell(.dshell)에는 .career 확장 토큰이 없어 보강한다. */
   --line: #e6e9ef;
   --accent-50: #f0f0f1;
