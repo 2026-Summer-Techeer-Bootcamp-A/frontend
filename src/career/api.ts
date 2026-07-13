@@ -130,7 +130,8 @@ async function rootRequest<T>(path: string): Promise<T> {
 
 export const jobsApi = {
   list(params: {
-    pool?: ApiPool; position?: string; sort?: 'latest' | 'deadline'; district?: string
+    pool?: ApiPool; position?: string; sort?: 'latest' | 'deadline' | 'match'; district?: string
+    q?: string; skills?: string
     deadline_within_days?: number; match_only?: boolean; min_match?: number; resume_id?: number
     page?: number; page_size?: number
   } = {}, token?: string | null) {
