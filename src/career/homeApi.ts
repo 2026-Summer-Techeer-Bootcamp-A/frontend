@@ -111,6 +111,9 @@ export const homeApi = {
       district?: string
       deadline_within_days?: number
       min_match?: number
+      sort?: 'latest' | 'match'
+      industry?: string
+      skills?: string
     } = {},
   ) => get<FeedResponseDto>('/feed/postings', params),
   news: (source: NewsSource, limit = 15) => get<NewsResponseDto>('/news', { source, limit }),

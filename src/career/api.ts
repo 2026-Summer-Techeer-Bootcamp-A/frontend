@@ -152,8 +152,8 @@ export const jobsApi = {
   map(params: { resume_id?: number; session_id?: string } = {}, token?: string | null) {
     return request<PostingMap>(withQuery('/postings/map', params), { headers: authHeaders(token) })
   },
-  categories() {
-    return request<{ categories: Array<{ name: string; is_tech: boolean }> }>('/job-categories')
+  categories(pool?: string) {
+    return request<{ categories: Array<{ name: string; is_tech: boolean }> }>(withQuery('/job-categories', { pool }))
   },
   skills(q = '') {
     return rootRequest<{ skills: Array<{ canonical: string; category: string; aliases: string[] }> }>(withQuery('/skills', { q, limit: 20 }))
