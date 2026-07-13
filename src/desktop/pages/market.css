@@ -70,6 +70,15 @@
   .dmkt2__head-r { padding-top: 0; }
 }
 
+/* 위젯 takeaway 캡션 — SectionHeader 바로 아래, 차트 위에 붙는 강조 한 줄. 데이터에서 뽑은
+   "그래서 나한테 뭔데?" 문장. 기본은 near-black 볼드 텍스트고, 상승/기회 신호에만 절제해서
+   그린/앰버를 얹는다(과용 금지). 파랑은 쓰지 않는다. */
+.dmkt2__takeaway { font-size: 12.5px; font-weight: 600; color: var(--c-ink); line-height: 1.45; margin: 6px 0 10px; }
+.dmkt2__takeaway b,
+.dmkt2__takeaway strong { color: #0b0b0c; font-weight: 800; }
+.dmkt2__takeaway-up { color: #1f9d57; }
+.dmkt2__takeaway-amber { color: #d9822b; }
+
 /* 상위 요구 기술 Top14 바 — 2x1(기본)에서는 상위 8개만, "더 보기"로 14개 전체 펼침 */
 .dmkt2__bars { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
 .dmkt2__bar { display: flex; align-items: center; gap: 10px; padding: 4px 4px; border-radius: 9px; transition: background 0.13s ease; text-align: left; }

@@ -740,7 +740,7 @@ export function DesktopMarket() {
         <section className="dmkt2__sec">
           <header className="dmkt2__sec-h">
             <h2>수요</h2>
-            <span>{leader ? <>무엇이 얼마나 필요한가 · 가장 많이 요구되는 기술은 <b>{leader.tech}</b></> : '무엇이 얼마나 필요한가'}</span>
+            <span>지금 뭘 할 줄 알아야 뽑히나 — 가장 많이 요구되는 기술과 그 비중</span>
           </header>
           <div className="dmkt2__sec-grid dmkt2__sec-grid--demand">
             {!isWidgetHidden('market', 'hero-demand') && (
@@ -759,6 +759,11 @@ export function DesktopMarket() {
               <div className="dmkt2__card-item">
                 <section className="dcard">
                   <SectionHeader title="상위 요구 기술 Top14" hint={scoped ? myCategory ?? undefined : '국내'} />
+                  <p className="dmkt2__takeaway">
+                    {scoped && leader
+                      ? <><b>{leader.tech}</b>가 {myCategory} 공고의 <b>{leader.share}%</b>를 요구 — 그만큼 지원자도 몰려요.</>
+                      : <><b>JavaScript</b>가 국내 공고의 <b>24.2%</b>를 요구 — 3곳 중 1곳 꼴. 근데 그만큼 지원자도 몰려요.</>}
+                  </p>
                   <div className="dmkt2__bars">
                     {leaderboardVisible.map((i) => (
                       <button key={i.tech} className="dmkt2__bar" onClick={() => navigate(`/tech/${encodeURIComponent(i.tech)}`)}>
@@ -786,7 +791,7 @@ export function DesktopMarket() {
         <section className="dmkt2__sec">
           <header className="dmkt2__sec-h">
             <h2>트렌드</h2>
-            <span>흐름과 거품 — 뜨는 기술과 관심·수요의 괴리</span>
+            <span>지금 배우면 늦었나? — 뜨는 기술과 지는 기술, 관심과 수요의 괴리</span>
           </header>
           <div className="dmkt2__sec-grid dmkt2__sec-grid--trend">
             {!isWidgetHidden('market', 'hype-vs-hire') && (
@@ -799,6 +804,9 @@ export function DesktopMarket() {
               <div className="dmkt2__card-item">
                 <section className="dcard">
                   <SectionHeader title="연도별 점유율 추이" hint="국내 · 단일 소스" right={scopeBadge} />
+                  <p className="dmkt2__takeaway">
+                    <b className="dmkt2__takeaway-up">Python +9.8%p 급등</b> vs <b>Java −13.8%p 추락</b> (2022→2025) — 지금 뭘 배울지가 갈려요.
+                  </p>
                   <TechYearlyTrendChart skills={NO_SKILLS} />
                 </section>
               </div>
@@ -806,7 +814,10 @@ export function DesktopMarket() {
             {!isWidgetHidden('market', 'movers') && (
               <div className="dmkt2__card-item">
                 <section className="dcard">
-                  <SectionHeader title="급상승 · 급감 Top" right={scopeBadge} />
+                  <SectionHeader title="지금 뜨는 기술 / 지는 기술" right={scopeBadge} />
+                  <p className="dmkt2__takeaway">
+                    떠오르는 건 <b>Python·Next.js·FastAPI</b>, 지는 건 <b>Java·Vue·Spring</b>.
+                  </p>
                   <TechMoversBar />
                 </section>
               </div>
@@ -821,7 +832,7 @@ export function DesktopMarket() {
         <section className="dmkt2__sec">
           <header className="dmkt2__sec-h">
             <h2>기업 · 역량</h2>
-            <span>회사는 무엇을 원하나 — 요구 역량 · 응답률 · 규모별 격차 · 지역·기업 활동</span>
+            <span>회사가 JD에 안 쓰지만 진짜 원하는 것 — 역량·응답률·개념</span>
           </header>
           <div className="dmkt2__sec-grid dmkt2__sec-grid--company">
             {!isWidgetHidden('market', 'competency') && (
@@ -846,6 +857,7 @@ export function DesktopMarket() {
               <div className="dmkt2__card-item">
                 <section className="dcard">
                   <SectionHeader title="기업 규모별 요구 차이" hint="대기업 · 중견 · 중소" right={scopeBadge} />
+                  <p className="dmkt2__takeaway">대기업·중견·중소가 원하는 스택이 다릅니다 — 타겟에 맞춰 준비하세요.</p>
                   <TierCompareChart />
                 </section>
               </div>
@@ -854,6 +866,7 @@ export function DesktopMarket() {
               <div className="dmkt2__card-item">
                 <section className="dcard">
                   <SectionHeader title="이번 달 활발 기업" hint={scoped ? `최근 30일 · ${myCategory}` : '최근 30일 · 신규 공고 수'} />
+                  <p className="dmkt2__takeaway"><b>지금 가장 많이 뽑는 회사</b> — 최근 30일 신규 공고 기준.</p>
                   <div className="dmkt2__bars">
                     {hotCompanies.map((c) => (
                       <div key={c.company} className="dmkt2__bar">
@@ -870,6 +883,7 @@ export function DesktopMarket() {
               <div className="dmkt2__card-item">
                 <section className="dcard">
                   <SectionHeader title="지역별 공고 밀도" hint={scoped ? `구 단위 · ${myCategory}` : '구 단위 · 국내'} />
+                  <p className="dmkt2__takeaway">공고가 몰린 지역 — 어디서 일하게 될 확률이 높은지.</p>
                   <div className="dmkt2__bars">
                     {regionDensity.map((r) => (
                       <div key={r.district} className="dmkt2__bar">
@@ -886,6 +900,7 @@ export function DesktopMarket() {
               <div className="dmkt2__card-item">
                 <section className="dcard">
                   <SectionHeader title="기업 규모 분포" hint={scoped ? myCategory ?? undefined : '국내'} />
+                  <p className="dmkt2__takeaway">국내 공고의 대기업/중견/중소 비율.</p>
                   <TierDonutChart counts={tierDonut.counts} total={tierDonut.total} />
                 </section>
               </div>
@@ -901,7 +916,7 @@ export function DesktopMarket() {
           <header className="dmkt2__sec-h dmkt2__sec-h--toggle">
             <div>
               <h2>구조 · 탐색</h2>
-              <span>깊이 보기 — 기술 네트워크 · 전파 경로 · 세대별 변화 · 수요×빈도</span>
+              <span>깊이 파보기 — 기술이 어떻게 얽혀 있고 어디로 흐르나</span>
             </div>
             <button className="dmkt2__sec-toggle" onClick={() => setExploreOpen((v) => !v)}>
               {exploreOpen ? '접기' : '더 보기'}
@@ -915,6 +930,7 @@ export function DesktopMarket() {
                 <div className="dmkt2__card-item">
                   <section className="dcard dmkt2__netcell">
                     <SectionHeader title="기술 공동출현 네트워크" hint="함께 요구되는 기술 · force graph" right={scopeBadge} />
+                    <p className="dmkt2__takeaway">하나 배우면 딸려오는 기술들 — <b>함께 요구되는 스택 지도</b>.</p>
                     <div className="dmkt2__netsplit">
                       <div className="dmkt2__netgraph"><TechCoNetworkGraph skills={NO_SKILLS} /></div>
                       <aside className="dmkt2__netsummary">
@@ -935,6 +951,7 @@ export function DesktopMarket() {
                 <div className="dmkt2__card-item">
                   <section className="dcard dmkt2__netcell">
                     <SectionHeader title="트렌드 전파 네트워크" hint="선행 기술 → 후행 기술 시차" right={scopeBadge} />
+                    <p className="dmkt2__takeaway"><b>먼저 뜨는 기술이 다음 유행을 예고</b> — 남보다 앞서 준비할 단서.</p>
                     <div className="dmkt2__netsplit">
                       <div className="dmkt2__netgraph"><TrendPropagationGraph /></div>
                       <aside className="dmkt2__netsummary">
@@ -954,7 +971,8 @@ export function DesktopMarket() {
               {!isWidgetHidden('market', 'generation-trend') && (
                 <div className="dmkt2__card-item">
                   <section className="dcard">
-                    <SectionHeader title="레거시 → 신진 스택 변화" hint="설립 세대별" right={scopeBadge} />
+                    <SectionHeader title="요즘 회사는 예전과 뭘 다르게 쓰나?" hint="설립 세대별" right={scopeBadge} />
+                    <p className="dmkt2__takeaway">설립이 최근일수록 <b>Java 지고 Python·클라우드 뜨는</b> 경향.</p>
                     <GenerationTrendChart skills={NO_SKILLS} />
                   </section>
                 </div>
@@ -963,6 +981,7 @@ export function DesktopMarket() {
                 <div className="dmkt2__card-item">
                   <section className="dcard">
                     <SectionHeader title="수요 × 빈도 분포" hint="국내 · 상위 16개 기술" right={scopeBadge} />
+                    <p className="dmkt2__takeaway">수요는 높은데 아직 남들이 덜 파는 <b className="dmkt2__takeaway-amber">틈새 기술</b>을 찾아보세요.</p>
                     <MarketScatter items={scatterItems} />
                   </section>
                 </div>
