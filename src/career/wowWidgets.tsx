@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import ReactECharts from 'echarts-for-react'
 import { Check } from 'lucide-react'
 import { AsOf } from './charts'
-import { SectionHeader, useCountUp, MiniScore } from './kit'
+import { SectionHeader, useCountUp, MiniScore, PreviewBadge } from './kit'
 import { FONT, tooltipStyle } from '../pages/widgets/base'
 import type { WidgetSize } from './dashboardConfig'
 import { useResumesState, getDynamicPostings } from './state'
@@ -188,7 +188,7 @@ export function LearningPathWidget({ size = '2x1' }: { size?: WidgetSize }) {
 
   return (
     <div className="dcard wow-card">
-      <SectionHeader title="학습 로드맵" hint="최적 순서" />
+      <SectionHeader title="학습 로드맵" hint="최적 순서" right={roadmap.source !== 'live' ? <PreviewBadge /> : undefined} />
       <div className="wow-body">
         <p className="wow-headline">
           이 순서로 배우면 기술 연결 공고가 <b>{D.start_matched.toLocaleString()}→{last.matched_after.toLocaleString()}</b>건
@@ -268,7 +268,7 @@ export function SkillUnlockWidget({ size = '2x1' }: { size?: WidgetSize }) {
   if (!top) {
     return (
       <div className="dcard wow-card">
-        <SectionHeader title="한계 해금" />
+        <SectionHeader title="한계 해금" right={!liveData ? <PreviewBadge /> : undefined} />
         <div className="wow-body"><div className="dov__empty">추천할 기술 데이터가 없어요.</div></div>
         <AsOf asOf={liveData?.as_of ?? MATCH._meta.asOf} n={roleData.n} />
       </div>
@@ -278,7 +278,7 @@ export function SkillUnlockWidget({ size = '2x1' }: { size?: WidgetSize }) {
   if (size === '1x1') {
     return (
       <div className="dcard wow-card">
-        <SectionHeader title="한계 해금" />
+        <SectionHeader title="한계 해금" right={!liveData ? <PreviewBadge /> : undefined} />
         <div className="wow-body">
           <div className="wow-unlock-mini">
             <span className="wow-unlock-mini__tech">{top.tech}</span>
@@ -295,12 +295,15 @@ export function SkillUnlockWidget({ size = '2x1' }: { size?: WidgetSize }) {
       <SectionHeader
         title="한계 해금" hint="하나만 배우면"
         right={
-          <div className="wow-seg">
-            {MATCH._meta.roles.map((r) => (
-              <button key={r.key} type="button" className={`wow-seg__btn${role === r.key ? ' on' : ''}`} onClick={() => setRole(r.key)}>
-                {r.label}
-              </button>
-            ))}
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+            {!liveData && <PreviewBadge />}
+            <div className="wow-seg">
+              {MATCH._meta.roles.map((r) => (
+                <button key={r.key} type="button" className={`wow-seg__btn${role === r.key ? ' on' : ''}`} onClick={() => setRole(r.key)}>
+                  {r.label}
+                </button>
+              ))}
+            </div>
           </div>
         }
       />

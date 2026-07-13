@@ -108,7 +108,7 @@ export default function DesktopOverview() {
   useDashboardConfig() // 위젯 표시/숨김·크기 변경 시 리렌더 트리거
   const { resumes, activeResume } = useResumesState()
   const { user } = useAuth()
-  const hasResume = resumes.length > 0 && !!activeResume
+  const hasResume = localStorage.getItem('techeer_resumes') !== null && resumes.length > 0 && !!activeResume
   const skills = activeResume?.skills ?? []
   const identity = useMemo(() => {
     const resumeId = Number(activeResume?.id)
@@ -171,8 +171,6 @@ export default function DesktopOverview() {
   const jobsData = useWidgetData(null, topJobs)
   const deadlinesData = useWidgetData(null, deadlines)
 
-  const previewA = !hasResume && scoreData.source === 'mock'
-
   const rings: RingMetric[] = [
     { key: 'cov', label: '기술 보유율', pct: shownCoverage, color: '#fff' },
     { key: 'app', label: '지원 가능', pct: shownApplicablePct, color: '#1f9d57' },
@@ -222,8 +220,8 @@ export default function DesktopOverview() {
   const briefSize = wsize('brief')
   const briefLines: ReactNode[] = [
     <li key="dl"><b>{deadlineSoonCount}건</b>이 곧 마감돼요</li>,
-    <li key="app">지원 가능 공고 <b>{shownApplicable.toLocaleString()}건</b> · 커버리지 <b>{shownCoverage}%</b></li>,
-    topGap[0] && <li key="gap">가장 자주 요구되는 미보유 기술: <b>{topGap[0][0]}</b></li>,
+    hasResume && <li key="app">지원 가능 공고 <b>{shownApplicable.toLocaleString()}건</b> · 커버리지 <b>{shownCoverage}%</b></li>,
+    hasResume && topGap[0] && <li key="gap">가장 자주 요구되는 미보유 기술: <b>{topGap[0][0]}</b></li>,
   ].filter(Boolean) as ReactNode[]
   const briefVisible = briefSize === '1x1' ? briefLines.slice(0, 2) : briefLines
 
@@ -252,36 +250,48 @@ export default function DesktopOverview() {
         </div>
       </header>
 
-      {!hasResume && (
-        <section className="dov__cta">
-          <div>
-            <div className="dov__cta-text"><FileText size={15} /> 이력서를 등록하면 진짜 내 점수를 볼 수 있어요</div>
-            <div className="dov__cta-sub">지금은 예시(preview) 데이터를 보여드리고 있어요</div>
-          </div>
-          <button className="dov__cta-btn" onClick={() => navigate('/resume/submit')}>이력서 등록/분석</button>
-        </section>
-      )}
-
       <div className="dov__layout">
         <div className="dov__insights">
           {/* Zone 1 — 히어로존: 히어로 1개(커리어 점수) + KPI stat 4개. above-fold. */}
           <div className="dov__hero-zone">
             {!isWidgetHidden('dashboard', 'hero-score') && (
               <div className="dov__hero-cell">
-                <HeroStat
-                  eyebrow="내 커리어 점수"
-                  value={covNum}
-                  unit="%"
-                  chart={<ActivityRings metrics={rings} size={84} trackColor="rgba(255,255,255,.14)" />}
-                  caption={<>국내 공고 <b>{scoreData.value.domesticTotal.toLocaleString()}건</b> 중 <b>{scoreData.value.applicable.toLocaleString()}건</b> 지원 가능</>}
-                  footChips={previewA && <PreviewBadge />}
-                />
+                {hasResume ? (
+                  <HeroStat
+                    eyebrow="내 커리어 점수"
+                    value={covNum}
+                    unit="%"
+                    chart={<ActivityRings metrics={rings} size={84} trackColor="rgba(255,255,255,.14)" />}
+                    caption={<>국내 공고 <b>{scoreData.value.domesticTotal.toLocaleString()}건</b> 중 <b>{scoreData.value.applicable.toLocaleString()}건</b> 지원 가능</>}
+                  />
+                ) : (
+                  <section
+                    className="kit-heroStat"
+                    style={{ position: 'relative', alignItems: 'center', justifyContent: 'center', gap: 10, textAlign: 'center' }}
+                  >
+                    <span style={{ position: 'absolute', top: 28, left: 30, fontSize: 12.5, fontWeight: 700, color: 'rgba(255,255,255,.56)' }}>
+                      내 커리어 점수
+                    </span>
+                    <span style={{ display: 'grid', placeItems: 'center', width: 44, height: 44, borderRadius: 14, background: 'rgba(255,255,255,.1)' }}>
+                      <FileText size={22} />
+                    </span>
+                    <strong style={{ fontSize: 18, lineHeight: 1.45 }}>이력서를 등록하면 내 커리어 점수를 확인할 수 있어요.</strong>
+                    <span style={{ fontSize: 12.5, color: 'rgba(255,255,255,.62)' }}>이력서 등록 전에는 아래 분석 위젯에 예시 데이터를 보여드려요.</span>
+                    <button
+                      className="dov__cta-btn"
+                      style={{ marginTop: 4, background: '#fff', color: '#111' }}
+                      onClick={() => navigate('/resume/submit')}
+                    >
+                      이력서 등록하기
+                    </button>
+                  </section>
+                )}
               </div>
             )}
 
             <div className="dov__kpis">
               {!isWidgetHidden('dashboard', 'hero-applicable') && (
-                <StatTile label="지원 가능 공고" value={applicableNum} unit="건" />
+                <StatTile label="지원 가능 공고" value={hasResume ? applicableNum : '—'} unit={hasResume ? '건' : undefined} />
               )}
               {!isWidgetHidden('dashboard', 'deadlines') && (
                 <StatTile label="마감 임박" value={deadlineSoonCount} unit="건" />
@@ -436,7 +446,7 @@ export default function DesktopOverview() {
                       {bookmarksVisible.length === 0 ? (
                         <div className="dov__empty">북마크한 공고가 없어요. 공고 상세에서 북마크해보세요.</div>
                       ) : (
-                        <div className="dov__jobs">
+                        <div className="dov__jobs" style={{ gridTemplateColumns: '1fr' }}>
                           {bookmarksVisible.map((p) => (
                             <JobCardCompact
                               key={p.id}
@@ -457,7 +467,7 @@ export default function DesktopOverview() {
                       {recentViewPostings.length === 0 ? (
                         <div className="dov__empty">최근 본 공고가 없어요.</div>
                       ) : (
-                        <div className="dov__jobs">
+                        <div className="dov__jobs" style={{ gridTemplateColumns: '1fr' }}>
                           {recentViewPostings.map((p) => (
                             <JobCardCompact
                               key={p.id}
