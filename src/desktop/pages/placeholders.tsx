@@ -632,6 +632,143 @@ function TierDonutChart({ counts, total }: { counts: Record<string, number>; tot
     </div>
   )
 }
+const CALENDAR_POSITION_API: Record<PositionCat, string | undefined> = {
+  '백엔드': 'Developer', '프론트엔드': 'Developer', '풀스택': 'Developer', '데이터/AI': 'Data Science',
+  '모바일': 'Developer', '인프라/DevOps': 'Developer', '기획/PM': 'Product', '디자인': 'Design',
+  'QA': 'Developer', '기타': undefined,
+}
+
+type PostingCalendarDay = {
+  date: string
+  count: number
+  intensity: number
+  isFuture: boolean
+}
+
+type PostingCalendarWeek = {
+  monthLabel?: string
+  days: PostingCalendarDay[]
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000
+
+/** API 날짜는 Asia/Seoul의 달력 날짜다. UTC 산술로 다뤄 브라우저 타임존이 바뀌어도 재해석하지 않는다. */
+function parseSeoulDateKey(dateKey: string) {
+  const [year, month, day] = dateKey.split('-').map(Number)
+  return new Date(Date.UTC(year, month - 1, day))
+}
+
+function toSeoulDateKey(date: Date) {
+  return date.toISOString().slice(0, 10)
+}
+
+/** GitHub contribution graph와 같은 53주 × 7일 공고 등록 캘린더. */
+function PostingCalendar({
+  daily,
+  asOf,
+  scopeLabel,
+}: {
+  daily: Array<{ date: string; total: number }>
+  asOf: string
+  scopeLabel: string
+}) {
+  const { weeks, total, activeDays, peak } = useMemo(() => {
+    const counts = new Map(daily.map((day) => [day.date, day.total]))
+
+    const endDate = parseSeoulDateKey(asOf)
+    const rangeStart = new Date(endDate.getTime() - 364 * DAY_MS)
+    const startSunday = new Date(rangeStart.getTime() - rangeStart.getUTCDay() * DAY_MS)
+    const endSaturday = new Date(endDate.getTime() + (6 - endDate.getUTCDay()) * DAY_MS)
+    const rangeStartKey = toSeoulDateKey(rangeStart)
+    const visibleCounts = Array.from(counts.entries())
+      .filter(([date]) => date >= rangeStartKey && date <= asOf)
+      .map(([, count]) => count)
+    const maxCount = Math.max(...visibleCounts, 0)
+    const result: PostingCalendarWeek[] = []
+
+    for (let cursor = startSunday.getTime(), weekIndex = 0; cursor <= endSaturday.getTime(); cursor += 7 * DAY_MS, weekIndex += 1) {
+      const weekStart = new Date(cursor)
+      const previousWeek = new Date(cursor - 7 * DAY_MS)
+      const monthChanged = weekIndex === 0 || weekStart.getUTCMonth() !== previousWeek.getUTCMonth()
+      const days = Array.from({ length: 7 }, (_, dayIndex) => {
+        const date = new Date(cursor + dayIndex * DAY_MS)
+        const dateKey = toSeoulDateKey(date)
+        const count = counts.get(dateKey) ?? 0
+        const intensity = count && maxCount ? Math.max(1, Math.ceil(Math.sqrt(count / maxCount) * 4)) : 0
+        return { date: dateKey, count, intensity, isFuture: date > endDate }
+      })
+      result.push({
+        monthLabel: monthChanged ? `${weekStart.getUTCMonth() + 1}월` : undefined,
+        days,
+      })
+    }
+
+    return {
+      weeks: result,
+      total: visibleCounts.reduce((sum, count) => sum + count, 0),
+      activeDays: visibleCounts.filter((count) => count > 0).length,
+      peak: Math.max(...visibleCounts, 0),
+    }
+  }, [daily, asOf])
+
+  return (
+    <div className="dmkt2__calendar">
+      <div className="dmkt2__calendar-summary">
+        <strong>{total.toLocaleString()}건</strong>
+        <span>{activeDays}일에 등록</span>
+        <span>하루 최대 {peak.toLocaleString()}건</span>
+      </div>
+      <div className="dmkt2__calendar-scroll" tabIndex={0} aria-label={`${scopeLabel} 최근 1년 채용 공고 등록 캘린더`}>
+        <div className="dmkt2__calendar-chart">
+          <div className="dmkt2__calendar-months" aria-hidden="true" style={{ gridTemplateColumns: `26px repeat(${weeks.length}, 11px)` }}>
+            <span className="dmkt2__calendar-month-spacer" />
+            {weeks.map((week, index) => <span key={index}>{week.monthLabel}</span>)}
+          </div>
+          <div className="dmkt2__calendar-body">
+            <div className="dmkt2__calendar-weekdays" aria-hidden="true">
+              <span />
+              <span>월</span>
+              <span />
+              <span>수</span>
+              <span />
+              <span>금</span>
+              <span />
+            </div>
+            <div className="dmkt2__calendar-weeks" role="grid" aria-label="날짜별 신규 채용 공고 수">
+              {weeks.map((week, weekIndex) => (
+                <div className="dmkt2__calendar-week" role="row" key={weekIndex}>
+                  {week.days.map((day) => {
+                    const [, month, date] = day.date.split('-').map(Number)
+                    const label = day.count > 0
+                      ? `${month}월 ${date}일 · 신규 공고 ${day.count.toLocaleString()}건`
+                      : `${month}월 ${date}일 · 등록 공고 없음`
+                    return (
+                      <span
+                        key={day.date}
+                        className={`dmkt2__calendar-day level-${day.intensity}${day.count > 0 ? ' has-postings' : ''}${day.isFuture ? ' is-future' : ''}`}
+                        role="gridcell"
+                        aria-label={label}
+                        title={label}
+                      />
+                    )
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="dmkt2__calendar-foot">
+        <span>기준 {asOf} · {scopeLabel}</span>
+        <span className="dmkt2__calendar-legend" aria-label="공고 수 범례">
+          적음
+          {[0, 1, 2, 3, 4].map((level) => <i key={level} className={`level-${level}`} />)}
+          많음
+        </span>
+      </div>
+    </div>
+  )
+}
 
 export function DesktopMarket() {
   const navigate = useNavigate()
@@ -653,6 +790,12 @@ export function DesktopMarket() {
   const [liveHotCompanies, setLiveHotCompanies] = useState<Array<{ company: string; count: number }> | null>(null)
   const [liveRegionDensity, setLiveRegionDensity] = useState<Array<{ district: string; count: number }> | null>(null)
   const [liveRising, setLiveRising] = useState<Array<{ tech: string; delta: number }> | null>(null)
+  const [calendarState, setCalendarState] = useState<
+    | { status: 'loading' }
+    | { status: 'error'; message: string }
+    | { status: 'ready'; daily: Array<{ date: string; total: number }>; asOf: string }
+  >({ status: 'loading' })
+  const [calendarRetry, setCalendarRetry] = useState(0)
 
   useEffect(() => {
     let cancelled = false
@@ -760,6 +903,28 @@ export function DesktopMarket() {
     return { counts, total }
   }, [scoped, myCategory])
 
+  useEffect(() => {
+    let cancelled = false
+    setCalendarState({ status: 'loading' })
+    marketApi.postingTimeline({
+      pool: 'domestic',
+      days: 365,
+      position: scoped && myCategory ? CALENDAR_POSITION_API[myCategory] : undefined,
+    })
+      .then((result) => {
+        if (!cancelled) setCalendarState({ status: 'ready', daily: result.daily, asOf: result.as_of })
+      })
+      .catch((reason) => {
+        if (!cancelled) {
+          setCalendarState({
+            status: 'error',
+            message: reason instanceof Error ? reason.message : '캘린더 데이터를 불러오지 못했습니다.',
+          })
+        }
+      })
+    return () => { cancelled = true }
+  }, [scoped, myCategory, calendarRetry])
+
   const leaderboardSize = widgetSize('leaderboard')
   const leaderboardShowAll = leaderboardSize === '2x2' || leaderboardExpanded
   const leaderboardVisible = leaderboardShowAll ? top : top.slice(0, 8)
@@ -777,7 +942,7 @@ export function DesktopMarket() {
   const secCompanyVisible = !isWidgetHidden('market', 'competency') || !isWidgetHidden('market', 'response-rate')
     || !isWidgetHidden('market', 'concept-signal') || !isWidgetHidden('market', 'tier-compare')
     || !isWidgetHidden('market', 'hot-companies') || !isWidgetHidden('market', 'region-density')
-    || !isWidgetHidden('market', 'tier-donut')
+    || !isWidgetHidden('market', 'tier-donut') || !isWidgetHidden('market', 'posting-calendar')
   // 트렌드 전파 네트워크(propagation)는 글로벌·HN 선행지표 성격이라 하단 글로벌 섹션으로 이동 —
   // 여기 구조·탐색엔 국내 구조(공동출현 네트워크)와 세대별 변화·수요×빈도만 남는다.
   const secExploreVisible = !isWidgetHidden('market', 'network')
@@ -1004,6 +1169,35 @@ export function DesktopMarket() {
                   <SectionHeader title="기업 규모 분포" hint={scoped ? myCategory ?? undefined : '국내'} />
                   <p className="dmkt2__takeaway">국내 공고의 대기업/중견/중소 비율.</p>
                   <TierDonutChart counts={tierDonut.counts} total={tierDonut.total} />
+                </section>
+              </div>
+            )}
+            {!isWidgetHidden('market', 'posting-calendar') && (
+              <div className="dmkt2__card-item dmkt2__card-item--calendar">
+                <section className="dcard dcard--posting-calendar">
+                  <SectionHeader
+                    title="채용 공고 등록 캘린더"
+                    hint={`최근 1년 · ${scoped ? myCategory ?? '내 직무' : '국내'}`}
+                  />
+                  {calendarState.status === 'loading' && (
+                    <div className="dmkt2__calendar-state" role="status">최근 1년 공고 데이터를 불러오는 중입니다.</div>
+                  )}
+                  {calendarState.status === 'error' && (
+                    <div className="dmkt2__calendar-state dmkt2__calendar-state--error" role="alert">
+                      <span>캘린더 데이터를 불러오지 못했습니다.</span>
+                      <button type="button" onClick={() => setCalendarRetry((value) => value + 1)}>다시 시도</button>
+                    </div>
+                  )}
+                  {calendarState.status === 'ready' && calendarState.daily.length === 0 && (
+                    <div className="dmkt2__calendar-state">이 조건에 집계할 채용 공고가 없습니다.</div>
+                  )}
+                  {calendarState.status === 'ready' && calendarState.daily.length > 0 && (
+                    <PostingCalendar
+                      daily={calendarState.daily}
+                      asOf={calendarState.asOf}
+                      scopeLabel={scoped ? myCategory ?? '내 직무' : '전체 직무'}
+                    />
+                  )}
                 </section>
               </div>
             )}
