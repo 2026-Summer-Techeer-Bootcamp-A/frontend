@@ -15,7 +15,7 @@
 .dmkt2__scopebadge {
   display: inline-flex; align-items: center; flex: none;
   font-size: 10.5px; font-weight: 700; color: var(--c-muted);
-  background: var(--accent-50); border-radius: 7px; padding: 3px 7px; margin-bottom: 8px;
+  background: var(--accent-50); border-radius: 7px; padding: 3px 7px;
 }
 
 /* ───────────────── 라벨 섹션 — 4개(수요 · 트렌드 · 기업·역량 · 구조·탐색), 섹션간 32px ───────────────── */
