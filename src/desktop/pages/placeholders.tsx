@@ -5,7 +5,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import {
   MiniScore, SectionHeader, SegmentedControl, SkillChip,
-  TechIcon, HeroStat, PreviewBadge, WidgetSettingsMenu,
+  TechIcon, WidgetSettingsMenu,
   StatTile, JobCardCompact, MenuRow,
 } from '../../career/kit'
 import {
@@ -27,6 +27,7 @@ import { useRecentViews } from '../../career/viewHistoryStore'
 import { SkillManagerModal } from '../SkillManagerModal'
 import marketData from '../../data/marketData.json'
 import data from '../../data/careerData.json'
+import newcomerGate from '../../data/pearl/h.json'
 import './placeholders.css'
 import './market.css'
 import './jobs.css'
@@ -533,36 +534,6 @@ function MarketScatter({ items }: { items: { tech: string; share: number; count:
   )
 }
 
-function SkillShareSparkline({ items }: { items: ShareItem[] }) {
-  const sparkItems = items.slice(1, 6)
-  const maxShare = Math.max(...sparkItems.map((i) => i.share), 1)
-  return (
-    <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: '5px', height: '48px', padding: '8px 0' }}>
-      {sparkItems.map((item, idx) => (
-        <div
-          key={item.tech}
-          style={{
-            width: '8px',
-            height: `${20 + (item.share / maxShare) * 28}px`,
-            borderRadius: '2px',
-            background: idx === 0 ? 'rgba(255, 255, 255, 0.7)' : 'rgba(255, 255, 255, 0.5)',
-            flexShrink: 0,
-          }}
-        />
-      ))}
-      <div
-        style={{
-          width: '10px',
-          height: `${20 + ((items[0]?.share ?? 0) / maxShare) * 28}px`,
-          borderRadius: '2px',
-          background: '#1f9d57',
-          flexShrink: 0,
-        }}
-      />
-    </div>
-  )
-}
-
 /** 기업 규모(대기업/중견/중소) 분포 도넛 — 모노톤 3단계(진한 그레이 → 연한 그레이). */
 function TierDonutChart({ counts, total }: { counts: Record<string, number>; total: number }) {
   const segments = [
@@ -639,6 +610,18 @@ export function DesktopMarket() {
   const top = scoped ? mineLeaderboard : leaderboard.value
   const leader = top[0]
   const maxShare = Math.max(...top.map((i) => i.share), 1)
+
+  // "신입에게 열린 기술" — pearl/h.json(신입 지원 가능 비율)을 open_rate 내림차순 상위 8개.
+  // 취준생 시점에서 "뽑히는 인기 기술"과 "신입도 지원 가능한 기술"은 다르므로 별도 랭킹.
+  const newcomerTop = useMemo(() => (
+    [...newcomerGate.data.items].sort((a, b) => b.open_rate - a.open_rate).slice(0, 8)
+  ), [])
+  const maxOpenRate = Math.max(...newcomerTop.map((i) => i.open_rate), 1)
+
+  // "지금 뜨는 기술" — techYearly(연도별 점유율) delta 상위 3개, 상승폭 큰 순.
+  const risingTop = useMemo(() => (
+    [...marketData.techYearly.series].sort((a, b) => b.delta - a.delta).slice(0, 3)
+  ), [])
 
   const scatterItems = useMemo(() => domestic.items.slice(0, 16).map((i) => ({
     tech: i.tech, share: i.share, count: i.count,
@@ -734,27 +717,24 @@ export function DesktopMarket() {
         </div>
       </header>
 
-      {/* 섹션 1 — 수요: 무엇이 얼마나 필요한가. featured 히어로(수요 리더보드, 2/3) + Top14(1/3).
-          페이지 히어로존(top-left) — 리서치 플레이북의 "featured 히어로 1개" 규칙. */}
+      {/* 섹션 1 — 수요: 취준생/신입 시점. "뭘 먼저 배워야 뽑히나" + "신입에게 열린 기술" 두
+          위젯을 나란히(같은 높이) 주력으로 두고, 검정 히어로는 소형 스탯 한 줄로 축소했다.
+          하단엔 "지금 뜨는 기술" 상승폭 상위 3개를 얇은 칩 줄로 덧붙인다. */}
       {secDemandVisible && (
         <section className="dmkt2__sec">
           <header className="dmkt2__sec-h">
             <h2>수요</h2>
-            <span>지금 뭘 할 줄 알아야 뽑히나 — 가장 많이 요구되는 기술과 그 비중</span>
+            <span>지금 뭘 할 줄 알아야 뽑히나 — 뭘 먼저 배울지 + 신입에게 열린 기술</span>
           </header>
+          {!isWidgetHidden('market', 'hero-demand') && leader && (
+            <div className="dmkt2__demandstat">
+              <TechIcon tech={leader.tech} size={16} />
+              가장 많이 요구되는 기술 — <b>{leader.tech}</b>
+              <span className="dmkt2__demandstat-v">{leader.share}%</span>
+              <span className="dmkt2__demandstat-n">공고 {leader.count.toLocaleString()}건</span>
+            </div>
+          )}
           <div className="dmkt2__sec-grid dmkt2__sec-grid--demand">
-            {!isWidgetHidden('market', 'hero-demand') && (
-              <div className="dmkt2__card-item dmkt2__card-item--hero">
-                <HeroStat
-                  eyebrow="수요 리더보드 1위"
-                  value={leader?.share ?? 0}
-                  unit="%"
-                  chart={<SkillShareSparkline items={top} />}
-                  caption={leader && <>가장 많이 요구되는 기술은 <b>{leader.tech}</b> · 공고 <b>{leader.count.toLocaleString()}건</b></>}
-                  footChips={!scoped && leaderboard.source === 'mock' && <PreviewBadge />}
-                />
-              </div>
-            )}
             {!isWidgetHidden('market', 'leaderboard') && (
               <div className="dmkt2__card-item">
                 <section className="dcard">
@@ -782,6 +762,36 @@ export function DesktopMarket() {
                 </section>
               </div>
             )}
+            <div className="dmkt2__card-item">
+              <section className="dcard">
+                <SectionHeader title="신입에게 열린 기술" hint="신입도 지원 가능한 공고 비율" />
+                <p className="dmkt2__takeaway">
+                  <b className="dmkt2__takeaway-up">{newcomerTop[0].tech}</b>가 신입에게 가장 열려 있어요 — 신입 지원 가능 <b className="dmkt2__takeaway-up">{newcomerTop[0].open_rate}%</b>. 스펙 부담 적은 기술부터 노려보세요.
+                </p>
+                <div className="dmkt2__bars dmkt2__bars--open">
+                  {newcomerTop.map((i) => (
+                    <button key={i.tech} className="dmkt2__bar" onClick={() => navigate(`/tech/${encodeURIComponent(i.tech)}`)}>
+                      <TechIcon tech={i.tech} size={20} />
+                      <span className="dmkt2__bar-t">{i.tech}</span>
+                      <span className="dmkt2__bar-track"><i style={{ width: `${(i.open_rate / maxOpenRate) * 100}%` }} /></span>
+                      <span className="dmkt2__bar-v">{i.open_rate}%</span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            </div>
+          </div>
+          <div className="dmkt2__rising">
+            <span className="dmkt2__rising-label">지금 뜨는 기술</span>
+            <div className="dmkt2__rising-chips">
+              {risingTop.map((r) => (
+                <span key={r.tech} className="dmkt2__rising-chip">
+                  <TechIcon tech={r.tech} size={14} />
+                  {r.tech}
+                  <b className="dmkt2__rising-delta">+{r.delta.toFixed(1)}%p</b>
+                </span>
+              ))}
+            </div>
           </div>
         </section>
       )}
