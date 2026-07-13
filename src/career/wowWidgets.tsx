@@ -317,7 +317,7 @@ export function HypeVsHireWidget({ size = '2x2' }: { size?: WidgetSize }) {
       <SectionHeader title="Hype vs Hire" hint="관심 × 수요" />
       <div className="wow-body">
         <span className="wow-scope">글로벌·HN 기준</span>
-        <p className="wow-headline">개발자가 떠드는 기술 ≠ 회사가 뽑는 기술 · 좌상단이 <b>숨은 기회</b></p>
+        <p className="wow-headline">개발자가 떠드는 기술 ≠ 회사가 뽑는 기술. <b>좌상단이 숨은 기회</b> — 예: Power BI는 관심 하위 <b>6%</b>인데 수요 상위 <b>24%</b>.</p>
         <div className={size === '2x2' ? 'wow-scatter-split' : undefined}>
           <ReactECharts option={option} style={{ height: size === '1x1' ? 160 : 220 }} notMerge />
           {size === '2x2' && (
@@ -356,7 +356,7 @@ export function CompetencyWidget({ size = '2x1' }: { size?: WidgetSize }) {
       <SectionHeader title="회사가 진짜 원하는 역량" />
       <div className="wow-body">
         <p className="wow-headline">
-          채용공고 <b>{COMP._meta.N.toLocaleString()}건</b>이 실제로 쓴 말 · <b>{top.anyPct}%</b>가 <b>{top.key}</b> 요구
+          코딩 실력만으론 부족 — 채용공고 <b>{top.anyPct}%가 '{top.key}'</b>을 대놓고 요구해요.
         </p>
         <div className="wow-comp-list">
           {shown.map((r) => (
@@ -396,12 +396,13 @@ export function ResponseRateWidget({ size = '2x1' }: { size?: WidgetSize }) {
   const D = S.data
   const maxLevelN = Math.max(...D.levels.map((l) => l.n), 1)
   const examples = useMemo(() => [...D.examples].sort((a, b) => b.rate - a.rate), [D.examples])
+  const fortyTwoDot = examples.find((e) => e.company.includes('포티투닷'))
 
   return (
     <div className="dcard wow-card">
       <SectionHeader title="응답 잘 오는 회사" hint="국내·원티드" />
       <div className="wow-body">
-        <p className="wow-headline">지원하면 답이 올까? · 중앙 응답률 <b>{D.median_rate}%</b></p>
+        <p className="wow-headline">지원하면 진짜 답 올까? <b>중앙값 {Math.round(D.median_rate)}%</b>인데 <b>포티투닷은 {Math.round(fortyTwoDot?.rate ?? 0)}%</b> — 회사마다 천차만별.</p>
         <div className="wow-median">
           <span className="wow-median__num">{D.median_rate}<small>%</small></span>
           <span className="wow-median__lbl">중앙 응답률</span>
@@ -466,7 +467,7 @@ export function ConceptSignalWidget({ size = '2x1' }: { size?: WidgetSize }) {
         }
       />
       <div className="wow-body">
-        <p className="wow-headline"><b>{active.label}</b> 경험을 증명하는 기술 · 내 커버리지 <b>{active.coverage.covPct}%</b></p>
+        <p className="wow-headline">'DevOps 경험 있음'을 증명하려면? <b>GitHub Actions(lift 2.41)</b> 같은 신호 기술이 핵심.</p>
         <div className="wow-concept-top">
           <span className="wow-concept-top__demand">수요 {active.demand}%</span>
           <span className="wow-concept-top__cov">{active.coverage.ownedCount}/{active.coverage.techCount} 보유</span>
