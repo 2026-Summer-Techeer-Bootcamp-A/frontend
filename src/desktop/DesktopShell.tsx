@@ -15,6 +15,7 @@ import {
 import { THEME, themeVars } from '../career/themes'
 import { useAuth } from '../career/authStore'
 import MacMenu, { type MacMenuEntry } from './MacMenu'
+import GlobalSearch from './GlobalSearch'
 import './DesktopShell.css'
 
 /* 데스크톱 셸 — Phase 3: 아이콘+라벨 레일 + 톱바 필 탭.
@@ -185,6 +186,7 @@ export default function DesktopShell({ children }: { children: ReactNode }) {
             </nav>
           )}
           <div className="dshell__topright">
+            <GlobalSearch />
             <div className="dshell__accountwrap">
               <button
                 type="button"
