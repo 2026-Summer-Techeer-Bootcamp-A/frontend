@@ -1000,8 +1000,13 @@
    `.dsub .djd*` 처럼 두 클래스로 명시해 카드 톤 오버라이드가 항상
    먼저 로드되는 규칙을 이기도록 한다(임포트 순서에 기대지 않음).
    ========================================================== */
+/* 공고 상세(3열)는 넓은 데스크톱 폭을 쓴다 — screens.css .dsub 기본 max-width(920px)를
+   :has()로 공고 상세일 때만 확장(설정·이력서제출 등 다른 .dsub 페이지는 920px 그대로). */
+.dsub:has(.djd) {
+  max-width: 1440px;
+}
 .dsub .djd {
-  grid-template-columns: minmax(0, 1fr) 340px 320px;
+  grid-template-columns: minmax(0, 1.7fr) 330px 340px;
   gap: 20px;
 }
 .dsub .djd-main {
@@ -1010,6 +1015,7 @@
   border-radius: 18px;
   box-shadow: var(--e1, 0 1px 2px rgba(20, 30, 60, 0.05));
   padding: 26px 28px 32px;
+  max-width: none;
 }
 .dsub .djd-card {
   border-radius: 18px;
@@ -1203,6 +1209,41 @@
   color: var(--c-muted);
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* 회사명 + 위치/거리 뱃지를 한 줄에 같이 놓을 때 — 회사명만 말줄임, 뱃지는 고정 폭 유지 */
+.djd-reco-row__co--badged {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+}
+.djd-reco-row__co-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* 위치 뱃지(구) — 옅은 회색 pill, 모노크롬 */
+.djd-reco-badge {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: #f0f0f1;
+  color: #71717a;
+  border: 1px solid #e4e4e7;
+  white-space: nowrap;
+}
+/* 거리 뱃지 — 텍스트만, muted */
+.djd-reco-dist {
+  flex: none;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--c-muted);
   white-space: nowrap;
 }
 .djd-reco-row__techs {
