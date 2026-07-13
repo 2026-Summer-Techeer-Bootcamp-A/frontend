@@ -20,6 +20,23 @@
   --e2: 0 2px 8px rgba(20, 30, 60, 0.06), 0 1px 2px rgba(20, 30, 60, 0.05);
   --e3: 0 8px 24px rgba(20, 30, 60, 0.08), 0 2px 6px rgba(20, 30, 60, 0.05);
 
+  /* 시각화 저채도 팔레트 — 데이터 표현 요소 전용(링/바/칩/수치/언어점).
+     크롬(버튼/보더/네비/필터)에는 사용하지 않는다(비주얼 스펙 1.1절). */
+  --hf-viz-blue: #5b7d9e;
+  --hf-viz-blue-soft: #e9eff5;
+  --hf-viz-blue-line: #d5e2ee;
+  --hf-viz-blue-text: #3d5a78;
+  --hf-viz-sage: #74957f;
+  --hf-viz-sage-soft: #e9f1ec;
+  --hf-viz-sage-text: #47705a;
+  --hf-viz-violet: #8a7fa8;
+  --hf-viz-violet-soft: #efecf5;
+  --hf-viz-violet-text: #5e5580;
+  --hf-viz-clay: #b08968;
+  --hf-viz-clay-soft: #f5ede6;
+  --hf-viz-clay-text: #8a6247;
+  --hf-viz-slate: #8a94a3;
+
   display: grid;
   grid-template-columns: 280px minmax(0, 680px) 340px;
   gap: 28px;
@@ -31,15 +48,27 @@
   color: var(--c-ink);
 }
 
+/* 좌/우 컬럼 — sticky로 상단에 붙되, 자기 높이 안에서 독립 스크롤한다.
+   뉴스 패널처럼 컬럼 콘텐츠가 뷰포트보다 길어도 컬럼 자체가 페이지 스크롤을
+   가로채지 않고, 컬럼 내부 스크롤로만 흡수한다(83px ≈ 톱바 62px + 셸 여백/보더 9px + sticky top 4px + 여유 8px). */
 .hfeed__left,
 .hfeed__right {
   position: sticky;
   top: 4px;
+  max-height: calc(100dvh - 83px);
   display: flex;
   flex-direction: column;
   gap: 16px;
   align-self: start;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
 }
+.hfeed__left::-webkit-scrollbar,
+.hfeed__right::-webkit-scrollbar { width: 5px; }
+.hfeed__left::-webkit-scrollbar-thumb,
+.hfeed__right::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.18); border-radius: 5px; }
+
 .hfeed__center { min-width: 0; }
 
 .tnum { font-variant-numeric: tabular-nums; }
@@ -49,6 +78,8 @@
   .hfeed__right {
     grid-column: 1 / -1;
     position: static;
+    max-height: none;
+    overflow-y: visible;
     flex-direction: row;
     flex-wrap: wrap;
   }
@@ -103,7 +134,7 @@
 .hfeed-resume__meter-cap { font-size: 12.5px; color: var(--c-muted); margin: 12px 0 6px; }
 .hfeed-resume__meter-cap b { color: var(--c-ink); font-weight: 700; }
 .hfeed-meter { height: 8px; border-radius: 5px; background: var(--track); overflow: hidden; }
-.hfeed-meter > i { display: block; height: 100%; border-radius: 5px; background: var(--c-accent); }
+.hfeed-meter > i { display: block; height: 100%; border-radius: 5px; background: var(--hf-viz-blue); }
 .hfeed-resume__skillcap { font-size: 12px; color: var(--c-muted); margin: 14px 0 8px; }
 .hfeed-resume__skillcap b { color: var(--c-ink); font-weight: 700; }
 .hfeed-chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -118,7 +149,7 @@
   border-radius: 9px; padding: 6px 11px; font-size: 12.5px; font-weight: 650; letter-spacing: -0.1px;
 }
 .hfeed-chip { background: var(--accent-50); color: var(--accent-700); border: 1px solid var(--accent-100); }
-.hfeed-chip--owned { background: var(--c-accent); color: #fff; border: 1px solid transparent; }
+.hfeed-chip--owned { background: var(--hf-viz-blue-soft); color: var(--hf-viz-blue-text); border: 1px solid var(--hf-viz-blue-line); }
 .hfeed-chip--missing { background: transparent; color: var(--c-muted); border: 1px solid var(--line); }
 .hfeed-chip--cat { background: #f2f3f6; color: #5b5e66; border: 1px solid var(--line); }
 .hfeed-chip--more { background: transparent; color: var(--c-muted); border: none; padding-left: 4px; }
@@ -129,7 +160,7 @@
   display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px;
   width: 100%; text-align: left; transition: background 0.15s;
 }
-.hfeed-links__row:hover { background: #f7f7f8; }
+.hfeed-links__row:hover { background: #f2f2f4; }
 .hfeed-links__row:focus-visible { outline: 2px solid var(--c-ink); outline-offset: 2px; }
 .hfeed-links__row .lb { flex: 1; font-size: 14px; font-weight: 600; color: var(--c-ink); }
 .hfeed-links__row .ct { font-size: 13px; font-weight: 700; color: var(--c-muted); }
@@ -165,11 +196,16 @@
 }
 
 /* ===== 필터 바 ===== */
+/* 스크롤 컨테이너(.dshell__content)의 padding-top(18px)+border(1px)만큼 top을 음수로
+   당겨 sticky 고정 위치를 컨테이너 맨 위(테두리)까지 끌어올린다 — 그렇지 않으면 그
+   패딩 틈으로 스크롤되어 지나가는 카드가 비쳐 보인다. 당긴 만큼(20px) padding-top에
+   더해 보정해 내부 콘텐츠(풀 토글 등)의 화면상 위치는 그대로 유지한다. */
 .hfeed-filter {
-  position: sticky; top: 0; z-index: 5; padding: 6px 0 12px;
-  background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px);
+  position: sticky; top: -20px; z-index: 5; padding: 26px 0 12px;
+  background: rgba(247, 247, 248, 0.96); backdrop-filter: blur(8px);
   box-shadow: 0 1px 0 var(--line);
 }
+.hfeed-filter__row1 { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .hfeed-filter__pool { display: inline-flex; background: #eef0f4; border-radius: 20px; padding: 3px; }
 .hfeed-filter__pool button {
   padding: 8px 16px; border-radius: 16px; font-size: 13px; font-weight: 650; color: var(--c-muted);
@@ -187,6 +223,59 @@
 .hfeed-filter__chip.is-on { background: var(--c-ink); color: #fff; }
 .hfeed-filter__pool button:focus-visible,
 .hfeed-filter__chip:focus-visible { outline: 2px solid var(--c-ink); outline-offset: 2px; }
+
+/* ===== 상세 필터 트리거 + 팝오버 ===== */
+.hfeed-filter__more-wrap { position: relative; flex: none; }
+.hfeed-filter__more {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: 650;
+  background: #eef1f6; color: var(--c-ink); white-space: nowrap;
+  transition: background 0.15s;
+}
+.hfeed-filter__more:hover { background: #e2e5ec; }
+.hfeed-filter__more.is-active { background: var(--c-ink); color: #fff; }
+.hfeed-filter__more:focus-visible { outline: 2px solid var(--c-ink); outline-offset: 2px; }
+.hfeed-filter__badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
+  background: var(--c-ink); color: #fff; font-size: 10px; font-weight: 800; font-variant-numeric: tabular-nums;
+}
+.hfeed-filter__more.is-active .hfeed-filter__badge { background: #fff; color: var(--c-ink); }
+
+.hfeed-filter__popover {
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: 20;
+  width: 280px; background: #fff; border: 1px solid var(--line); border-radius: 16px;
+  box-shadow: var(--e3); padding: 16px;
+}
+.hfeed-filter__popover-title { font-size: 13px; font-weight: 700; color: var(--c-ink); margin: 0 0 12px; }
+.hfeed-filter__popover-field { margin-bottom: 14px; }
+.hfeed-filter__popover-field:last-of-type { margin-bottom: 0; }
+.hfeed-filter__popover-label { display: block; font-size: 12px; font-weight: 650; color: var(--c-muted); margin-bottom: 6px; }
+.hfeed-filter__popover-input {
+  width: 100%; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line);
+  font-size: 13px; color: var(--c-ink); background: #fff;
+}
+.hfeed-filter__popover-input:focus-visible { outline: 2px solid var(--c-ink); outline-offset: 1px; }
+.hfeed-filter__popover-seg { display: flex; gap: 6px; flex-wrap: wrap; }
+.hfeed-filter__popover-seg button {
+  padding: 6px 10px; border-radius: 999px; font-size: 12px; font-weight: 650;
+  background: #eef1f6; color: var(--c-ink); transition: background 0.15s;
+}
+.hfeed-filter__popover-seg button:hover { background: #e2e5ec; }
+.hfeed-filter__popover-seg button.is-on { background: var(--c-ink); color: #fff; }
+.hfeed-filter__popover-range { width: 100%; accent-color: var(--c-ink); }
+.hfeed-filter__popover-rangeval { font-size: 12px; color: var(--c-muted); margin-top: 4px; }
+.hfeed-filter__popover-rangeval b { color: var(--c-ink); font-weight: 700; }
+.hfeed-filter__popover-actions { display: flex; gap: 8px; margin-top: 16px; }
+.hfeed-filter__popover-actions button {
+  flex: 1; padding: 9px; border-radius: 10px; font-size: 12.5px; font-weight: 700;
+  transition: background 0.15s;
+}
+.hfeed-filter__popover-actions .apply { background: var(--c-ink); color: #fff; }
+.hfeed-filter__popover-actions .apply:hover { background: #2a2a2e; }
+.hfeed-filter__popover-actions .reset { background: #fff; border: 1px solid var(--line); color: var(--c-muted); }
+.hfeed-filter__popover-actions .reset:hover { background: #f7f7f8; }
+.hfeed-filter__popover button:focus-visible { outline: 2px solid var(--c-ink); outline-offset: 2px; }
 
 /* ===== 날짜 구분선 ===== */
 .hfeed-divider { display: flex; align-items: center; gap: 10px; margin: 22px 0 12px; }
@@ -238,6 +327,10 @@
   letter-spacing: -0.5px;
 }
 .hfeed-ring__cap { font-size: 10px; color: var(--c-muted); text-align: center; margin-top: 4px; }
+/* 매치 수준별 링 채움색 — 저채도 3단계(비주얼 스펙 4.9) */
+.hfeed-ring--high { --ring-c: var(--hf-viz-sage); }
+.hfeed-ring--mid  { --ring-c: var(--hf-viz-blue); }
+.hfeed-ring--low  { --ring-c: var(--hf-viz-slate); }
 
 .hfeed-card__timerow { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
 .hfeed-card__time { font-size: 12px; color: var(--c-muted); }
@@ -285,12 +378,13 @@
   transition: background 0.15s;
 }
 .hfeed-news__item:last-child { border-bottom: none; }
-.hfeed-news__item:hover { background: #f7f7f8; }
+.hfeed-news__item:hover { background: #f2f2f4; }
 .hfeed-news__title {
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   font-size: 13px; font-weight: 650; line-height: 1.4; color: var(--c-ink);
 }
 .hfeed-news__meta { margin-top: 6px; font-size: 11.5px; color: var(--c-muted); font-variant-numeric: tabular-nums; }
+.hfeed-news__stat { color: var(--hf-viz-clay-text); font-weight: 700; }
 .hfeed-news__thread { color: var(--accent-700); font-weight: 700; }
 .hfeed-news__source { margin-top: 4px; font-size: 11.5px; color: var(--c-muted); }
 .hfeed-news__repo { font-size: 13px; display: inline-block; }
@@ -302,8 +396,12 @@
 }
 .hfeed-news__langdot {
   display: inline-block; width: 8px; height: 8px; border-radius: 50%;
-  background: var(--accent-300); vertical-align: -1px; margin-right: 3px;
+  background: var(--hf-viz-slate); vertical-align: -1px; margin-right: 3px;
 }
+/* 언어점 저채도 매핑 — 브랜드 원색 대신 팔레트 안에서만 매핑(비주얼 스펙 4.10) */
+.hfeed-news__langdot--ts { background: var(--hf-viz-blue); }
+.hfeed-news__langdot--py { background: var(--hf-viz-sage); }
+.hfeed-news__langdot--sys { background: var(--hf-viz-clay); }
 .hfeed-news__stale { font-size: 11px; color: var(--c-muted); margin: 4px 0 0; }
 .hfeed-news__error {
   font-size: 12.5px; color: var(--c-muted); padding: 12px 8px; line-height: 1.5;
@@ -311,6 +409,21 @@
 .hfeed-news__error button {
   display: block; margin-top: 6px; font-weight: 700; color: var(--accent-700); font-size: 12.5px;
 }
+
+/* 뉴스 페이지네이션 — 5개씩 노출, 무채색 크롬 규칙(컬러 금지) */
+.hfeed-news__pager {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--line2, #f0f0f1);
+}
+.hfeed-news__pager button {
+  width: 26px; height: 26px; border-radius: 8px; border: 1px solid var(--line);
+  background: #fff; color: var(--c-muted); display: grid; place-items: center;
+  transition: background 0.15s, color 0.15s;
+}
+.hfeed-news__pager button:hover:not(:disabled) { background: var(--accent-50); color: var(--c-ink); }
+.hfeed-news__pager button:disabled { opacity: 0.4; cursor: default; }
+.hfeed-news__pager button:focus-visible { outline: 2px solid var(--c-ink); outline-offset: 2px; }
+.hfeed-news__pager span { font-size: 11.5px; font-weight: 700; color: var(--c-muted); }
 
 /* ===== 미니 요약 카드 ===== */
 .hfeed-mini {
@@ -324,6 +437,9 @@
 .hfeed-mini__label { font-size: 12px; font-weight: 650; color: var(--c-muted); }
 .hfeed-mini__num { font-size: 24px; font-weight: 800; color: var(--c-ink); font-variant-numeric: tabular-nums; letter-spacing: -0.5px; }
 .hfeed-mini__num span { font-size: 13px; font-weight: 700; color: var(--c-muted); margin-left: 2px; }
+/* 수치 강조색 — 시장 데이터=블루, 개인화 데이터=바이올렛(비주얼 스펙 4.11). 단위 span은 muted 유지 */
+.hfeed-mini__num--market { color: var(--hf-viz-blue-text); }
+.hfeed-mini__num--personal { color: var(--hf-viz-violet-text); }
 .hfeed-mini__hint {
   font-size: 11.5px; font-weight: 700; color: var(--accent-700); margin-top: 6px;
   display: flex; align-items: center; gap: 4px;
@@ -334,7 +450,7 @@
 .hfeed-mini--list .hfeed-mini__row:last-of-type { border-bottom: none; }
 .hfeed-mini__rank { width: 16px; font-size: 12px; font-weight: 800; color: var(--c-muted); }
 .hfeed-mini__name { flex: 1; font-size: 13px; font-weight: 700; color: var(--c-ink); }
-.hfeed-mini__delta { font-size: 11.5px; font-weight: 800; color: #1f9d57; }
+.hfeed-mini__delta { font-size: 11.5px; font-weight: 800; color: var(--hf-viz-sage-text); }
 
 /* ===== 스켈레톤 ===== */
 .hfeed-skel {
@@ -360,7 +476,8 @@
 .hfeed-card--skel .chip { width: 64px; height: 24px; border-radius: 9px; }
 
 /* ===== 빈 상태 / 에러 상태 ===== */
-.hfeed-empty { text-align: center; padding: 40px 20px; background: #f6f8fc; border-radius: 20px; }
+/* 페이지 배경이 회색이 되면서 흰 대시 카드로 변경(비주얼 스펙 2.0 / 5.3) */
+.hfeed-empty { text-align: center; padding: 40px 20px; background: #fff; border: 1.5px dashed var(--line); border-radius: 20px; }
 .hfeed-empty__glyph {
   width: 52px; height: 52px; border-radius: 16px; background: var(--accent-50);
   color: var(--c-accent); display: grid; place-items: center; margin: 0 auto 14px;
