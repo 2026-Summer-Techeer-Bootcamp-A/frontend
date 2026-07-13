@@ -1,16 +1,15 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
+import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import {
   homeApi,
+  type FeedPostingDto,
   type NewsItemDto,
   type NewsResponseDto,
   type NewsSource,
-  type PostingTimelineDto,
-  type SkillShareDto,
 } from '../../../career/homeApi'
-import { useResumesState } from '../../../career/state'
-import { getAuthToken } from '../../../career/authStore'
+import { ddayInfo, useResumesState } from '../../../career/state'
 
 const TAB_LABEL: Record<NewsSource, string> = {
   hackernews: '해커뉴스',
@@ -138,8 +137,72 @@ function NewsListSkeleton() {
   )
 }
 
-export default function HomeNewsPanel({ isAuthed, pool }: { isAuthed: boolean; pool: 'all' | 'domestic' | 'global' }) {
+// 우측 컬럼 — LinkedIn 스타일 클릭형 공고 리스트(마감 임박 / 추천). 기존 피드 API만 사용한다.
+function PostingListSkeleton() {
+  return (
+    <>
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="hfeed-plist__row" aria-hidden="true">
+          <div style={{ flex: 1 }}>
+            <div className="hfeed-skel" style={{ width: '35%', height: 11 }} />
+            <div className="hfeed-skel" style={{ width: '80%', height: 13, marginTop: 6 }} />
+          </div>
+          <div className="hfeed-skel" style={{ width: 36, height: 18, borderRadius: 6 }} />
+        </div>
+      ))}
+    </>
+  )
+}
+
+function PostingListRow({ posting, trailing }: { posting: FeedPostingDto; trailing: ReactNode }) {
   const navigate = useNavigate()
+  return (
+    <button type="button" className="hfeed-plist__row" onClick={() => navigate(`/job/${posting.id}`)}>
+      <span className="hfeed-plist__main">
+        <span className="hfeed-plist__company">{posting.company ?? '기업명 미상'}</span>
+        <span className="hfeed-plist__title">{posting.title}</span>
+      </span>
+      {trailing}
+    </button>
+  )
+}
+
+// 로딩/에러/빈 상태를 카드 단위로 흡수 — 실패하거나 빈 결과면 카드 자체를 숨겨 컬럼이 깨지지 않게 한다.
+function PostingListCard({
+  title,
+  viewAllTo,
+  loading,
+  failed,
+  items,
+  renderRow,
+}: {
+  title: string
+  viewAllTo: string
+  loading: boolean
+  failed: boolean
+  items: FeedPostingDto[] | null
+  renderRow: (posting: FeedPostingDto) => ReactNode
+}) {
+  const navigate = useNavigate()
+  if (failed) return null
+  if (!loading && (items == null || items.length === 0)) return null
+
+  return (
+    <section className="hfeed-plist card">
+      <div className="hfeed-plist__head">
+        <h3>{title}</h3>
+        <button type="button" className="hfeed-plist__viewall" onClick={() => navigate(viewAllTo)}>
+          전체 보기
+        </button>
+      </div>
+      <div className="hfeed-plist__list">
+        {loading && items == null ? <PostingListSkeleton /> : items?.map((posting) => renderRow(posting))}
+      </div>
+    </section>
+  )
+}
+
+export default function HomeNewsPanel({ isAuthed, pool }: { isAuthed: boolean; pool: 'all' | 'domestic' | 'global' }) {
   const [activeTab, setActiveTab] = useState<NewsSource>('hackernews')
   const [cache, setCache] = useState<Partial<Record<NewsSource, NewsResponseDto>>>({})
   const [newsLoading, setNewsLoading] = useState(false)
@@ -189,43 +252,51 @@ export default function HomeNewsPanel({ isAuthed, pool }: { isAuthed: boolean; p
     setNewsPage(1)
   }
 
-  // 미니 요약 카드 — 오늘 신규 공고 / 수요 Top3 스킬 / (로그인) 내 매치 상위 공고.
-  const effectivePool: 'domestic' | 'global' = pool === 'all' ? 'domestic' : pool
+  // 우측 컬럼 리스트 — 마감 임박 공고 / (로그인+이력서) 추천 공고. 기존 /feed/postings API만 재사용한다.
+  const feedPoolParam = pool === 'all' ? undefined : pool
   const { activeResume } = useResumesState()
-  const resumeIdentity = useMemo(() => {
-    const resumeId = Number(activeResume?.id)
-    const token = getAuthToken()
-    return isAuthed && Number.isInteger(resumeId) && resumeId > 0 && token ? resumeId : undefined
-  }, [activeResume?.id, isAuthed])
+  const showRecommended = isAuthed && !!activeResume
 
-  const [timeline, setTimeline] = useState<PostingTimelineDto | null>(null)
-  const [timelineFailed, setTimelineFailed] = useState(false)
-  const [skillShare, setSkillShare] = useState<SkillShareDto | null>(null)
-  const [skillShareFailed, setSkillShareFailed] = useState(false)
+  const [deadlineItems, setDeadlineItems] = useState<FeedPostingDto[] | null>(null)
+  const [deadlineFailed, setDeadlineFailed] = useState(false)
+  const [deadlineLoading, setDeadlineLoading] = useState(true)
+  const [deadlineAsOf, setDeadlineAsOf] = useState<string>(() => new Date().toISOString().slice(0, 10))
 
   useEffect(() => {
     let cancelled = false
-    setTimelineFailed(false)
+    setDeadlineLoading(true)
+    setDeadlineFailed(false)
     homeApi
-      .postingTimeline(effectivePool, 7, resumeIdentity)
-      .then((res) => { if (!cancelled) setTimeline(res) })
-      .catch(() => { if (!cancelled) setTimelineFailed(true) })
+      .feed({ pool: feedPoolParam, deadline_within_days: 7, page_size: 5 })
+      .then((res) => {
+        if (cancelled) return
+        setDeadlineItems(res.items)
+        setDeadlineAsOf(res.as_of)
+      })
+      .catch(() => { if (!cancelled) setDeadlineFailed(true) })
+      .finally(() => { if (!cancelled) setDeadlineLoading(false) })
     return () => { cancelled = true }
-  }, [effectivePool, resumeIdentity])
+  }, [feedPoolParam])
+
+  const [recommendedItems, setRecommendedItems] = useState<FeedPostingDto[] | null>(null)
+  const [recommendedFailed, setRecommendedFailed] = useState(false)
+  const [recommendedLoading, setRecommendedLoading] = useState(false)
 
   useEffect(() => {
+    if (!showRecommended) {
+      setRecommendedItems(null)
+      return
+    }
     let cancelled = false
-    setSkillShareFailed(false)
+    setRecommendedLoading(true)
+    setRecommendedFailed(false)
     homeApi
-      .skillShare(effectivePool, 3)
-      .then((res) => { if (!cancelled) setSkillShare(res) })
-      .catch(() => { if (!cancelled) setSkillShareFailed(true) })
+      .feed({ pool: feedPoolParam, min_match: 60, page_size: 5 })
+      .then((res) => { if (!cancelled) setRecommendedItems(res.items) })
+      .catch(() => { if (!cancelled) setRecommendedFailed(true) })
+      .finally(() => { if (!cancelled) setRecommendedLoading(false) })
     return () => { cancelled = true }
-  }, [effectivePool])
-
-  const lastDay = timeline?.daily[timeline.daily.length - 1]
-  const todayNew = lastDay?.total
-  const matchedToday = lastDay?.matched
+  }, [showRecommended, feedPoolParam])
 
   return (
     <>
@@ -297,34 +368,49 @@ export default function HomeNewsPanel({ isAuthed, pool }: { isAuthed: boolean; p
         )}
       </section>
 
-      {!timelineFailed && todayNew != null && (
-        <section className="hfeed-mini" role="link" tabIndex={0} onClick={() => navigate('/market')}>
-          <span className="hfeed-mini__label">오늘 신규 공고</span>
-          <span className="hfeed-mini__num hfeed-mini__num--market tnum">{todayNew}<span>건</span></span>
-          <span className="hfeed-mini__hint">시장에서 보기 <ChevronRight size={13} /></span>
-        </section>
-      )}
+      <PostingListCard
+        title="마감 임박 공고"
+        viewAllTo="/jobs"
+        loading={deadlineLoading}
+        failed={deadlineFailed}
+        items={deadlineItems}
+        renderRow={(posting) => {
+          const dd = posting.close_date ? ddayInfo(posting.close_date, deadlineAsOf) : null
+          const urgent = !!dd && dd.d <= 3
+          return (
+            <PostingListRow
+              key={posting.id}
+              posting={posting}
+              trailing={
+                <span
+                  className={`hfeed-badge tnum ${dd ? 'hfeed-badge--dday' : 'hfeed-badge--always'}${urgent ? ' is-urgent' : ''}`}
+                >
+                  {dd ? `D-${dd.d}` : '상시채용'}
+                </span>
+              }
+            />
+          )
+        }}
+      />
 
-      {!skillShareFailed && skillShare && skillShare.items.length > 0 && (
-        <section className="hfeed-mini hfeed-mini--list" role="link" tabIndex={0} onClick={() => navigate('/market')}>
-          <span className="hfeed-mini__label" style={{ marginBottom: 6 }}>수요 Top 3 스킬</span>
-          {skillShare.items.slice(0, 3).map((item, idx) => (
-            <div key={item.canonical} className="hfeed-mini__row">
-              <span className="hfeed-mini__rank tnum">{idx + 1}</span>
-              <span className="hfeed-mini__name">{item.canonical}</span>
-              <span className="hfeed-mini__delta tnum">{(item.share * 100).toFixed(1)}%</span>
-            </div>
-          ))}
-          <span className="hfeed-mini__hint" style={{ marginTop: 10 }}>시장에서 보기 <ChevronRight size={13} /></span>
-        </section>
-      )}
-
-      {isAuthed && matchedToday != null && (
-        <section className="hfeed-mini" role="link" tabIndex={0} onClick={() => navigate('/')}>
-          <span className="hfeed-mini__label">내 매치 상위 공고</span>
-          <span className="hfeed-mini__num hfeed-mini__num--personal tnum">{matchedToday}<span>건</span></span>
-          <span className="hfeed-mini__hint">대시보드에서 보기 <ChevronRight size={13} /></span>
-        </section>
+      {showRecommended && (
+        <PostingListCard
+          title="추천 공고"
+          viewAllTo="/jobs"
+          loading={recommendedLoading}
+          failed={recommendedFailed}
+          items={recommendedItems}
+          renderRow={(posting) => {
+            const rate = posting.match ? Math.round(posting.match.rate) : null
+            return (
+              <PostingListRow
+                key={posting.id}
+                posting={posting}
+                trailing={rate != null ? <span className="hfeed-plist__match tnum">{rate}%</span> : null}
+              />
+            )
+          }}
+        />
       )}
     </>
   )

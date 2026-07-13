@@ -58,7 +58,7 @@ type FastApiValidationError = {
   msg?: string
 }
 
-function formatApiError(detail: unknown) {
+export function formatApiError(detail: unknown) {
   if (typeof detail === 'string') return detail
   if (Array.isArray(detail)) {
     return detail

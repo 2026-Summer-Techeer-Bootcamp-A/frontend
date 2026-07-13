@@ -1,4 +1,5 @@
 import { getAuthToken } from './authStore'
+import { formatApiError } from './api'
 
 const API_BASE = '/api/v1'
 
@@ -24,7 +25,7 @@ async function get<T>(path: string, params: Record<string, string | number | boo
   const response = await fetch(query(path, params), { headers: token ? { Authorization: `Bearer ${token}` } : undefined })
   if (!response.ok) {
     const body = await response.json().catch(() => null)
-    throw new Error(typeof body?.detail === 'string' ? body.detail : '데이터를 불러오지 못했습니다.')
+    throw new Error(formatApiError(body?.detail))
   }
   return response.json() as Promise<T>
 }

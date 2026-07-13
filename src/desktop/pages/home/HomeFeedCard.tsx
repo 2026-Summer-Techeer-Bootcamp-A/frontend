@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { KeyboardEvent, MouseEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Bookmark } from 'lucide-react'
@@ -7,6 +8,21 @@ import { toggleBookmark, useBookmarks } from '../../../career/bookmarkStore'
 import { recordView } from '../../../career/viewHistoryStore'
 
 const MAX_SKILL_CHIPS = 6
+const MAX_CONCEPT_CHIPS = 8
+
+// 백엔드 원값 -> 한국어 표기. 매핑에 없는 값은 원문 그대로 노출한다.
+const SENIORITY_LABELS: Record<string, string> = {
+  'Entry-level': '신입',
+  'Mid-level': '중간급',
+  Manager: '매니저',
+  Director: '디렉터',
+  Executive: '임원',
+}
+
+function seniorityLabel(raw: string | null): string | null {
+  if (!raw) return null
+  return SENIORITY_LABELS[raw] ?? raw
+}
 
 function relativeTime(postDate: string | null): string {
   if (!postDate) return '날짜 미상'
@@ -37,6 +53,7 @@ function careerLabel(min: number | null, max: number | null): string | null {
 export default function HomeFeedCard({ posting, asOf }: { posting: FeedPostingDto; asOf: string }) {
   const navigate = useNavigate()
   const bookmarks = useBookmarks()
+  const [expanded, setExpanded] = useState(false)
   const postingKey = String(posting.id)
   const saved = bookmarks.includes(postingKey)
 
@@ -63,6 +80,11 @@ export default function HomeFeedCard({ posting, asOf }: { posting: FeedPostingDt
     toggleBookmark(postingKey)
   }
 
+  const handleToggleDetail = (e: MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation()
+    setExpanded((v) => !v)
+  }
+
   const match = posting.match
   const skillChips: SkillChip[] = match
     ? [
@@ -82,6 +104,13 @@ export default function HomeFeedCard({ posting, asOf }: { posting: FeedPostingDt
   // 매치율 수준별 링 색 등급 — 저채도 3단계(비주얼 스펙 4.9).
   const ringTier = rateRounded == null ? null : rateRounded >= 75 ? 'high' : rateRounded >= 50 ? 'mid' : 'low'
 
+  const seniority = seniorityLabel(posting.seniority)
+  const concepts = posting.concepts ?? []
+  const certs = posting.certs ?? []
+  const visibleConcepts = concepts.slice(0, MAX_CONCEPT_CHIPS)
+  const extraConceptCount = concepts.length - visibleConcepts.length
+  const hasDetail = Boolean(posting.description_snippet) || concepts.length > 0 || certs.length > 0
+
   return (
     <article
       className="hfeed-card"
@@ -94,7 +123,12 @@ export default function HomeFeedCard({ posting, asOf }: { posting: FeedPostingDt
         <div className="hfeed-card__logo">{logoChar}</div>
         <div className="hfeed-card__meta">
           <div className="hfeed-card__company">{posting.company ?? '기업명 미상'}</div>
-          {subLine && <div className="hfeed-card__sub">{subLine}</div>}
+          {(subLine || seniority) && (
+            <div className="hfeed-card__subrow">
+              {subLine && <span className="hfeed-card__sub">{subLine}</span>}
+              {seniority && <span className="hfeed-card__seniority">{seniority}</span>}
+            </div>
+          )}
           <div className="hfeed-card__title">{posting.title}</div>
         </div>
         {match && rateRounded != null && ringTier && (
@@ -140,6 +174,40 @@ export default function HomeFeedCard({ posting, asOf }: { posting: FeedPostingDt
         ))}
         {extraSkillCount > 0 && <span className="hfeed-chip--more">+{extraSkillCount}</span>}
       </div>
+
+      {hasDetail && (
+        <div className="hfeed-card__detail-wrap">
+          <div className={`hfeed-card__detail-content${expanded ? ' is-expanded' : ''}`}>
+            {posting.description_snippet && (
+              <p className="hfeed-card__detail-desc">{posting.description_snippet}</p>
+            )}
+            {concepts.length > 0 && (
+              <div className="hfeed-card__detail-block">
+                <span className="hfeed-card__detail-label">핵심 키워드</span>
+                <div className="hfeed-card__detail-chips">
+                  {visibleConcepts.map((c) => (
+                    <span key={`concept-${c}`} className="hfeed-chip--cat">{c}</span>
+                  ))}
+                  {extraConceptCount > 0 && <span className="hfeed-chip--more">+{extraConceptCount}</span>}
+                </div>
+              </div>
+            )}
+            {certs.length > 0 && (
+              <div className="hfeed-card__detail-block">
+                <span className="hfeed-card__detail-label">우대 자격증</span>
+                <ul className="hfeed-card__detail-certs">
+                  {certs.map((c) => (
+                    <li key={`cert-${c}`}>{c}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+          <button type="button" className="hfeed-card__more-toggle" onClick={handleToggleDetail}>
+            {expanded ? '접기' : '더보기'}
+          </button>
+        </div>
+      )}
 
       <div className="hfeed-card__foot">
         {match ? (

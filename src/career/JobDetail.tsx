@@ -87,8 +87,11 @@ function LocationMapCard({ lat, lng, address }: { lat: number; lng: number; addr
       <div className="crd-map__addr">{address}</div>
       <div className="crd-map__viewport">
         <div ref={elRef} className="crd-map__canvas" />
+        {tileStatus === 'loading' && (
+          <div className="crd-map__status" role="status">지도를 불러오는 중…</div>
+        )}
         {tileStatus === 'error' && (
-          <div className="crd-map__error" role="status">지도를 불러오지 못했습니다. 네트워크 연결을 확인해 주세요.</div>
+          <div className="crd-map__status">지도를 불러오지 못했습니다. 네트워크 연결을 확인해 주세요.</div>
         )}
       </div>
     </div>
@@ -240,6 +243,7 @@ export default function JobDetail() {
     pool: desktopDetail.pool === 'domestic' ? '국내' : desktopDetail.pool === 'global' ? '국외' : fallbackP.pool,
     company: desktopDetail.company ?? '회사명 미상',
     title: desktopDetail.title,
+    logo: mockP?.logo ?? '',
     postDate: desktopDetail.post_date ?? '',
     closeDate: desktopDetail.close_date ?? '',
     careerMin: desktopDetail.career_min,
@@ -280,7 +284,7 @@ export default function JobDetail() {
     const existing = getDynamicPostings(activeSkills).find((item) => String(item.id) === String(card.id))
     const base = existing ?? getDynamicPostings(activeSkills)[0]
     const held = card.skills.filter((skill) => activeSkills.includes(skill))
-    return { ...base, ...existing, id: String(card.id), title: card.title, company: card.company ?? '회사명 미상', postDate: card.post_date ?? '', closeDate: card.close_date ?? '', techs: card.skills, matchHeld: card.matched_count ?? held.length, matchTotal: card.skills.length, matchPct: card.skills.length ? Math.round(((card.matched_count ?? held.length) / card.skills.length) * 100) : 0, gap: card.skills.filter((skill) => !activeSkills.includes(skill)) }
+    return { ...base, ...existing, id: String(card.id), title: card.title, company: card.company ?? '회사명 미상', logo: existing?.logo ?? '', postDate: card.post_date ?? '', closeDate: card.close_date ?? '', techs: card.skills, matchHeld: card.matched_count ?? held.length, matchTotal: card.skills.length, matchPct: card.skills.length ? Math.round(((card.matched_count ?? held.length) / card.skills.length) * 100) : 0, gap: card.skills.filter((skill) => !activeSkills.includes(skill)) }
   }
   const nearby = desktopNearby?.map(apiCardToPosting) ?? mockNearby
   const similar = desktopSimilar?.map(apiCardToPosting) ?? mockSimilar
