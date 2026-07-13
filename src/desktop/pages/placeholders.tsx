@@ -20,7 +20,7 @@ import {
 } from '../../career/wowWidgets'
 import { useWidgetData } from '../../career/useWidgetData'
 import CompanyLogo from '../../career/CompanyLogo'
-import { useResumesState, getDynamicPostings, calculateCoverage } from '../../career/state'
+import { useResumesState, getDynamicPostings, calculateCoverage, resumeToUpsertPayload } from '../../career/state'
 import { getAuthToken, useAuth } from '../../career/authStore'
 import { useDashboardConfig, isWidgetHidden, getWidgetSize } from '../../career/dashboardConfig'
 import { MARKET_WIDGETS } from '../../career/widgetCatalog'
@@ -1212,7 +1212,7 @@ export function DesktopMap() {
 export function DesktopMy() {
   const navigate = useNavigate()
   const { user, isAuthed } = useAuth()
-  const { activeResume, updateResumes } = useResumesState()
+  const { resumes, activeResume, updateResume, deleteResume, setPrimary } = useResumesState()
   const skills = activeResume?.skills ?? []
   const coverage = activeResume?.coveragePct ?? calculateCoverage(skills, '국내')
   const name = user?.nickname ?? '리버'
@@ -1270,19 +1270,36 @@ export function DesktopMy() {
       <div className="dmy__body">
         <div className="dmy__main">
           <section className="dcard">
-            <SectionHeader title="내 이력서" right={<button className="dpage__more" onClick={() => navigate('/resume/submit')}>편집</button>} />
-            {activeResume ? (
-              <button className="dmy__resume" onClick={() => navigate('/resume/submit')}>
-                <span className="dmy__resume-ic"><FileText size={18} /></span>
-                <span className="djobs__row-b">
-                  <span className="djobs__row-t">{activeResume.title ?? '이력서'}</span>
-                  <span className="djobs__row-c">{activeResume.position ?? '직무 미정'} · 보유 기술 {skills.length}개 · 커버리지 {coverage}%</span>
-                </span>
-              </button>
-            ) : (
+            <SectionHeader title="내 이력서" hint={`${resumes.length}개`} right={
+              <button className="dpage__more" onClick={() => navigate('/resume/new')}>새 이력서 추가</button>
+            } />
+            {resumes.length === 0 ? (
               <div className="dmy__resume-empty">
                 <span>이력서를 등록해보세요</span>
-                <button className="dmy__resume-btn" onClick={() => navigate('/resume/submit')}>이력서 등록하기</button>
+                <button className="dmy__resume-btn" onClick={() => navigate('/resume/new')}>이력서 등록하기</button>
+              </div>
+            ) : (
+              <div className="dmy__jobs">
+                {resumes.map((r) => (
+                  <div key={r.id} className="dmy__resume" style={{ alignItems: 'center' }}>
+                    <span className="dmy__resume-ic"><FileText size={18} /></span>
+                    <span className="djobs__row-b" onClick={() => navigate(`/resume/${r.id}/edit`)} style={{ cursor: 'pointer' }}>
+                      <span className="djobs__row-t">{r.title}</span>
+                      <span className="djobs__row-c">{r.position || '직무 미정'} · 보유 기술 {r.skills.length}개</span>
+                    </span>
+                    {r.isPrimary ? (
+                      <span className="dpage__more">기본</span>
+                    ) : (
+                      <button className="dpage__more" onClick={() => setPrimary(r.id)}>기본으로</button>
+                    )}
+                    <button
+                      className="dpage__more"
+                      onClick={() => { if (window.confirm(`'${r.title}'을(를) 삭제할까요?`)) deleteResume(r.id) }}
+                    >
+                      삭제
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
           </section>
@@ -1368,7 +1385,16 @@ export function DesktopMy() {
         open={skillModalOpen && !!activeResume}
         onClose={() => setSkillModalOpen(false)}
         owned={skills}
-        onChange={(next) => { if (activeResume) updateResumes([{ ...activeResume, skills: next }]) }}
+        onChange={(next) => {
+          if (!activeResume) return
+          updateResume(activeResume.id, resumeToUpsertPayload({
+            ...activeResume,
+            skills: next,
+            careerMin: activeResume.careerMin ?? 0,
+            careerMax: activeResume.careerMax ?? 0,
+            pool: activeResume.pool ?? '국내',
+          }))
+        }}
       />
     </div>
   )
