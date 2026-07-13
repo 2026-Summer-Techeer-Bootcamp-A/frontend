@@ -30,6 +30,7 @@ export type FeedPostingDto = {
   certs: string[]
   seniority: string | null
   description_snippet: string | null
+  logo_url: string | null
 }
 
 export type FeedResponseDto = {
