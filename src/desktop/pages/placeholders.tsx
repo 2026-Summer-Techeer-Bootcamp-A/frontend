@@ -883,8 +883,7 @@ export function DesktopMarket() {
             )}
             {!isWidgetHidden('market', 'trend-chronicle') && (
               <div className="dmkt2__card-item">
-                {scopeBadge}
-                <TrendChronicleWidget size={widgetSize('trend-chronicle')} />
+                <TrendChronicleWidget size={widgetSize('trend-chronicle')} headerRight={scopeBadge} />
               </div>
             )}
           </div>
@@ -902,20 +901,17 @@ export function DesktopMarket() {
           <div className="dmkt2__sec-grid dmkt2__sec-grid--company">
             {!isWidgetHidden('market', 'competency') && (
               <div className="dmkt2__card-item">
-                {scopeBadge}
-                <CompetencyWidget size={widgetSize('competency')} />
+                <CompetencyWidget size={widgetSize('competency')} headerRight={scopeBadge} />
               </div>
             )}
             {!isWidgetHidden('market', 'response-rate') && (
               <div className="dmkt2__card-item">
-                {scopeBadge}
-                <ResponseRateWidget size={widgetSize('response-rate')} />
+                <ResponseRateWidget size={widgetSize('response-rate')} headerRight={scopeBadge} />
               </div>
             )}
             {!isWidgetHidden('market', 'concept-signal') && (
               <div className="dmkt2__card-item">
-                {scopeBadge}
-                <ConceptSignalWidget size={widgetSize('concept-signal')} />
+                <ConceptSignalWidget size={widgetSize('concept-signal')} headerRight={scopeBadge} />
               </div>
             )}
             {!isWidgetHidden('market', 'tier-compare') && (

@@ -182,6 +182,14 @@
 }
 .wow-seg__btn.on { color: #fff; background: var(--c-accent); }
 
+/* 좁은 카드에서 제목이 글자 단위로 꺾이지 않도록 개념 선택지는 다음 행을 쓴다. */
+.wow-concept-tabs {
+  width: 100%;
+  max-width: none;
+  justify-content: flex-start;
+  margin-bottom: 10px;
+}
+
 /* ---------- 위젯 3: 한계 해금 ---------- */
 .wow-funnel { display: flex; flex-direction: column; gap: 6px; flex: none; }
 .wow-funnel__bar { display: flex; height: 10px; border-radius: 999px; overflow: hidden; background: #eef1f6; }

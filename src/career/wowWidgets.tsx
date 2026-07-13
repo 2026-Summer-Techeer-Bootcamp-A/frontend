@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ReactECharts from 'echarts-for-react'
 import { Check } from 'lucide-react'
@@ -439,14 +440,14 @@ type CompetencyRow = { key: string; any: number; anyPct: number; req: number; re
 type CompetencyMeta = { source: string; N: number; asOf: string; note: string }
 const COMP = competencyRaw as unknown as { _meta: CompetencyMeta; competency: CompetencyRow[] }
 
-export function CompetencyWidget({ size = '2x1' }: { size?: WidgetSize }) {
+export function CompetencyWidget({ size = '2x1', headerRight }: { size?: WidgetSize; headerRight?: ReactNode }) {
   const rows = useMemo(() => [...COMP.competency].sort((a, b) => b.anyPct - a.anyPct), [])
   const shown = size === '2x2' ? rows : rows.slice(0, 8)
   const top = rows[0]
 
   return (
     <div className="dcard wow-card">
-      <SectionHeader title="회사가 진짜 원하는 역량" />
+      <SectionHeader title="회사가 진짜 원하는 역량" right={headerRight} />
       <div className="wow-body">
         <p className="wow-headline">
           코딩 실력만으론 부족 — 채용공고 <b>{top.anyPct}%가 '{top.key}'</b>을 대놓고 요구해요.
@@ -485,7 +486,7 @@ const S = sRaw as unknown as { as_of: string; sample_size: number; data: SData }
 const LEVEL_LABEL: Record<string, string> = { very_low: '매우낮음', low: '낮음', normal: '보통', high: '높음', very_high: '매우높음' }
 const LEVEL_COLOR: Record<string, string> = { very_low: '#e4e4e7', low: '#c9c9cf', normal: '#a1a1aa', high: '#5fb98a', very_high: '#1f9d57' }
 
-export function ResponseRateWidget({ size = '2x1' }: { size?: WidgetSize }) {
+export function ResponseRateWidget({ size = '2x1', headerRight }: { size?: WidgetSize; headerRight?: ReactNode }) {
   const [live, setLive] = useState<SData | null>(null)
   const D = live ?? S.data
   useEffect(() => {
@@ -506,7 +507,7 @@ export function ResponseRateWidget({ size = '2x1' }: { size?: WidgetSize }) {
 
   return (
     <div className="dcard wow-card">
-      <SectionHeader title="응답 잘 오는 회사" hint="국내·원티드" />
+      <SectionHeader title="응답 잘 오는 회사" hint="국내·원티드" right={headerRight} />
       <div className="wow-body">
         <p className="wow-headline">지원하면 진짜 답 올까? <b>중앙값 {Math.round(D.median_rate)}%</b>인데 <b>포티투닷은 {Math.round(fortyTwoDot?.rate ?? 0)}%</b> — 회사마다 천차만별.</p>
         <div className="wow-median">
@@ -552,7 +553,7 @@ type ConceptMeta = { simulated: boolean; source: string; N: number; asOf: string
 const CONCEPT = conceptRaw as unknown as { _meta: ConceptMeta; concepts: ConceptItem[] }
 const CONCEPT_SORTED = [...CONCEPT.concepts].sort((a, b) => b.demand - a.demand)
 
-export function ConceptSignalWidget({ size = '2x1' }: { size?: WidgetSize }) {
+export function ConceptSignalWidget({ size = '2x1', headerRight }: { size?: WidgetSize; headerRight?: ReactNode }) {
   const [key, setKey] = useState(CONCEPT_SORTED[0].key)
   const active = CONCEPT_SORTED.find((c) => c.key === key) ?? CONCEPT_SORTED[0]
   const sig = active.signature.slice(0, 6)
@@ -562,16 +563,15 @@ export function ConceptSignalWidget({ size = '2x1' }: { size?: WidgetSize }) {
     <div className="dcard wow-card">
       <SectionHeader
         title="개념 → 기술 시그니처" hint={CONCEPT._meta.simulated ? undefined : '실측'}
-        right={
-          <div className="wow-seg wow-seg--scroll">
-            {CONCEPT_SORTED.map((c) => (
-              <button key={c.key} type="button" className={`wow-seg__btn${c.key === key ? ' on' : ''}`} onClick={() => setKey(c.key)}>
-                {c.label}
-              </button>
-            ))}
-          </div>
-        }
+        right={headerRight}
       />
+      <div className="wow-seg wow-seg--scroll wow-concept-tabs">
+        {CONCEPT_SORTED.map((c) => (
+          <button key={c.key} type="button" className={`wow-seg__btn${c.key === key ? ' on' : ''}`} onClick={() => setKey(c.key)}>
+            {c.label}
+          </button>
+        ))}
+      </div>
       <div className="wow-body">
         <p className="wow-headline">'DevOps 경험 있음'을 증명하려면? <b>GitHub Actions(lift 2.41)</b> 같은 신호 기술이 핵심.</p>
         <div className="wow-concept-top">
@@ -612,7 +612,7 @@ const CHRONICLE_CONCEPTS = CHRONICLE_KEYS
   .map((k) => CHRONICLE.concepts.find((c) => c.key === k))
   .filter((c): c is ChronicleConcept => !!c)
 
-export function TrendChronicleWidget({ size = '2x2' }: { size?: WidgetSize }) {
+export function TrendChronicleWidget({ size = '2x2', headerRight }: { size?: WidgetSize; headerRight?: ReactNode }) {
   const [live, setLive] = useState<{ years: number[]; concepts: ChronicleConcept[]; asOf: string; n: number } | null>(null)
   useEffect(() => {
     let cancelled = false
@@ -676,7 +676,7 @@ export function TrendChronicleWidget({ size = '2x2' }: { size?: WidgetSize }) {
 
   return (
     <div className="dcard wow-card">
-      <SectionHeader title="기술 트렌드 연대기" hint="무엇을 만드는가의 축 · 2020→2026" />
+      <SectionHeader title="기술 트렌드 연대기" hint="무엇을 만드는가의 축 · 2020→2026" right={headerRight} />
       <div className="wow-body">
         <p className="wow-headline">
           <b>AI·LLM</b>은 2023 변곡점 후 {yearsSinceInflection}년 만에 <b>{startPct}%→{endPct}%</b> 폭발.
