@@ -1103,21 +1103,29 @@ export function DesktopMy() {
         <div className="dmy__sub">내 프로필 · 이력서 · 활동</div>
       </header>
 
-      <section className="dmy__hero">
-        <span className="dmy__hero-avatar">{initial}</span>
-        <div className="dmy__hero-id">
-          <span className="dmy__hero-nm">{name}</span>
-          <span className="dmy__hero-em">{email}</span>
-          <div className="dmy__hero-stats">
-            <span><b>{skills.length}</b> 보유 기술</span>
-            <span><b>{coverage}%</b> 커버리지</span>
-            <span><b>{bookmarkedPostings.length}</b> 북마크</span>
+      <div className="dmy__top">
+        <section className="dmy__hero">
+          <span className="dmy__hero-avatar">{initial}</span>
+          <div className="dmy__hero-id">
+            <span className="dmy__hero-nm">{name}</span>
+            <span className="dmy__hero-em">{email}</span>
+            <div className="dmy__hero-stats">
+              <span><b>{skills.length}</b> 보유 기술</span>
+              <span><b>{coverage}%</b> 커버리지</span>
+              <span><b>{bookmarkedPostings.length}</b> 북마크</span>
+            </div>
           </div>
+          <button className="dmy__hero-edit" onClick={() => navigate(isAuthed ? '/settings/account' : '/login')}>
+            {isAuthed ? '내 정보 수정' : '로그인'}
+          </button>
+        </section>
+
+        <div className="dmy__stats">
+          <StatTile label="북마크" value={bookmarkedPostings.length} unit="건" />
+          <StatTile label="최근 본 공고" value={recentViewPostings.length} unit="건" />
+          <StatTile label="커버리지" value={coverage} unit="%" />
         </div>
-        <button className="dmy__hero-edit" onClick={() => navigate(isAuthed ? '/settings/account' : '/login')}>
-          {isAuthed ? '내 정보 수정' : '로그인'}
-        </button>
-      </section>
+      </div>
 
       <div className="dmy__body">
         <div className="dmy__main">
@@ -1186,12 +1194,6 @@ export function DesktopMy() {
         </div>
 
         <aside className="dmy__aside">
-          <div className="dmy__stats">
-            <StatTile label="북마크" value={bookmarkedPostings.length} unit="건" />
-            <StatTile label="최근 본 공고" value={recentViewPostings.length} unit="건" />
-            <StatTile label="커버리지" value={coverage} unit="%" />
-          </div>
-
           <section className="dcard">
             <SectionHeader title="최근 본 공고" />
             {recentViewPostings.length === 0 ? (

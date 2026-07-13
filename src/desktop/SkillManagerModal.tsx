@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Search, X, Check, Plus } from 'lucide-react'
 import { TechIcon } from '../career/kit'
 import techs from '../data/techs.json'
+import catData from '../data/pearl/n.json'
 import './SkillManagerModal.css'
 
 /* PC 중앙 모달 — 보유 기술 검색/추가/제거.
@@ -12,6 +13,34 @@ import './SkillManagerModal.css'
    바깥이라 --c-ink 등 변수 상속이 끊긴다. */
 
 const TECHS = techs as { tech: string; count: number }[]
+
+/* 검색 결과를 직무별 카테고리로 그룹핑하기 위한 tech→category 맵.
+   pearl/n.json(기술 코-네트워크 그래프 데이터)의 노드에 이미 {tech, category}가
+   들어있으므로 이를 재사용한다 — 별도 매핑 데이터를 새로 만들지 않는다. */
+const CATEGORY_NODES = (catData as { data: { nodes: { tech: string; category: string }[] } }).data.nodes
+const TECH_CATEGORY: Record<string, string> = Object.fromEntries(
+  CATEGORY_NODES.map((n) => [n.tech, n.category]),
+)
+
+const CATEGORY_LABEL: Record<string, string> = {
+  language: '언어',
+  backend: '백엔드',
+  frontend: '프론트엔드',
+  data_db: '데이터·DB',
+  cloud_services: '클라우드',
+  devops: 'DevOps',
+  mobile: '모바일',
+  ai_llm: 'AI·LLM',
+}
+// 매핑에 없는 카테고리(누락 tech 포함)는 이 순서 맨 끝 '기타'로 모인다.
+const CATEGORY_ORDER = ['language', 'backend', 'frontend', 'data_db', 'cloud_services', 'devops', 'mobile', 'ai_llm', 'etc']
+
+function categoryOf(tech: string): string {
+  return TECH_CATEGORY[tech] ?? 'etc'
+}
+function categoryLabel(cat: string): string {
+  return CATEGORY_LABEL[cat] ?? '기타'
+}
 
 export function SkillManagerModal({
   open, onClose, owned, onChange,
@@ -54,6 +83,20 @@ export function SkillManagerModal({
     const s = q.trim().toLowerCase()
     return TECHS.filter((t) => !s || t.tech.toLowerCase().includes(s)).slice(0, 60)
   }, [q])
+
+  // 검색 결과를 카테고리 섹션으로 묶는다(빈 카테고리는 목록에서 제외).
+  const grouped = useMemo(() => {
+    const byCat = new Map<string, { tech: string; count: number }[]>()
+    for (const t of filtered) {
+      const cat = categoryOf(t.tech)
+      const bucket = byCat.get(cat)
+      if (bucket) bucket.push(t)
+      else byCat.set(cat, [t])
+    }
+    return CATEGORY_ORDER
+      .map((cat) => ({ cat, label: categoryLabel(cat), items: byCat.get(cat) ?? [] }))
+      .filter((g) => g.items.length > 0)
+  }, [filtered])
 
   if (!open) return null
 
@@ -104,22 +147,29 @@ export function SkillManagerModal({
           </div>
 
           <div className="skm__results kit-scroll">
-            {filtered.map((t) => {
-              const on = draft.includes(t.tech)
-              return (
-                <button
-                  key={t.tech}
-                  type="button"
-                  className={`skm__row${on ? ' on' : ''}`}
-                  onClick={() => toggle(t.tech)}
-                >
-                  <TechIcon tech={t.tech} size={22} />
-                  <span className="skm__row-nm">{t.tech}</span>
-                  <span className="skm__row-ct">{t.count.toLocaleString()}</span>
-                  <span className="skm__row-act">{on ? <Check size={15} /> : <Plus size={15} />}</span>
-                </button>
-              )
-            })}
+            {grouped.map((g) => (
+              <div key={g.cat} className="skm__cat-group">
+                <div className="skm__cat">
+                  {g.label} <span>{g.items.length}</span>
+                </div>
+                {g.items.map((t) => {
+                  const on = draft.includes(t.tech)
+                  return (
+                    <button
+                      key={t.tech}
+                      type="button"
+                      className={`skm__row${on ? ' on' : ''}`}
+                      onClick={() => toggle(t.tech)}
+                    >
+                      <TechIcon tech={t.tech} size={22} />
+                      <span className="skm__row-nm">{t.tech}</span>
+                      <span className="skm__row-ct">{t.count.toLocaleString()}</span>
+                      <span className="skm__row-act">{on ? <Check size={15} /> : <Plus size={15} />}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            ))}
             {filtered.length === 0 && <div className="skm__empty">검색 결과가 없어요.</div>}
           </div>
         </div>
