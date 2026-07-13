@@ -13,6 +13,8 @@ import marketData from '../data/marketData.json'
 import { getDynamicPostings, useResumesState } from './state'
 import { isBookmarked, toggleBookmark, useBookmarks } from './bookmarkStore'
 import { recordView } from './viewHistoryStore'
+import { jobsApi, type PostingCard } from './api'
+import { getAuthToken } from './authStore'
 import './career.css'
 
 type MapPin = { id: string; lat: number; lng: number }
@@ -189,11 +191,55 @@ export default function JobDetail() {
   useBookmarks()
   const { activeResume } = useResumesState()
   const activeSkills = activeResume ? activeResume.skills : []
+  const [desktopDetail, setDesktopDetail] = useState<Awaited<ReturnType<typeof jobsApi.detail>> | null>(null)
+  const [desktopNearby, setDesktopNearby] = useState<PostingCard[] | null>(null)
+  const [desktopSimilar, setDesktopSimilar] = useState<Array<PostingCard & { overlap_count?: number }> | null>(null)
+  const [desktopPin, setDesktopPin] = useState<MapPin | undefined>()
+
+  useEffect(() => {
+    if (!isDesktop || !id) return
+    let cancelled = false
+    const numericResumeId = Number(activeResume?.id)
+    Promise.allSettled([
+      jobsApi.detail(id),
+      jobsApi.nearby(id, 5),
+      jobsApi.similar(id, 5),
+      jobsApi.map(Number.isInteger(numericResumeId) ? { resume_id: numericResumeId } : {}, getAuthToken()),
+    ]).then(([detail, nearby, similar, map]) => {
+      if (cancelled) return
+      if (detail.status === 'fulfilled') setDesktopDetail(detail.value)
+      if (nearby.status === 'fulfilled') setDesktopNearby(nearby.value.items)
+      if (similar.status === 'fulfilled') setDesktopSimilar(similar.value.items)
+      if (map.status === 'fulfilled') {
+        const pin = map.value.pins.find((item) => String(item.id) === decodeURIComponent(id))
+        if (pin) setDesktopPin({ id: String(pin.id), lat: pin.lat, lng: pin.lng })
+      }
+    })
+    return () => { cancelled = true }
+  }, [isDesktop, id, activeResume?.id])
 
   // 이전엔 배열 인덱스(data.postings.indexOf(dynamicCopy))로 찾았는데, 매칭 배지가 붙은
   // 동적 복사본은 원본 배열과 참조가 달라 indexOf가 항상 -1이 나오는 버그가 있었다 —
   // 안정적인 id로 직접 찾도록 수정.
-  const p = data.postings.find((x) => x.id === decodeURIComponent(id ?? ''))
+  const mockP = data.postings.find((x) => x.id === decodeURIComponent(id ?? ''))
+  const fallbackP = mockP ?? data.postings[0]
+  const p = isDesktop && desktopDetail ? {
+    ...fallbackP,
+    ...mockP,
+    id: String(desktopDetail.id),
+    source: desktopDetail.source,
+    pool: desktopDetail.pool === 'domestic' ? '국내' : desktopDetail.pool === 'global' ? '국외' : fallbackP.pool,
+    company: desktopDetail.company ?? '회사명 미상',
+    title: desktopDetail.title,
+    postDate: desktopDetail.post_date ?? '',
+    closeDate: desktopDetail.close_date ?? '',
+    careerMin: desktopDetail.career_min,
+    careerMax: desktopDetail.career_max,
+    region: desktopDetail.region,
+    techs: desktopDetail.skills,
+    url: desktopDetail.url,
+    companyInfo: { ...fallbackP.companyInfo, industry: desktopDetail.industry ?? fallbackP.companyInfo?.industry ?? '', location: desktopDetail.region ?? fallbackP.companyInfo?.location ?? '' },
+  } : mockP
   const bookmarked = isBookmarked(p?.id ?? '')
 
   // 조회 기록 — 훅 규칙을 지키기 위해 얼리리턴보다 위에서 항상 호출하고, 내부에서 p 유무를 체크한다.
@@ -204,7 +250,7 @@ export default function JobDetail() {
   // 데스크톱 3열 레일(주변/비슷한 채용공고) 계산 — 훅 규칙을 지키기 위해 얼리리턴보다
   // 위에서 항상 호출하고, 내부에서 p 유무를 가드한다. matchPct가 반영된 동적 postings
   // (getDynamicPostings) 기준으로 계산해 사이드 매칭 카드와 수치가 어긋나지 않게 한다.
-  const { nearby, similar, hasLocationKey } = useMemo(() => {
+  const { nearby: mockNearby, similar: mockSimilar, hasLocationKey } = useMemo(() => {
     if (!p) return { nearby: [] as RecoPosting[], similar: [] as RecoPosting[], hasLocationKey: false }
     const pool = getDynamicPostings(activeSkills)
     const others = pool.filter((o) => o.id !== p.id)
@@ -220,6 +266,15 @@ export default function JobDetail() {
       .map((x) => x.o)
     return { nearby: nearbyList, similar: similarList, hasLocationKey: Boolean(districtKey) }
   }, [p, activeSkills])
+
+  const apiCardToPosting = (card: PostingCard): RecoPosting => {
+    const existing = getDynamicPostings(activeSkills).find((item) => String(item.id) === String(card.id))
+    const base = existing ?? getDynamicPostings(activeSkills)[0]
+    const held = card.skills.filter((skill) => activeSkills.includes(skill))
+    return { ...base, ...existing, id: String(card.id), title: card.title, company: card.company ?? '회사명 미상', postDate: card.post_date ?? '', closeDate: card.close_date ?? '', techs: card.skills, matchHeld: card.matched_count ?? held.length, matchTotal: card.skills.length, matchPct: card.skills.length ? Math.round(((card.matched_count ?? held.length) / card.skills.length) * 100) : 0, gap: card.skills.filter((skill) => !activeSkills.includes(skill)) }
+  }
+  const nearby = desktopNearby?.map(apiCardToPosting) ?? mockNearby
+  const similar = desktopSimilar?.map(apiCardToPosting) ?? mockSimilar
 
   if (!p) {
     return (
@@ -240,7 +295,7 @@ export default function JobDetail() {
   const ci = p.companyInfo ?? { industry: '', homepage: '', established: '', location: '', tags: [] as string[] }
   // 국외 공고는 지도 카드를 아예 렌더하지 않는다. id 매칭 pin이 없으면(백엔드 좌표 미연동
   // 등) 에러 대신 조용히 숨긴다.
-  const pinCoord = p.pool === '국내' ? findPinCoord(p.id) : undefined
+  const pinCoord = p.pool === '국내' ? desktopPin ?? (desktopDetail?.lat != null && desktopDetail.lng != null ? { id: p.id, lat: desktopDetail.lat, lng: desktopDetail.lng } : findPinCoord(p.id)) : undefined
   const bookmarkBtn = (
     <Bookmark
       size={21}

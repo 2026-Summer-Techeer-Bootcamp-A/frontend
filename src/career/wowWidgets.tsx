@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ReactECharts from 'echarts-for-react'
 import { Check } from 'lucide-react'
@@ -8,6 +8,7 @@ import { FONT, tooltipStyle } from '../pages/widgets/base'
 import type { WidgetSize } from './dashboardConfig'
 import { useResumesState, getDynamicPostings } from './state'
 import CompanyLogo from './CompanyLogo'
+import { marketApi } from './api'
 import feedRaw from '../data/feedData.json'
 import y1Raw from '../data/pearl/y1.json'
 import matchRaw from '../data/matchData.json'
@@ -277,8 +278,26 @@ type AData = { series: AItem[]; pearls: AItem[] }
 const A = aRaw as unknown as { as_of: string; sample_size: number; data: AData }
 
 export function HypeVsHireWidget({ size = '2x2' }: { size?: WidgetSize }) {
-  const series = A.data.series
-  const pearls = A.data.pearls
+  const [live, setLive] = useState<AData | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    marketApi.skillShare({ pool: 'global', top_k: 10 }).then(async (share) => {
+      const responses = await Promise.allSettled(share.items.map((item) => marketApi.hypeVsHire(item.canonical)))
+      const latest = responses.flatMap((response) => response.status === 'fulfilled' && response.value.quarters.length ? [{ tech: response.value.skill, point: response.value.quarters[response.value.quarters.length - 1]!, n: response.value.sample_size }] : [])
+      if (cancelled || latest.length < 2) return
+      const interests = [...latest].sort((a, b) => a.point.interest_value - b.point.interest_value)
+      const demands = [...latest].sort((a, b) => a.point.posting_count - b.point.posting_count)
+      const rows = latest.map((item): AItem => {
+        const iPct = Math.round((interests.findIndex((row) => row.tech === item.tech) / (latest.length - 1)) * 100)
+        const dPct = Math.round((demands.findIndex((row) => row.tech === item.tech) / (latest.length - 1)) * 100)
+        return { tech: item.tech, i_pct: iPct, d_pct: dPct, i_now: item.point.interest_value, d_now: item.point.posting_count, n: item.n, owned: false, cat: iPct < 50 && dPct >= 50 ? '진주' : '일반' }
+      })
+      setLive({ series: rows, pearls: rows.filter((row) => row.cat === '진주').sort((a, b) => b.d_pct - a.d_pct).slice(0, 5) })
+    }).catch(() => undefined)
+    return () => { cancelled = true }
+  }, [])
+  const series = live?.series ?? A.data.series
+  const pearls = live?.pearls.length ? live.pearls : A.data.pearls
 
   const option = useMemo(() => ({
     animationDuration: 600, animationEasing: 'cubicOut',
@@ -402,7 +421,20 @@ const LEVEL_LABEL: Record<string, string> = { very_low: '매우낮음', low: '�
 const LEVEL_COLOR: Record<string, string> = { very_low: '#e4e4e7', low: '#c9c9cf', normal: '#a1a1aa', high: '#5fb98a', very_high: '#1f9d57' }
 
 export function ResponseRateWidget({ size = '2x1' }: { size?: WidgetSize }) {
-  const D = S.data
+  const [live, setLive] = useState<SData | null>(null)
+  const D = live ?? S.data
+  useEffect(() => {
+    let cancelled = false
+    marketApi.responseRate('domestic').then((result) => {
+      if (cancelled || !result.companies.length) return
+      setLive({
+        median_rate: result.median_rate,
+        levels: result.levels,
+        examples: result.companies.map((company) => ({ company: company.company, level: '', rate: company.rate, matched: [], matched_n: company.n })),
+      })
+    }).catch(() => undefined)
+    return () => { cancelled = true }
+  }, [])
   const maxLevelN = Math.max(...D.levels.map((l) => l.n), 1)
   const examples = useMemo(() => [...D.examples].sort((a, b) => b.rate - a.rate), [D.examples])
   const fortyTwoDot = examples.find((e) => e.company.includes('포티투닷'))
@@ -516,8 +548,24 @@ const CHRONICLE_CONCEPTS = CHRONICLE_KEYS
   .filter((c): c is ChronicleConcept => !!c)
 
 export function TrendChronicleWidget({ size = '2x2' }: { size?: WidgetSize }) {
-  const years = CHRONICLE._meta.years
-  const ai = CHRONICLE_CONCEPTS.find((c) => c.key === 'ai')!
+  const [live, setLive] = useState<{ years: number[]; concepts: ChronicleConcept[]; asOf: string; n: number } | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    marketApi.yearlyTrend('domestic').then((result) => {
+      if (cancelled || !result.years.length || !result.series.length) return
+      const colors = ['#1f9d57', '#5b78d1', '#d9822b', '#8b5cf6']
+      setLive({
+        years: result.years,
+        concepts: [...result.series].sort((a, b) => b.delta - a.delta).slice(0, 4).map((item, index) => ({ key: item.canonical, label: item.canonical, color: colors[index], demand: item.shares[item.shares.length - 1] ?? 0, delta: item.delta, me: 0, yearly: item.shares })),
+        asOf: result.as_of,
+        n: result.sample_size,
+      })
+    }).catch(() => undefined)
+    return () => { cancelled = true }
+  }, [])
+  const years = live?.years ?? CHRONICLE._meta.years
+  const concepts = live?.concepts ?? CHRONICLE_CONCEPTS
+  const ai = concepts[0]!
   const startPct = ai.yearly[0]
   const endPct = ai.yearly[ai.yearly.length - 1]
   const yearsSinceInflection = years[years.length - 1] - 2023
@@ -539,8 +587,8 @@ export function TrendChronicleWidget({ size = '2x2' }: { size?: WidgetSize }) {
       type: 'value', axisLabel: { color: '#7c7f88', fontFamily: FONT, fontSize: 10, formatter: '{value}%' },
       splitLine: { lineStyle: { color: '#eef1f6' } }, axisLine: { show: false },
     },
-    series: CHRONICLE_CONCEPTS.map((c) => {
-      const isAi = c.key === 'ai'
+    series: concepts.map((c, index) => {
+      const isAi = index === 0
       const col = isAi ? '#1f9d57' : '#a1a1aa'
       return {
         name: c.label, type: 'line', data: c.yearly, smooth: 0.2,
@@ -559,7 +607,7 @@ export function TrendChronicleWidget({ size = '2x2' }: { size?: WidgetSize }) {
         },
       }
     }),
-  }), [years])
+  }), [years, concepts])
 
   return (
     <div className="dcard wow-card">
@@ -570,7 +618,7 @@ export function TrendChronicleWidget({ size = '2x2' }: { size?: WidgetSize }) {
         </p>
         <ReactECharts option={option} style={{ height: size === '2x1' ? 170 : 240 }} notMerge />
       </div>
-      <AsOf asOf={CHRONICLE._meta.asOf} n={CHRONICLE._meta.N} note={CHRONICLE._meta.simulated ? '개념 추이는 시뮬레이션 기준' : undefined} />
+      <AsOf asOf={live?.asOf ?? CHRONICLE._meta.asOf} n={live?.n ?? CHRONICLE._meta.N} note={live ? undefined : 'API 연결 실패 시 기존 프리뷰 데이터'} />
     </div>
   )
 }
@@ -594,8 +642,19 @@ function ghRankSeries(line: GhLine): (number | null)[] {
 }
 
 export function GithubChronicleWidget({ size = '2x2' }: { size?: WidgetSize }) {
-  const firstEvent = GH.data.events[0]
-  const shownEvents = GH.data.events.slice(0, size === '2x2' ? 6 : 3)
+  const [live, setLive] = useState<GhData | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    marketApi.githubChronicle().then((result) => {
+      if (cancelled || !result.lines.length) return
+      setLive({ years: result.years, lines: result.lines.map((line) => ({ tech: line.tech, points: line.points, owned: false })), events: GH.data.events })
+    }).catch(() => undefined)
+    return () => { cancelled = true }
+  }, [])
+  const ghData = live ?? GH.data
+  const topLines = live ? [...ghData.lines].sort((a, b) => (a.points[a.points.length - 1]?.rank ?? 99) - (b.points[b.points.length - 1]?.rank ?? 99)).slice(0, 8) : GH_TOP_LINES
+  const firstEvent = ghData.events[0]
+  const shownEvents = ghData.events.slice(0, size === '2x2' ? 6 : 3)
 
   const option = useMemo(() => ({
     animationDuration: 700, animationEasing: 'cubicOut',
@@ -603,14 +662,14 @@ export function GithubChronicleWidget({ size = '2x2' }: { size?: WidgetSize }) {
     tooltip: {
       ...tooltipStyle, trigger: 'item',
       formatter: (p: { seriesName: string; axisValue: string }) => {
-        const line = GH_TOP_LINES.find((l) => l.tech === p.seriesName)
+        const line = topLines.find((l) => l.tech === p.seriesName)
         const point = line?.points.find((pt) => String(pt.year) === p.axisValue)
         if (!line || !point) return p.seriesName
         return `<b>${line.tech}</b>${line.owned ? ' <span style="color:#1f9d57">· 보유</span>' : ''}<br/>${point.year} · 순위 ${point.rank}위 · 스타 ${point.stars.toLocaleString()}`
       },
     },
     xAxis: {
-      type: 'category', boundaryGap: false, data: GH.data.years.map(String),
+      type: 'category', boundaryGap: false, data: ghData.years.map(String),
       axisLine: { lineStyle: { color: '#e6e9ef' } }, axisTick: { show: false },
       axisLabel: { color: '#7c7f88', fontFamily: FONT, fontSize: 9.5, fontWeight: 600, interval: 1 },
     },
@@ -619,10 +678,10 @@ export function GithubChronicleWidget({ size = '2x2' }: { size?: WidgetSize }) {
       axisLabel: { color: '#7c7f88', fontFamily: FONT, fontSize: 10, formatter: '{value}위' },
       splitLine: { lineStyle: { color: '#eef1f6' } }, axisLine: { show: false },
     },
-    series: GH_TOP_LINES.map((line) => {
+    series: topLines.map((line) => {
       const col = line.owned ? '#1f9d57' : '#c9c9cf'
       return {
-        name: line.tech, type: 'line', data: ghRankSeries(line), connectNulls: true, smooth: 0.15,
+        name: line.tech, type: 'line', data: live ? ghData.years.map((year) => line.points.find((point) => point.year === year)?.rank ?? null) : ghRankSeries(line), connectNulls: true, smooth: 0.15,
         symbol: 'circle', symbolSize: line.owned ? 6 : 4,
         lineStyle: { color: col, width: line.owned ? 2.4 : 1.2, opacity: line.owned ? 1 : 0.6 },
         itemStyle: { color: col, borderColor: '#fff', borderWidth: 1 },
@@ -630,7 +689,7 @@ export function GithubChronicleWidget({ size = '2x2' }: { size?: WidgetSize }) {
         z: line.owned ? 5 : 2,
       }
     }),
-  }), [])
+  }), [ghData, topLines])
 
   return (
     <div className="dcard wow-card">
@@ -666,12 +725,23 @@ type GapData = { global_favored: GapRow[]; domestic_favored: GapRow[]; g_total: 
 const GAP = oRaw as unknown as { as_of: string; pool: string; sample_size: number; sample_note: string; data: GapData }
 
 export function GlobalDomesticGapWidget({ size = '2x1' }: { size?: WidgetSize }) {
+  const [live, setLive] = useState<GapData | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    marketApi.globalDomesticGap().then((result) => {
+      if (cancelled || (!result.domestic_favored.length && !result.global_favored.length)) return
+      const map = (row: (typeof result.domestic_favored)[number]): GapRow => ({ tech: row.canonical, category: row.category, global_pct: row.global_pct, domestic_pct: row.domestic_pct, diff: row.diff, g_n: 0, d_n: 0 })
+      setLive({ domestic_favored: result.domestic_favored.map(map), global_favored: result.global_favored.map(map), g_total: 0, d_total: 0 })
+    }).catch(() => undefined)
+    return () => { cancelled = true }
+  }, [])
+  const gapData = live ?? GAP.data
   const perSide = size === '2x2' ? 6 : 4
-  const domesticTop = GAP.data.domestic_favored.slice(0, perSide)
-  const globalTop = GAP.data.global_favored.slice(0, perSide)
+  const domesticTop = gapData.domestic_favored.slice(0, perSide)
+  const globalTop = gapData.global_favored.slice(0, perSide)
   const combined = useMemo(() => [...domesticTop, ...globalTop].sort((a, b) => a.diff - b.diff), [domesticTop, globalTop])
   const maxAbs = Math.max(...combined.map((d) => Math.abs(d.diff)), 1)
-  const topDomestic = GAP.data.domestic_favored[0]
+  const topDomestic = gapData.domestic_favored[0]
 
   const option = useMemo(() => ({
     animationDuration: 700, animationEasing: 'cubicOut',
@@ -745,8 +815,21 @@ const TOPICS = uRaw as unknown as { as_of: string; pool: string; sample_size: nu
 const TOPICS_OPP_SET = new Set(TOPICS.data.opportunities.map((o) => o.tech))
 
 export function GithubTopicsWidget({ size = '2x1' }: { size?: WidgetSize }) {
-  const items = TOPICS.data.items
-  const opp = TOPICS.data.opportunities
+  const [live, setLive] = useState<TopicsData | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    marketApi.githubTopics().then((result) => {
+      if (cancelled || !result.items.length) return
+      const items = result.items.filter((item) => item.job_demand_pct != null).map((item) => ({ tech: item.canonical, category: item.category, repo_reach: item.repo_reach, reach_pct: item.reach_pct, job_demand_pct: item.job_demand_pct ?? 0, owned: item.owned ?? false, reach_pctl: item.reach_pct, demand_pctl: Math.max(0, 100 - (item.job_demand_pct ?? 0)) }))
+      const opportunities = [...items].sort((a, b) => (b.job_demand_pct - b.reach_pct) - (a.job_demand_pct - a.reach_pct)).slice(0, 5)
+      setLive({ items, opportunities })
+    }).catch(() => undefined)
+    return () => { cancelled = true }
+  }, [])
+  const topicData = live ?? TOPICS.data
+  const items = topicData.items
+  const opp = topicData.opportunities
+  const opportunitySet = live ? new Set(opp.map((item) => item.tech)) : TOPICS_OPP_SET
   const top = opp[0]
 
   const option = useMemo(() => ({
@@ -775,14 +858,14 @@ export function GithubTopicsWidget({ size = '2x1' }: { size?: WidgetSize }) {
         value: [d.reach_pct, d.job_demand_pct], raw: d,
         symbolSize: 6 + Math.sqrt(d.repo_reach) * 1.3,
         itemStyle: {
-          color: TOPICS_OPP_SET.has(d.tech) ? '#d9822b' : '#c9c9cf',
+          color: opportunitySet.has(d.tech) ? '#d9822b' : '#c9c9cf',
           borderColor: d.owned ? '#1f9d57' : 'transparent',
           borderWidth: d.owned ? 2 : 0,
-          opacity: TOPICS_OPP_SET.has(d.tech) ? 0.95 : 0.65,
+          opacity: opportunitySet.has(d.tech) ? 0.95 : 0.65,
         },
       })),
     }],
-  }), [items])
+  }), [items, opportunitySet])
 
   return (
     <div className="dcard wow-card">

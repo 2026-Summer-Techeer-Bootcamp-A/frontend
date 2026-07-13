@@ -96,7 +96,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 0 24px 0 20px;
+  padding: 0 16px 0 12px;
 }
 
 /* 톱바 좌측 — 섹션 라벨(항상 표시) + 필 탭 셀렉터 */
@@ -166,8 +166,8 @@
   flex: 1;
   min-width: 0;
   min-height: 0;
-  margin: 0 16px 16px; /* 패널이 없어진 2열 레이아웃 — 좌우 대칭 */
-  padding: 28px;
+  margin: 0 8px 8px;
+  padding: 18px;
   border-radius: 24px;
   border: 1px solid #eef1f6;
   background: var(--c-card); /* 콘텐츠는 흰색 카드 */
