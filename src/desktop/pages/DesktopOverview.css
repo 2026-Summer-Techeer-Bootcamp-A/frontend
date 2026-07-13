@@ -1,4 +1,4 @@
-/* 데스크톱 대시보드 — 검정 히어로 2 + stat 타일 4 + 개인화 위젯 다수의 촘촘한 커맨드센터.
+/* 데스크톱 대시보드 — 히어로 1개(커리어 점수) + KPI stat 4개 + 라벨 섹션 3개의 위계형 커맨드센터.
    모바일 단일컬럼과 완전히 분리된 메인+사이드 멀티컬럼 레이아웃. */
 .dov {
   max-width: 1520px;
@@ -62,29 +62,53 @@
   .dov__rail > * { height: auto; }
 }
 
-/* 좌측 인사이트: 히어로 행 + 2열 masonry.
-   grid는 mixed-height 위젯이 섞이면 stretch로 인해 짧은 위젯이 부풀어 거대한 빈 카드가
-   생긴다(진짜 masonry가 아님) — 그래서 [고정 히어로 행] + [CSS 컬럼 masonry]로 분리해
-   카드가 자연 높이로 흐르게 한다. */
+/* 좌측 인사이트: [Zone1 히어로존] + [Zone2~3 라벨 섹션들].
+   히어로는 1개(커리어 점수)만 크게 두고, 나머지는 제목 붙은 섹션(.dov__sec)으로 그룹해
+   섹션 내부 카드 높이를 grid로 통일한다(리스트형 카드는 내부 스크롤로 흡수). */
 .dov__insights { min-width: 0; }
 
-/* 히어로 행 — 2열 고정 grid. 두 히어로가 항상 나란히, 같은 높이로 정렬된다. */
-.dov__heroes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: stretch; margin-bottom: 14px; }
-.dov__heroes > * { min-width: 0; }
-.dov__heroes .kit-heroStat { height: 100%; }
+/* Zone 1 — 히어로존: 히어로(검정, 크게) + KPI stat 4개. above-fold. */
+.dov__hero-zone { display: flex; flex-direction: column; gap: 14px; margin-bottom: 32px; }
+.dov__hero-cell { width: 100%; }
+.dov__hero-zone .kit-heroStat { min-height: 240px; padding: 28px 30px; }
+.dov__hero-zone .kit-heroStat__eyebrow { font-size: 12.5px; }
+.dov__hero-zone .kit-heroStat__num { font-size: 68px; }
+.dov__hero-zone .kit-heroStat__num span { font-size: 30px; }
+.dov__hero-zone .kit-heroStat__caption { font-size: 14px; }
 
-/* 인사이트 카드 — 2열 CSS 컬럼 masonry. 카드가 위→아래로 자연 높이로 흐르며 다음 컬럼으로
-   넘어가므로 mixed-height라도 void가 생기지 않는다. */
-.dov__cards { column-count: 2; column-gap: 14px; }
-.dov__cards > .dov__card-item { break-inside: avoid; -webkit-column-break-inside: avoid; width: 100%; margin: 0 0 14px; display: block; }
-.dov__cards > .dov__card-item > * { width: 100%; }
+.dov__kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.dov__kpis > * { min-width: 0; height: 100%; }
+
+/* Zone 2~3 — 라벨 섹션. 섹션 사이 32px, 섹션 내부 카드 14~16px. */
+.dov__sec { margin-bottom: 32px; }
+.dov__sec:last-child { margin-bottom: 0; }
+.dov__sec-title { font-size: 17px; font-weight: 800; letter-spacing: -0.3px; color: var(--c-ink); }
+.dov__sec-hint { font-size: 12.5px; color: var(--c-muted); margin-top: 3px; margin-bottom: 16px; }
+
+.dov__sec-grid { display: grid; gap: 16px; align-items: stretch; grid-auto-rows: 1fr; }
+.dov__sec-grid > * { min-width: 0; height: 100%; }
+.dov__sec-grid .dcard,
+.dov__sec-grid > .dov__card-item > * { height: 100%; display: flex; flex-direction: column; }
+.dov__sec-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.dov__sec-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.dov__card-item--wide { grid-column: span 2; }
+
+/* 리스트형 카드(맞춤 공고/마감 임박/브리핑/북마크/최근 본 공고)는 섹션 grid의 equal-height
+   stretch를 내부 스크롤로 흡수해, 짧은 카드까지 무리하게 늘어나지 않게 한다. */
+.dov__sec-grid .dov__jobs,
+.dov__sec-grid .dov__dl,
+.dov__sec-grid .dov__brief { max-height: 340px; overflow-y: auto; }
 
 @media (max-width: 1180px) {
-  .dov__cards { column-count: 2; }
+  .dov__kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dov__sec-grid--3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 720px) {
-  .dov__heroes { grid-template-columns: 1fr; }
-  .dov__cards { column-count: 1; }
+  .dov__kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dov__sec-grid--3,
+  .dov__sec-grid--2 { grid-template-columns: 1fr; }
+  .dov__card-item--wide { grid-column: span 1; }
+  .dov__hero-zone .kit-heroStat__num { font-size: 52px; }
 }
 
 .dov__card-eyebrow {
@@ -95,11 +119,6 @@
   font-weight: 700;
   color: var(--c-muted);
 }
-
-/* 매치 분포 미니 바 (HeroStat B 그래프 슬롯) */
-.dov__distro { display: flex; align-items: flex-end; gap: 4px; height: 44px; }
-.dov__distro i { display: block; width: 8px; border-radius: 3px 3px 1px 1px; background: rgba(255, 255, 255, 0.26); }
-.dov__distro i.on { background: #1f9d57; }
 
 .dov__hdright { display: flex; align-items: center; gap: 10px; }
 
