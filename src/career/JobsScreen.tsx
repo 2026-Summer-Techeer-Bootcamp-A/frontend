@@ -1,13 +1,13 @@
-import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
 import { Search, ChevronUp, SearchX } from 'lucide-react'
 import { SubScreen, PoolToggle } from './charts'
 import { EmptyState } from './states'
 import { CardModeToggle, JobCardCompact, type CardMode } from './kit'
 import { JobCard } from './CareerDashboard'
 import CompanyLogo from './CompanyLogo'
-import data from '../data/careerData.json'
-import { useResumesState, getDynamicPostings } from './state'
+import { useResumesState } from './state'
+import { recruitmentApi, type PostingCardDto } from './recruitmentApi'
+import { getAuthToken } from './authStore'
 
 type Pool = '국내' | '국외'
 type Sort = 'match' | 'tier' | 'latest'
@@ -26,19 +26,47 @@ const SORTS: { key: Sort; label: string }[] = [
 ]
 
 export default function JobsScreen() {
-  const navigate = useNavigate()
   const [q, setQ] = useState('')
   const [pool, setPool] = useState<Pool>('국내')
   const [mode, setMode] = useState<CardMode>('full')
   const [sort, setSort] = useState<Sort>('match')
+  const [postings, setPostings] = useState<PostingCardDto[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   const { activeResume } = useResumesState()
   const activeSkills = activeResume ? activeResume.skills : []
-  const dynamicPostings = useMemo(() => getDynamicPostings(activeSkills), [activeSkills])
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true); setError('')
+    const resumeId = Number(activeResume?.id)
+    const hasMatchedResume = Number.isInteger(resumeId) && !!getAuthToken()
+    recruitmentApi.postings({
+      pool: pool === '국내' ? 'domestic' : 'global', page_size: 100, sort: 'latest',
+      ...(hasMatchedResume ? { resume_id: resumeId, match_only: true } : {}),
+    })
+      .then((result) => { if (!cancelled) setPostings(result.items) })
+      .catch((reason) => { if (!cancelled) setError(reason instanceof Error ? reason.message : '공고를 불러오지 못했습니다.') })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [pool, activeResume?.id])
+
+  const dynamicPostings = useMemo(() => postings.map((p) => {
+    const held = p.skills.filter((skill) => activeSkills.includes(skill))
+    const matched = p.matched_count ?? held.length
+    const total = p.skills.length
+    return {
+      id: String(p.id), title: p.title, company: p.company ?? '회사명 미상', pool,
+      postDate: p.post_date ?? '', closeDate: p.close_date ?? '', techs: p.skills,
+      matchHeld: matched, matchTotal: total, matchPct: total ? Math.round(matched / total * 100) : 0,
+      gap: p.skills.filter((skill) => !activeSkills.includes(skill)), careerMin: null, careerMax: null,
+      tier: null, region: null, logo: '', url: p.url,
+    }
+  }), [postings, activeSkills, pool])
 
   const list = useMemo(() => {
     const s = q.trim().toLowerCase()
-    let arr = dynamicPostings.filter((p) => p.pool === pool)
+    let arr = dynamicPostings
     if (s) arr = arr.filter((p) => (p.company + ' ' + p.title).toLowerCase().includes(s))
     return [...arr].sort((a, b) => {
       if (sort === 'tier') return tierRank(a.tier) - tierRank(b.tier) || b.matchPct - a.matchPct
@@ -67,7 +95,11 @@ export default function JobsScreen() {
       <div className="scr-asof" style={{ marginTop: 12 }}>{list.length}건</div>
 
       <div style={{ marginTop: 8 }}>
-        {list.length === 0 ? (
+        {loading ? (
+          <div className="cr-empty">채용공고를 불러오는 중입니다.</div>
+        ) : error ? (
+          <EmptyState icon={<SearchX size={26} />} title="공고를 불러오지 못했습니다" desc={error} />
+        ) : list.length === 0 ? (
           <EmptyState
             icon={<SearchX size={26} />}
             title={q.trim() ? '검색 결과가 없어요' : '조건에 맞는 공고가 없어요'}
@@ -77,25 +109,23 @@ export default function JobsScreen() {
           />
         ) : mode === 'compact' ? (
           list.map((p) => {
-            const originalIndex = data.postings.findIndex((x) => x.id === p.id)
             return (
               <JobCardCompact
                 key={p.id}
                 job={{ company: p.company, title: p.title, matchPct: p.matchPct, careerLabel: careerLabel(p.careerMin, p.careerMax) }}
                 logo={<CompanyLogo logo={p.logo} name={p.company} size={40} radius={11} />}
-                onOpen={() => navigate(`/job/${originalIndex}`)}
+                onOpen={() => window.open(p.url, '_blank', 'noopener,noreferrer')}
               />
             )
           })
         ) : (
           list.map((p) => {
-            const originalIndex = data.postings.findIndex((x) => x.id === p.id)
             return (
               <JobCard
                 key={p.id}
                 p={p}
                 mySkills={activeSkills}
-                onOpen={() => navigate(`/job/${originalIndex}`)}
+                onOpen={() => window.open(p.url, '_blank', 'noopener,noreferrer')}
               />
             )
           })

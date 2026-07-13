@@ -26,6 +26,7 @@ import { MARKET_WIDGETS } from '../../career/widgetCatalog'
 import { useBookmarks } from '../../career/bookmarkStore'
 import { useRecentViews } from '../../career/viewHistoryStore'
 import { SkillManagerModal } from '../SkillManagerModal'
+import { recruitmentApi } from '../../career/recruitmentApi'
 import marketData from '../../data/marketData.json'
 import data from '../../data/careerData.json'
 import newcomerGate from '../../data/pearl/h.json'
@@ -362,7 +363,7 @@ export function DesktopJobs() {
               </span>
               <MiniScore pct={p.matchPct} size={40} />
             </button>
-          ))}
+              ))}
         </div>
 
         {/* 상세 프리뷰 */}
@@ -1061,7 +1062,20 @@ type Pin = { id: string; lat: number; lng: number; company: string; title: strin
 export function DesktopMap() {
   const elRef = useRef<HTMLDivElement>(null)
   const [sel, setSel] = useState<Pin | null>(null)
-  const pins = marketData.map.pins as Pin[]
+  const [pins, setPins] = useState<Pin[]>([])
+  const { activeResume } = useResumesState()
+
+  useEffect(() => {
+    let cancelled = false
+    const resumeId = Number(activeResume?.id)
+    recruitmentApi.map(Number.isInteger(resumeId) ? { resume_id: resumeId } : {})
+      .then((result) => {
+        if (cancelled) return
+        setPins(result.pins.map((p) => ({ id: String(p.id), lat: p.lat, lng: p.lng, company: p.company ?? '회사명 미상', title: p.title, district: '', matchPct: Math.round(p.match_pct ?? 0), tier: '', logo: '' })))
+      })
+      .catch(() => { if (!cancelled) setPins([]) })
+    return () => { cancelled = true }
+  }, [activeResume?.id])
 
   useEffect(() => {
     if (!elRef.current) return

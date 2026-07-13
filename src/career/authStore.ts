@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react'
 import { authApi } from './api'
 
-// 로그인 세션(목업). 백엔드 연결 전까지 localStorage에 유저만 보관한다.
-// 선택적 게이팅: 로그인 안 해도 앱은 돌아가고, 로그인 시 화면이 유저 정보를 반영한다.
-export type AuthUser = { email: string; nickname: string }
+export type AuthUser = { id: number; email: string; nickname: string | null }
 
 const STORAGE_KEY_AUTH = 'techeer_auth'
+const STORAGE_KEY_TOKEN = 'techeer_auth_token'
 const AUTH_EVENT = 'auth-change'
 
 export function getAuthUser(): AuthUser | null {
@@ -18,11 +17,25 @@ export function getAuthUser(): AuthUser | null {
   }
 }
 
+export function getAuthToken(): string | null {
+  return localStorage.getItem(STORAGE_KEY_TOKEN)
+}
+
 function writeAuthUser(user: AuthUser | null) {
   if (user) localStorage.setItem(STORAGE_KEY_AUTH, JSON.stringify(user))
   else localStorage.removeItem(STORAGE_KEY_AUTH)
   // state.ts 패턴과 동일하게 window 이벤트로 전 화면에 변경을 알린다.
   window.dispatchEvent(new Event(AUTH_EVENT))
+}
+
+function writeAuthToken(token: string | null) {
+  if (token) localStorage.setItem(STORAGE_KEY_TOKEN, token)
+  else localStorage.removeItem(STORAGE_KEY_TOKEN)
+}
+
+function clearAuth() {
+  writeAuthToken(null)
+  writeAuthUser(null)
 }
 
 export function useAuth() {
@@ -34,16 +47,35 @@ export function useAuth() {
     return () => window.removeEventListener(AUTH_EVENT, handle)
   }, [])
 
+  useEffect(() => {
+    const token = getAuthToken()
+    if (!token) return
+
+    let cancelled = false
+    authApi.me(token)
+      .then((freshUser) => {
+        if (!cancelled) writeAuthUser(freshUser)
+      })
+      .catch(() => {
+        if (!cancelled) clearAuth()
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   const login = async (email: string, password: string) => {
-    const { user: u } = await authApi.login({ email, password })
+    const token = await authApi.login({ email, password })
+    writeAuthToken(token.access_token)
+    const u = await authApi.me(token.access_token)
     writeAuthUser(u)
     return u
   }
 
   const signup = async (email: string, password: string, nickname: string) => {
-    const { user: u } = await authApi.signup({ email, password, nickname })
-    writeAuthUser(u)
-    return u
+    await authApi.signup({ email, password, nickname })
+    return login(email, password)
   }
 
   const updateProfile = (patch: Partial<AuthUser>) => {
@@ -52,7 +84,19 @@ export function useAuth() {
     writeAuthUser({ ...cur, ...patch })
   }
 
-  const logout = () => writeAuthUser(null)
+  const logout = async () => {
+    const token = getAuthToken()
+    if (!token) {
+      clearAuth()
+      return
+    }
+
+    try {
+      await authApi.logout(token)
+    } finally {
+      clearAuth()
+    }
+  }
 
   return { user, isAuthed: !!user, login, signup, updateProfile, logout }
 }

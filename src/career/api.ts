@@ -1,41 +1,80 @@
-// ── 목 어댑터 계층 ────────────────────────────────────────────────
-// 지금은 백엔드가 없어 localStorage + 지연 시뮬레이션으로 동작한다.
-// 백엔드 연결 시 각 함수의 "몸통"만 fetch로 교체하면 화면 코드는 그대로 둔다.
-//   예) authApi.login → return (await fetch('/api/v1/auth/login', ...)).json()
-// state.ts / authStore.ts / settingsStore.ts 가 이 어댑터만 바라보게 해서
-// 백엔드 교체 지점을 한 파일로 모은다.
 import type { AuthUser } from './authStore'
-
-const LATENCY = 650
-
-function delay<T>(value: T, ms = LATENCY): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(value), ms))
-}
-function fail(message: string, ms = LATENCY): Promise<never> {
-  return new Promise((_, reject) => setTimeout(() => reject(new Error(message)), ms))
-}
 
 export const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
 
+export type AuthToken = {
+  access_token: string
+  token_type: string
+}
+
+type FastApiValidationError = {
+  msg?: string
+}
+
+function formatApiError(detail: unknown) {
+  if (typeof detail === 'string') return detail
+  if (Array.isArray(detail)) {
+    return detail
+      .map((item: FastApiValidationError) => item.msg ?? '입력값을 확인해주세요')
+      .join('\n')
+  }
+  return '요청에 실패했어요'
+}
+
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const headers = new Headers(options.headers)
+  if (options.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
+
+  const response = await fetch(`/api/v1${path}`, {
+    ...options,
+    headers,
+  })
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => null)
+    throw new Error(formatApiError(data?.detail))
+  }
+
+  if (response.status === 204) return undefined as T
+  return response.json() as Promise<T>
+}
+
 export const authApi = {
-  // 백엔드 자리: POST /api/v1/auth/login → { access_token }, 이어서 GET /me
-  async login({ email, password }: { email: string; password: string }): Promise<{ user: AuthUser }> {
-    if (!isEmail(email)) return fail('이메일 형식을 확인해주세요')
-    if (password.length < 6) return fail('비밀번호는 6자 이상이에요')
-    return delay({ user: { email, nickname: email.split('@')[0] } })
+  login(body: { email: string; password: string }) {
+    return request<AuthToken>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    })
   },
 
-  // 백엔드 자리: POST /api/v1/auth/signup (email, password, nickname)
-  async signup({ email, password, nickname }: { email: string; password: string; nickname: string }): Promise<{ user: AuthUser }> {
-    if (!isEmail(email)) return fail('이메일 형식을 확인해주세요')
-    if (password.length < 6) return fail('비밀번호는 6자 이상이에요')
-    return delay({ user: { email, nickname: nickname.trim() || email.split('@')[0] } })
+  signup(body: { email: string; password: string; nickname: string }) {
+    return request<AuthUser>('/auth/signup', {
+      method: 'POST',
+      body: JSON.stringify({ ...body, nickname: body.nickname.trim() || null }),
+    })
+  },
+
+  me(token: string) {
+    return request<AuthUser>('/auth/me', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+  },
+
+  logout(token: string) {
+    return request<void>('/auth/logout', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
   },
 }
 
 export const settingsApi = {
   // 백엔드 자리: PATCH /api/v1/settings — 지금은 로컬 저장이 정본이라 성공만 흉내낸다.
   async save(): Promise<{ ok: true }> {
-    return delay({ ok: true }, 350)
+    return { ok: true }
   },
 }
