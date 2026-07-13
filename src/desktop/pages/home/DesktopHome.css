@@ -211,6 +211,15 @@
   padding: 8px 16px; border-radius: 16px; font-size: 13px; font-weight: 650; color: var(--c-muted);
 }
 .hfeed-filter__pool button.is-on { background: #fff; color: var(--accent-700); font-weight: 700; box-shadow: var(--e2); }
+/* 정렬 토글(최신순/매칭순) — hfeed-filter__pool과 동일한 필 형태를 재사용한다. */
+.hfeed-filter__sort { display: inline-flex; align-items: center; background: #eef0f4; border-radius: 20px; padding: 3px; }
+.hfeed-filter__sort button {
+  padding: 8px 16px; border-radius: 16px; font-size: 13px; font-weight: 650; color: var(--c-muted);
+}
+.hfeed-filter__sort button.is-on { background: #fff; color: var(--accent-700); font-weight: 700; box-shadow: var(--e2); }
+.hfeed-filter__sort button:focus-visible { outline: 2px solid var(--c-ink); outline-offset: 2px; }
+/* 매칭순을 못 쓰는 상태(비로그인/이력서 없음)에서는 토글 없이 정적 라벨만 보여준다. */
+.hfeed-filter__sort-static { padding: 8px 16px; font-size: 13px; font-weight: 650; color: var(--c-muted); }
 .hfeed-filter__cats {
   display: flex; gap: 8px; margin-top: 8px; overflow-x: auto; scrollbar-width: none;
 }
@@ -263,6 +272,9 @@
 }
 .hfeed-filter__popover-seg button:hover { background: #e2e5ec; }
 .hfeed-filter__popover-seg button.is-on { background: var(--c-ink); color: #fff; }
+/* 기술스택처럼 옵션이 많아질 수 있는 다중 선택 세그먼트는 세로로 접어서 스크롤한다. */
+.hfeed-filter__popover-seg--multi { flex-wrap: wrap; max-height: 120px; overflow-y: auto; }
+.hfeed-filter__popover-empty { font-size: 12px; color: var(--c-muted); }
 .hfeed-filter__popover-range { width: 100%; accent-color: var(--c-ink); }
 .hfeed-filter__popover-rangeval { font-size: 12px; color: var(--c-muted); margin-top: 4px; }
 .hfeed-filter__popover-rangeval b { color: var(--c-ink); font-weight: 700; }
