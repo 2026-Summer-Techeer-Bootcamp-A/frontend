@@ -82,9 +82,11 @@ import WidgetU from './pages/widgets/WidgetU'
 import WidgetY4 from './pages/widgets/WidgetY4'
 import WidgetX from './pages/widgets/WidgetX'
 import RagDocs from './rag/RagDocs'
+import AssistantWorkspace from './rag/AssistantWorkspace'
 import ResponsiveProductLayout from './shared/ResponsiveProductLayout'
 import Adaptive from './shared/Adaptive'
 import DesktopOverview from './desktop/pages/DesktopOverview'
+import DesktopHome from './desktop/pages/home/DesktopHome'
 import { DesktopJobs, DesktopMarket, DesktopMy } from './desktop/pages/placeholders'
 
 export default function App() {
@@ -101,6 +103,7 @@ export default function App() {
           모바일: 프레임리스 모바일 화면. Adaptive가 폭으로 본문을 스왑한다. */}
       <Route element={<ResponsiveProductLayout />}>
         <Route path="/" element={<Adaptive mobile={CareerDashboard} desktop={DesktopOverview} />} />
+        <Route path="/home" element={<DesktopHome />} />
         <Route path="/jobs" element={<Adaptive mobile={JobsScreen} desktop={DesktopJobs} />} />
         <Route path="/market" element={<Adaptive mobile={MarketScreen} desktop={DesktopMarket} />} />
         <Route path="/resume" element={<Adaptive mobile={ResumeScreen} desktop={DesktopMy} />} />
@@ -117,6 +120,7 @@ export default function App() {
         <Route path="/job/:id" element={<JobDetail />} />
         <Route path="/tech/:name" element={<TechDetail />} />
         <Route path="/states" element={<StatesGallery />} />
+        <Route path="/assistant" element={<AssistantWorkspace />} />
       </Route>
 
       {/* ─── 자잘한 화면 세트: 인증 · 시스템 상태 (선택적 게이팅) ─── */}
