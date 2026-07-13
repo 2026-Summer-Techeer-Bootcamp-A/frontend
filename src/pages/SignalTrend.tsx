@@ -294,7 +294,7 @@ export default function SignalTrend() {
               <defs>
                 <linearGradient id="stOwned" x1="0" y1="0" x2="1" y2="0">
                   <stop offset="0%" stopColor="#5a86cf" />
-                  <stop offset="100%" stopColor="#2f61b8" />
+                  <stop offset="100%" stopColor="#0b0b0c" />
                 </linearGradient>
                 <filter id="stGlow" x="-40%" y="-40%" width="180%" height="180%">
                   <feGaussianBlur stdDeviation="4" />
@@ -433,15 +433,15 @@ export default function SignalTrend() {
             <svg viewBox={`0 0 ${volW} ${volH}`} preserveAspectRatio="none" className="st-pulse__svg" aria-hidden="true">
               <defs>
                 <linearGradient id="stVolFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#2f61b8" stopOpacity="0.20" />
-                  <stop offset="100%" stopColor="#2f61b8" stopOpacity="0" />
+                  <stop offset="0%" stopColor="#0b0b0c" stopOpacity="0.20" />
+                  <stop offset="100%" stopColor="#0b0b0c" stopOpacity="0" />
                 </linearGradient>
               </defs>
               <path d={volAreaD} fill="url(#stVolFill)" />
               <path d={volLineD} fill="none" stroke="#5a86cf" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               {volPts.map((p, i) => (
                 <circle key={i} cx={p.x} cy={p.y} r={i === model.peakIdx ? 3.6 : 2.4}
-                  fill={i === model.peakIdx ? '#2f61b8' : '#3a4150'}
+                  fill={i === model.peakIdx ? '#0b0b0c' : '#3a4150'}
                   stroke={i === model.peakIdx ? '#eef3fb' : 'none'} strokeWidth="1.4" />
               ))}
             </svg>

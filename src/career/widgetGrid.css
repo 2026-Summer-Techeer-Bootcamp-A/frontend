@@ -1,0 +1,22 @@
+/* 대시보드/시장 페이지가 공유할 통일 위젯 그리드. 아직 어느 페이지에서도 import하지
+   않는다 — 다음 웨이브 작업이 각 페이지 레이아웃에 적용한다. */
+/* 셀이 행 높이만큼 확장되고, 각 위젯이 그 공간을 채워 그리드 정렬이 깔끔하게 함. */
+.wgrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: minmax(124px, auto); gap: 14px; align-items: stretch; }
+/* 위젯 카드가 셀을 채우도록 flex로 확장 */
+.wcell > * { flex: 1 1 auto; min-height: 0; }
+/* 병합형 카드(.dcard.wcell): 자식을 늘리지 말고 위에서부터 정렬 — 콘텐츠 세로 중앙정렬로 인한 상단 공백 방지 */
+.wcell.dcard { justify-content: flex-start; }
+.wcell.dcard > * { flex: 0 0 auto; }
+.wcell { min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
+.wcell--1x1 { grid-column: span 1; grid-row: span 1; }
+.wcell--2x1 { grid-column: span 2; grid-row: span 1; }
+.wcell--2x2 { grid-column: span 2; grid-row: span 2; }
+.wcell--1x2 { grid-column: span 1; grid-row: span 2; }
+@media (max-width: 1180px) {
+  .wgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .wcell--2x2 { grid-row: span 2; }
+}
+@media (max-width: 640px) {
+  .wgrid { grid-template-columns: 1fr; }
+  .wcell--1x1, .wcell--2x1, .wcell--2x2, .wcell--1x2 { grid-column: span 1; }
+}

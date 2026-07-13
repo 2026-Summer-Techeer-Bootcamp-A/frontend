@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { ChevronDown, ChevronRight, Search, Plus, Check, X } from 'lucide-react'
+import { ChevronDown, ChevronRight, Search, Plus, Check, X, Settings2 } from 'lucide-react'
 import {
   siPython, siJavascript, siTypescript, siReact, siNodedotjs, siPostgresql, siGit,
   siDocker, siHtml5, siCss, siMysql, siLinux, siKubernetes, siGooglecloud, siTerraform,
@@ -7,6 +7,10 @@ import {
   siMongodb, siGraphql, siApachekafka, siRuby, siPhp, siNginx, siElasticsearch,
   siFlutter, siJira, siNextdotjs, siExpress, siMariadb,
 } from 'simple-icons'
+import { Sparkline } from './charts'
+import { useDashboardConfig, toggleWidget, getWidgetSize, setWidgetSize, type WidgetSection } from './dashboardConfig'
+import type { WidgetCatalogItem } from './widgetCatalog'
+import { WidgetShapeIcon } from './widgetIcons'
 import './kit.css'
 
 // 실제 브랜드 아이콘 (simple-icons). 상표 이슈로 없는 것은 이니셜 배지로 폴백.
@@ -74,7 +78,7 @@ export function StatHero({
    "도달률"(실제 지원 가능한 공고 비율)을 함께 겹쳐 보여주는 요약. */
 export type RingMetric = { key: string; label: string; pct: number; ghost?: number; color: string; note?: string }
 
-export function ActivityRings({ metrics, size = 66 }: { metrics: RingMetric[]; size?: number }) {
+export function ActivityRings({ metrics, size = 66, trackColor = 'var(--accent-50)' }: { metrics: RingMetric[]; size?: number; trackColor?: string }) {
   const sw = size * 0.115
   const gap = sw * 0.32
   const c = size / 2
@@ -87,7 +91,7 @@ export function ActivityRings({ metrics, size = 66 }: { metrics: RingMetric[]; s
         const off = (v: number) => circ * (1 - Math.max(0, Math.min(100, v)) / 100)
         return (
           <g key={m.key} transform={`rotate(-90 ${c} ${c})`}>
-            <circle cx={c} cy={c} r={r} fill="none" stroke="var(--accent-50)" strokeWidth={sw} />
+            <circle cx={c} cy={c} r={r} fill="none" stroke={trackColor} strokeWidth={sw} />
             {m.ghost != null && m.ghost > m.pct && (
               <circle
                 cx={c} cy={c} r={r} fill="none" stroke={m.color} opacity={0.32} strokeWidth={sw} strokeLinecap="round"
@@ -221,11 +225,12 @@ export function CoverageHistogram({
       </div>
       <div className="kit-hist__axis"><span>0%</span><span className="thr">문턱 {threshold}%</span><span>100%</span></div>
       <div className="kit-hist__whatif-label">이 기술을 배우면? (커버리지 상승순)</div>
-      <div className="kit-whatif__chips" style={{ marginTop: 6 }}>
+      <div className="kit-hist__whatif-chips" style={{ marginTop: 6 }}>
         {sortedGap.map((g) => (
-          <button key={g.tech} className={`kit-whatif__chip${added.includes(g.tech) ? ' on' : ''}`}
+          <button key={g.tech} className={`kit-hist__whatif-chip${added.includes(g.tech) ? ' on' : ''}`}
             onClick={() => toggle(g.tech)}>
-            +{g.tech} (+{g.pctIncrease}%)
+            <TechIcon tech={g.tech} size={14} />
+            <span>{g.tech}</span>
           </button>
         ))}
       </div>
@@ -363,9 +368,8 @@ const TECH: Record<string, [string, string]> = {
 // 매칭% → 채도 그라데이션. 100%=진한 accent, 낮을수록 채도가 빠짐.
 export function matchGrad(pct: number): string {
   const p = Math.max(0, Math.min(100, pct)) / 100
-  const sat = 26 + p * 33 // 26% ~ 59%(accent)
-  const lig = 52 - p * 7 // 52% ~ 45%(accent)
-  return `linear-gradient(90deg, hsl(217 ${Math.round(sat * 0.72)}% ${Math.round(lig + 8)}%), hsl(217 ${Math.round(sat)}% ${Math.round(lig)}%))`
+  const lig = 74 - p * 62 // 74% (light gray, low match) ~ 12% (near-black, high match)
+  return `linear-gradient(90deg, hsl(220 4% ${Math.round(lig + 10)}%), hsl(220 4% ${Math.round(lig)}%))`
 }
 
 function techLabel(t: string) { return TECH[t]?.[0] ?? (t.replace(/[^A-Za-z0-9]/g, '').slice(0, 2) || t.slice(0, 2)) }
@@ -490,6 +494,76 @@ export function SectionHeader({ title, hint, right }: { title: string; hint?: st
         {hint && <span className="kit-sec__h">{hint}</span>}
       </div>
       {right}
+    </div>
+  )
+}
+
+/* ---------- 5b. 위젯 표시/숨김 설정 — 기어 버튼 + 팝오버 ---------- */
+export function WidgetSettingsMenu({ section, items }: { section: WidgetSection; items: WidgetCatalogItem[] }) {
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+  const config = useDashboardConfig()
+  const hidden = config.hidden[section]
+
+  useEffect(() => {
+    if (!open) return
+    const onPointerDown = (e: PointerEvent) => {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [open])
+
+  return (
+    <div className="kit-wset" ref={rootRef}>
+      <button
+        type="button"
+        className="kit-wset__btn"
+        aria-label="위젯 표시 설정"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+      >
+        <Settings2 size={16} />
+      </button>
+      {open && (
+        <div className="kit-wset__pop" role="menu">
+          <div className="kit-wset__pop-title">위젯 표시</div>
+          {items.map((it) => (
+            <div key={it.id} className="kit-wset__row2">
+              <span className="kit-wset__shape"><WidgetShapeIcon shape={it.shape} size={20} /></span>
+              <label className="kit-wset__row2-main">
+                <input
+                  type="checkbox"
+                  checked={!hidden.includes(it.id)}
+                  onChange={() => toggleWidget(section, it.id)}
+                />
+                <span>{it.label}</span>
+              </label>
+              {it.allowedSizes.length > 1 && (
+                <div className="kit-wset__sizepills">
+                  {it.allowedSizes.map((sz) => (
+                    <button
+                      key={sz}
+                      type="button"
+                      className={`kit-wset__sizepill${getWidgetSize(section, it.id, it.defaultSize) === sz ? ' on' : ''}`}
+                      onClick={() => setWidgetSize(section, it.id, sz)}
+                    >
+                      {sz}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -649,6 +723,54 @@ export function SegmentedControl({
       ))}
     </div>
   )
+}
+
+/* ---------- 13. 검정 히어로 스탯 카드 (대시보드 커맨드센터) ----------
+   macOS 위젯 톤: 숫자 좌하단 강조 + 심플 그래프. value는 이미 렌더링된
+   ReactNode(카운트업 등은 호출부에서 useCountUp으로 만들어 넘긴다)라
+   숫자가 아닌 콘텐츠도 그대로 받을 수 있다. */
+export function HeroStat({
+  eyebrow, value, unit, caption, chart, footChips,
+}: { eyebrow: string; value: ReactNode; unit?: string; caption?: ReactNode; chart?: ReactNode; footChips?: ReactNode }) {
+  return (
+    <div className="kit-heroStat">
+      <div className="kit-heroStat__top">
+        <span className="kit-heroStat__eyebrow">{eyebrow}</span>
+        {chart && <div className="kit-heroStat__chart">{chart}</div>}
+      </div>
+      <div className="kit-heroStat__bottom">
+        <div className="kit-heroStat__num">
+          {value}{unit && <span>{unit}</span>}
+        </div>
+        {caption && <div className="kit-heroStat__caption">{caption}</div>}
+        {footChips && <div className="kit-heroStat__chips">{footChips}</div>}
+      </div>
+    </div>
+  )
+}
+
+/* ---------- 14. stat 타일 (촘촘한 대시보드용 초소형 카드) ---------- */
+export function StatTile({
+  label, value, unit, delta, spark,
+}: { label: string; value: ReactNode; unit?: string; delta?: string; spark?: number[] }) {
+  return (
+    <div className="kit-statTile">
+      <div className="kit-statTile__top">
+        <span className="kit-statTile__label">{label}</span>
+        {spark && spark.length > 1
+          ? <Sparkline data={spark} w={52} h={22} />
+          : delta && <span className="kit-statTile__delta">{delta}</span>}
+      </div>
+      <div className="kit-statTile__num">
+        {value}{unit && <span>{unit}</span>}
+      </div>
+    </div>
+  )
+}
+
+/* ---------- 15. 프리뷰 배지 (mock 폴백 위젯 표식) ---------- */
+export function PreviewBadge() {
+  return <span className="kit-previewBadge">preview</span>
 }
 
 /* ---------- 유틸: 카운트업 ---------- */

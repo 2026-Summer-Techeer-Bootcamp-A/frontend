@@ -1,0 +1,266 @@
+/* ============================================================
+   와우포인트 위젯 7종 — src/career/wowWidgets.tsx 전용 스타일.
+   모노크롬(near-black) + 그린(#1f9d57, 긍정/보유) + 앰버(#d9822b, 기회/주의)만.
+   .wcell 안에 들어갈 때 부모가 크기를 정하므로 카드는 height:100%로 채운다.
+   ============================================================ */
+
+.wow-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.wow-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.wow-headline {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--c-muted);
+  margin: 0;
+}
+.wow-headline b { color: var(--c-ink); font-weight: 800; }
+
+.wow-scope {
+  display: inline-block;
+  align-self: flex-start;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--accent-700, #18181b);
+  background: var(--accent-50, #f0f0f1);
+  border-radius: 7px;
+  padding: 3px 8px;
+}
+
+/* ---------- 미니(1x1) 카운트 강조 ---------- */
+.wow-mini { display: flex; flex-direction: column; gap: 2px; }
+.wow-mini__num { font-size: 26px; font-weight: 800; letter-spacing: -0.6px; color: var(--c-ink); line-height: 1.1; }
+.wow-mini__lbl { font-size: 11.5px; color: var(--c-muted); font-weight: 600; }
+
+.wow-unlock-mini { display: flex; flex-direction: column; gap: 4px; justify-content: center; flex: 1; }
+.wow-unlock-mini__tech { font-size: 17px; font-weight: 800; color: var(--c-ink); }
+.wow-unlock-mini__delta { font-size: 14px; font-weight: 800; color: #d9822b; }
+
+/* ---------- 위젯 1: 타임라인 ---------- */
+.wow-timeline {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 68px;
+  flex: none;
+}
+.wow-timeline--mini { height: 44px; flex: 1; }
+.wow-timeline__col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  gap: 3px;
+}
+.wow-timeline__bar {
+  position: relative;
+  width: 100%;
+  max-width: 7px;
+  border-radius: 2px 2px 0 0;
+  background: #e4e4e7;
+  overflow: hidden;
+}
+.wow-timeline__bar i {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: block;
+  background: #1f9d57;
+  border-radius: 2px 2px 0 0;
+}
+.wow-timeline__lbl {
+  font-size: 9px;
+  color: var(--c-muted);
+  font-weight: 600;
+  white-space: nowrap;
+  height: 12px;
+}
+
+.wow-joblist__label {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--c-muted);
+  margin: 2px 0 0;
+}
+.wow-joblist {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.wow-joblist__row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  text-align: left;
+  padding: 10px 8px;
+  border-radius: 12px;
+  border-top: 1px solid var(--line);
+  transition: background 0.12s ease;
+}
+.wow-joblist__row:first-child { border-top: none; }
+.wow-joblist__row:hover { background: var(--accent-50, #f5f5f6); }
+.wow-joblist__row:active { background: var(--accent-100, #e4e4e7); }
+.wow-joblist__top { display: flex; align-items: center; gap: 10px; }
+.wow-joblist__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.wow-joblist__meta { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.wow-joblist__co { font-size: 10.5px; font-weight: 700; color: var(--c-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wow-joblist__date { flex: none; font-size: 11px; font-weight: 600; color: var(--c-muted); text-align: right; }
+.wow-joblist__title {
+  display: flex; align-items: center; gap: 5px; min-width: 0;
+}
+.wow-joblist__title-text {
+  font-size: 13px; font-weight: 700; color: var(--c-ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+.wow-jobbadge {
+  flex: none;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 999px;
+  color: #1f9d57;
+  background: #e6f5ed;
+}
+.wow-joblist__loc { font-size: 10.5px; font-weight: 600; color: var(--c-muted); }
+.wow-joblist__chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.wow-chip {
+  font-size: 10px; font-weight: 700;
+  border-radius: 6px; padding: 2px 6px; white-space: nowrap;
+}
+.wow-chip--held { color: #1f9d57; background: #e6f5ed; }
+.wow-chip--gap { color: var(--c-muted); background: var(--accent-100, #e4e4e7); }
+.wow-chip--more { opacity: 0.8; }
+
+/* ---------- 위젯 2: 학습 로드맵 ---------- */
+.wow-steps { display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 0; overflow-y: auto; }
+.wow-steps__row { display: flex; align-items: center; gap: 10px; }
+.wow-steps__badge {
+  flex: none; width: 22px; height: 22px; border-radius: 999px;
+  background: var(--c-accent); color: #fff; font-size: 11px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+}
+.wow-steps__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.wow-steps__t { display: flex; align-items: baseline; gap: 6px; font-size: 13px; color: var(--c-ink); }
+.wow-steps__cat { font-size: 10.5px; font-weight: 600; color: var(--c-muted); }
+.wow-steps__track { height: 5px; border-radius: 999px; background: #eef1f6; overflow: hidden; }
+.wow-steps__track i { display: block; height: 100%; border-radius: 999px; background: var(--accent-300, #a1a1aa); }
+.wow-steps__delta { flex: none; font-size: 12px; font-weight: 800; color: #1f9d57; }
+
+.wow-progress { display: flex; align-items: center; gap: 10px; flex: none; }
+.wow-progress__track { flex: 1; height: 8px; border-radius: 999px; background: #eef1f6; overflow: hidden; }
+.wow-progress__track i { display: block; height: 100%; border-radius: 999px; background: #1f9d57; }
+.wow-progress__cap { flex: none; font-size: 11px; font-weight: 700; color: var(--c-muted); white-space: nowrap; }
+
+/* ---------- 세그먼트 선택(직군/개념) ---------- */
+.wow-seg { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+.wow-seg--scroll { flex-wrap: nowrap; overflow-x: auto; max-width: 220px; }
+.wow-seg__btn {
+  flex: none; font-size: 11px; font-weight: 700; color: var(--c-muted);
+  background: var(--accent-50, #f0f0f1); border-radius: 999px; padding: 4px 9px;
+  white-space: nowrap; transition: background 0.13s ease, color 0.13s ease;
+}
+.wow-seg__btn.on { color: #fff; background: var(--c-accent); }
+
+/* ---------- 위젯 3: 한계 해금 ---------- */
+.wow-funnel { display: flex; flex-direction: column; gap: 6px; flex: none; }
+.wow-funnel__bar { display: flex; height: 10px; border-radius: 999px; overflow: hidden; background: #eef1f6; }
+.wow-funnel__bar i { display: block; height: 100%; }
+.wow-funnel__bar i.apply { background: #1f9d57; }
+.wow-funnel__bar i.near1 { background: #d9822b; }
+.wow-funnel__bar i.near23 { background: #c9c9cf; }
+.wow-funnel__bar i.far { background: #eef1f6; }
+.wow-funnel__cap { margin: 0; font-size: 11.5px; color: var(--c-muted); }
+.wow-funnel__cap b { color: var(--c-ink); }
+
+.wow-unlock-list { display: flex; flex-direction: column; gap: 6px; flex: 1; min-height: 0; overflow-y: auto; }
+.wow-unlock-row { display: flex; align-items: center; gap: 8px; }
+.wow-unlock-row__tech { flex: none; width: 84px; font-size: 12px; font-weight: 700; color: var(--c-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wow-unlock-row__track { flex: 1; height: 8px; border-radius: 999px; background: #eef1f6; overflow: hidden; }
+.wow-unlock-row__track i { display: block; height: 100%; border-radius: 999px; background: #d9822b; }
+.wow-unlock-row__val { flex: none; font-size: 11.5px; font-weight: 800; color: #d9822b; width: 44px; text-align: right; }
+.wow-unlock-row__req { flex: none; font-size: 10.5px; color: var(--c-muted); width: 56px; text-align: right; }
+
+/* ---------- 위젯 4: Hype vs Hire ---------- */
+.wow-scatter-split { display: flex; gap: 14px; flex: 1; min-height: 0; }
+.wow-scatter-split > div:first-child { flex: 1.5; min-width: 0; }
+.wow-pearls { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; }
+.wow-pearls__title { font-size: 11px; font-weight: 700; color: var(--c-muted); }
+.wow-pearls__row { display: flex; flex-direction: column; gap: 1px; padding: 6px 8px; border-radius: 10px; background: #fbeee2; }
+.wow-pearls__tech { font-size: 12.5px; font-weight: 800; color: var(--c-ink); }
+.wow-pearls__sub { font-size: 10.5px; color: #b56a24; font-weight: 600; }
+
+/* ---------- 위젯 5: 회사가 원하는 역량 ---------- */
+.wow-comp-list { display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 0; overflow-y: auto; }
+.wow-comp-row { display: flex; align-items: center; gap: 10px; }
+.wow-comp-row__key { flex: none; width: 78px; font-size: 12px; font-weight: 700; color: var(--c-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wow-comp-row__track { position: relative; flex: 1; height: 10px; border-radius: 999px; background: #f0f0f1; overflow: hidden; }
+.wow-comp-row__track i { position: absolute; left: 0; top: 0; height: 100%; border-radius: 999px; }
+.wow-comp-row__track i.pref { background: #d9822b; opacity: 0.5; }
+.wow-comp-row__track i.req { background: var(--c-accent); }
+.wow-comp-row__pct { flex: none; width: 34px; text-align: right; font-size: 11.5px; font-weight: 800; color: var(--c-ink); }
+
+.wow-legend2 { display: flex; gap: 12px; font-size: 11px; font-weight: 600; color: var(--c-muted); flex: none; }
+.wow-legend2 span { display: inline-flex; align-items: center; gap: 5px; }
+.wow-legend2 i { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
+.wow-legend2 i.req { background: var(--c-accent); }
+.wow-legend2 i.pref { background: #d9822b; opacity: 0.6; }
+
+/* ---------- 위젯 6: 응답 잘 오는 회사 ---------- */
+.wow-median { display: flex; align-items: baseline; gap: 8px; flex: none; }
+.wow-median__num { font-size: 30px; font-weight: 800; letter-spacing: -0.8px; color: var(--c-ink); }
+.wow-median__num small { font-size: 16px; font-weight: 700; margin-left: 1px; }
+.wow-median__lbl { font-size: 11.5px; color: var(--c-muted); font-weight: 600; }
+
+.wow-levels { display: flex; align-items: flex-end; gap: 8px; height: 52px; flex: none; }
+.wow-levels__col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+.wow-levels__track { width: 100%; max-width: 22px; height: 36px; display: flex; align-items: flex-end; border-radius: 4px 4px 0 0; overflow: hidden; background: #f7f7f8; }
+.wow-levels__track i { display: block; width: 100%; border-radius: 4px 4px 0 0; }
+.wow-levels__col span { font-size: 9px; color: var(--c-muted); font-weight: 600; white-space: nowrap; }
+
+.wow-companies { display: flex; flex-direction: column; gap: 4px; flex: 1; min-height: 0; overflow-y: auto; }
+.wow-companies__row { display: flex; align-items: center; gap: 8px; padding: 5px 4px; border-top: 1px solid var(--line); }
+.wow-companies__row:first-child { border-top: none; }
+.wow-companies__name { flex: 1; min-width: 0; font-size: 12.5px; font-weight: 700; color: var(--c-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wow-companies__rate { flex: none; font-size: 12.5px; font-weight: 800; color: #1f9d57; }
+.wow-companies__chip { flex: none; font-size: 10px; font-weight: 700; color: var(--c-muted); background: var(--accent-50, #f0f0f1); border-radius: 6px; padding: 2px 6px; }
+
+/* ---------- 위젯 7: 개념 → 기술 시그니처 ---------- */
+.wow-concept-top { display: flex; gap: 10px; flex: none; }
+.wow-concept-top__demand { font-size: 11.5px; font-weight: 700; color: var(--c-muted); }
+.wow-concept-top__cov { font-size: 11.5px; font-weight: 800; color: #1f9d57; }
+
+.wow-sig-list { display: flex; flex-direction: column; gap: 6px; flex: 1; min-height: 0; overflow-y: auto; }
+.wow-sig-row { display: flex; align-items: center; gap: 8px; }
+.wow-sig-row__tech { flex: none; width: 96px; display: inline-flex; align-items: center; gap: 3px; font-size: 12px; font-weight: 700; color: var(--c-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wow-sig-row__check { flex: none; color: #1f9d57; }
+.wow-sig-row__track { flex: 1; height: 8px; border-radius: 999px; background: #eef1f6; overflow: hidden; }
+.wow-sig-row__track i { display: block; height: 100%; border-radius: 999px; background: var(--accent-300, #a1a1aa); }
+.wow-sig-row__lift { flex: none; font-size: 10.5px; font-weight: 800; color: #d9822b; width: 48px; text-align: right; }
+
+.wow-tech-all { display: flex; flex-wrap: wrap; gap: 5px; flex: none; }
+.wow-tech-chip {
+  font-size: 10.5px; font-weight: 700; color: var(--c-muted); background: var(--accent-50, #f0f0f1);
+  border-radius: 999px; padding: 3px 8px;
+}
+.wow-tech-chip.owned { color: #1f9d57; background: #e6f5ed; }

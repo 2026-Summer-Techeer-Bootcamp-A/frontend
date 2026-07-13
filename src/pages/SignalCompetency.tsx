@@ -10,7 +10,7 @@ import './signalCompetency.css'
    viz = ECharts (오버레이 바 · 수요 바). 디자인 = signature-language.md.
    ================================================================ */
 
-const BLUE = '#2f61b8'
+const BLUE = '#0b0b0c'
 const BLUE_ON = '#5a86cf'
 const AMBER = '#d9932f'
 const ON = '#f4f6fb'
@@ -139,7 +139,7 @@ function conceptOption() {
     grid: { left: 118, right: 52, top: 6, bottom: 6 },
     tooltip: {
       trigger: 'axis',
-      axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(47,97,184,0.06)' } },
+      axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(11, 11, 12,0.06)' } },
       backgroundColor: '#fff',
       borderColor: '#e2e5ec',
       borderWidth: 1,

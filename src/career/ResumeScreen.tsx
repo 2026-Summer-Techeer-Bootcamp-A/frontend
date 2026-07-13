@@ -1,9 +1,9 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Award, Bookmark, Bell, Shield, Settings, LogOut, LogIn, Plus, X, Briefcase, User, FileText, ChevronRight } from 'lucide-react'
+import { Award, Bookmark, Bell, Shield, Settings, LogOut, LogIn, Plus, Briefcase, User, FileText, ChevronRight } from 'lucide-react'
 import { CareerScreen, ScreenHead } from './charts'
 import { MenuRow, SectionHeader, SkillChip, TechSearchSheet } from './kit'
-import { useResumesState, calculateCoverage, type Resume } from './state'
+import { useResumesState, calculateCoverage } from './state'
 import { useAuth } from './authStore'
 import LogoutSheet from './auth/LogoutSheet'
 import techs from '../data/techs.json'
@@ -17,11 +17,10 @@ function careerText(min: number | null, max: number | null) {
 
 export default function ResumeScreen() {
   const navigate = useNavigate()
-  const { resumes, activeId, activeResume, updateResumes, selectResume, addResume } = useResumesState()
+  const { resumes, activeResume, updateResumes } = useResumesState()
   const { user, isAuthed, logout } = useAuth()
   const [pickerOpen, setPickerOpen] = useState(false)
   const [logoutOpen, setLogoutOpen] = useState(false)
-  const uid = useRef(Date.now())
 
   const displayName = user?.nickname ?? '리버'
   const displayEmail = user?.email ?? 'bootcamp@example.com'
@@ -42,45 +41,9 @@ export default function ResumeScreen() {
     updateResumes(updated)
   }
 
-  const delResume = (id: string) => {
-    if (resumes.length <= 1) return
-    const nl = resumes.filter((x) => x.id !== id)
-    updateResumes(nl)
-    if (activeId === id) {
-      selectResume(nl[0].id)
-    }
-  }
-
-  const handleAddResume = () => {
-    const id = `rx${uid.current++}`
-    const newResume: Resume = {
-      id,
-      title: '새 이력서',
-      skills: [],
-      position: '직무 미정',
-      careerMin: 0,
-      careerMax: 0,
-      coveragePct: 0,
-    }
-    addResume(newResume)
-  }
-
   return (
     <CareerScreen active="resume">
       <ScreenHead title="마이" sub="내 이력서와 커버리지" />
-
-      {/* 이력서 전환 · 추가/삭제 (토큰 칩) */}
-      <div className="scr-rchips">
-        {resumes.map((x, i) => (
-          <span key={x.id} className={`kit-schip rchip${activeId === x.id ? ' on' : ''}`} onClick={() => selectResume(x.id)}>
-            이력서 {i + 1}
-            {resumes.length > 1 && (
-              <button className="kit-schip__x" onClick={(e) => { e.stopPropagation(); delResume(x.id) }} aria-label="삭제"><X size={12} /></button>
-            )}
-          </span>
-        ))}
-        <button className="kit-schip add" onClick={handleAddResume}><Plus size={14} /> 추가</button>
-      </div>
 
       {/* 계정 카드 — 담백하게: 아바타 이니셜 + 이름/이메일 + 정보수정, 아래 목표직무·경력 2단 */}
       <div className="cr-profile">

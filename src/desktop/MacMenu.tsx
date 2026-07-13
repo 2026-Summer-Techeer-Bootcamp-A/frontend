@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import './macmenu.css'
 
 /* macOS 풀다운 메뉴(mg-menu) 문법을 우리 팔레트로 틴트한 범용 드롭다운.
-   /design-system/apple-mac 의 글래스 메뉴를 참고하되 액센트는 #2f61b8, 파괴적 액션은 #c8382d를 쓴다. */
+   /design-system/apple-mac 의 글래스 메뉴를 참고하되 액센트는 #0b0b0c, 파괴적 액션은 #c8382d를 쓴다. */
 
 export type MacMenuItem = {
   icon?: ReactNode

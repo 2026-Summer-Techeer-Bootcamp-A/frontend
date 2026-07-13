@@ -31,7 +31,8 @@ export function CareerScreen({ active, children }: { active: CareerTab; children
     데스크톱 셸 크롬은 라우트 레이아웃(ResponsiveProductLayout)이 씌우므로 여기선 본문만 그린다.
     desktopBack: 데스크톱에서 뒤로 버튼을 보여줄지 여부 — 패널에서 바로 진입하는 화면은
     돌아갈 이전 화면 개념이 없어 기본값 false. 상세 페이지처럼 목록에서 밀고 들어온
-    화면만 true로 켠다. */
+    화면만 true로 켠다. 타이틀도 같은 기준 — 톱바(섹션 라벨+필 탭)가 이미 위치를
+    말해주므로, 콘텐츠 고유 제목이 있는 상세 페이지(desktopBack)에서만 그린다. */
 export function SubScreen({ title, children, desktopBack = false }: { title: string; children: ReactNode; desktopBack?: boolean }) {
   const t = THEME
   const navigate = useNavigate()
@@ -44,7 +45,7 @@ export function SubScreen({ title, children, desktopBack = false }: { title: str
             <ChevronLeft size={17} /> 뒤로
           </button>
         )}
-        <h1 className="dsub__title">{title}</h1>
+        {desktopBack && <h1 className="dsub__title">{title}</h1>}
         <div className="dsub__content">{children}</div>
       </div>
     )
@@ -247,7 +248,7 @@ export function Heatmap({
           {cols.map((c, ci) => {
             const v = matrix[ri][ci]
             return (
-              <div key={c} className="scr-heat__cell" style={{ background: `rgba(47,97,184,${(v / max).toFixed(2)})` }}>
+              <div key={c} className="scr-heat__cell" style={{ background: `rgba(11, 11, 12,${(v / max).toFixed(2)})` }}>
                 <span style={{ color: v / max > 0.5 ? '#fff' : 'var(--c-muted)' }}>{v}</span>
               </div>
             )

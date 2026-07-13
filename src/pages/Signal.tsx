@@ -214,13 +214,13 @@ export default function Signal() {
               <defs>
                 <radialGradient id="sgOwned" cx="38%" cy="34%" r="72%">
                   <stop offset="0%" stopColor="#7ba0dd" />
-                  <stop offset="52%" stopColor="#2f61b8" />
+                  <stop offset="52%" stopColor="#0b0b0c" />
                   <stop offset="100%" stopColor="#254c92" />
                 </radialGradient>
                 <radialGradient id="sgHot" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="#2f61b8" stopOpacity="0.20" />
-                  <stop offset="55%" stopColor="#2f61b8" stopOpacity="0.07" />
-                  <stop offset="100%" stopColor="#2f61b8" stopOpacity="0" />
+                  <stop offset="0%" stopColor="#0b0b0c" stopOpacity="0.20" />
+                  <stop offset="55%" stopColor="#0b0b0c" stopOpacity="0.07" />
+                  <stop offset="100%" stopColor="#0b0b0c" stopOpacity="0" />
                 </radialGradient>
                 <filter id="sgGlow" x="-80%" y="-80%" width="260%" height="260%">
                   <feGaussianBlur stdDeviation="7" />
@@ -237,7 +237,7 @@ export default function Signal() {
               <g filter="url(#sgField)">
                 {model.points.map((p) => (
                   <circle key={`fld${p.tech}`} cx={p.x} cy={p.y} r="50"
-                    fill="#2f61b8" opacity={p.owned ? 0.09 : 0.05} />
+                    fill="#0b0b0c" opacity={p.owned ? 0.09 : 0.05} />
                 ))}
               </g>
 
@@ -306,7 +306,7 @@ export default function Signal() {
                   onMouseEnter={() => setHover(p.tech)}
                   onMouseLeave={() => setHover(null)}
                   style={{ animationDelay: `${180 + i * 44}ms`, opacity: hover && hover !== p.tech ? 0.5 : 1 }}>
-                  <circle cx={p.x} cy={p.y} r={p.r + 6} fill="#2f61b8" opacity="0.5" filter="url(#sgGlow)" />
+                  <circle cx={p.x} cy={p.y} r={p.r + 6} fill="#0b0b0c" opacity="0.5" filter="url(#sgGlow)" />
                   <circle cx={p.x} cy={p.y} r={p.r} fill="url(#sgOwned)" stroke="#eef3fb" strokeWidth="1.5" />
                 </g>
               ))}
@@ -344,7 +344,7 @@ export default function Signal() {
                     stroke="#8b90a0" strokeWidth="1" />
                   <g transform={`translate(${callout.x - 96}, ${callout.y - callout.r - 26 - 30})`}>
                     <rect width="192" height="30" rx="15" fill="#f4f6fb" />
-                    <circle cx="16" cy="15" r="4" fill="#2f61b8" />
+                    <circle cx="16" cy="15" r="4" fill="#0b0b0c" />
                     <text x="28" y="19" className="sg-callout__t">
                       {callout.tech} · 고수요인데 미보유
                     </text>

@@ -20,25 +20,25 @@ export interface CareerTheme {
   navActive: string
 }
 
-// 액센트 = 슬레이트 블루(C) 확정. 뉴트럴은 쿨 톤으로 하모나이즈.
+// 액센트 = near-black 모노크롬 확정. 뉴트럴은 쿨 톤으로 하모나이즈.
 export const THEME: CareerTheme = {
   key: 'p3',
   name: '커리어 홈',
-  stageBg: 'radial-gradient(120% 120% at 70% 20%,#eef1f6 0%,#e5e8ee 55%,#dcdfe6 100%)',
-  screenBg: '#f6f8fc',
+  stageBg: 'radial-gradient(120% 120% at 70% 20%,#ffffff 0%,#f7f7f8 55%,#f0f0f1 100%)',
+  screenBg: '#f7f7f8',
   statusTheme: 'light',
-  primary: '#2f61b8',
-  accent: '#2f61b8',
+  primary: '#0b0b0c',
+  accent: '#0b0b0c',
   gap: '#e0453a',
-  ink: '#1c1d21',
-  muted: '#7c7f88',
+  ink: '#18181b',
+  muted: '#71717a',
   cardBg: '#ffffff',
-  chipBg: '#dde8f9',
-  chipText: '#274f97',
+  chipBg: '#f0f0f1',
+  chipText: '#18181b',
   radius: 22,
   headingWeight: 700,
   letterSpacing: '-0.6px',
-  navActive: '#2f61b8',
+  navActive: '#0b0b0c',
 }
 
 export function themeVars(t: CareerTheme): React.CSSProperties {

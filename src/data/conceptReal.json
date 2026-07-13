@@ -470,7 +470,7 @@
     {
       "key": "대규모 트래픽",
       "label": "대규모 트래픽",
-      "color": "#2f61b8",
+      "color": "#0b0b0c",
       "demand": 23.3,
       "n": 954,
       "coverage": {
@@ -910,7 +910,7 @@
     {
       "key": "데이터 파이프라인",
       "label": "데이터 파이프라인",
-      "color": "#2f61b8",
+      "color": "#0b0b0c",
       "demand": 11.7,
       "n": 481,
       "coverage": {
@@ -1057,7 +1057,7 @@
     {
       "key": "클라우드 네이티브",
       "label": "클라우드 네이티브",
-      "color": "#2f61b8",
+      "color": "#0b0b0c",
       "demand": 11.5,
       "n": 473,
       "coverage": {

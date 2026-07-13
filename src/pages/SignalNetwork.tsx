@@ -439,7 +439,7 @@ export default function SignalNetwork() {
               <defs>
                 <radialGradient id="snOwned" cx="38%" cy="34%" r="72%">
                   <stop offset="0%" stopColor="#7ba0dd" />
-                  <stop offset="52%" stopColor="#2f61b8" />
+                  <stop offset="52%" stopColor="#0b0b0c" />
                   <stop offset="100%" stopColor="#254c92" />
                 </radialGradient>
                 <filter id="snGlow" x="-80%" y="-80%" width="260%" height="260%">
@@ -494,7 +494,7 @@ export default function SignalNetwork() {
                           cx={n.x}
                           cy={n.y}
                           r={n.r + 5}
-                          fill="#2f61b8"
+                          fill="#0b0b0c"
                           opacity={emphasize || focus ? 0.5 : 0.32}
                           filter="url(#snGlow)"
                         />

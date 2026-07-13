@@ -1,0 +1,56 @@
+import type { WidgetSize } from './dashboardConfig'
+
+// 위젯 리사이즈 + 카탈로그 공용 타입. DesktopOverview.tsx/placeholders.tsx의 기존
+// DASHBOARD_WIDGETS/MARKET_WIDGETS 배열(id/label만 있던 것)을 이 파일로 이전하며
+// shape(프리뷰 아이콘 형태)/allowedSizes/defaultSize를 부여한다. 원본 배열은 아직
+// 그대로 두고(다음 웨이브가 페이지에서 이 카탈로그를 소비하도록 교체) 여기서는
+// 인프라만 준비한다.
+export type WidgetShape = 'hero' | 'ring' | 'bars' | 'line' | 'network' | 'radar' | 'scatter' | 'list' | 'stat'
+
+export type WidgetCatalogItem = {
+  id: string
+  label: string
+  shape: WidgetShape
+  allowedSizes: WidgetSize[]
+  defaultSize: WidgetSize
+}
+
+export const DASHBOARD_WIDGETS: WidgetCatalogItem[] = [
+  { id: 'hero-score', label: '내 커리어 점수', shape: 'hero', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
+  { id: 'hero-applicable', label: '지원 가능 공고', shape: 'hero', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
+  { id: 'stat-recent', label: '신규 공고', shape: 'stat', allowedSizes: ['1x1'], defaultSize: '1x1' },
+  { id: 'top-jobs', label: '맞춤 공고 Top', shape: 'list', allowedSizes: ['2x1', '2x2'], defaultSize: '2x2' },
+  { id: 'coverage-histogram', label: '커버리지 분포', shape: 'bars', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
+  { id: 'brief', label: '오늘 브리핑', shape: 'list', allowedSizes: ['1x1', '1x2', '2x1'], defaultSize: '1x1' },
+  { id: 'deadlines', label: '마감 임박', shape: 'list', allowedSizes: ['1x1', '1x2', '2x1', '2x2'], defaultSize: '2x1' },
+  { id: 'industry-fit', label: '업종 적합도', shape: 'radar', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
+  { id: 'bookmarks', label: '북마크한 공고', shape: 'list', allowedSizes: ['1x1', '1x2', '2x1', '2x2'], defaultSize: '2x1' },
+  { id: 'recent-views', label: '최근 본 공고', shape: 'list', allowedSizes: ['1x1', '1x2', '2x1'], defaultSize: '1x1' },
+  { id: 'skill-momentum', label: '내 스킬 시장 모멘텀', shape: 'bars', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
+  { id: 'latest-timeline', label: '최신 공고 타임라인', shape: 'line', allowedSizes: ['2x1', '2x2'], defaultSize: '2x2' },
+  { id: 'learning-path', label: '학습 로드맵', shape: 'bars', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
+  { id: 'skill-unlock', label: '한계 해금', shape: 'bars', allowedSizes: ['1x1', '2x1', '2x2'], defaultSize: '2x1' },
+]
+
+export const MARKET_WIDGETS: WidgetCatalogItem[] = [
+  { id: 'hero-demand', label: '수요 리더보드', shape: 'hero', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
+  { id: 'leaderboard', label: '상위 요구 기술 Top14', shape: 'bars', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
+  { id: 'network', label: '기술 공동출현 네트워크', shape: 'network', allowedSizes: ['2x2'], defaultSize: '2x2' },
+  { id: 'propagation', label: '트렌드 전파 네트워크', shape: 'network', allowedSizes: ['2x2'], defaultSize: '2x2' },
+  { id: 'yearly-trend', label: '연도별 점유율 추이', shape: 'line', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
+  { id: 'movers', label: '급상승 · 급감 Top', shape: 'bars', allowedSizes: ['1x1', '2x1'], defaultSize: '2x1' },
+  { id: 'tier-compare', label: '기업 규모별 요구 차이', shape: 'bars', allowedSizes: ['1x1', '2x1'], defaultSize: '2x1' },
+  { id: 'generation-trend', label: '레거시 → 신진 스택 변화', shape: 'line', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
+  { id: 'scatter', label: '수요 × 빈도 분포', shape: 'scatter', allowedSizes: ['2x1', '2x2'], defaultSize: '2x2' },
+  { id: 'hot-companies', label: '이번 달 활발 기업', shape: 'bars', allowedSizes: ['1x1', '2x1'], defaultSize: '2x1' },
+  { id: 'region-density', label: '지역별 공고 밀도', shape: 'bars', allowedSizes: ['1x1', '2x1'], defaultSize: '2x1' },
+  { id: 'tier-donut', label: '기업 규모 분포', shape: 'ring', allowedSizes: ['1x1'], defaultSize: '1x1' },
+  { id: 'hype-vs-hire', label: 'Hype vs Hire', shape: 'scatter', allowedSizes: ['2x1', '2x2'], defaultSize: '2x2' },
+  { id: 'competency', label: '회사가 원하는 역량', shape: 'bars', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
+  { id: 'response-rate', label: '응답 잘 오는 회사', shape: 'stat', allowedSizes: ['1x1', '2x1'], defaultSize: '2x1' },
+  { id: 'concept-signal', label: '개념 → 기술 시그니처', shape: 'radar', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
+  { id: 'trend-chronicle', label: '기술 트렌드 연대기', shape: 'line', allowedSizes: ['2x1', '2x2'], defaultSize: '2x2' },
+  { id: 'github-chronicle', label: 'GitHub 스타 순위 변천사', shape: 'line', allowedSizes: ['2x1', '2x2'], defaultSize: '2x2' },
+  { id: 'global-domestic-gap', label: '글로벌 vs 국내 격차', shape: 'bars', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
+  { id: 'github-topics', label: '오픈소스 관심 vs 수요', shape: 'scatter', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
+]
