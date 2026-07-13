@@ -27,6 +27,7 @@ import { useBookmarks } from '../../career/bookmarkStore'
 import { useRecentViews } from '../../career/viewHistoryStore'
 import { SkillManagerModal } from '../SkillManagerModal'
 import { recruitmentApi } from '../../career/recruitmentApi'
+import JobsPagination, { parseJobPage, parseJobPageSize, type JobPageSize } from '../../career/JobsPagination'
 import { jobsApi, marketApi } from '../../career/api'
 import { addMapTileLayer } from '../../career/mapTiles'
 import marketData from '../../data/marketData.json'
@@ -98,6 +99,10 @@ function CompanyLocationMap({ lat, lng, address }: { lat: number; lng: number; a
    보완하지 않으며, 해당 필드를 요구하는 필터도 노출하지 않는다. */
 const POSITION_CATS = ['백엔드', '프론트엔드', '풀스택', '데이터/AI', '모바일', '인프라/DevOps', '기획/PM', '디자인', 'QA', '기타'] as const
 type PositionCat = typeof POSITION_CATS[number]
+const POSITION_API: Record<PositionCat, string> = {
+  '백엔드': 'backend', '프론트엔드': 'frontend', '풀스택': 'fullstack', '데이터/AI': 'data',
+  '모바일': 'mobile', '인프라/DevOps': 'devops', '기획/PM': 'pm', '디자인': 'design', 'QA': 'qa', '기타': 'other',
+}
 
 function derivePosition(title: string, techs: string[]): PositionCat {
   const t = title.toLowerCase()
@@ -133,50 +138,71 @@ function derivePosition(title: string, techs: string[]): PositionCat {
 /* ───────────────── 맞춤 공고 — 마스터-디테일 ───────────────── */
 export function DesktopJobs() {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const { resumes, activeId, activeResume } = useResumesState()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const { resumes, activeResume } = useResumesState()
   const skills = activeResume?.skills ?? []
 
-  const [pool, setPool] = useState<'국내' | '국외'>('국내')
+  const [pool, setPool] = useState<'국내' | '국외'>(() => searchParams.get('pool') === 'global' ? '국외' : '국내')
   const [q, setQ] = useState(() => searchParams.get('q') ?? '')
-  const [sort, setSort] = useState<'match' | 'latest'>('match')
+  const [sort, setSort] = useState<'match' | 'latest'>(() => searchParams.get('sort') === 'latest' ? 'latest' : 'match')
+  const [page, setPage] = useState(() => parseJobPage(searchParams.get('page')))
+  const [pageSize, setPageSize] = useState<JobPageSize>(() => parseJobPageSize(searchParams.get('page_size')))
   const [selId, setSelId] = useState<string | null>(null)
-  const [techFilter, setTechFilter] = useState<Set<string>>(new Set())
-  const [deadlineOnly, setDeadlineOnly] = useState(false)
-  const [positionFilter, setPositionFilter] = useState<PositionCat | ''>('')
+  const [techFilter, setTechFilter] = useState<Set<string>>(() => new Set((searchParams.get('tech') ?? '').split(',').filter(Boolean)))
+  const [deadlineOnly, setDeadlineOnly] = useState(searchParams.get('deadline') === '1')
+  const [positionFilter, setPositionFilter] = useState<PositionCat | ''>(() => {
+    const value = searchParams.get('position')
+    return POSITION_CATS.includes(value as PositionCat) ? value as PositionCat : ''
+  })
   const [pvTab, setPvTab] = useState<'desc' | 'company'>('desc')
   const [remoteCards, setRemoteCards] = useState<Awaited<ReturnType<typeof jobsApi.list>> | null>(null)
   const [jobsLoading, setJobsLoading] = useState(false)
   const [jobsError, setJobsError] = useState('')
   const [selectedDetail, setSelectedDetail] = useState<Awaited<ReturnType<typeof jobsApi.detail>> | null>(null)
 
-  // 이력서에 저장된 검색 풀만 반영한다. 보유 기술은 매칭도 계산에만 사용하고 기본 필터로
-  // 강제하지 않아 API가 반환한 공고가 처음부터 사라지지 않게 한다.
   useEffect(() => {
-    if (!activeResume) return
-    if (activeResume.pool) setPool(activeResume.pool)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeId])
+    const next = new URLSearchParams()
+    if (q.trim()) next.set('q', q.trim())
+    next.set('pool', pool === '국내' ? 'domestic' : 'global')
+    next.set('page', String(page))
+    next.set('page_size', String(pageSize))
+    next.set('sort', sort)
+    if (techFilter.size) next.set('tech', [...techFilter].sort().join(','))
+    if (positionFilter) next.set('position', positionFilter)
+    if (deadlineOnly) next.set('deadline', '1')
+    setSearchParams(next, { replace: true })
+  }, [q, pool, page, pageSize, sort, techFilter, positionFilter, deadlineOnly, setSearchParams])
 
   useEffect(() => {
     let cancelled = false
     setJobsLoading(true)
     setJobsError('')
     setRemoteCards(null)
+    const resumeId = Number(activeResume?.id)
+    const hasMatchedResume = Number.isInteger(resumeId) && !!getAuthToken()
     jobsApi.list({
       pool: pool === '국내' ? 'domestic' : 'global',
-      position: positionFilter || undefined,
-      sort: deadlineOnly ? 'deadline' : 'latest',
+      q: q.trim() || undefined,
+      skills: techFilter.size ? [...techFilter].join(',') : undefined,
+      position: positionFilter ? POSITION_API[positionFilter] : undefined,
+      sort,
       deadline_within_days: deadlineOnly ? 7 : undefined,
-      page: 1,
-      page_size: 100,
+      page,
+      page_size: pageSize,
+      resume_id: hasMatchedResume ? resumeId : undefined,
     }, getAuthToken()).then((result) => {
       if (!cancelled) setRemoteCards(result)
     }).catch((reason) => {
       if (!cancelled) setJobsError(reason instanceof Error ? reason.message : '공고를 불러오지 못했습니다.')
     }).finally(() => { if (!cancelled) setJobsLoading(false) })
     return () => { cancelled = true }
-  }, [pool, deadlineOnly, positionFilter])
+  }, [pool, q, sort, techFilter, deadlineOnly, positionFilter, page, pageSize, activeResume?.id])
+
+  useEffect(() => {
+    if (!remoteCards) return
+    const lastPage = Math.max(1, Math.ceil(remoteCards.total / remoteCards.page_size))
+    if (page > lastPage) setPage(lastPage)
+  }, [remoteCards, page])
 
   const postings = useMemo(() => {
     if (!remoteCards) return []
@@ -201,27 +227,10 @@ export function DesktopJobs() {
     })
   }, [remoteCards, skills, pool])
   const techOptions = useMemo(
-    () => [...new Set(postings.flatMap((posting) => posting.techs))].sort((a, b) => a.localeCompare(b)),
-    [postings],
+    () => [...new Set([...techFilter, ...postings.flatMap((posting) => posting.techs)])].sort((a, b) => a.localeCompare(b)),
+    [postings, techFilter],
   )
-  const byPool = useMemo(() => postings.filter((p) => p.pool === pool), [postings, pool])
-
-  const list = useMemo(() => {
-    let arr = byPool
-    const s = q.trim().toLowerCase()
-    if (s) arr = arr.filter((p) => (p.company + ' ' + p.title).toLowerCase().includes(s))
-    if (techFilter.size > 0) arr = arr.filter((p) => [...techFilter].some((t) => p.techs.includes(t)))
-    if (deadlineOnly) {
-      arr = arr.filter((p) => {
-        if (!p.closeDate || !remoteCards?.as_of) return false
-        const days = Math.round((new Date(p.closeDate).getTime() - new Date(remoteCards.as_of).getTime()) / 86400000)
-        return days >= 0 && days <= 7
-      })
-    }
-    if (positionFilter) arr = arr.filter((p) => derivePosition(p.title, p.techs) === positionFilter)
-    return [...arr].sort((a, b) =>
-      sort === 'latest' ? (b.postDate || '').localeCompare(a.postDate || '') : b.matchPct - a.matchPct)
-  }, [byPool, q, techFilter, deadlineOnly, positionFilter, sort, remoteCards?.as_of])
+  const list = postings
 
   const positionFacets = useMemo(() => {
     const counts = new Map<PositionCat, number>()
@@ -249,6 +258,7 @@ export function DesktopJobs() {
   const toggleTech = (t: string) => setTechFilter((s) => {
     const next = new Set(s)
     if (next.has(t)) next.delete(t); else next.add(t)
+    setPage(1)
     return next
   })
   // 링크드인/사람인식 스킬 매치 미니 줄 — "요구 N개 중 M개 보유" 텍스트 +
@@ -292,12 +302,12 @@ export function DesktopJobs() {
 
           <div className="djobs__search">
             <Search size={16} />
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="회사 · 공고 검색" />
+            <input value={q} onChange={(e) => { setQ(e.target.value); setPage(1) }} placeholder="회사 · 공고 검색" />
           </div>
 
           <div className="djobs__fld">
             <span className="djobs__fld-l">채용 풀</span>
-            <SegmentedControl value={pool} onChange={(v) => setPool(v as '국내' | '국외')}
+            <SegmentedControl value={pool} onChange={(v) => { setPool(v as '국내' | '국외'); setPage(1) }}
               options={[{ key: '국내', label: '국내' }, { key: '국외', label: '글로벌' }]} />
           </div>
 
@@ -315,7 +325,7 @@ export function DesktopJobs() {
             <select
               className="djobs__select"
               value={positionFilter}
-              onChange={(e) => setPositionFilter(e.target.value as PositionCat | '')}
+              onChange={(e) => { setPositionFilter(e.target.value as PositionCat | ''); setPage(1) }}
             >
               <option value="">전체</option>
               {POSITION_CATS.map((c) => <option key={c} value={c}>{c}</option>)}
@@ -323,7 +333,7 @@ export function DesktopJobs() {
           </div>
 
           <label className="djobs__toggle">
-            <input type="checkbox" checked={deadlineOnly} onChange={(e) => setDeadlineOnly(e.target.checked)} />
+            <input type="checkbox" checked={deadlineOnly} onChange={(e) => { setDeadlineOnly(e.target.checked); setPage(1) }} />
             마감 임박(7일 이내)만
           </label>
 
@@ -331,19 +341,19 @@ export function DesktopJobs() {
             <span className="djobs__fld-l">정렬</span>
             <div className="djobs__sorts">
               {([['match', '매칭순'], ['latest', '최신순']] as const).map(([k, lb]) => (
-                <button key={k} className={sort === k ? 'on' : ''} onClick={() => setSort(k)}>{lb}</button>
+                <button key={k} className={sort === k ? 'on' : ''} onClick={() => { setSort(k); setPage(1) }}>{lb}</button>
               ))}
             </div>
           </div>
 
-          <div className="djobs__count">{list.length.toLocaleString()}건</div>
+          <div className="djobs__count">{(remoteCards?.total ?? 0).toLocaleString()}건</div>
         </aside>
 
         {/* 결과 리스트 */}
         <div className="dcard djobs__list">
           <div className="djobs__listhead">
             <div className="djobs__facets">
-              <span className="djobs__facets-count">{list.length.toLocaleString()}건</span>
+              <span className="djobs__facets-count">전체 {(remoteCards?.total ?? 0).toLocaleString()}건</span>
               <span className="djobs__facets-sep" />
               {positionFacets.map(([cat, n]) => (
                 <span key={cat} className="djobs__facet djobs__facet--static">{cat} {n}</span>
@@ -353,7 +363,7 @@ export function DesktopJobs() {
           {jobsLoading && <div className="dpage__empty">공고를 불러오는 중이에요.</div>}
           {jobsError && <div className="dpage__empty">{jobsError}</div>}
           {!jobsLoading && !jobsError && list.length === 0 && <div className="dpage__empty">조건에 맞는 공고가 없어요.</div>}
-          {list.slice(0, 40).map((p) => (
+          {list.map((p) => (
             <button
               key={p.id}
               className={`djobs__row${sel?.id === p.id ? ' on' : ''}`}
@@ -370,6 +380,15 @@ export function DesktopJobs() {
               <MiniScore pct={p.matchPct} size={40} />
             </button>
               ))}
+          {!jobsLoading && !jobsError && (
+            <JobsPagination
+              page={remoteCards?.page ?? page}
+              pageSize={remoteCards ? remoteCards.page_size as JobPageSize : pageSize}
+              total={remoteCards?.total ?? 0}
+              onPageChange={setPage}
+              onPageSizeChange={(size) => { setPageSize(size); setPage(1) }}
+            />
+          )}
         </div>
 
         {/* 상세 프리뷰 */}
