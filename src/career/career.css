@@ -1001,7 +1001,7 @@
    먼저 로드되는 규칙을 이기도록 한다(임포트 순서에 기대지 않음).
    ========================================================== */
 .dsub .djd {
-  grid-template-columns: minmax(0, 1fr) 380px;
+  grid-template-columns: minmax(0, 1fr) 340px 320px;
   gap: 20px;
 }
 .dsub .djd-main {
@@ -1013,6 +1013,18 @@
 }
 .dsub .djd-card {
   border-radius: 18px;
+}
+/* 3열째 추천 레일 — 사이드(2열)와 같은 sticky 톤, 1280px 미만에서는 본문 아래로 전체 폭 배치 */
+.dsub .djd-reco {
+  position: sticky;
+  top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+@media (max-width: 1280px) {
+  .dsub .djd { grid-template-columns: minmax(0, 1fr) 340px; }
+  .dsub .djd-reco { grid-column: 1 / -1; position: static; top: auto; }
 }
 @media (max-width: 1180px) {
   .dsub .djd { grid-template-columns: 1fr; }
@@ -1122,6 +1134,99 @@
   color: var(--c-muted);
   margin-top: 9px;
   padding-left: 2px;
+}
+
+/* 추천 레일 카드 — 주변/비슷한 채용공고 (.djd-card 톤 재사용, 모노크롬) */
+.djd-reco-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.djd-reco-card__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.djd-reco-card__head h4 {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  color: var(--c-ink);
+  margin: 0;
+}
+.djd-reco-card__hint {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--c-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+.djd-reco-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.djd-reco-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px;
+  border-radius: 14px;
+  text-align: left;
+  transition: background 0.12s ease;
+}
+.djd-reco-row:hover {
+  background: #f2f2f3;
+}
+.djd-reco-row__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.djd-reco-row__title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--c-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.djd-reco-row__co {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--c-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.djd-reco-row__techs {
+  display: flex;
+  gap: 4px;
+  margin-top: 2px;
+}
+/* 겹치는 기술 칩 — 모노크롬 그린(.djd-chip--held와 동일 톤) */
+.djd-reco-tech {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 7px;
+  background: #e6f5ec;
+  color: #1f9d57;
+  border: 1px solid #bfe6ce;
+  white-space: nowrap;
+}
+.djd-reco-empty {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--c-muted);
+  padding: 12px 2px;
+  text-align: center;
 }
 
 .crd__actions {
