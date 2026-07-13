@@ -61,6 +61,7 @@ const widgetDesigns: Item[] = [
 
 /* ── 4. 기타 ── */
 const etc: Item[] = [
+  { to: '/assistant', path: '/assistant', title: '커리어 어시스턴트 · AI 인사이트 콘솔', sub: 'POST /api/v1/chat 실연동 · 기본/Verbose 과정 보기', swatch: 'linear-gradient(135deg,#12141a,#5a86cf)' },
   { to: '/rag-docs', path: '/rag-docs', title: 'AI 채팅 · RAG 문서', sub: 'RAG 콘솔 · 시나리오 · 문서 뷰어', swatch: 'linear-gradient(135deg,#12141a,#2a9db0)' },
 ]
 

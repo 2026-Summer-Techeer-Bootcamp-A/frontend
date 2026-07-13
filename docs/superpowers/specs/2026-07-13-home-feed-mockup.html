@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1440" />
+<title>홈 피드 — 3컬럼 목업 (2026-07-13)</title>
+<style>
+  /* ===== 디자인 토큰 (themes.ts p3 + career.css 로컬 스케일) ===== */
+  :root {
+    --c-accent: #0b0b0c;
+    --c-ink: #18181b;
+    --c-muted: #71717a;
+    --c-card: #ffffff;
+    --c-chipbg: #f0f0f1;
+    --c-chiptext: #18181b;
+    --c-gap: #e0453a;
+    --line: #e6e9ef;
+    --line2: #f0f0f1;
+    --accent-50: #f0f0f1;
+    --accent-100: #e4e4e7;
+    --accent-200: #e4e4e7;
+    --accent-300: #a1a1aa;
+    --accent-700: #18181b;
+    --track: #eceef3;
+    --e1: 0 1px 2px rgba(20,30,60,.05), 0 1px 1px rgba(20,30,60,.04);
+    --e2: 0 2px 8px rgba(20,30,60,.06), 0 1px 2px rgba(20,30,60,.05);
+    --e3: 0 8px 24px rgba(20,30,60,.08), 0 2px 6px rgba(20,30,60,.05);
+    /* 시각화 저채도 팔레트 (2026-07-13 피드백 반영, 스펙 1.1절) */
+    --hf-viz-blue: #5b7d9e;
+    --hf-viz-blue-soft: #e9eff5;
+    --hf-viz-blue-line: #d5e2ee;
+    --hf-viz-blue-text: #3d5a78;
+    --hf-viz-sage: #74957f;
+    --hf-viz-sage-soft: #e9f1ec;
+    --hf-viz-sage-text: #47705a;
+    --hf-viz-violet: #8a7fa8;
+    --hf-viz-violet-soft: #efecf5;
+    --hf-viz-violet-text: #5e5580;
+    --hf-viz-clay: #b08968;
+    --hf-viz-clay-soft: #f5ede6;
+    --hf-viz-clay-text: #8a6247;
+    --hf-viz-slate: #8a94a3;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    letter-spacing: -0.3px;
+    color: var(--c-ink);
+    background: #f7f7f8;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; text-decoration: none; }
+  button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+  .tnum { font-variant-numeric: tabular-nums; }
+
+  /* ===== 셸 크롬 (문맥용 간이 레일 + 톱바) ===== */
+  .shell { display: flex; min-height: 100vh; }
+  .rail {
+    flex: none; width: 84px; background: #0d0d0d;
+    display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 18px 0;
+  }
+  .rail__dot { width: 26px; height: 26px; border-radius: 9px; background: #fff; margin-bottom: 18px; }
+  .rail__btn {
+    width: 66px; height: 56px; border-radius: 12px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    color: rgba(255,255,255,.62); font-size: 10.5px; font-weight: 600;
+  }
+  .rail__btn .ic { width: 18px; height: 18px; border-radius: 5px; border: 1.6px solid currentColor; }
+  .rail__btn.on { background: rgba(255,255,255,.14); color: #fff; }
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .topbar {
+    height: 62px; flex: none; display: flex; align-items: center; gap: 16px; padding: 0 20px;
+  }
+  .topbar__crumb { font-size: 13px; font-weight: 600; color: var(--c-muted); }
+  .topbar__tabs { display: flex; padding: 3px; border-radius: 999px; background: #eef1f6; }
+  .topbar__tab { padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--c-muted); }
+  .topbar__tab.on { background: #fff; color: var(--c-ink); box-shadow: 0 1px 2px rgba(20,30,60,.06); }
+  .topbar__av {
+    margin-left: auto; width: 36px; height: 36px; border-radius: 50%;
+    background: var(--c-accent); color: #fff; font-size: 13px; font-weight: 700;
+    display: grid; place-items: center;
+  }
+  /* 홈 라우트 전용 배경 오버라이드(.dshell__content--home 상당) —
+     바탕은 옅은 회색, 카드는 흰색으로 면 분리 (2026-07-13 피드백 반영) */
+  .content {
+    flex: 1; margin: 0 8px 8px; padding: 18px; border-radius: 24px;
+    border: 1px solid #eef1f6; background: #f7f7f8;
+  }
+
+  /* ===== 3컬럼 그리드 ===== */
+  .hfeed {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 680px) 340px;
+    gap: 28px;
+    justify-content: center;
+    align-items: start;
+    max-width: 1360px;
+    margin: 0 auto;
+  }
+  .hfeed__left, .hfeed__right { display: flex; flex-direction: column; gap: 16px; }
+  .hfeed__center { min-width: 0; }
+
+  /* ===== 카드 공통 ===== */
+  .card { background: #fff; border: 1px solid var(--line); box-shadow: var(--e1); }
+
+  /* ===== 프로필 카드 ===== */
+  .hfeed-profile { border-radius: 20px; padding: 18px; }
+  .hfeed-profile__top { display: flex; align-items: center; gap: 12px; }
+  .hfeed-profile__avatar {
+    width: 44px; height: 44px; border-radius: 50%; flex: none;
+    background: var(--accent-50); color: var(--accent-700);
+    font-size: 14px; font-weight: 800; display: grid; place-items: center;
+  }
+  .hfeed-profile__name { font-size: 16px; font-weight: 700; }
+  .hfeed-profile__target { font-size: 12.5px; color: var(--c-muted); margin-top: 2px; }
+  .hfeed-profile__stats {
+    display: flex; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line);
+  }
+  .hfeed-profile__stat { flex: 1; }
+  .hfeed-profile__stat:first-child { border-right: 1px solid var(--line); }
+  .hfeed-profile__stat .lb { font-size: 11px; color: var(--c-muted); }
+  .hfeed-profile__stat .v { font-size: 13px; font-weight: 700; margin-top: 1px; }
+
+  /* ===== 이력서 요약 카드 ===== */
+  .hfeed-resume { border-radius: 20px; padding: 18px; }
+  .hfeed-resume__head { display: flex; align-items: baseline; justify-content: space-between; }
+  .hfeed-resume__head h3 { font-size: 13px; font-weight: 700; }
+  .hfeed-resume__edit { font-size: 12px; font-weight: 700; color: var(--accent-700); }
+  .hfeed-resume__meter-cap { font-size: 12.5px; color: var(--c-muted); margin: 12px 0 6px; }
+  .hfeed-resume__meter-cap b { color: var(--c-ink); font-weight: 700; }
+  .hfeed-meter { height: 8px; border-radius: 5px; background: var(--track); overflow: hidden; }
+  .hfeed-meter > i { display: block; height: 100%; border-radius: 5px; background: var(--hf-viz-blue); }
+  .hfeed-resume__skillcap { font-size: 12px; color: var(--c-muted); margin: 14px 0 8px; }
+  .hfeed-resume__skillcap b { color: var(--c-ink); font-weight: 700; }
+  .hfeed-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  /* ===== 공용 칩 ===== */
+  .hfeed-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    border-radius: 9px; padding: 6px 11px; font-size: 12.5px; font-weight: 650; letter-spacing: -.1px;
+  }
+  .hfeed-chip { background: var(--accent-50); color: var(--accent-700); border: 1px solid var(--accent-100); }
+  .hfeed-chip--owned { background: var(--hf-viz-blue-soft); color: var(--hf-viz-blue-text); border: 1px solid var(--hf-viz-blue-line); }
+  .hfeed-chip--missing { background: transparent; color: var(--c-muted); border: 1px solid var(--line); }
+  .hfeed-chip--cat { background: #f2f3f6; color: #5b5e66; border: 1px solid var(--line); }
+  .hfeed-chip--more { background: transparent; color: var(--c-muted); border: none; padding-left: 4px; }
+
+  /* ===== 빠른 링크 ===== */
+  .hfeed-links { border-radius: 20px; padding: 8px 4px; }
+  .hfeed-links__row {
+    display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px;
+  }
+  .hfeed-links__row:hover { background: #f2f2f4; }
+  .hfeed-links__row .lb { flex: 1; font-size: 14px; font-weight: 600; }
+  .hfeed-links__row .ct { font-size: 13px; font-weight: 700; color: var(--c-muted); }
+  .hfeed-links__row .chev { color: var(--c-muted); font-size: 15px; }
+
+  /* ===== 게스트 CTA (다크) ===== */
+  .hfeed-guest {
+    border-radius: 22px; padding: 22px 20px; color: #fff;
+    background: linear-gradient(145deg, #0b0b0c 0%, #18181b 100%);
+    box-shadow: 0 12px 30px -10px rgba(20,30,60,.45);
+  }
+  .hfeed-guest__eyebrow {
+    font-size: 11px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase;
+    color: rgba(255,255,255,.56);
+  }
+  .hfeed-guest__title { font-size: 18px; font-weight: 800; letter-spacing: -.5px; margin-top: 8px; }
+  .hfeed-guest__body { font-size: 13.5px; line-height: 1.5; color: rgba(255,255,255,.72); margin-top: 8px; }
+  .hfeed-guest__actions { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+  .hfeed-guest__btn { border-radius: 12px; padding: 12px; font-size: 14px; font-weight: 700; text-align: center; }
+  .hfeed-guest__btn--primary { background: #fff; color: #0b0b0c; }
+  .hfeed-guest__btn--ghost { background: rgba(255,255,255,.14); color: #fff; }
+  .hfeed-guest__skip { display: block; text-align: center; margin-top: 12px; font-size: 12.5px; color: rgba(255,255,255,.6); }
+
+  /* ===== 필터 바 ===== */
+  .hfeed-filter {
+    position: sticky; top: 0; z-index: 5; padding: 4px 0 12px;
+    background: rgba(247,247,248,.92); backdrop-filter: blur(8px);
+  }
+  .hfeed-filter__pool { display: inline-flex; background: #eef0f4; border-radius: 20px; padding: 3px; }
+  .hfeed-filter__pool button {
+    padding: 8px 16px; border-radius: 16px; font-size: 13px; font-weight: 650; color: var(--c-muted);
+  }
+  .hfeed-filter__pool button.on { background: #fff; color: var(--accent-700); font-weight: 700; box-shadow: var(--e2); }
+  .hfeed-filter__cats { display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; scrollbar-width: none; }
+  .hfeed-filter__cats::-webkit-scrollbar { display: none; }
+  .hfeed-filter__chip {
+    flex: none; padding: 8px 14px; border-radius: 999px; font-size: 13px; font-weight: 650;
+    background: #eef1f6; color: var(--c-ink); white-space: nowrap;
+  }
+  .hfeed-filter__chip.on { background: var(--c-ink); color: #fff; }
+
+  /* ===== 날짜 구분선 ===== */
+  .hfeed-divider { display: flex; align-items: center; gap: 10px; margin: 22px 0 12px; }
+  .hfeed-divider:first-child { margin-top: 4px; }
+  .hfeed-divider__dot { width: 5px; height: 5px; border-radius: 50%; background: var(--c-accent); flex: none; }
+  .hfeed-divider__label { font-size: 12.5px; font-weight: 700; color: var(--c-muted); }
+  .hfeed-divider--today .hfeed-divider__label { color: var(--c-ink); }
+  .hfeed-divider__rule { flex: 1; height: 1px; background: var(--line); }
+
+  /* ===== 공고 카드 ===== */
+  .hfeed-card {
+    border-radius: 18px; padding: 18px; margin-bottom: 14px;
+    background: #fff; border: 1px solid var(--line); box-shadow: var(--e1);
+    transition: border-color .15s, box-shadow .15s, transform .12s cubic-bezier(.25,.1,.25,1);
+  }
+  .hfeed-card:hover { border-color: var(--accent-200); box-shadow: var(--e2); }
+  .hfeed-card__head { display: flex; align-items: flex-start; gap: 12px; }
+  .hfeed-card__logo {
+    width: 44px; height: 44px; border-radius: 12px; flex: none;
+    background: var(--c-chipbg); color: var(--c-chiptext);
+    font-size: 18px; font-weight: 800; display: grid; place-items: center;
+  }
+  .hfeed-card__meta { flex: 1; min-width: 0; }
+  .hfeed-card__company {
+    font-size: 13px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .hfeed-card__sub {
+    font-size: 12px; color: var(--c-muted); margin-top: 1px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .hfeed-card__title { font-size: 15.5px; font-weight: 700; line-height: 1.3; margin-top: 6px; }
+  .hfeed-ring {
+    width: 54px; height: 54px; border-radius: 50%; position: relative; flex: none;
+    display: grid; place-items: center;
+  }
+  .hfeed-ring::after {
+    content: ''; position: absolute; width: 40px; height: 40px; border-radius: 50%;
+    background: #fff; box-shadow: inset 0 0 0 1px var(--line);
+  }
+  .hfeed-ring b { position: relative; z-index: 1; font-size: 14px; font-weight: 800; letter-spacing: -.5px; }
+  /* 매치 수준별 링 채움색 (저채도 3단계, 스펙 4.9) */
+  .hfeed-ring--high { --ring-c: var(--hf-viz-sage); }
+  .hfeed-ring--mid  { --ring-c: var(--hf-viz-blue); }
+  .hfeed-ring--low  { --ring-c: var(--hf-viz-slate); }
+  .hfeed-ring__wrap { display: flex; flex-direction: column; align-items: center; }
+  .hfeed-ring__cap { font-size: 10px; color: var(--c-muted); margin-top: 4px; }
+  .hfeed-card__timerow { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+  .hfeed-card__time { font-size: 12px; color: var(--c-muted); }
+  .hfeed-badge {
+    border-radius: 6px; padding: 3px 7px; font-size: 10.5px; font-weight: 700; white-space: nowrap;
+  }
+  .hfeed-badge--dday { background: #fbeee2; color: #c76a2e; }
+  .hfeed-badge--dday.is-urgent { background: #fbe9e7; color: var(--c-gap); }
+  .hfeed-badge--always { background: #f2f3f6; color: #5b5e66; }
+  .hfeed-card__chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .hfeed-card__foot {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line);
+  }
+  .hfeed-card__matchsum { font-size: 11.5px; color: var(--c-muted); }
+  .hfeed-card__matchsum b { color: var(--c-ink); font-weight: 700; }
+  .hfeed-card__actions { display: flex; align-items: center; gap: 10px; }
+  .hfeed-card__detail { font-size: 13px; font-weight: 700; color: var(--accent-700); }
+  .hfeed-card__bookmark {
+    width: 32px; height: 32px; border-radius: 10px; border: 1px solid var(--line);
+    background: #fff; color: var(--c-muted); display: grid; place-items: center;
+  }
+  .hfeed-card__bookmark:hover { background: var(--accent-50); color: var(--c-ink); }
+  .hfeed-card__bookmark.is-saved { background: var(--c-ink); color: #fff; border-color: var(--c-ink); }
+  .hfeed-card__bookmark svg { width: 15px; height: 15px; }
+
+  /* ===== 뉴스 패널 ===== */
+  .hfeed-news { border-radius: 18px; padding: 16px; }
+  .hfeed-news__head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .hfeed-news__head h3 { font-size: 14px; font-weight: 800; }
+  .hfeed-news__updated { font-size: 11px; color: var(--c-muted); }
+  .hfeed-news__tabs { display: flex; background: #eceef3; border-radius: 10px; padding: 3px; margin-top: 12px; }
+  .hfeed-news__tabs button {
+    flex: 1; padding: 6px 8px; border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--c-muted);
+  }
+  .hfeed-news__tabs button.on { background: #fff; color: var(--accent-700); font-weight: 700; box-shadow: var(--e1); }
+  .hfeed-news__list { margin-top: 8px; }
+  .hfeed-news__item {
+    display: block; padding: 12px 8px; margin: 0 -8px;
+    border-radius: 12px; border-bottom: 1px solid var(--line2);
+  }
+  .hfeed-news__item:last-child { border-bottom: none; }
+  .hfeed-news__item:hover { background: #f2f2f4; }
+  .hfeed-news__title { font-size: 13px; font-weight: 650; line-height: 1.4; }
+  .hfeed-news__meta { margin-top: 6px; font-size: 11.5px; color: var(--c-muted); }
+  .hfeed-news__stat { color: var(--hf-viz-clay-text); font-weight: 700; }
+  .hfeed-news__thread { color: var(--accent-700); font-weight: 700; }
+  .hfeed-news__source { margin-top: 4px; font-size: 11.5px; color: var(--c-muted); }
+  .hfeed-news__repo { font-size: 13px; }
+  .hfeed-news__repo .owner { color: var(--c-muted); font-weight: 500; }
+  .hfeed-news__repo b { font-weight: 700; }
+  .hfeed-news__desc { font-size: 12px; color: var(--c-muted); line-height: 1.4; margin-top: 2px; }
+  .hfeed-news__langdot {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--hf-viz-slate); vertical-align: -1px; margin-right: 3px;
+  }
+  /* 언어점 저채도 매핑 (브랜드 원색 금지, 스펙 4.10) */
+  .hfeed-news__langdot--ts { background: var(--hf-viz-blue); }
+  .hfeed-news__langdot--py { background: var(--hf-viz-sage); }
+  .hfeed-news__langdot--sys { background: var(--hf-viz-clay); }
+
+  /* ===== 미니 요약 카드 ===== */
+  .hfeed-mini {
+    border-radius: 14px; padding: 14px 16px; background: #fff;
+    border: 1px solid var(--line); box-shadow: var(--e1);
+    display: flex; flex-direction: column; gap: 2px;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .hfeed-mini:hover { border-color: var(--accent-200); box-shadow: var(--e2); }
+  .hfeed-mini__label { font-size: 12px; font-weight: 650; color: var(--c-muted); }
+  .hfeed-mini__num { font-size: 24px; font-weight: 800; letter-spacing: -.5px; }
+  .hfeed-mini__num span { font-size: 13px; font-weight: 700; color: var(--c-muted); margin-left: 2px; }
+  /* 수치 강조색 — 시장 데이터=블루, 개인화 데이터=바이올렛 (스펙 4.11) */
+  .hfeed-mini__num--market { color: var(--hf-viz-blue-text); }
+  .hfeed-mini__num--personal { color: var(--hf-viz-violet-text); }
+  .hfeed-mini__hint {
+    font-size: 11.5px; font-weight: 700; color: var(--accent-700);
+    margin-top: 6px; display: flex; align-items: center; gap: 4px;
+  }
+  .hfeed-mini__row {
+    display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--line2);
+  }
+  .hfeed-mini--list .hfeed-mini__row:last-of-type { border-bottom: none; }
+  .hfeed-mini__rank { width: 16px; font-size: 12px; font-weight: 800; color: var(--c-muted); }
+  .hfeed-mini__name { flex: 1; font-size: 13px; font-weight: 700; }
+  .hfeed-mini__delta { font-size: 11.5px; font-weight: 800; color: var(--hf-viz-sage-text); }
+
+  /* ===== 스켈레톤 ===== */
+  .hfeed-skel { background: linear-gradient(90deg,#eef1f6 25%,#e2e7f0 37%,#eef1f6 63%); background-size: 400% 100%; animation: hfeed-shimmer 1.2s ease-in-out infinite; border-radius: 6px; }
+  @keyframes hfeed-shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+  .hfeed-card--skel { border-radius: 18px; padding: 18px; margin-bottom: 14px; background: #fff; border: 1px solid var(--line); box-shadow: var(--e1); }
+  .hfeed-card--skel .row { display: flex; align-items: flex-start; gap: 12px; }
+  .hfeed-card--skel .logo { width: 44px; height: 44px; border-radius: 12px; }
+  .hfeed-card--skel .ln1 { width: 42%; height: 11px; }
+  .hfeed-card--skel .ln2 { width: 70%; height: 13px; margin-top: 8px; }
+  .hfeed-card--skel .ring { width: 54px; height: 54px; border-radius: 50%; margin-left: auto; }
+  .hfeed-card--skel .chiprow { display: flex; gap: 6px; margin-top: 14px; }
+  .hfeed-card--skel .chip { width: 64px; height: 24px; border-radius: 9px; }
+
+  /* ===== 빈 상태 ===== */
+  .hfeed-empty { text-align: center; padding: 40px 20px; background: #fff; border: 1.5px dashed var(--line); border-radius: 20px; }
+  .hfeed-empty__glyph {
+    width: 52px; height: 52px; border-radius: 16px; background: var(--accent-50);
+    color: var(--c-accent); display: grid; place-items: center; margin: 0 auto 14px;
+  }
+  .hfeed-empty__title { font-size: 14.5px; font-weight: 700; }
+  .hfeed-empty__body { font-size: 12.5px; color: var(--c-muted); margin-top: 4px; }
+
+  /* ===== 섹션 라벨 (목업 전용, 실제 화면 아님) ===== */
+  .mock-band {
+    max-width: 1360px; margin: 40px auto 8px; padding: 0 4px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .mock-band__tag {
+    font-size: 11px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase;
+    color: #fff; background: var(--c-accent); border-radius: 6px; padding: 4px 8px;
+  }
+  .mock-band__note { font-size: 12.5px; color: var(--c-muted); }
+  .mock-note-top {
+    max-width: 1360px; margin: 4px auto 20px; font-size: 12px; color: var(--c-muted);
+    background: #f6f8fc; border: 1px dashed var(--line); border-radius: 12px; padding: 10px 14px;
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <!-- 문맥용 간이 레일 -->
+  <nav class="rail">
+    <div class="rail__dot"></div>
+    <div class="rail__btn on"><span class="ic"></span>홈</div>
+    <div class="rail__btn"><span class="ic"></span>대시보드</div>
+    <div class="rail__btn"><span class="ic"></span>검색</div>
+    <div class="rail__btn"><span class="ic"></span>시장</div>
+    <div class="rail__btn"><span class="ic"></span>마이</div>
+  </nav>
+
+  <div class="main">
+    <header class="topbar">
+      <span class="topbar__crumb">홈</span>
+      <div class="topbar__tabs">
+        <span class="topbar__tab on">피드</span>
+      </div>
+      <div class="topbar__av">김</div>
+    </header>
+
+    <div class="content">
+
+      <div class="mock-note-top">
+        디자인 목업 (프로덕션 코드 아님) · 1440px 데스크톱 · 상단 = 로그인 상태(매치 링 · 보유/미보유 칩) · 하단 = 게스트 상태(다크 CTA + 익명 카드)
+        · 2026-07-13 피드백 반영: 시각화 요소 저채도 팔레트(hf-viz: 링 3단계 sage/blue/slate, 보유 칩 블루 틴트, 메트릭 클레이, 증가율 세이지) + 회색 바탕(#f7f7f8) 위 흰 카드 분리
+      </div>
+
+      <!-- =========================================================
+           상단: 로그인 상태 3컬럼
+           ========================================================= -->
+      <div class="mock-band">
+        <span class="mock-band__tag">A · 로그인 상태</span>
+        <span class="mock-band__note">좌: 내 정보 / 중앙: 공고 타임라인 / 우: 기술 뉴스 + 미니 요약</span>
+      </div>
+
+      <div class="hfeed">
+        <!-- 좌측 -->
+        <aside class="hfeed__left">
+          <section class="hfeed-profile card">
+            <div class="hfeed-profile__top">
+              <div class="hfeed-profile__avatar">김</div>
+              <div>
+                <div class="hfeed-profile__name">김도현</div>
+                <div class="hfeed-profile__target">백엔드 개발자 지망</div>
+              </div>
+            </div>
+            <div class="hfeed-profile__stats">
+              <div class="hfeed-profile__stat">
+                <div class="lb">북마크</div>
+                <div class="v tnum">8</div>
+              </div>
+              <div class="hfeed-profile__stat" style="padding-left:14px;">
+                <div class="lb">최근 본 공고</div>
+                <div class="v tnum">27</div>
+              </div>
+            </div>
+          </section>
+
+          <section class="hfeed-resume card">
+            <div class="hfeed-resume__head">
+              <h3>내 이력서</h3>
+              <a class="hfeed-resume__edit" href="#">이력서 편집</a>
+            </div>
+            <div class="hfeed-resume__meter-cap">이력서 완성도 <b>82%</b></div>
+            <div class="hfeed-meter"><i style="width:82%"></i></div>
+            <div class="hfeed-resume__skillcap">보유 스킬 <b>12개</b></div>
+            <div class="hfeed-chips">
+              <span class="hfeed-chip">Python</span>
+              <span class="hfeed-chip">FastAPI</span>
+              <span class="hfeed-chip">PostgreSQL</span>
+              <span class="hfeed-chip">Docker</span>
+              <span class="hfeed-chip">Redis</span>
+              <span class="hfeed-chip">AWS</span>
+              <span class="hfeed-chip">Git</span>
+              <span class="hfeed-chip">SQLAlchemy</span>
+              <span class="hfeed-chip--more">+4</span>
+            </div>
+          </section>
+
+          <nav class="hfeed-links card">
+            <a class="hfeed-links__row" href="#">
+              <span class="lb">북마크한 공고</span>
+              <span class="ct tnum">8</span>
+              <span class="chev">&rsaquo;</span>
+            </a>
+            <a class="hfeed-links__row" href="#">
+              <span class="lb">최근 본 공고</span>
+              <span class="ct tnum">27</span>
+              <span class="chev">&rsaquo;</span>
+            </a>
+          </nav>
+        </aside>
+
+        <!-- 중앙 -->
+        <main class="hfeed__center">
+          <div class="hfeed-filter">
+            <div class="hfeed-filter__pool">
+              <button class="on">전체</button>
+              <button>국내</button>
+              <button>해외</button>
+            </div>
+            <div class="hfeed-filter__cats">
+              <button class="hfeed-filter__chip on">전체</button>
+              <button class="hfeed-filter__chip">백엔드</button>
+              <button class="hfeed-filter__chip">프론트엔드</button>
+              <button class="hfeed-filter__chip">AI/ML</button>
+              <button class="hfeed-filter__chip">데이터</button>
+              <button class="hfeed-filter__chip">모바일</button>
+              <button class="hfeed-filter__chip">DevOps</button>
+              <button class="hfeed-filter__chip">기획</button>
+            </div>
+          </div>
+
+          <!-- 오늘 -->
+          <div class="hfeed-divider hfeed-divider--today">
+            <span class="hfeed-divider__dot"></span>
+            <span class="hfeed-divider__label">오늘</span>
+            <span class="hfeed-divider__rule"></span>
+          </div>
+
+          <!-- 카드 1: 높은 매치 + 긴급 D-day -->
+          <article class="hfeed-card">
+            <div class="hfeed-card__head">
+              <div class="hfeed-card__logo">토</div>
+              <div class="hfeed-card__meta">
+                <div class="hfeed-card__company">토스페이먼츠</div>
+                <div class="hfeed-card__sub">핀테크 · 서울 강남구</div>
+                <div class="hfeed-card__title">결제 시스템 백엔드 엔지니어 (Python)</div>
+              </div>
+              <div class="hfeed-ring__wrap">
+                <div class="hfeed-ring hfeed-ring--high" role="img" aria-label="이력서 매치율 86%"
+                     style="background:conic-gradient(var(--ring-c) 0 86%, var(--track) 86%)">
+                  <b class="tnum">86%</b>
+                </div>
+                <span class="hfeed-ring__cap">매치</span>
+              </div>
+            </div>
+            <div class="hfeed-card__timerow">
+              <span class="hfeed-card__time">2시간 전</span>
+              <span class="hfeed-badge hfeed-badge--dday is-urgent tnum" style="margin-left:auto">D-2</span>
+            </div>
+            <div class="hfeed-card__chips">
+              <span class="hfeed-chip--cat">백엔드</span>
+              <span class="hfeed-chip--owned">Python</span>
+              <span class="hfeed-chip--owned">FastAPI</span>
+              <span class="hfeed-chip--owned">PostgreSQL</span>
+              <span class="hfeed-chip--owned">Redis</span>
+              <span class="hfeed-chip--missing">Kafka</span>
+              <span class="hfeed-chip--missing">gRPC</span>
+              <span class="hfeed-chip--more">+2</span>
+            </div>
+            <div class="hfeed-card__foot">
+              <span class="hfeed-card__matchsum">보유 <b class="tnum">4</b> · 부족 <b class="tnum">4</b></span>
+              <div class="hfeed-card__actions">
+                <a class="hfeed-card__detail" href="#">상세보기</a>
+                <button class="hfeed-card__bookmark is-saved" aria-label="북마크 해제">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg>
+                </button>
+              </div>
+            </div>
+          </article>
+
+          <!-- 카드 2: 중간 매치 + 일반 D-day -->
+          <article class="hfeed-card">
+            <div class="hfeed-card__head">
+              <div class="hfeed-card__logo">당</div>
+              <div class="hfeed-card__meta">
+                <div class="hfeed-card__company">당근마켓</div>
+                <div class="hfeed-card__sub">커머스·플랫폼 · 서울 서초구</div>
+                <div class="hfeed-card__title">서버 개발자 (검색/추천 플랫폼)</div>
+              </div>
+              <div class="hfeed-ring__wrap">
+                <div class="hfeed-ring hfeed-ring--mid" role="img" aria-label="이력서 매치율 61%"
+                     style="background:conic-gradient(var(--ring-c) 0 61%, var(--track) 61%)">
+                  <b class="tnum">61%</b>
+                </div>
+                <span class="hfeed-ring__cap">매치</span>
+              </div>
+            </div>
+            <div class="hfeed-card__timerow">
+              <span class="hfeed-card__time">5시간 전</span>
+              <span class="hfeed-badge hfeed-badge--dday tnum" style="margin-left:auto">D-12</span>
+            </div>
+            <div class="hfeed-card__chips">
+              <span class="hfeed-chip--cat">백엔드</span>
+              <span class="hfeed-chip--cat">데이터</span>
+              <span class="hfeed-chip--owned">Python</span>
+              <span class="hfeed-chip--owned">AWS</span>
+              <span class="hfeed-chip--missing">Elasticsearch</span>
+              <span class="hfeed-chip--missing">Kafka</span>
+              <span class="hfeed-chip--missing">Go</span>
+            </div>
+            <div class="hfeed-card__foot">
+              <span class="hfeed-card__matchsum">보유 <b class="tnum">2</b> · 부족 <b class="tnum">3</b></span>
+              <div class="hfeed-card__actions">
+                <a class="hfeed-card__detail" href="#">상세보기</a>
+                <button class="hfeed-card__bookmark" aria-label="북마크 추가">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg>
+                </button>
+              </div>
+            </div>
+          </article>
+
+          <!-- 어제 -->
+          <div class="hfeed-divider">
+            <span class="hfeed-divider__dot"></span>
+            <span class="hfeed-divider__label">어제</span>
+            <span class="hfeed-divider__rule"></span>
+          </div>
+
+          <!-- 카드 3: 상시채용 -->
+          <article class="hfeed-card">
+            <div class="hfeed-card__head">
+              <div class="hfeed-card__logo">네</div>
+              <div class="hfeed-card__meta">
+                <div class="hfeed-card__company">네이버클라우드</div>
+                <div class="hfeed-card__sub">클라우드·인프라 · 경기 성남시 분당구</div>
+                <div class="hfeed-card__title">Platform Backend Engineer</div>
+              </div>
+              <div class="hfeed-ring__wrap">
+                <div class="hfeed-ring hfeed-ring--low" role="img" aria-label="이력서 매치율 40%"
+                     style="background:conic-gradient(var(--ring-c) 0 40%, var(--track) 40%)">
+                  <b class="tnum">40%</b>
+                </div>
+                <span class="hfeed-ring__cap">매치</span>
+              </div>
+            </div>
+            <div class="hfeed-card__timerow">
+              <span class="hfeed-card__time">어제</span>
+              <span class="hfeed-badge hfeed-badge--always" style="margin-left:auto">상시채용</span>
+            </div>
+            <div class="hfeed-card__chips">
+              <span class="hfeed-chip--cat">백엔드</span>
+              <span class="hfeed-chip--cat">DevOps</span>
+              <span class="hfeed-chip--owned">Docker</span>
+              <span class="hfeed-chip--owned">PostgreSQL</span>
+              <span class="hfeed-chip--missing">Kubernetes</span>
+              <span class="hfeed-chip--missing">Terraform</span>
+              <span class="hfeed-chip--missing">Go</span>
+            </div>
+            <div class="hfeed-card__foot">
+              <span class="hfeed-card__matchsum">보유 <b class="tnum">2</b> · 부족 <b class="tnum">3</b></span>
+              <div class="hfeed-card__actions">
+                <a class="hfeed-card__detail" href="#">상세보기</a>
+                <button class="hfeed-card__bookmark" aria-label="북마크 추가">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg>
+                </button>
+              </div>
+            </div>
+          </article>
+
+          <!-- 무한스크롤 로딩 스켈레톤 -->
+          <div class="hfeed-card--skel" aria-hidden="true">
+            <div class="row">
+              <div class="hfeed-skel logo"></div>
+              <div style="flex:1">
+                <div class="hfeed-skel ln1"></div>
+                <div class="hfeed-skel ln2"></div>
+              </div>
+              <div class="hfeed-skel ring"></div>
+            </div>
+            <div class="chiprow">
+              <div class="hfeed-skel chip"></div>
+              <div class="hfeed-skel chip"></div>
+              <div class="hfeed-skel chip"></div>
+            </div>
+          </div>
+        </main>
+
+        <!-- 우측 -->
+        <aside class="hfeed__right">
+          <section class="hfeed-news card">
+            <div class="hfeed-news__head">
+              <h3>기술 뉴스</h3>
+              <span class="hfeed-news__updated tnum">12분 전 갱신</span>
+            </div>
+            <div class="hfeed-news__tabs">
+              <button class="on">해커뉴스</button>
+              <button>긱뉴스</button>
+              <button>GitHub</button>
+            </div>
+            <div class="hfeed-news__list">
+              <a class="hfeed-news__item hfeed-news__item--hn" href="#">
+                <div class="hfeed-news__title">Postgres is eating the database world: why teams consolidate on one engine</div>
+                <div class="hfeed-news__meta tnum">포인트 <b class="hfeed-news__stat">342</b> · <span class="hfeed-news__thread">댓글 128</span></div>
+              </a>
+              <a class="hfeed-news__item hfeed-news__item--hn" href="#">
+                <div class="hfeed-news__title">Show HN: A tiny type-safe RPC layer for FastAPI and TypeScript clients</div>
+                <div class="hfeed-news__meta tnum">포인트 <b class="hfeed-news__stat">211</b> · <span class="hfeed-news__thread">댓글 74</span></div>
+              </a>
+              <a class="hfeed-news__item hfeed-news__item--hn" href="#">
+                <div class="hfeed-news__title">The cost of async: benchmarking Python 3.13 free-threading in production</div>
+                <div class="hfeed-news__meta tnum">포인트 <b class="hfeed-news__stat">189</b> · <span class="hfeed-news__thread">댓글 63</span></div>
+              </a>
+            </div>
+          </section>
+
+          <section class="hfeed-mini" role="link" tabindex="0">
+            <span class="hfeed-mini__label">오늘 신규 공고</span>
+            <span class="hfeed-mini__num hfeed-mini__num--market tnum">128<span>건</span></span>
+            <span class="hfeed-mini__hint">시장에서 보기 &rsaquo;</span>
+          </section>
+
+          <section class="hfeed-mini hfeed-mini--list" role="link" tabindex="0">
+            <span class="hfeed-mini__label" style="margin-bottom:6px">이번 주 급상승 스킬</span>
+            <div class="hfeed-mini__row">
+              <span class="hfeed-mini__rank tnum">1</span>
+              <span class="hfeed-mini__name">Kubernetes</span>
+              <span class="hfeed-mini__delta tnum">+38%</span>
+            </div>
+            <div class="hfeed-mini__row">
+              <span class="hfeed-mini__rank tnum">2</span>
+              <span class="hfeed-mini__name">Kafka</span>
+              <span class="hfeed-mini__delta tnum">+29%</span>
+            </div>
+            <div class="hfeed-mini__row">
+              <span class="hfeed-mini__rank tnum">3</span>
+              <span class="hfeed-mini__name">Go</span>
+              <span class="hfeed-mini__delta tnum">+21%</span>
+            </div>
+            <span class="hfeed-mini__hint" style="margin-top:10px">시장에서 보기 &rsaquo;</span>
+          </section>
+
+          <section class="hfeed-mini" role="link" tabindex="0">
+            <span class="hfeed-mini__label">내 매치 상위 공고</span>
+            <span class="hfeed-mini__num hfeed-mini__num--personal tnum">23<span>건</span></span>
+            <span class="hfeed-mini__hint">대시보드에서 보기 &rsaquo;</span>
+          </section>
+        </aside>
+      </div>
+
+      <!-- =========================================================
+           하단: 게스트 상태 (좌 CTA + 익명 카드 + 뉴스 에러/미니 변형)
+           ========================================================= -->
+      <div class="mock-band">
+        <span class="mock-band__tag">B · 게스트 상태</span>
+        <span class="mock-band__note">좌: 다크 로그인 CTA / 중앙: 개인화 제거된 익명 카드 / 우: 뉴스 stale·에러 + 미니(내 매치 숨김)</span>
+      </div>
+
+      <div class="hfeed">
+        <!-- 좌측: 게스트 CTA -->
+        <aside class="hfeed__left">
+          <section class="hfeed-guest">
+            <div class="hfeed-guest__eyebrow">게스트</div>
+            <div class="hfeed-guest__title">로그인하고 매치율 확인하기</div>
+            <div class="hfeed-guest__body">로그인하면 공고마다 내 이력서 매치율이 보여요.</div>
+            <div class="hfeed-guest__actions">
+              <a class="hfeed-guest__btn hfeed-guest__btn--primary" href="#">로그인</a>
+              <a class="hfeed-guest__btn hfeed-guest__btn--ghost" href="#">회원가입</a>
+            </div>
+            <a class="hfeed-guest__skip" href="#">먼저 둘러보기</a>
+          </section>
+        </aside>
+
+        <!-- 중앙: 익명 카드 -->
+        <main class="hfeed__center">
+          <div class="hfeed-filter">
+            <div class="hfeed-filter__pool">
+              <button class="on">전체</button>
+              <button>국내</button>
+              <button>해외</button>
+            </div>
+            <div class="hfeed-filter__cats">
+              <button class="hfeed-filter__chip on">전체</button>
+              <button class="hfeed-filter__chip">백엔드</button>
+              <button class="hfeed-filter__chip">프론트엔드</button>
+              <button class="hfeed-filter__chip">AI/ML</button>
+              <button class="hfeed-filter__chip">데이터</button>
+              <button class="hfeed-filter__chip">모바일</button>
+            </div>
+          </div>
+
+          <div class="hfeed-divider hfeed-divider--today">
+            <span class="hfeed-divider__dot"></span>
+            <span class="hfeed-divider__label">오늘</span>
+            <span class="hfeed-divider__rule"></span>
+          </div>
+
+          <!-- 익명 카드: 링 없음, 스킬 전부 뉴트럴, 매치요약 없음 -->
+          <article class="hfeed-card">
+            <div class="hfeed-card__head">
+              <div class="hfeed-card__logo">토</div>
+              <div class="hfeed-card__meta">
+                <div class="hfeed-card__company">토스페이먼츠</div>
+                <div class="hfeed-card__sub">핀테크 · 서울 강남구</div>
+                <div class="hfeed-card__title">결제 시스템 백엔드 엔지니어 (Python)</div>
+              </div>
+            </div>
+            <div class="hfeed-card__timerow">
+              <span class="hfeed-card__time">2시간 전</span>
+              <span class="hfeed-badge hfeed-badge--dday is-urgent tnum" style="margin-left:auto">D-2</span>
+            </div>
+            <div class="hfeed-card__chips">
+              <span class="hfeed-chip--cat">백엔드</span>
+              <span class="hfeed-chip--cat">Python</span>
+              <span class="hfeed-chip--cat">FastAPI</span>
+              <span class="hfeed-chip--cat">PostgreSQL</span>
+              <span class="hfeed-chip--cat">Kafka</span>
+              <span class="hfeed-chip--cat">gRPC</span>
+              <span class="hfeed-chip--more">+2</span>
+            </div>
+            <div class="hfeed-card__foot">
+              <span></span>
+              <div class="hfeed-card__actions">
+                <a class="hfeed-card__detail" href="#">상세보기</a>
+                <button class="hfeed-card__bookmark" aria-label="북마크 추가">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg>
+                </button>
+              </div>
+            </div>
+          </article>
+
+          <!-- 빈 상태 예시 (필터 결과 0건) -->
+          <div class="hfeed-empty">
+            <div class="hfeed-empty__glyph">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            </div>
+            <div class="hfeed-empty__title">표시할 공고가 없어요</div>
+            <div class="hfeed-empty__body">필터를 바꾸거나 잠시 후 다시 확인해 주세요.</div>
+          </div>
+        </main>
+
+        <!-- 우측: 뉴스(GitHub 탭 + stale) + 미니(내 매치 숨김) -->
+        <aside class="hfeed__right">
+          <section class="hfeed-news card">
+            <div class="hfeed-news__head">
+              <h3>기술 뉴스</h3>
+              <span class="hfeed-news__updated tnum">3시간 전 갱신</span>
+            </div>
+            <div class="hfeed-news__tabs">
+              <button>해커뉴스</button>
+              <button>긱뉴스</button>
+              <button class="on">GitHub</button>
+            </div>
+            <div class="hfeed-news__source" style="margin:8px 0 0; color:var(--c-muted)">이전에 받아온 정보예요.</div>
+            <div class="hfeed-news__list">
+              <a class="hfeed-news__item hfeed-news__item--gh" href="#">
+                <div class="hfeed-news__repo"><span class="owner">vercel/</span><b>ai</b></div>
+                <div class="hfeed-news__desc">Build AI-powered applications with React, Svelte, Vue, and Solid.</div>
+                <div class="hfeed-news__meta tnum"><span class="hfeed-news__langdot hfeed-news__langdot--ts"></span>TypeScript · 스타 <b class="hfeed-news__stat">11.2k</b></div>
+              </a>
+              <a class="hfeed-news__item hfeed-news__item--gh" href="#">
+                <div class="hfeed-news__repo"><span class="owner">pydantic/</span><b>logfire</b></div>
+                <div class="hfeed-news__desc">Uncomplicated observability for Python and beyond, from the Pydantic team.</div>
+                <div class="hfeed-news__meta tnum"><span class="hfeed-news__langdot hfeed-news__langdot--py"></span>Python · 스타 <b class="hfeed-news__stat">4.8k</b></div>
+              </a>
+              <a class="hfeed-news__item hfeed-news__item--gh" href="#">
+                <div class="hfeed-news__repo"><span class="owner">tokio-rs/</span><b>axum</b></div>
+                <div class="hfeed-news__desc">Ergonomic and modular web framework built with Tokio, Tower, and Hyper.</div>
+                <div class="hfeed-news__meta tnum"><span class="hfeed-news__langdot hfeed-news__langdot--sys"></span>Rust · 스타 <b class="hfeed-news__stat">19.6k</b></div>
+              </a>
+            </div>
+          </section>
+
+          <!-- 긱뉴스 탭 예시 카드 (참조용 두 번째 패널) -->
+          <section class="hfeed-news card">
+            <div class="hfeed-news__head">
+              <h3>기술 뉴스</h3>
+              <span class="hfeed-news__updated tnum">방금 갱신</span>
+            </div>
+            <div class="hfeed-news__tabs">
+              <button>해커뉴스</button>
+              <button class="on">긱뉴스</button>
+              <button>GitHub</button>
+            </div>
+            <div class="hfeed-news__list">
+              <a class="hfeed-news__item hfeed-news__item--gn" href="#">
+                <div class="hfeed-news__title">FastAPI 0.115 릴리스 정리: 의존성 주입과 lifespan 변경점</div>
+                <div class="hfeed-news__source">news.hada.io</div>
+              </a>
+              <a class="hfeed-news__item hfeed-news__item--gn" href="#">
+                <div class="hfeed-news__title">주니어 백엔드가 6개월 만에 배운 것들 (회고)</div>
+                <div class="hfeed-news__source">news.hada.io</div>
+              </a>
+              <a class="hfeed-news__item hfeed-news__item--gn" href="#">
+                <div class="hfeed-news__title">PostgreSQL 인덱스 잘못 쓰면 벌어지는 일</div>
+                <div class="hfeed-news__source">news.hada.io</div>
+              </a>
+            </div>
+          </section>
+
+          <section class="hfeed-mini" role="link" tabindex="0">
+            <span class="hfeed-mini__label">오늘 신규 공고</span>
+            <span class="hfeed-mini__num hfeed-mini__num--market tnum">128<span>건</span></span>
+            <span class="hfeed-mini__hint">시장에서 보기 &rsaquo;</span>
+          </section>
+          <!-- 게스트: "내 매치 상위 공고" 미니카드는 렌더하지 않음 -->
+        </aside>
+      </div>
+
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,51 +1,57 @@
-// /chat v2 응답 계약 — 프론트 단일 진실원.
-// 스펙 docs/superpowers/specs/2026-07-10-rag-hybrid-agentic-graph-design.md §5 동결본.
-// 백엔드 T3 완료 시 이 타입에 응답을 그대로 맞춘다(픽스처 → 실제 API 무변경 스위치).
+// POST /api/v1/chat 응답 계약 — 실제 백엔드 계약을 그대로 반영한 프론트 단일 진실원.
+// 원천: backend/app/services/rag/schemas.py (ChatRequest/ChatResponse).
+// answer는 세그먼트 배열이 아니라 순수 문자열이다 — 예전 아스피레이셔널 계약(AnswerSeg[])과 다르니 주의.
 
-export type Pool = 'global' | 'domestic'
+export type Pool = 'domestic' | 'global'
 export type Route = 'sql' | 'vector' | 'graph' | 'mixed'
-export type ToolName = 'sql' | 'vector' | 'graph'
-
-/** 파이프라인 단계 하나. status는 재검색 루프 시각화용. */
 export type StepKind = 'plan' | 'tool' | 'eval' | 'synth'
+export type ToolResultKind = 'list' | 'stat' | 'trend' | 'graph' | 'compare'
+
+/** 파이프라인 단계 하나. kind==='tool'일 때만 tool이 채워진다. */
 export interface ChatStep {
   kind: StepKind
-  tool?: ToolName          // kind==='tool'일 때 어떤 도구인지
+  tool?: string
   label: string
-  detail: string
-  status?: 'run' | 'done' | 'retry'  // 'retry' = evaluator가 재검색을 걸었음
+  detail?: string
 }
 
 export interface Plan {
   intent: string
   subqueries: string[]
-  tools: ToolName[]
-  pool: Pool
+  tools: string[]
+  pool: string | null
+  entities: Record<string, unknown>
 }
 
-// --- tool_results: 기존 union 유지 + graph 추가 ---
-export interface ListItem { name: string; sub?: string; metric: string; pct?: number; rank?: number }
-export interface GraphNode { id: string; label: string; group?: string; focus?: boolean }
-export interface GraphEdge { source: string; target: string; strength?: number; label?: string }
+export interface ToolResultItem {
+  name: string
+  metric?: string
+  pct?: number
+}
 
-export type ToolResult =
-  | { kind: 'trend'; label: string; n: number; unit: string; delta: string; spark: number[] }
-  | { kind: 'list'; label: string; items: ListItem[] }
-  | { kind: 'compare'; label: string; beforeLabel: string; before: number; afterLabel: string; after: number; deltaLabel: string }
-  | { kind: 'stat'; label: string; big: number; suffix: string; caption: string; sub: string }
-  | { kind: 'graph'; label: string; nodes: GraphNode[]; edges: GraphEdge[]; focusId: string; traversal: string[] }
+export interface ToolResult {
+  kind: ToolResultKind
+  label: string
+  items: ToolResultItem[]
+  value?: number | string
+  unit?: string
+  nodes: Record<string, unknown>[]
+  edges: Record<string, unknown>[]
+}
 
 export interface Citation {
-  type: 'sql' | 'vector' | 'graph' | 'posting' | 'community'
+  type: string
   ref: string
   label: string
 }
 
-export interface AnswerSeg { text: string; cite: string }
-export interface Confidence { level: number; n: number }
+export interface Confidence {
+  level: number // 0~5
+  n: number // 근거 표본 수
+}
 
 export interface ChatResponse {
-  answer: AnswerSeg[]
+  answer: string
   route: Route
   plan: Plan
   steps: ChatStep[]
@@ -55,10 +61,50 @@ export interface ChatResponse {
   degraded: boolean
 }
 
-/** 데모/픽스처 항목: 응답 + 칩 라벨 + 유저 질문. */
-export interface DemoScenario {
-  id: string
-  chipLabel: string
-  userQ: string
-  response: ChatResponse
+export interface ChatRequestBody {
+  question: string
+  pool?: Pool
+}
+
+// ============================================================
+// POST /api/v1/chat/stream 응답 계약 (SSE) — 위 /chat과 같은 파이프라인을
+// 단계별로 프레임 하나씩 흘려보낸다. 원천: 세션 스크래치패드 sse-chat-contract.md.
+// answer는 토큰 스트리밍이 아니라 final 프레임에서 한 번에 온다 —
+// 라이브 체감은 plan → tool → eval → synth 단계가 하나씩 나타나는 것.
+// ============================================================
+
+/** step 프레임의 kind는 tool·eval·synth만 온다 — plan은 별도 plan 프레임으로 이미 다룬다. */
+export type StreamStepKind = 'tool' | 'eval' | 'synth'
+
+/** result 프레임의 items/nodes/edges는 비어있으면 아예 필드가 생략될 수 있어 옵셔널로 둔다.
+ *  화면에 쓸 때는 ToolResult로 정규화(빈 배열 기본값)해서 기존 렌더 컴포넌트를 그대로 재사용한다. */
+export interface StreamToolResult {
+  kind: ToolResultKind
+  label: string
+  items?: ToolResultItem[]
+  value?: number | string
+  unit?: string
+  nodes?: Record<string, unknown>[]
+  edges?: Record<string, unknown>[]
+}
+
+export type ChatStreamEvent =
+  | { type: 'plan'; route: Route; plan: Plan }
+  | { type: 'step'; kind: StreamStepKind; tool?: string; label: string; detail?: string }
+  | { type: 'result'; result: StreamToolResult }
+  | { type: 'final'; answer: string; citations: Citation[]; confidence: Confidence; degraded: boolean }
+  | { type: 'error'; message: string }
+
+/** 정규화: StreamToolResult의 옵셔널 배열을 ToolResult 형태(빈 배열 기본값)로 채워
+ *  RagConsole의 ToolResultCard 등 기존 렌더 컴포넌트를 스트리밍 데이터에도 그대로 쓴다. */
+export function normalizeStreamResult(r: StreamToolResult): ToolResult {
+  return {
+    kind: r.kind,
+    label: r.label,
+    items: r.items ?? [],
+    value: r.value,
+    unit: r.unit,
+    nodes: r.nodes ?? [],
+    edges: r.edges ?? [],
+  }
 }
