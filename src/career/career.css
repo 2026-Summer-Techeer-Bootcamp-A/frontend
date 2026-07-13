@@ -1402,6 +1402,10 @@
 .cr-morebtn:active { opacity: 0.6; }
 
 /* 이력서 편집 — 데스크톱 2단(좌 설정 / 우 실 이력서 미리보기) */
+/* .dsub 기본 max-width(920px)·.dsub__content(680px)는 1컬럼 설정 화면 기준이라
+   560+420+28=1008px가 필요한 2단 레이아웃엔 좁다 — 공고상세(.djd)와 같은 :has() 확장 패턴. */
+.dsub:has(.rpv-grid) { max-width: 1040px; }
+.dsub:has(.rpv-grid) .dsub__content { max-width: none; }
 .rpv-grid { display: grid; grid-template-columns: minmax(0, 560px) minmax(320px, 420px); gap: 28px; align-items: start; }
 .rpv-settings { min-width: 0; }
 .rpv-preview { position: sticky; top: 24px; }
