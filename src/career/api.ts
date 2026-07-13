@@ -16,9 +16,11 @@ export type PostingCard = {
   close_date: string | null
   skills: string[]
   url: string
+  logo_url?: string | null
   matched_count?: number | null
 }
 export type PostingList = { items: PostingCard[]; page: number; page_size: number; total: number; as_of: string }
+export type DescSection = { title: string; text: string }
 export type PostingDetail = PostingCard & {
   source: string
   pool: string | null
@@ -31,6 +33,7 @@ export type PostingDetail = PostingCard & {
   response_rate: number | null
   categories: string[]
   certs: string[]
+  desc_sections?: DescSection[]
 }
 export type SimilarPosting = PostingCard & { overlap_count: number }
 export type PostingMap = {
