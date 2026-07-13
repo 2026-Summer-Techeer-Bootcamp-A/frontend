@@ -8,6 +8,7 @@ import {
   siFlutter, siJira, siNextdotjs, siExpress, siMariadb,
 } from 'simple-icons'
 import { Sparkline } from './charts'
+import { certApi } from './api'
 import { useDashboardConfig, toggleWidget, getWidgetSize, setWidgetSize, type WidgetSection } from './dashboardConfig'
 import type { WidgetCatalogItem } from './widgetCatalog'
 import { WidgetShapeIcon } from './widgetIcons'
@@ -481,6 +482,44 @@ export function TechSearchSheet({
           )
         })}
         {filtered.length === 0 && <div className="kit-picker__empty">검색 결과가 없어요</div>}
+      </div>
+    </BottomSheet>
+  )
+}
+
+export function CertSearchSheet({
+  open, onClose, owned, onAdd,
+}: { open: boolean; onClose: () => void; owned: string[]; onAdd: (name: string) => void }) {
+  const [q, setQ] = useState('')
+  const [results, setResults] = useState<string[]>([])
+
+  useEffect(() => {
+    if (!open) return
+    let cancelled = false
+    certApi.search(q).then(({ certs }) => {
+      if (!cancelled) setResults(certs.map((c) => c.name))
+    }).catch(() => { if (!cancelled) setResults([]) })
+    return () => { cancelled = true }
+  }, [open, q])
+
+  return (
+    <BottomSheet open={open} onClose={onClose}>
+      <div className="kit-picker__hd">자격증 추가 <span>{owned.length}개 보유</span></div>
+      <div className="kit-picker__search">
+        <Search size={17} />
+        <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="자격증 검색 (예: AWS)" />
+      </div>
+      <div className="kit-picker__list">
+        {results.map((name) => {
+          const on = owned.includes(name)
+          return (
+            <button key={name} className={`kit-picker__row${on ? ' on' : ''}`} disabled={on} onClick={() => onAdd(name)}>
+              <span className="nm">{name}</span>
+              <span className="act">{on ? <Check size={16} /> : <Plus size={16} />}</span>
+            </button>
+          )
+        })}
+        {results.length === 0 && <div className="kit-picker__empty">검색 결과가 없어요</div>}
       </div>
     </BottomSheet>
   )
