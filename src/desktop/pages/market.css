@@ -1,43 +1,74 @@
 /* 채용 시장 — 시장 흐름 인텔리전스 보드. placeholders.css의 .dpage/.dcard 토큰을 그대로 쓴다.
-   12컬럼 밀집 그리드 — 각 카드는 명시적 span을 가지고, 모든 행이 12칸을 정확히 채워서
-   좌/우 빈 컬럼(void)이 생기지 않도록 한다. */
+   위계형 커맨드센터: 라벨 섹션 4개(수요 · 트렌드 · 기업·역량 · 구조·탐색) + featured 히어로 1개
+   + "내 직무/전체" 스코프 탭. 대시보드(DesktopOverview .dov__sec)와 동일한 섹션 패턴을 미러링한다. */
 
 .dmkt2__head { margin-bottom: 18px; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .dmkt2__head-l { min-width: 0; }
-.dmkt2__head > .kit-wset { margin-top: 6px; }
 .dmkt2__title { font-size: 34px; font-weight: 800; letter-spacing: -1px; line-height: 1.15; color: var(--c-ink); }
 .dmkt2__sub { margin-top: 6px; font-size: 12.5px; color: var(--c-muted); }
 
-.dmkt2__grid {
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 14px;
-  /* align-items 기본값(stretch) — 짧은 카드가 행 높이만큼 늘어나 빈 공간이 남지 않는다. */
+/* 우측 헤더 존 — "내 직무/전체" 스코프 탭 + 위젯 설정 기어 */
+.dmkt2__head-r { flex: none; display: flex; align-items: center; gap: 12px; padding-top: 2px; }
+.dmkt2__scopetabs { flex: none; }
+
+/* 전역 집계 위젯 배지 — scope='mine'일 때 "전체 시장 기준"을 알림(카드 안 직무 필터가 안 먹는다는 신호) */
+.dmkt2__scopebadge {
+  display: inline-flex; align-items: center; flex: none;
+  font-size: 10.5px; font-weight: 700; color: var(--c-muted);
+  background: var(--accent-50); border-radius: 7px; padding: 3px 7px; margin-bottom: 8px;
 }
 
-/* row 1: 검정 히어로(수요 1위) + 상위 요구 기술 Top14 리더보드 */
-.dmkt2__cell--hero { grid-column: span 4; }
-.dmkt2__cell--bars { grid-column: span 8; }
+/* ───────────────── 라벨 섹션 — 4개(수요 · 트렌드 · 기업·역량 · 구조·탐색), 섹션간 32px ───────────────── */
+.dmkt2__sec { margin-bottom: 32px; }
+.dmkt2__sec:last-child { margin-bottom: 0; }
+.dmkt2__sec-h { margin-bottom: 16px; }
+.dmkt2__sec-h h2 { font-size: 18px; font-weight: 800; letter-spacing: -0.3px; color: var(--c-ink); }
+.dmkt2__sec-h span { display: block; margin-top: 4px; font-size: 12.5px; color: var(--c-muted); font-weight: 500; }
+.dmkt2__sec-h span b { color: var(--c-ink); font-weight: 700; }
 
-/* row 2: 기술 공동출현 네트워크 + 트렌드 전파 네트워크 */
-.dmkt2__cell--net { grid-column: span 8; min-height: 380px; }
-.dmkt2__cell--prop { grid-column: span 4; min-height: 380px; }
-
-/* row 3: 연도별 추이 · 무버스 · 티어 비교 — 3등분 */
-.dmkt2__cell--third { grid-column: span 4; min-height: 320px; }
-
-/* row 4: 세대별 변화 · 수요×빈도 분포 — 2등분 */
-.dmkt2__cell--half { grid-column: span 6; min-height: 320px; }
-
-.dmkt2__cell--net, .dmkt2__cell--prop, .dmkt2__cell--third, .dmkt2__cell--half {
-  display: flex;
-  flex-direction: column;
+/* 구조·탐색 섹션 헤더 — 토글 버튼을 우측에 붙이는 flex row 변형 */
+.dmkt2__sec-h--toggle { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.dmkt2__sec-toggle {
+  flex: none; font-size: 12px; font-weight: 700; color: var(--c-muted);
+  background: var(--accent-50); border-radius: 9px; padding: 6px 12px;
+  transition: color 0.13s ease, background 0.13s ease;
 }
+.dmkt2__sec-toggle:hover { color: var(--c-ink); background: var(--accent-100); }
+.dmkt2__sec-collapsed { font-size: 12.5px; color: var(--c-muted); padding: 4px 2px; }
 
-/* 수요 리더보드 히어로 — kit-heroStat(검정)을 셀(.wcell, flex column) 안에 꽉 채운다.
-   이웃(Top14)보다 내용이 짧아도 flex:1로 행 높이를 그대로 물려받아 카드 아래에 빈 공간이
-   남지 않는다. */
-.dmkt2 .wgrid .kit-heroStat { flex: 1; }
+/* 섹션 내부 그리드 — 섹션마다 열 수가 다르고, 카드 높이는 같은 행에서 stretch로 통일한다.
+   리스트/그래프형 카드는 내부 overflow-y:auto로 흡수(대시보드 .dov__sec-grid와 동일 원칙). */
+.dmkt2__sec-grid { display: grid; gap: 16px; align-items: stretch; }
+.dmkt2__sec-grid > * { min-width: 0; height: 100%; }
+.dmkt2__card-item { display: flex; flex-direction: column; min-width: 0; height: 100%; }
+.dmkt2__card-item > .dcard,
+.dmkt2__card-item > .wow-card { flex: 1; height: 100%; display: flex; flex-direction: column; }
+.dmkt2__card-item .kit-heroStat { flex: 1; }
+
+/* 수요 — 8/4 split(featured 히어로 2/3 : Top14 레일 1/3) */
+.dmkt2__sec-grid--demand { grid-template-columns: 2fr 1fr; }
+.dmkt2__card-item--hero { min-height: 240px; }
+
+/* 트렌드 — Hype vs Hire · 연도별 추이 · 무버스, 3등분 같은 높이 */
+.dmkt2__sec-grid--trend { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+/* 기업 · 역량 — 카드 크기에 맞춰 2~3열로 채워지는 auto-fill */
+.dmkt2__sec-grid--company { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+
+/* 구조 · 탐색 — 무거운 탐색 그래프 2등분(진행적 공개로 펼쳤을 때만 렌더) */
+.dmkt2__sec-grid--explore { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+@media (max-width: 1180px) {
+  .dmkt2__sec-grid--demand,
+  .dmkt2__sec-grid--trend,
+  .dmkt2__sec-grid--explore { grid-template-columns: 1fr; }
+  .dmkt2__sec-grid--company { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .dmkt2__sec-grid--company { grid-template-columns: 1fr; }
+  .dmkt2__head { flex-direction: column; }
+  .dmkt2__head-r { padding-top: 0; }
+}
 
 /* 상위 요구 기술 Top14 바 — 2x1(기본)에서는 상위 8개만, "더 보기"로 14개 전체 펼침 */
 .dmkt2__bars { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
@@ -83,16 +114,3 @@
   font-size: 11.5px; font-weight: 600; color: var(--c-muted);
 }
 .dmkt2__scatter-legend i { width: 8px; height: 8px; border-radius: 50%; flex: none; }
-
-@media (max-width: 1180px) {
-  .dmkt2__grid { grid-template-columns: 1fr; }
-  .dmkt2__cell--hero,
-  .dmkt2__cell--bars,
-  .dmkt2__cell--net,
-  .dmkt2__cell--prop,
-  .dmkt2__cell--third,
-  .dmkt2__cell--half {
-    grid-column: span 1;
-    min-height: 0;
-  }
-}
