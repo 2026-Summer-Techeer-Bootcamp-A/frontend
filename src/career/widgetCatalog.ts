@@ -49,4 +49,8 @@ export const MARKET_WIDGETS: WidgetCatalogItem[] = [
   { id: 'competency', label: '회사가 원하는 역량', shape: 'bars', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
   { id: 'response-rate', label: '응답 잘 오는 회사', shape: 'stat', allowedSizes: ['1x1', '2x1'], defaultSize: '2x1' },
   { id: 'concept-signal', label: '개념 → 기술 시그니처', shape: 'radar', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
+  { id: 'trend-chronicle', label: '기술 트렌드 연대기', shape: 'line', allowedSizes: ['2x1', '2x2'], defaultSize: '2x2' },
+  { id: 'github-chronicle', label: 'GitHub 스타 순위 변천사', shape: 'line', allowedSizes: ['2x1', '2x2'], defaultSize: '2x2' },
+  { id: 'global-domestic-gap', label: '글로벌 vs 국내 격차', shape: 'bars', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
+  { id: 'github-topics', label: '오픈소스 관심 vs 수요', shape: 'scatter', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
 ]
