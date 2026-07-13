@@ -14,6 +14,10 @@ import aRaw from '../data/pearl/a.json'
 import competencyRaw from '../data/competencyData.json'
 import sRaw from '../data/pearl/s.json'
 import conceptRaw from '../data/conceptReal.json'
+import conceptChronicleRaw from '../data/conceptData.json'
+import lRaw from '../data/pearl/l.json'
+import oRaw from '../data/pearl/o.json'
+import uRaw from '../data/pearl/u.json'
 import './wowWidgets.css'
 
 /* ============================================================
@@ -490,6 +494,315 @@ export function ConceptSignalWidget({ size = '2x1' }: { size?: WidgetSize }) {
         )}
       </div>
       <AsOf asOf={CONCEPT._meta.asOf} n={CONCEPT._meta.N} />
+    </div>
+  )
+}
+
+/* ============================================================
+   위젯 8 — TrendChronicleWidget (시장) · conceptData.json
+   기술 트렌드 연대기 — 무엇을 만드는가의 축, 2020→2026
+   ============================================================ */
+type ChronicleMeta = { simulated: boolean; note: string; asOf: string; years: number[]; N: number }
+type ChronicleConcept = { key: string; label: string; color: string; demand: number; delta: number; me: number; yearly: number[] }
+const CHRONICLE = conceptChronicleRaw as unknown as { _meta: ChronicleMeta; concepts: ChronicleConcept[] }
+const CHRONICLE_KEYS = ['ai', 'scale', 'msa', 'realtime']
+const CHRONICLE_CONCEPTS = CHRONICLE_KEYS
+  .map((k) => CHRONICLE.concepts.find((c) => c.key === k))
+  .filter((c): c is ChronicleConcept => !!c)
+
+export function TrendChronicleWidget({ size = '2x2' }: { size?: WidgetSize }) {
+  const years = CHRONICLE._meta.years
+  const ai = CHRONICLE_CONCEPTS.find((c) => c.key === 'ai')!
+  const startPct = ai.yearly[0]
+  const endPct = ai.yearly[ai.yearly.length - 1]
+  const yearsSinceInflection = years[years.length - 1] - 2023
+
+  const option = useMemo(() => ({
+    animationDuration: 700, animationEasing: 'cubicOut',
+    grid: { left: 10, right: 74, top: 16, bottom: 26, containLabel: true },
+    tooltip: {
+      ...tooltipStyle, trigger: 'axis',
+      formatter: (params: { seriesName: string; axisValue: string; value: number }[]) =>
+        `${params[0]?.axisValue}<br/>${params.map((p) => `${p.seriesName} <b>${p.value}%</b>`).join('<br/>')}`,
+    },
+    xAxis: {
+      type: 'category', boundaryGap: false, data: years.map(String),
+      axisLine: { lineStyle: { color: '#e6e9ef' } }, axisTick: { show: false },
+      axisLabel: { color: '#7c7f88', fontFamily: FONT, fontSize: 10.5, fontWeight: 600 },
+    },
+    yAxis: {
+      type: 'value', axisLabel: { color: '#7c7f88', fontFamily: FONT, fontSize: 10, formatter: '{value}%' },
+      splitLine: { lineStyle: { color: '#eef1f6' } }, axisLine: { show: false },
+    },
+    series: CHRONICLE_CONCEPTS.map((c) => {
+      const isAi = c.key === 'ai'
+      const col = isAi ? '#1f9d57' : '#a1a1aa'
+      return {
+        name: c.label, type: 'line', data: c.yearly, smooth: 0.2,
+        symbol: 'circle', symbolSize: isAi ? 6 : 4,
+        lineStyle: { color: col, width: isAi ? 2.6 : 1.3, opacity: isAi ? 1 : 0.6 },
+        itemStyle: { color: col, borderColor: '#fff', borderWidth: 1 },
+        endLabel: { show: true, formatter: c.label, color: col, fontFamily: FONT, fontSize: 10, fontWeight: 700, distance: 6 },
+        z: isAi ? 5 : 2,
+        markLine: !isAi ? undefined : {
+          silent: true, symbol: 'none', animation: false,
+          label: { fontFamily: FONT, fontSize: 9, fontWeight: 700 },
+          data: [
+            { xAxis: '2020', lineStyle: { color: '#c9c9cf', type: 'dashed', width: 1 }, label: { formatter: '코로나·원격근무 확산', color: '#8f8f97', position: 'insideStartTop' } },
+            { xAxis: '2023', lineStyle: { color: '#1f9d57', type: 'dashed', width: 1 }, label: { formatter: 'AI 변곡점', color: '#1f9d57', position: 'insideEndTop' } },
+          ],
+        },
+      }
+    }),
+  }), [years])
+
+  return (
+    <div className="dcard wow-card">
+      <SectionHeader title="기술 트렌드 연대기" hint="무엇을 만드는가의 축 · 2020→2026" />
+      <div className="wow-body">
+        <p className="wow-headline">
+          <b>AI·LLM</b>은 2023 변곡점 후 {yearsSinceInflection}년 만에 <b>{startPct}%→{endPct}%</b> 폭발.
+        </p>
+        <ReactECharts option={option} style={{ height: size === '2x1' ? 170 : 240 }} notMerge />
+      </div>
+      <AsOf asOf={CHRONICLE._meta.asOf} n={CHRONICLE._meta.N} note={CHRONICLE._meta.simulated ? '개념 추이는 시뮬레이션 기준' : undefined} />
+    </div>
+  )
+}
+
+/* ============================================================
+   위젯 9 — GithubChronicleWidget (시장) · pearl/l.json
+   GitHub 스타 순위 변천사 — 오픈소스 15년, 무엇이 무엇을 추월했나 (글로벌 전용)
+   ============================================================ */
+type GhPoint = { year: number; rank: number; stars: number }
+type GhLine = { tech: string; points: GhPoint[]; owned: boolean }
+type GhEvent = { year: number; over: string; under: string; over_stars: number; under_stars: number }
+type GhData = { years: number[]; lines: GhLine[]; events: GhEvent[] }
+const GH = lRaw as unknown as { as_of: string; pool: string; sample_size: number; sample_note: string; data: GhData }
+const GH_TOP_LINES = [...GH.data.lines]
+  .sort((a, b) => (a.points[a.points.length - 1]?.rank ?? 99) - (b.points[b.points.length - 1]?.rank ?? 99))
+  .slice(0, 8)
+
+function ghRankSeries(line: GhLine): (number | null)[] {
+  const byYear = new Map(line.points.map((p) => [p.year, p.rank]))
+  return GH.data.years.map((y) => byYear.get(y) ?? null)
+}
+
+export function GithubChronicleWidget({ size = '2x2' }: { size?: WidgetSize }) {
+  const firstEvent = GH.data.events[0]
+  const shownEvents = GH.data.events.slice(0, size === '2x2' ? 6 : 3)
+
+  const option = useMemo(() => ({
+    animationDuration: 700, animationEasing: 'cubicOut',
+    grid: { left: 10, right: 70, top: 16, bottom: 26, containLabel: true },
+    tooltip: {
+      ...tooltipStyle, trigger: 'item',
+      formatter: (p: { seriesName: string; axisValue: string }) => {
+        const line = GH_TOP_LINES.find((l) => l.tech === p.seriesName)
+        const point = line?.points.find((pt) => String(pt.year) === p.axisValue)
+        if (!line || !point) return p.seriesName
+        return `<b>${line.tech}</b>${line.owned ? ' <span style="color:#1f9d57">· 보유</span>' : ''}<br/>${point.year} · 순위 ${point.rank}위 · 스타 ${point.stars.toLocaleString()}`
+      },
+    },
+    xAxis: {
+      type: 'category', boundaryGap: false, data: GH.data.years.map(String),
+      axisLine: { lineStyle: { color: '#e6e9ef' } }, axisTick: { show: false },
+      axisLabel: { color: '#7c7f88', fontFamily: FONT, fontSize: 9.5, fontWeight: 600, interval: 1 },
+    },
+    yAxis: {
+      type: 'value', inverse: true, min: 1,
+      axisLabel: { color: '#7c7f88', fontFamily: FONT, fontSize: 10, formatter: '{value}위' },
+      splitLine: { lineStyle: { color: '#eef1f6' } }, axisLine: { show: false },
+    },
+    series: GH_TOP_LINES.map((line) => {
+      const col = line.owned ? '#1f9d57' : '#c9c9cf'
+      return {
+        name: line.tech, type: 'line', data: ghRankSeries(line), connectNulls: true, smooth: 0.15,
+        symbol: 'circle', symbolSize: line.owned ? 6 : 4,
+        lineStyle: { color: col, width: line.owned ? 2.4 : 1.2, opacity: line.owned ? 1 : 0.6 },
+        itemStyle: { color: col, borderColor: '#fff', borderWidth: 1 },
+        endLabel: { show: true, formatter: line.tech, color: line.owned ? '#1f9d57' : '#8f8f97', fontFamily: FONT, fontSize: 9, fontWeight: 700, distance: 6 },
+        z: line.owned ? 5 : 2,
+      }
+    }),
+  }), [])
+
+  return (
+    <div className="dcard wow-card">
+      <SectionHeader title="GitHub 스타 순위 변천사" hint="오픈소스 15년 · 무엇이 무엇을 추월했나" />
+      <div className="wow-body">
+        <span className="wow-scope">글로벌 기준</span>
+        <p className="wow-headline">
+          <b>{firstEvent.over}</b>가 <b>{firstEvent.under}</b>를 추월 ({firstEvent.year})
+        </p>
+        <ReactECharts option={option} style={{ height: size === '2x1' ? 160 : 220 }} notMerge />
+        <p className="wow-joblist__label">추월 사건</p>
+        <div className="wow-companies">
+          {shownEvents.map((e) => (
+            <div key={`${e.year}-${e.over}-${e.under}`} className="wow-companies__row">
+              <span className="wow-companies__name">{e.over} → {e.under}</span>
+              <span className="wow-companies__rate">추월</span>
+              <span className="wow-companies__chip">{e.year}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <AsOf asOf={GH.as_of} n={GH.sample_size} note={GH.sample_note} />
+    </div>
+  )
+}
+
+/* ============================================================
+   위젯 10 — GlobalDomesticGapWidget (시장) · pearl/o.json
+   글로벌 vs 국내, 뭐가 다른가 (글로벌+국내 비교)
+   ============================================================ */
+type GapRow = { tech: string; category: string; global_pct: number; domestic_pct: number; diff: number; g_n: number; d_n: number }
+type GapData = { global_favored: GapRow[]; domestic_favored: GapRow[]; g_total: number; d_total: number }
+const GAP = oRaw as unknown as { as_of: string; pool: string; sample_size: number; sample_note: string; data: GapData }
+
+export function GlobalDomesticGapWidget({ size = '2x1' }: { size?: WidgetSize }) {
+  const perSide = size === '2x2' ? 6 : 4
+  const domesticTop = GAP.data.domestic_favored.slice(0, perSide)
+  const globalTop = GAP.data.global_favored.slice(0, perSide)
+  const combined = useMemo(() => [...domesticTop, ...globalTop].sort((a, b) => a.diff - b.diff), [domesticTop, globalTop])
+  const maxAbs = Math.max(...combined.map((d) => Math.abs(d.diff)), 1)
+  const topDomestic = GAP.data.domestic_favored[0]
+
+  const option = useMemo(() => ({
+    animationDuration: 700, animationEasing: 'cubicOut',
+    grid: { left: 92, right: 54, top: 10, bottom: 10, containLabel: true },
+    tooltip: {
+      ...tooltipStyle, trigger: 'item',
+      formatter: (p: { name: string; value: number }) => {
+        const row = combined.find((d) => d.tech === p.name)
+        if (!row) return p.name
+        return `<b>${row.tech}</b><br/>글로벌 ${row.global_pct}% · 국내 ${row.domestic_pct}%<br/>차이 ${row.diff > 0 ? '+' : ''}${row.diff.toFixed(1)}%p`
+      },
+    },
+    xAxis: {
+      type: 'value', min: -maxAbs * 1.15, max: maxAbs * 1.15,
+      axisLabel: { color: '#7c7f88', fontFamily: FONT, fontSize: 10, formatter: (v: number) => `${Math.abs(v)}` },
+      splitLine: { lineStyle: { color: '#eef1f6' } }, axisLine: { show: false },
+    },
+    yAxis: {
+      type: 'category', data: combined.map((d) => d.tech),
+      axisLabel: { color: '#43454c', fontFamily: FONT, fontSize: 11, fontWeight: 700 },
+      axisLine: { lineStyle: { color: '#e6e9ef' } }, axisTick: { show: false },
+    },
+    series: [{
+      type: 'bar', barWidth: 12,
+      data: combined.map((d) => ({
+        value: Number(d.diff.toFixed(1)),
+        itemStyle: { color: d.diff < 0 ? '#1f9d57' : '#c9c9cf' },
+        label: {
+          show: true, position: d.diff < 0 ? 'left' : 'right',
+          formatter: `${d.diff > 0 ? '+' : ''}${d.diff.toFixed(1)}%p`,
+          color: d.diff < 0 ? '#1f9d57' : '#8f8f97', fontFamily: FONT, fontSize: 10, fontWeight: 700,
+        },
+      })),
+      markLine: {
+        silent: true, symbol: 'none', animation: false,
+        lineStyle: { color: '#d4d4d8', type: 'solid', width: 1 }, label: { show: false },
+        data: [{ xAxis: 0 }],
+      },
+    }],
+  }), [combined, maxAbs])
+
+  return (
+    <div className="dcard wow-card">
+      <SectionHeader title="글로벌 vs 국내, 뭐가 다른가" hint="같은 기술도 시장마다 수요가 달라요" />
+      <div className="wow-body">
+        <span className="wow-scope">글로벌+국내 비교</span>
+        <p className="wow-headline">
+          <b>{topDomestic.tech}</b>는 국내가 <b>+{Math.abs(topDomestic.diff).toFixed(1)}%p</b> 더 원해요 — 해외 취업 노린다면 참고.
+        </p>
+        <ReactECharts option={option} style={{ height: Math.max(180, combined.length * 20) }} notMerge />
+        <div className="wow-legend2">
+          <span><i style={{ background: '#1f9d57' }} /> 국내가 더 원함</span>
+          <span><i style={{ background: '#c9c9cf' }} /> 글로벌이 더 원함</span>
+        </div>
+      </div>
+      <AsOf asOf={GAP.as_of} n={GAP.sample_size} note={GAP.sample_note} />
+    </div>
+  )
+}
+
+/* ============================================================
+   위젯 11 — GithubTopicsWidget (시장) · pearl/u.json
+   오픈소스 관심 vs 채용 수요 (글로벌 전용, HN과 독립 신호)
+   ============================================================ */
+type TopicItem = {
+  tech: string; category: string; repo_reach: number; reach_pct: number; job_demand_pct: number
+  owned: boolean; reach_pctl: number; demand_pctl: number
+}
+type TopicsData = { items: TopicItem[]; opportunities: TopicItem[] }
+const TOPICS = uRaw as unknown as { as_of: string; pool: string; sample_size: number; sample_note: string; data: TopicsData }
+const TOPICS_OPP_SET = new Set(TOPICS.data.opportunities.map((o) => o.tech))
+
+export function GithubTopicsWidget({ size = '2x1' }: { size?: WidgetSize }) {
+  const items = TOPICS.data.items
+  const opp = TOPICS.data.opportunities
+  const top = opp[0]
+
+  const option = useMemo(() => ({
+    animationDuration: 600, animationEasing: 'cubicOut',
+    grid: { left: 46, right: 20, top: 20, bottom: 34 },
+    tooltip: {
+      ...tooltipStyle, trigger: 'item',
+      formatter: (p: { data: { raw: TopicItem } }) => {
+        const d = p.data.raw
+        return `<b>${d.tech}</b>${d.owned ? ' <span style="color:#1f9d57">· 보유</span>' : ''}<br/>OSS 관심 ${d.reach_pct}% (백분위 ${d.reach_pctl}) · 채용수요 ${d.job_demand_pct}% (상위 ${100 - d.demand_pctl}%ile)`
+      },
+    },
+    xAxis: {
+      type: 'value', name: 'OSS 관심 →', min: 0, nameTextStyle: { color: '#7c7f88', fontFamily: FONT, fontSize: 10 },
+      splitLine: { lineStyle: { color: '#eef1f6' } }, axisLine: { lineStyle: { color: '#e6e9ef' } },
+      axisLabel: { color: '#7c7f88', fontFamily: FONT, fontSize: 10, formatter: '{value}%' },
+    },
+    yAxis: {
+      type: 'value', name: '채용수요 →', min: 0, nameTextStyle: { color: '#7c7f88', fontFamily: FONT, fontSize: 10 },
+      splitLine: { lineStyle: { color: '#eef1f6' } }, axisLine: { lineStyle: { color: '#e6e9ef' } },
+      axisLabel: { color: '#7c7f88', fontFamily: FONT, fontSize: 10, formatter: '{value}%' },
+    },
+    series: [{
+      type: 'scatter',
+      data: items.map((d) => ({
+        value: [d.reach_pct, d.job_demand_pct], raw: d,
+        symbolSize: 6 + Math.sqrt(d.repo_reach) * 1.3,
+        itemStyle: {
+          color: TOPICS_OPP_SET.has(d.tech) ? '#d9822b' : '#c9c9cf',
+          borderColor: d.owned ? '#1f9d57' : 'transparent',
+          borderWidth: d.owned ? 2 : 0,
+          opacity: TOPICS_OPP_SET.has(d.tech) ? 0.95 : 0.65,
+        },
+      })),
+    }],
+  }), [items])
+
+  return (
+    <div className="dcard wow-card">
+      <SectionHeader title="오픈소스 관심 vs 채용 수요" hint="GitHub에서 뜨는 것과 회사가 뽑는 것 (HN과 독립 신호)" />
+      <div className="wow-body">
+        <span className="wow-scope">글로벌 기준</span>
+        <p className="wow-headline">
+          <b>{top.tech}</b>는 오픈소스 관심 하위권(백분위 {top.reach_pctl})인데 채용수요는 상위 {100 - top.demand_pctl}%ile — 저평가된 실무 기술.
+        </p>
+        <div className={size === '2x2' ? 'wow-scatter-split' : undefined}>
+          <ReactECharts option={option} style={{ height: size === '1x1' ? 160 : 210 }} notMerge />
+          {size === '2x2' && (
+            <div className="wow-pearls">
+              <div className="wow-pearls__title">저평가 기회 (앰버)</div>
+              {opp.map((o) => (
+                <div key={o.tech} className="wow-pearls__row">
+                  <span className="wow-pearls__tech">{o.tech}</span>
+                  <span className="wow-pearls__sub">관심 백분위 {o.reach_pctl} · 수요 상위 {100 - o.demand_pctl}%ile</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+      <AsOf asOf={TOPICS.as_of} n={TOPICS.sample_size} note={TOPICS.sample_note} />
     </div>
   )
 }
