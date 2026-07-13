@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ChevronLeft, Bookmark, MapPin, Briefcase, Calendar } from 'lucide-react'
 import L from 'leaflet'
@@ -10,7 +10,7 @@ import { THEME, themeVars } from './themes'
 import { useIsDesktop } from '../shared/useMediaQuery'
 import data from '../data/careerData.json'
 import marketData from '../data/marketData.json'
-import { useResumesState } from './state'
+import { getDynamicPostings, useResumesState } from './state'
 import { isBookmarked, toggleBookmark, useBookmarks } from './bookmarkStore'
 import { recordView } from './viewHistoryStore'
 import './career.css'
@@ -77,6 +77,58 @@ function renderBold(text: string) {
   )
 }
 
+type RecoPosting = ReturnType<typeof getDynamicPostings>[number]
+
+/** 데스크톱 3열 레일(.djd-reco) 한 행 — 로고 + 제목/회사 + 겹치는 기술(선택) + 미니 점수. */
+function JobRecoRow({ job, techChips, onOpen }: { job: RecoPosting; techChips?: string[]; onOpen: () => void }) {
+  return (
+    <button type="button" className="djd-reco-row" onClick={onOpen}>
+      <CompanyLogo logo={job.logo} name={job.company} size={36} radius={10} />
+      <div className="djd-reco-row__body">
+        <div className="djd-reco-row__title">{job.title}</div>
+        <div className="djd-reco-row__co">{job.company}</div>
+        {techChips && techChips.length > 0 && (
+          <div className="djd-reco-row__techs">
+            {techChips.slice(0, 2).map((tc) => (
+              <span key={tc} className="djd-reco-tech">{tc}</span>
+            ))}
+          </div>
+        )}
+      </div>
+      <MiniScore pct={job.matchPct} size={32} />
+    </button>
+  )
+}
+
+/** 데스크톱 3열 레일 카드 — "주변 채용공고" / "비슷한 채용공고" 공용. 비면 빈 상태 문구. */
+function JobRecoCard({
+  title, hint, jobs, onOpen, techOverlap,
+}: {
+  title: string
+  hint: string
+  jobs: RecoPosting[]
+  onOpen: (id: string) => void
+  techOverlap?: (job: RecoPosting) => string[]
+}) {
+  return (
+    <div className="djd-card djd-reco-card">
+      <div className="djd-reco-card__head">
+        <h4>{title}</h4>
+        <span className="djd-reco-card__hint">{hint}</span>
+      </div>
+      {jobs.length === 0 ? (
+        <div className="djd-reco-empty">해당 공고가 없어요</div>
+      ) : (
+        <div className="djd-reco-list">
+          {jobs.map((job) => (
+            <JobRecoRow key={job.id} job={job} techChips={techOverlap?.(job)} onOpen={() => onOpen(job.id)} />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function JobDetail() {
   const { id } = useParams<{ id: string }>()
   const t = THEME
@@ -99,6 +151,26 @@ export default function JobDetail() {
   useEffect(() => {
     if (p) recordView(p.id)
   }, [p?.id])
+
+  // 데스크톱 3열 레일(주변/비슷한 채용공고) 계산 — 훅 규칙을 지키기 위해 얼리리턴보다
+  // 위에서 항상 호출하고, 내부에서 p 유무를 가드한다. matchPct가 반영된 동적 postings
+  // (getDynamicPostings) 기준으로 계산해 사이드 매칭 카드와 수치가 어긋나지 않게 한다.
+  const { nearby, similar, hasLocationKey } = useMemo(() => {
+    if (!p) return { nearby: [] as RecoPosting[], similar: [] as RecoPosting[], hasLocationKey: false }
+    const pool = getDynamicPostings(activeSkills)
+    const others = pool.filter((o) => o.id !== p.id)
+    const districtKey = p.district || p.region
+    const nearbyList = districtKey
+      ? others.filter((o) => o.pool === '국내' && (o.district || o.region) === districtKey).slice(0, 5)
+      : []
+    const similarList = others
+      .map((o) => ({ o, overlap: o.techs.filter((tc) => p.techs.includes(tc)).length }))
+      .filter((x) => x.overlap >= 1)
+      .sort((a, b) => b.overlap - a.overlap || b.o.matchPct - a.o.matchPct)
+      .slice(0, 5)
+      .map((x) => x.o)
+    return { nearby: nearbyList, similar: similarList, hasLocationKey: Boolean(districtKey) }
+  }, [p, activeSkills])
 
   if (!p) {
     return (
@@ -305,6 +377,23 @@ export default function JobDetail() {
                 <Bookmark size={18} style={{ color: bookmarked ? 'var(--c-accent)' : 'var(--c-muted)', fill: bookmarked ? 'var(--c-accent)' : 'none' }} />
               </button>
             </div>
+          </aside>
+          <aside className="djd-reco">
+            {hasLocationKey && (
+              <JobRecoCard
+                title="주변 채용공고"
+                hint={`${p.district || p.region} 인근`}
+                jobs={nearby}
+                onOpen={(jid) => navigate('/job/' + encodeURIComponent(jid))}
+              />
+            )}
+            <JobRecoCard
+              title="비슷한 채용공고"
+              hint="요구 기술 유사"
+              jobs={similar}
+              onOpen={(jid) => navigate('/job/' + encodeURIComponent(jid))}
+              techOverlap={(job) => job.techs.filter((tc) => p.techs.includes(tc))}
+            />
           </aside>
         </div>
       </div>
