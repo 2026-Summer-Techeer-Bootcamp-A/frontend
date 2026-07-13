@@ -38,3 +38,6 @@ dist-ssr
 
 # TS build info
 *.tsbuildinfo
+
+# Worktrees
+.worktrees/
