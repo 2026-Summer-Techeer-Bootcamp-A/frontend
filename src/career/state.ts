@@ -1,50 +1,68 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import data from '../data/careerData.json'
 import market from '../data/marketData.json'
+import { resumeApi } from './api'
+import type { ParsedCertDto, ParsedSkillDto, ResumeDetailDto, ResumeUpsertPayload } from './api'
+import { getAuthToken } from './authStore'
 
 export type Resume = {
   id: string
   title: string
   skills: string[]
+  certs: string[]
   position: string
   careerMin: number | null
   careerMax: number | null
   coveragePct: number
   pool?: '국내' | '국외'
+  memo?: string
+  isPrimary: boolean
 }
 
-const STORAGE_KEY_RESUMES = 'techeer_resumes'
-const STORAGE_KEY_ACTIVE_ID = 'techeer_active_resume_id'
+const poolToApi = (pool: '국내' | '국외' | undefined): 'domestic' | 'global' =>
+  pool === '국외' ? 'global' : 'domestic'
+const poolFromApi = (pool: 'domestic' | 'global'): '국내' | '국외' =>
+  pool === 'global' ? '국외' : '국내'
 
-// 이력서는 1개만 유지한다(단일화). 저장된 배열이 여러 개여도 첫 항목만 사용한다.
-// Initialize local storage if empty
-export function getSavedResumes(): Resume[] {
-  const saved = localStorage.getItem(STORAGE_KEY_RESUMES)
-  if (saved) {
-    try {
-      return (JSON.parse(saved) as Resume[]).slice(0, 1)
-    } catch (e) {
-      // ignore
-    }
+function detailToResume(detail: ResumeDetailDto): Resume {
+  const skills = detail.skills.map((s) => s.canonical)
+  return {
+    id: String(detail.resume_id),
+    title: detail.title,
+    skills,
+    certs: detail.certs.map((c) => c.name),
+    position: detail.position,
+    careerMin: detail.career_min,
+    careerMax: detail.career_max,
+    coveragePct: calculateCoverage(skills, poolFromApi(detail.pool)),
+    pool: poolFromApi(detail.pool),
+    memo: detail.memo ?? undefined,
+    isPrimary: detail.is_primary,
   }
-  return (data.resumes as Resume[]).slice(0, 1)
 }
 
-export function saveResumes(resumes: Resume[]) {
-  localStorage.setItem(STORAGE_KEY_RESUMES, JSON.stringify(resumes))
-  window.dispatchEvent(new Event('resume-state-change'))
-}
-
-export function getActiveResumeId(): string {
-  const saved = localStorage.getItem(STORAGE_KEY_ACTIVE_ID)
-  if (saved) return saved
-  const list = getSavedResumes()
-  return list[0]?.id || 'r1'
-}
-
-export function saveActiveResumeId(id: string) {
-  localStorage.setItem(STORAGE_KEY_ACTIVE_ID, id)
-  window.dispatchEvent(new Event('resume-state-change'))
+export function resumeToUpsertPayload(resume: {
+  title: string
+  skills: string[]
+  certs: string[]
+  position: string
+  careerMin: number
+  careerMax: number
+  pool: '국내' | '국외'
+  memo?: string
+}): ResumeUpsertPayload {
+  const toDictSkill = (canonical: string): ParsedSkillDto => ({ canonical, category: 'unknown', in_dict: true })
+  const toDictCert = (name: string): ParsedCertDto => ({ name, in_dict: true })
+  return {
+    title: resume.title,
+    skills: resume.skills.map(toDictSkill),
+    certs: resume.certs.map(toDictCert),
+    position: resume.position,
+    career_min: resume.careerMin,
+    career_max: resume.careerMax,
+    pool: poolToApi(resume.pool),
+    memo: resume.memo ?? null,
+  }
 }
 
 export function calculateCoverage(skills: string[], pool: '국내' | '국외' = '국내'): number {
@@ -129,42 +147,89 @@ export function useHeroMode() {
 }
 
 export function useResumesState() {
-  const [resumes, setResumes] = useState<Resume[]>(getSavedResumes)
-  const [activeId, setActiveId] = useState<string>(getActiveResumeId)
+  const [resumes, setResumes] = useState<Resume[]>([])
+  const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const handleUpdate = () => {
-      setResumes(getSavedResumes())
-      setActiveId(getActiveResumeId())
+  const refresh = useCallback(() => {
+    const token = getAuthToken()
+    if (!token) {
+      setResumes([])
+      setLoading(false)
+      return
     }
-    window.addEventListener('resume-state-change', handleUpdate)
-    return () => window.removeEventListener('resume-state-change', handleUpdate)
+    setLoading(true)
+    resumeApi
+      .list(token)
+      .then(async ({ items }) => {
+        const primary = items.find((item) => item.is_primary) ?? items[0]
+        if (!primary) {
+          setResumes([])
+          return
+        }
+        const detail = await resumeApi.detail(primary.resume_id, token)
+        const active = detailToResume(detail)
+        setResumes(
+          items.map((item) =>
+            item.resume_id === primary.resume_id
+              ? active
+              : {
+                  id: String(item.resume_id),
+                  title: item.title,
+                  skills: [],
+                  certs: [],
+                  position: item.position ?? '',
+                  careerMin: null,
+                  careerMax: null,
+                  coveragePct: 0,
+                  isPrimary: item.is_primary,
+                },
+          ),
+        )
+      })
+      .catch(() => setResumes([]))
+      .finally(() => setLoading(false))
   }, [])
 
-  const activeResumeIndex = resumes.findIndex((r) => r.id === activeId)
-  const activeResume = activeResumeIndex !== -1 ? resumes[activeResumeIndex] : resumes[0]
+  useEffect(() => {
+    refresh()
+    window.addEventListener('auth-change', refresh)
+    return () => window.removeEventListener('auth-change', refresh)
+  }, [refresh])
 
-  const updateResumes = (newResumes: Resume[]) => {
-    saveResumes(newResumes)
-  }
+  const activeResume = resumes.find((r) => r.isPrimary) ?? resumes[0]
+  const activeId = activeResume?.id ?? ''
 
-  const selectResume = (id: string) => {
-    saveActiveResumeId(id)
-  }
+  const createResume = useCallback(async (payload: ResumeUpsertPayload) => {
+    const token = getAuthToken()
+    if (!token) throw new Error('로그인이 필요해요')
+    const { resume_id } = await resumeApi.create(payload, token)
+    const detail = await resumeApi.detail(resume_id, token)
+    refresh()
+    return detailToResume(detail)
+  }, [refresh])
 
-  // 단일화: 새 이력서는 기존 것을 대체한다(추가하지 않음).
-  const addResume = (newResume: Resume) => {
-    const updated = [newResume]
-    saveResumes(updated)
-    saveActiveResumeId(newResume.id)
-  }
+  const updateResume = useCallback(async (id: string, payload: ResumeUpsertPayload) => {
+    const token = getAuthToken()
+    if (!token) throw new Error('로그인이 필요해요')
+    await resumeApi.update(Number(id), payload, token)
+    const detail = await resumeApi.detail(Number(id), token)
+    refresh()
+    return detailToResume(detail)
+  }, [refresh])
 
-  return {
-    resumes,
-    activeId,
-    activeResume,
-    updateResumes,
-    selectResume,
-    addResume,
-  }
+  const deleteResume = useCallback(async (id: string) => {
+    const token = getAuthToken()
+    if (!token) throw new Error('로그인이 필요해요')
+    await resumeApi.remove(Number(id), token)
+    refresh()
+  }, [refresh])
+
+  const setPrimary = useCallback(async (id: string) => {
+    const token = getAuthToken()
+    if (!token) throw new Error('로그인이 필요해요')
+    await resumeApi.setPrimary(Number(id), token)
+    refresh()
+  }, [refresh])
+
+  return { resumes, activeId, activeResume, loading, refresh, createResume, updateResume, deleteResume, setPrimary }
 }
