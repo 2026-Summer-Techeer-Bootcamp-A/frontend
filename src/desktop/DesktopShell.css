@@ -90,6 +90,7 @@
 }
 
 .dshell__topbar {
+  position: relative;
   flex: none;
   height: 62px;
   display: flex;
@@ -97,6 +98,15 @@
   justify-content: space-between;
   gap: 16px;
   padding: 0 16px 0 12px;
+}
+
+/* 홈 전용 — 하위 탭이 1개뿐이라 비는 톱바 중앙 공간에 큰 검색바를 띄운다 */
+.dshell__topcenter {
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  transform: translateX(-50%);
+  width: min(560px, 46vw);
 }
 
 /* 톱바 좌측 — 섹션 라벨(항상 표시) + 필 탭 셀렉터 */
