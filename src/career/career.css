@@ -987,7 +987,7 @@
 .crd-map__viewport {
   position: relative;
 }
-.crd-map__error {
+.crd-map__status {
   position: absolute;
   inset: 0;
   z-index: 500;
