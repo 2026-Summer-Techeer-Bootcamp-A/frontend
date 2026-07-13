@@ -6,11 +6,12 @@ import {
   Search,
   ChartNoAxesColumn,
   CircleUser,
-  BookOpen,
+  Compass,
   Settings,
   Bell,
   LogOut,
   LogIn,
+  Home,
 } from 'lucide-react'
 import { THEME, themeVars } from '../career/themes'
 import { useAuth } from '../career/authStore'
@@ -36,6 +37,14 @@ type Section = {
 
 // 모바일 4탭을 계승한 5섹션. 셸 밖에 떠돌던 설정·자격증 갭·이력서 제출을 하위 메뉴로 흡수.
 const SECTIONS: Section[] = [
+  {
+    key: 'home',
+    label: '홈',
+    icon: Home,
+    home: '/home',
+    match: ['/home'],
+    items: [{ to: '/home', label: '피드', end: true }],
+  },
   {
     key: 'dash',
     label: '대시보드',
@@ -72,6 +81,14 @@ const SECTIONS: Section[] = [
     items: [{ to: '/resume', label: '이력서', end: true }],
   },
   {
+    key: 'assistant',
+    label: '어시스턴트',
+    icon: Compass,
+    home: '/assistant',
+    match: ['/assistant'],
+    items: [{ to: '/assistant', label: '어시스턴트', end: true }],
+  },
+  {
     key: 'settings',
     label: '설정',
     icon: Settings,
@@ -90,11 +107,12 @@ const SECTIONS: Section[] = [
 
 // 현재 경로가 속한 섹션. '/'는 정확히 일치할 때만 대시보드로 본다.
 function sectionOf(pathname: string): Section {
-  if (pathname === '/') return SECTIONS[0]
+  const dash = SECTIONS.find((s) => s.key === 'dash')!
+  if (pathname === '/') return dash
   const hit = SECTIONS.find((s) =>
     s.match.some((m) => m !== '/' && pathname.startsWith(m)),
   )
-  return hit ?? SECTIONS[0]
+  return hit ?? dash
 }
 
 export default function DesktopShell({ children }: { children: ReactNode }) {
@@ -156,14 +174,6 @@ export default function DesktopShell({ children }: { children: ReactNode }) {
               </button>
             )
           })}
-          <button
-            type="button"
-            className="dshell__railbtn"
-            onClick={() => navigate('/rag-docs')}
-          >
-            <BookOpen size={20} strokeWidth={2} />
-            <span className="dshell__raillabel">RAG 문서</span>
-          </button>
         </div>
       </aside>
 
@@ -203,7 +213,7 @@ export default function DesktopShell({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <main className="dshell__content">{children}</main>
+        <main className={`dshell__content${location.pathname === '/home' ? ' dshell__content--home' : ''}`}>{children}</main>
       </div>
     </div>
   )
