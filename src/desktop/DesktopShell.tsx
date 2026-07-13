@@ -195,8 +195,13 @@ export default function DesktopShell({ children }: { children: ReactNode }) {
               ))}
             </nav>
           )}
+          {active.key === 'home' && (
+            <div className="dshell__topcenter">
+              <GlobalSearch variant="large" />
+            </div>
+          )}
           <div className="dshell__topright">
-            <GlobalSearch />
+            {active.key !== 'home' && <GlobalSearch />}
             <div className="dshell__accountwrap">
               <button
                 type="button"
