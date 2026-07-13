@@ -429,7 +429,8 @@
 .hfeed-news__meta { margin-top: 6px; font-size: 11.5px; color: var(--c-muted); font-variant-numeric: tabular-nums; }
 .hfeed-news__stat { color: var(--hf-viz-clay-text); font-weight: 700; }
 .hfeed-news__thread { color: var(--accent-700); font-weight: 700; }
-.hfeed-news__source { margin-top: 4px; font-size: 11.5px; color: var(--c-muted); }
+.hfeed-news__source { display: block; margin-top: 4px; font-size: 11.5px; color: var(--c-muted); }
+.hfeed-news__source:hover { color: var(--c-ink); }
 .hfeed-news__repo { font-size: 13px; display: inline-block; }
 .hfeed-news__repo .owner { color: var(--c-muted); font-weight: 500; }
 .hfeed-news__repo b { font-weight: 700; color: var(--c-ink); }
