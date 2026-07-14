@@ -271,17 +271,43 @@ function TurnBlock({ turn, mode, onRetry }: { turn: Turn; mode: Mode; onRetry: (
   )
 }
 
+// 백엔드가 내려주는 제한된 마크다운 서브셋(문단, **굵게**, - 목록)만 실제 React 엘리먼트로 직접
+// 빌드한다. HTML 문자열을 거치지 않으므로(marked, dangerouslySetInnerHTML 등 배제) LLM 출력에
+// 프롬프트 인젝션이 섞여도 주입 표면 자체가 존재하지 않는다.
+function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
+  return text.split(/(\*\*[^*]+\*\*)/g).filter(Boolean).map((part, i) =>
+    part.startsWith('**') && part.endsWith('**')
+      ? <strong key={`${keyPrefix}-${i}`}>{part.slice(2, -2)}</strong>
+      : <span key={`${keyPrefix}-${i}`}>{part}</span>
+  )
+}
+
+function renderAnswerMarkdown(answer: string): React.ReactNode[] {
+  const blocks = answer.split(/\n{2,}/).map((b) => b.trim()).filter(Boolean)
+  return blocks.map((block, bi) => {
+    const lines = block.split('\n').map((l) => l.trim()).filter(Boolean)
+    const isList = lines.length > 0 && lines.every((l) => l.startsWith('- '))
+    if (isList) {
+      return (
+        <ul key={`b-${bi}`}>
+          {lines.map((l, li) => <li key={`b-${bi}-${li}`}>{renderInline(l.slice(2), `b-${bi}-${li}`)}</li>)}
+        </ul>
+      )
+    }
+    return <p key={`b-${bi}`}>{renderInline(lines.join(' '), `b-${bi}`)}</p>
+  })
+}
+
 function FinalBlock({ final, mode }: { final: FinalPayload; mode: Mode }) {
-  const paragraphs = final.answer.split(/\n+/).filter(Boolean)
   const confLabel = final.confidence.level >= 4 ? '높음' : final.confidence.level >= 2 ? '보통' : '낮음'
   const dots = Array.from({ length: 5 }, (_, i) => i < final.confidence.level)
 
   return (
     <div className="rc__out">
       <div className="rc__answer">
-        {paragraphs.length > 0
-          ? paragraphs.map((p, i) => <p className="rc__seg" key={i}>{p}</p>)
-          : <p className="rc__seg">답변 내용이 비어 있어요.</p>}
+        {final.answer.trim()
+          ? renderAnswerMarkdown(final.answer)
+          : <p>답변 내용이 비어 있어요.</p>}
       </div>
 
       <div className="rc__evidence">
