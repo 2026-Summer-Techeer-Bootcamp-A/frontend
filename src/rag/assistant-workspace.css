@@ -1,14 +1,38 @@
 /* === 통합 어시스턴트 워크스페이스 — 좌: 이력서 분석, 우: AI 콘솔, 가운데 접이식 디바이더 ===
-   셸(.dshell__content)이 이미 흰 카드이므로 여기서도 카드를 다시 두르지 않는다.
-   각 pane 안의 ResumeInsight/RagConsole은 자체 rc__head/rc__body를 그대로 쓰고,
-   워크스페이스는 오직 좌우 배치·높이·접기만 담당한다. */
+   셸 콘텐츠 배경이 회색(/assistant는 grayBgRoutes)으로 바뀌었으므로, 이제 여기서 각 pane 안쪽을
+   흰 카드로 감싼다. ResumeInsight(.ri)/RagConsole(.rc)은 자체 rc__head/rc__body 구조를 그대로 쓰고,
+   워크스페이스는 좌우 배치·높이·접기 + pane 카드 크롬(배경/보더/라운딩/섀도)만 담당한다.
+   .dshell(themeVars)에는 --c-ink/--c-accent/--c-muted/--c-card는 있지만 --line/--accent-*/--e1은
+   없어 여기서 보강한다(placeholders.css의 .dpage, DesktopOverview.css의 .dov와 같은 패턴). */
 .aw {
   height: 100%;
+  --line: #e6e9ef;
+  --accent-50: #f0f0f1;
+  --accent-100: #e4e4e7;
+  --accent-200: #e4e4e7;
+  --accent-300: #a1a1aa;
+  --accent-700: #18181b;
+  --e1: 0 1px 2px rgba(20, 30, 60, 0.05), 0 1px 1px rgba(20, 30, 60, 0.04);
+  --e2: 0 2px 8px rgba(20, 30, 60, 0.06), 0 1px 2px rgba(20, 30, 60, 0.05);
 }
 .aw__row {
   height: 100%;
   display: flex;
   align-items: stretch;
+}
+
+/* pane 카드화 — 회색 배경 위에 흰 카드로 띄운다. AssistantWorkspace.tsx/RagConsole.tsx 구조는
+   그대로 두고, ResumeInsight/RagConsole의 루트 엘리먼트(.ri/.rc)를 셀렉터로만 카드화한다. */
+.aw__pane--left > .ri,
+.aw__pane--right > .rc {
+  height: 100%;
+  box-sizing: border-box;
+  background: var(--c-card, #fff);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--e1);
+  padding: 20px;
+  overflow-y: auto;
 }
 
 .aw__pane {
@@ -144,6 +168,18 @@
   .aw__row { flex-direction: column; height: auto; }
   .aw__pane, .aw__pane--left, .aw__pane--right, .aw__pane--solo {
     flex: none; width: 100%; height: auto; overflow: visible; padding: 0;
+  }
+  /* 모바일은 프레임리스로 흐르게 두므로 데스크톱 전용 pane 카드 크롬을 해제한다
+     (.ri/.rc 자체의 max-width:1023px 보정이 각자 여백을 이미 챙긴다). */
+  .aw__pane--left > .ri,
+  .aw__pane--right > .rc {
+    height: auto;
+    background: none;
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 0;
+    overflow: visible;
   }
   .aw__divider, .aw__rail { display: none; }
   .aw__pane--left { border-bottom: 1px solid #e2e5ec; }

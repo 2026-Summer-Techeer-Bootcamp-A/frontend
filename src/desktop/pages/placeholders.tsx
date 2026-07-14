@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Search, MapPin, ArrowUpRight, FileText, Settings, Award, User } from 'lucide-react'
+import { Search, MapPin, ArrowUpRight, FileText, Settings, Award, User, Sparkles } from 'lucide-react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import catData from '../../data/pearl/n.json'
@@ -1402,6 +1402,46 @@ export function DesktopMap() {
   )
 }
 
+/* 마이페이지 히어로 옆에 붙는 미니 커버리지 도넛 — 어시스턴트가 쓰는 재사용 링 컴포넌트와는
+   별개로, 이 파일 안에서 단순 SVG(stroke-dasharray)로 직접 그린다.
+   dim=true(비로그인·이력서 없음)이면 채우기 호를 생략하고 점선 트랙 + "–"만 남긴다. */
+function MiniCoverageRing({ pct, dim }: { pct: number; dim: boolean }) {
+  const size = 56
+  const stroke = 6
+  const r = (size - stroke) / 2
+  const circumference = 2 * Math.PI * r
+  const clamped = Math.max(0, Math.min(100, pct))
+  const offset = circumference * (1 - clamped / 100)
+  return (
+    <svg
+      width={size} height={size} viewBox={`0 0 ${size} ${size}`}
+      className={`dmy__ring${dim ? ' dmy__ring--dim' : ''}`}
+      aria-hidden="true"
+    >
+      <circle
+        cx={size / 2} cy={size / 2} r={r} fill="none"
+        className="dmy__ring-track"
+        strokeWidth={stroke}
+        strokeDasharray={dim ? '2 5' : undefined}
+      />
+      {!dim && (
+        <circle
+          cx={size / 2} cy={size / 2} r={r} fill="none"
+          className="dmy__ring-fill"
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        />
+      )}
+      <text x="50%" y="50%" textAnchor="middle" dominantBaseline="central" className="dmy__ring-txt">
+        {dim ? '–' : `${Math.round(clamped)}%`}
+      </text>
+    </svg>
+  )
+}
+
 /* ───────────────── 마이 — 프로필 · 이력서 · 활동(대시보드/시장과 통일된 커맨드센터 톤) ─────────────────
    상단 검정 히어로(대시보드 HeroStat 계열과 시각적으로 호응) + 2컬럼 본문(.dmy__body).
    좌측(main): 내 이력서 · 보유 기술 · 북마크한 공고. 우측(aside): 활동 요약 · 최근 본 공고 · 바로가기.
@@ -1413,6 +1453,16 @@ export function DesktopMy() {
   const { resumes, activeResume, updateResume, deleteResume, setPrimary } = useResumesState()
   const skills = activeResume?.skills ?? []
   const coverage = activeResume?.coveragePct ?? calculateCoverage(skills, '국내')
+  // 미니 커버리지 스냅샷 상태 — 로그인 + 이력서 보유일 때만 실값을 보여준다.
+  const hasCoverageSnapshot = isAuthed && !!activeResume
+  const coverageLabel = !isAuthed
+    ? '로그인하면 커버리지를 볼 수 있어요'
+    : !activeResume
+      ? '이력서를 등록하면 커버리지가 보여요'
+      : '내 커버리지 스냅샷'
+  const coverageDesc = hasCoverageSnapshot
+    ? `보유 기술 ${skills.length}개 기준`
+    : '어시스턴트가 갭을 짚어드려요'
   const name = user?.nickname ?? '리버'
   const email = user?.email ?? 'bootcamp@example.com'
   const initial = (user ? (user.nickname || user.email) : 'RV').slice(0, 2).toUpperCase()
@@ -1464,10 +1514,23 @@ export function DesktopMy() {
           </button>
         </section>
 
-        <div className="dmy__stats">
-          <StatTile label="북마크" value={bookmarkedPostings.length} unit="건" />
-          <StatTile label="최근 본 공고" value={recentViewPostings.length} unit="건" />
-          <StatTile label="커버리지" value={coverage} unit="%" />
+        <div className="dmy__top-side">
+          <div className="dmy__stats">
+            <StatTile label="북마크" value={bookmarkedPostings.length} unit="건" />
+            <StatTile label="최근 본 공고" value={recentViewPostings.length} unit="건" />
+            <StatTile label="커버리지" value={coverage} unit="%" />
+          </div>
+
+          <section className={`dmy__coverage dcard${hasCoverageSnapshot ? '' : ' dmy__coverage--dim'}`}>
+            <MiniCoverageRing pct={hasCoverageSnapshot ? coverage : 0} dim={!hasCoverageSnapshot} />
+            <div className="dmy__coverage-body">
+              <span className="dmy__coverage-label">{coverageLabel}</span>
+              <span className="dmy__coverage-desc">{coverageDesc}</span>
+              <button className="dmy__coverage-btn" onClick={() => navigate('/assistant')}>
+                자세히 분석 <ArrowUpRight size={13} strokeWidth={2.4} />
+              </button>
+            </div>
+          </section>
         </div>
       </div>
 
@@ -1478,9 +1541,9 @@ export function DesktopMy() {
               <button className="dpage__more" onClick={() => navigate('/resume/new')}>새 이력서 추가</button>
             } />
             {resumes.length === 0 ? (
-              <div className="dmy__resume-empty">
-                <span>이력서를 등록해보세요</span>
-                <button className="dmy__resume-btn" onClick={() => navigate('/resume/new')}>이력서 등록하기</button>
+              <div className="dmy__empty">
+                <span>아직 등록한 이력서가 없어요. 이력서를 등록하면 맞춤 공고와 커버리지 분석을 받아볼 수 있어요.</span>
+                <button className="dmy__empty-btn" onClick={() => navigate('/resume/new')}>이력서 등록하기</button>
               </div>
             ) : (
               <div className="dmy__jobs">
@@ -1518,11 +1581,16 @@ export function DesktopMy() {
             />
             <div className="dmy__skills">
               {!activeResume ? (
-                <div className="dpage__empty">이력서를 먼저 등록해주세요.</div>
+                <div className="dmy__empty">
+                  <span>이력서를 등록하면 보유 기술을 관리할 수 있어요.</span>
+                  <button className="dmy__empty-btn" onClick={() => navigate('/resume/new')}>이력서 등록하기</button>
+                </div>
               ) : (
                 <>
                   {skills.map((s) => <SkillChip key={s} tech={s} />)}
-                  {skills.length === 0 && <div className="dpage__empty">등록된 기술이 없어요.</div>}
+                  {skills.length === 0 && (
+                    <div className="dpage__empty">아직 등록된 기술이 없어요. 위 '기술 관리'에서 추가해보세요.</div>
+                  )}
                 </>
               )}
             </div>
@@ -1533,7 +1601,10 @@ export function DesktopMy() {
               <button className="dpage__more" onClick={() => navigate('/jobs')}>전체 보기</button>
             } />
             {bookmarksVisible.length === 0 ? (
-              <div className="dpage__empty">공고 상세에서 북마크하면 여기 모여요.</div>
+              <div className="dmy__empty">
+                <span>아직 북마크한 공고가 없어요. 마음에 드는 공고를 담아두면 여기 모여요.</span>
+                <button className="dmy__empty-btn" onClick={() => navigate('/jobs')}>공고 둘러보기</button>
+              </div>
             ) : (
               <>
                 <div className="dmy__jobs">
@@ -1558,7 +1629,10 @@ export function DesktopMy() {
           <section className="dcard">
             <SectionHeader title="최근 본 공고" />
             {recentViewPostings.length === 0 ? (
-              <div className="dpage__empty">최근 본 공고가 없어요.</div>
+              <div className="dmy__empty">
+                <span>최근 본 공고가 아직 없어요.</span>
+                <button className="dmy__empty-btn" onClick={() => navigate('/jobs')}>공고 보러 가기</button>
+              </div>
             ) : (
               <div className="dmy__recent">
                 {recentViewPostings.map((p) => (
@@ -1577,6 +1651,7 @@ export function DesktopMy() {
           <section className="dcard">
             <SectionHeader title="바로가기" />
             <div className="kit-menulist">
+              <MenuRow icon={<Sparkles size={17} />} label="어시스턴트로 분석" onClick={() => navigate('/assistant')} />
               <MenuRow icon={<Settings size={17} />} label="계정 설정" onClick={() => navigate('/settings')} />
               <MenuRow icon={<FileText size={17} />} label="이력서 관리" onClick={() => navigate('/resume/submit')} />
               <MenuRow icon={<Award size={17} />} label="자격증 갭" onClick={() => navigate('/cert-gap')} />
