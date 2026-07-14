@@ -41,3 +41,6 @@ dist-ssr
 
 # Worktrees
 .worktrees/
+
+# superpowers brainstorm/sdd scratch
+.superpowers/

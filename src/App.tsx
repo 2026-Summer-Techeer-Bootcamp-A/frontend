@@ -37,6 +37,7 @@ import SignupScreen from './career/auth/SignupScreen'
 import SettingsHome from './career/settings/SettingsHome'
 import SettingsAccount from './career/settings/SettingsAccount'
 import SettingsNotifications from './career/settings/SettingsNotifications'
+import SettingsDisplay from './career/settings/SettingsDisplay'
 import SettingsLegal from './career/settings/SettingsLegal'
 import SettingsAbout from './career/settings/SettingsAbout'
 import NotFoundScreen, { StatesGallery, OfflineScreen } from './career/states'
@@ -115,6 +116,7 @@ export default function App() {
         <Route path="/settings" element={<SettingsHome />} />
         <Route path="/settings/account" element={<SettingsAccount />} />
         <Route path="/settings/notifications" element={<SettingsNotifications />} />
+        <Route path="/settings/display" element={<SettingsDisplay />} />
         <Route path="/settings/terms" element={<SettingsLegal kind="terms" />} />
         <Route path="/settings/privacy" element={<SettingsLegal kind="privacy" />} />
         <Route path="/settings/about" element={<SettingsAbout />} />

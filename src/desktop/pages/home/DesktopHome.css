@@ -206,6 +206,7 @@
   box-shadow: 0 1px 0 var(--line);
 }
 .hfeed-filter__row1 { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.hfeed-filter__row1-right { display: inline-flex; align-items: center; gap: 12px; }
 .hfeed-filter__pool { display: inline-flex; background: #eef0f4; border-radius: 20px; padding: 3px; }
 .hfeed-filter__pool button {
   padding: 8px 16px; border-radius: 16px; font-size: 13px; font-weight: 650; color: var(--c-muted);
@@ -219,7 +220,14 @@
 .hfeed-filter__sort button.is-on { background: #fff; color: var(--accent-700); font-weight: 700; box-shadow: var(--e2); }
 .hfeed-filter__sort button:focus-visible { outline: 2px solid var(--c-ink); outline-offset: 2px; }
 /* 매칭순을 못 쓰는 상태(비로그인/이력서 없음)에서는 토글 없이 정적 라벨만 보여준다. */
-.hfeed-filter__sort-static { padding: 8px 16px; font-size: 13px; font-weight: 650; color: var(--c-muted); }
+.hfeed-filter__sort-static {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 8px 14px; border-radius: 16px;
+  background: #fff; box-shadow: var(--e2);
+  font-size: 13px; font-weight: 650; color: var(--c-muted);
+  cursor: default;
+}
+.hfeed-filter__sort-static svg { color: var(--c-muted); opacity: 0.7; }
 .hfeed-filter__cats {
   display: flex; gap: 8px; margin-top: 8px; overflow-x: auto; scrollbar-width: none;
 }

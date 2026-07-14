@@ -114,6 +114,7 @@ export const homeApi = {
       sort?: 'latest' | 'match'
       industry?: string
       skills?: string
+      rich_only?: boolean
     } = {},
   ) => get<FeedResponseDto>('/feed/postings', params),
   news: (source: NewsSource, limit = 15) => get<NewsResponseDto>('/news', { source, limit }),

@@ -5,6 +5,7 @@ import { SCENARIOS } from './demoScenarios'
 import { streamChat } from './chatStream'
 import { normalizeStreamResult } from './chatContract'
 import type { Citation, Confidence, Plan, Route, ToolResult, StreamStepKind } from './chatContract'
+import { useAuth } from '../career/authStore'
 import './rag-console.css'
 
 // 실 백엔드(POST /api/v1/chat/stream) 라이브 스트리밍 콘솔.
@@ -49,6 +50,8 @@ export default function RagConsole() {
   const [mode, setMode] = useState<Mode>('basic')
   const [input, setInput] = useState('')
   const bodyRef = useRef<HTMLDivElement>(null)
+  // 빈 상태 그리팅을 로그인 여부에 따라 개인화하는 데만 쓴다.
+  const { user, isAuthed } = useAuth()
 
   const busy = turns.some((t) => t.status === 'loading')
 
@@ -119,7 +122,7 @@ export default function RagConsole() {
 
       <div className="rc__body" ref={bodyRef}>
         {turns.length === 0 && (
-          <div className="rc__empty">궁금한 걸 물어보거나, 아래 추천 질문을 눌러보세요.</div>
+          <RcEmptyState isAuthed={isAuthed} nickname={user?.nickname} busy={busy} onPick={submit} />
         )}
         {turns.map((turn) => (
           <TurnBlock key={turn.id} turn={turn} mode={mode} onRetry={() => retry(turn)} />
@@ -138,14 +141,58 @@ export default function RagConsole() {
             <Send size={16} />
           </button>
         </div>
-        <div className="rc__chips">
-          {SCENARIOS.map((s) => (
-            <button key={s.id} type="button" className="rc__chip" onClick={() => submit(s.userQ)} disabled={busy}>
-              {s.chip} <ChevronRight size={13} className="chev" />
-            </button>
-          ))}
-        </div>
+        {/* 빈 상태에서는 rc__hero의 추천 카드가 같은 역할을 하므로, 대화가 시작된 뒤에만 하단 칩을 보여준다. */}
+        {turns.length > 0 && (
+          <div className="rc__chips">
+            {SCENARIOS.map((s) => (
+              <button key={s.id} type="button" className="rc__chip" onClick={() => submit(s.userQ)} disabled={busy}>
+                {s.chip} <ChevronRight size={13} className="chev" />
+              </button>
+            ))}
+          </div>
+        )}
       </form>
+    </div>
+  )
+}
+
+// 빈 상태(첫 화면) 그리팅 + 추천 질문 카드. 로그인 여부에 따라 문구만 갈라지고,
+// 카드 문구는 하단 rc__chips와 동일하게 SCENARIOS를 그대로 재사용한다(하드코딩 중복 금지).
+interface RcEmptyStateProps {
+  isAuthed: boolean
+  nickname: string | null | undefined
+  busy: boolean
+  onPick: (question: string) => void
+}
+
+function RcEmptyState({ isAuthed, nickname, busy, onPick }: RcEmptyStateProps) {
+  // 로그인 상태면 닉네임(없으면 '리버')으로 개인화하고, 비로그인이면 완전히 중립적인 문구로 대체한다.
+  const greeting = isAuthed
+    ? `${nickname ?? '리버'}님, 오늘은 뭘 볼까요?`
+    : '채용 시장에 대해 무엇이든 물어보세요'
+
+  return (
+    <div className="rc__hero">
+      <span className="rc__hero-badge"><Compass size={20} /></span>
+      <div className="rc__hero-greet">{greeting}</div>
+      <div className="rc__hero-sub">채용 시장, 이력서, 기술 트렌드 — 실제 데이터로 답해드려요.</div>
+      <div className="rc__suggest">
+        {SCENARIOS.map((s) => (
+          <button
+            key={s.id}
+            type="button"
+            className="rc__suggest-card"
+            onClick={() => onPick(s.userQ)}
+            disabled={busy}
+          >
+            <span className="rc__suggest-text">
+              <span className="rc__suggest-title">{s.chip}</span>
+              <span className="rc__suggest-q">{s.userQ}</span>
+            </span>
+            <ChevronRight size={14} className="rc__suggest-chev" />
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
@@ -224,17 +271,43 @@ function TurnBlock({ turn, mode, onRetry }: { turn: Turn; mode: Mode; onRetry: (
   )
 }
 
+// 백엔드가 내려주는 제한된 마크다운 서브셋(문단, **굵게**, - 목록)만 실제 React 엘리먼트로 직접
+// 빌드한다. HTML 문자열을 거치지 않으므로(marked, dangerouslySetInnerHTML 등 배제) LLM 출력에
+// 프롬프트 인젝션이 섞여도 주입 표면 자체가 존재하지 않는다.
+function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
+  return text.split(/(\*\*[^*]+\*\*)/g).filter(Boolean).map((part, i) =>
+    part.startsWith('**') && part.endsWith('**')
+      ? <strong key={`${keyPrefix}-${i}`}>{part.slice(2, -2)}</strong>
+      : <span key={`${keyPrefix}-${i}`}>{part}</span>
+  )
+}
+
+function renderAnswerMarkdown(answer: string): React.ReactNode[] {
+  const blocks = answer.split(/\n{2,}/).map((b) => b.trim()).filter(Boolean)
+  return blocks.map((block, bi) => {
+    const lines = block.split('\n').map((l) => l.trim()).filter(Boolean)
+    const isList = lines.length > 0 && lines.every((l) => l.startsWith('- '))
+    if (isList) {
+      return (
+        <ul key={`b-${bi}`}>
+          {lines.map((l, li) => <li key={`b-${bi}-${li}`}>{renderInline(l.slice(2), `b-${bi}-${li}`)}</li>)}
+        </ul>
+      )
+    }
+    return <p key={`b-${bi}`}>{renderInline(lines.join(' '), `b-${bi}`)}</p>
+  })
+}
+
 function FinalBlock({ final, mode }: { final: FinalPayload; mode: Mode }) {
-  const paragraphs = final.answer.split(/\n+/).filter(Boolean)
   const confLabel = final.confidence.level >= 4 ? '높음' : final.confidence.level >= 2 ? '보통' : '낮음'
   const dots = Array.from({ length: 5 }, (_, i) => i < final.confidence.level)
 
   return (
     <div className="rc__out">
       <div className="rc__answer">
-        {paragraphs.length > 0
-          ? paragraphs.map((p, i) => <p className="rc__seg" key={i}>{p}</p>)
-          : <p className="rc__seg">답변 내용이 비어 있어요.</p>}
+        {final.answer.trim()
+          ? renderAnswerMarkdown(final.answer)
+          : <p>답변 내용이 비어 있어요.</p>}
       </div>
 
       <div className="rc__evidence">
