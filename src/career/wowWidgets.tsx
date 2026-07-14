@@ -11,8 +11,10 @@ import { useResumesState } from './state'
 import { getAuthToken } from './authStore'
 import { dashboardApi, jobsApi, type PostingCard, type UnlockData, type ApiPool } from './api'
 import { useWidgetData } from './useWidgetData'
+import { dashboardRichOnly } from './dashboardPostingFilters'
 import CompanyLogo from './CompanyLogo'
 import { useBookmarks } from './bookmarkStore'
+import { useSettings } from './settingsStore'
 import { marketApi } from './api'
 import feedRaw from '../data/feedData.json'
 import y1Raw from '../data/pearl/y1.json'
@@ -60,6 +62,7 @@ const FEED_DAILY = stripHeaderRow<DailyRow>(FEED.daily)
 export function LatestJobsTimeline({ size = '2x2' }: { size?: WidgetSize }) {
   const navigate = useNavigate()
   const { activeResume } = useResumesState()
+  const { settings } = useSettings()
   const skills = useMemo(() => activeResume?.skills ?? [], [activeResume?.skills])
   const bookmarkIds = useBookmarks()
   const [activeTab, setActiveTab] = useState<'latest' | 'matched' | 'deadline' | 'bookmarks'>('latest')
@@ -121,6 +124,7 @@ export function LatestJobsTimeline({ size = '2x2' }: { size?: WidgetSize }) {
         deadline_within_days: activeTab === 'deadline' ? 7 : undefined,
         match_only: activeTab === 'matched' ? true : undefined,
         resume_id: activeTab === 'matched' ? resumeId : undefined,
+        rich_only: dashboardRichOnly(activeTab, settings.richOnly),
         page: 1,
         page_size: listCount,
       }, token)
@@ -138,7 +142,7 @@ export function LatestJobsTimeline({ size = '2x2' }: { size?: WidgetSize }) {
       .finally(() => { if (!cancelled) setJobsLoading(false) })
 
     return () => { cancelled = true }
-  }, [activeTab, bookmarkKey, listCount, resumeId, token])
+  }, [activeTab, bookmarkKey, listCount, resumeId, settings.richOnly, token])
 
   const listLabel = activeTab === 'latest' ? '국내 최신 공고'
     : activeTab === 'matched' ? '내 이력서 맞춤 공고'
