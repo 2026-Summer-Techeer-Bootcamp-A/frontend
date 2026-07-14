@@ -50,15 +50,70 @@
 }
 .djobs__resume-active svg { flex-shrink: 0; }
 
-.djobs__techgroups { display: flex; flex-direction: column; gap: 10px; }
+.djobs__fld-head,
+.djobs__filter-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.djobs__text-btn {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--c-muted);
+}
+.djobs__text-btn:hover { color: var(--c-ink); }
+
+.djobs__skill-search {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--c-muted);
+  border: 1px solid var(--line, #e6e9ef);
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: var(--c-card, #fff);
+}
+.djobs__skill-search input {
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+  color: var(--c-ink);
+}
+.djobs__selected-summary,
+.djobs__filter-note,
+.djobs__filter-empty {
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--c-muted);
+}
+.djobs__selected-summary {
+  color: var(--accent-700, #18181b);
+  background: var(--accent-50);
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+
+.djobs__techgroups { display: flex; flex-direction: column; gap: 8px; }
+.djobs__techgroup { min-width: 0; }
 .djobs__techgroup-l {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  list-style: none;
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.04em;
   color: var(--c-muted);
-  margin-bottom: 5px;
+  padding: 2px 0;
 }
+.djobs__techgroup-l::-webkit-details-marker { display: none; }
+.djobs__techgroup-l::after { content: '＋'; font-size: 11px; font-weight: 600; }
+.djobs__techgroup[open] .djobs__techgroup-l::after { content: '－'; }
+.djobs__techgroup-l span { margin-left: auto; color: var(--c-muted); font-weight: 500; }
+.djobs__techgroup[open] .djobs__chiprow { margin-top: 6px; }
 .djobs__chiprow {
   display: flex;
   flex-wrap: wrap;
@@ -110,6 +165,19 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.djobs__reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--c-muted);
+  border: 1px solid var(--line, #e6e9ef);
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+.djobs__reset:hover { color: var(--c-ink); background: var(--accent-50); }
 
 /* ── 결과 리스트 헤더: facet 카운트 요약(사람인/링크드인 패턴) ── */
 .djobs__listhead {
