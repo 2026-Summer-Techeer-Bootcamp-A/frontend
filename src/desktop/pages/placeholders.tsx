@@ -36,6 +36,7 @@ import {
   mergeSkillOptions,
   normalizeJobSort,
   parseDeadlineDays,
+  toPositionFilterOptions,
   type DeadlineDays,
   type JobPool,
   type JobSort,
@@ -110,18 +111,6 @@ function CompanyLocationMap({ lat, lng, address }: { lat: number; lng: number; a
    보완하지 않으며, 해당 필드를 요구하는 필터도 노출하지 않는다. */
 const POSITION_CATS = ['백엔드', '프론트엔드', '풀스택', '데이터/AI', '모바일', '인프라/DevOps', '기획/PM', '디자인', 'QA', '기타'] as const
 type PositionCat = typeof POSITION_CATS[number]
-const POSITION_API: Record<PositionCat, string> = {
-  '백엔드': 'backend', '프론트엔드': 'frontend', '풀스택': 'fullstack', '데이터/AI': 'data',
-  '모바일': 'mobile', '인프라/DevOps': 'devops', '기획/PM': 'pm', '디자인': 'design', 'QA': 'qa', '기타': 'other',
-}
-const POSITION_LABEL_BY_API: Record<string, string> = Object.fromEntries(
-  Object.entries(POSITION_API).map(([label, value]) => [value, label]),
-)
-const FALLBACK_POSITION_OPTIONS: PositionFilterOption[] = POSITION_CATS.map((label) => ({
-  value: POSITION_API[label],
-  label,
-}))
-
 /* 기술 스택 필터 카테고리 그룹핑 — SkillManagerModal.tsx와 동일하게 pearl/n.json(기술
    코-네트워크 그래프 데이터)의 {tech, category} 노드를 재사용한다. 별도 매핑 새로 안 만듦. */
 const TECH_CATEGORY_NODES = (catData as { data: { nodes: { tech: string; category: string }[] } }).data.nodes
@@ -201,11 +190,8 @@ export function DesktopJobs() {
   const [searchedSkills, setSearchedSkills] = useState<string[]>([])
   const [deadlineDays, setDeadlineDays] = useState<DeadlineDays | undefined>(() => parseDeadlineDays(searchParams))
   const [districtFilter, setDistrictFilter] = useState(() => searchParams.get('district') ?? '')
-  const [positionFilter, setPositionFilter] = useState(() => {
-    const value = searchParams.get('position')
-    return POSITION_CATS.includes(value as PositionCat) ? POSITION_API[value as PositionCat] : value ?? ''
-  })
-  const [positionOptions, setPositionOptions] = useState<PositionFilterOption[]>(FALLBACK_POSITION_OPTIONS)
+  const [positionFilter, setPositionFilter] = useState(() => searchParams.get('position') ?? '')
+  const [positionOptions, setPositionOptions] = useState<PositionFilterOption[]>([])
   const [regionOptions, setRegionOptions] = useState<RegionFilterOption[]>([])
   const [pvTab, setPvTab] = useState<'desc' | 'company'>('desc')
   const [remoteCards, setRemoteCards] = useState<Awaited<ReturnType<typeof jobsApi.list>> | null>(null)
@@ -238,15 +224,27 @@ export function DesktopJobs() {
 
   useEffect(() => {
     let cancelled = false
-    jobsApi.categories()
+    setPositionOptions([])
+    jobsApi.categories(pool === '국내' ? 'domestic' : 'global')
       .then(({ categories }) => {
         if (cancelled) return
-        const options = categories
-          .filter((category) => category.is_tech)
-          .map((category) => ({ value: category.name, label: POSITION_LABEL_BY_API[category.name] ?? category.name }))
-        if (options.length) setPositionOptions(options)
+        const options = toPositionFilterOptions(categories)
+        setPositionOptions(options)
+        setPositionFilter((current) => (
+          current && !options.some((option) => option.value === current) ? '' : current
+        ))
       })
-      .catch(() => undefined)
+      .catch(() => {
+        if (!cancelled) {
+          setPositionOptions([])
+          setPositionFilter('')
+        }
+      })
+    return () => { cancelled = true }
+  }, [pool])
+
+  useEffect(() => {
+    let cancelled = false
     jobsApi.skills('', 100)
       .then(({ skills: items }) => {
         if (!cancelled) setBaseSkills(items.map((item) => item.canonical))
@@ -376,6 +374,7 @@ export function DesktopJobs() {
   })
   const changePool = (value: JobPool) => {
     setPool(value)
+    setPositionFilter('')
     if (value === '국외') {
       setDistrictFilter('')
       setDeadlineDays(undefined)
