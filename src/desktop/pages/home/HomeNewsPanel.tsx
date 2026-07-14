@@ -16,7 +16,9 @@ const TAB_LABEL: Record<NewsSource, string> = {
   geeknews: '긱뉴스',
   github: 'GitHub',
 }
-const TAB_ORDER: NewsSource[] = ['hackernews', 'geeknews', 'github']
+// 긱뉴스를 기본 탭이자 목록 첫 번째로 노출한다(국내 개발자 대상 큐레이션이라 기본값으로 적절).
+const TAB_ORDER: NewsSource[] = ['geeknews', 'hackernews', 'github']
+const DEFAULT_NEWS_SOURCE: NewsSource = 'geeknews'
 const NEWS_PAGE_SIZE = 5
 
 function formatUpdatedCaption(iso: string): string {
@@ -52,23 +54,60 @@ function langDotClass(language: string | null): string {
   return ''
 }
 
+// 뉴스 항목 왼쪽 썸네일. /news API가 이미지 필드를 주지 않으므로 URL에서 파생한다:
+// HN·긱뉴스는 원문 도메인 파비콘, GitHub은 소유자(오너) 아바타를 쓴다. 로드 실패 시
+// 이니셜 플레이스홀더로 대체해 칸이 비지 않게 한다.
+function faviconUrl(host: string): string {
+  return `https://www.google.com/s2/favicons?sz=64&domain=${encodeURIComponent(host)}`
+}
+
+function thumbFor(source: NewsSource, item: NewsItemDto): { src: string; fallback: string } {
+  if (source === 'github') {
+    const [owner, ...rest] = item.title.split('/')
+    if (rest.length > 0 && owner) {
+      return { src: `https://github.com/${encodeURIComponent(owner)}.png?size=64`, fallback: owner.slice(0, 1) }
+    }
+    return { src: faviconUrl('github.com'), fallback: 'G' }
+  }
+  const host = hostnameOf(item.url)
+  return { src: faviconUrl(host), fallback: host.replace(/^www\./, '').slice(0, 1) }
+}
+
+function NewsThumb({ src, fallback }: { src: string; fallback: string }) {
+  const [broken, setBroken] = useState(false)
+  return (
+    <span className="hfeed-news__thumb" aria-hidden="true">
+      {broken ? (
+        <span className="hfeed-news__thumb-fb">{fallback}</span>
+      ) : (
+        <img src={src} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setBroken(true)} />
+      )}
+    </span>
+  )
+}
+
 function NewsItemView({ source, item }: { source: NewsSource; item: NewsItemDto }) {
+  const thumb = thumbFor(source, item)
+
   if (source === 'hackernews') {
     return (
       <div className="hfeed-news__item hfeed-news__item--hn">
-        <a className="hfeed-news__title" href={item.url} target="_blank" rel="noreferrer">
-          {item.title}
-        </a>
-        <div className="hfeed-news__meta tnum">
-          포인트 <b className="hfeed-news__stat">{item.points ?? 0}</b>
-          {' · '}
-          {item.comments_url ? (
-            <a className="hfeed-news__thread" href={item.comments_url} target="_blank" rel="noreferrer">
-              댓글 {item.comments_count ?? 0}
-            </a>
-          ) : (
-            <span>댓글 {item.comments_count ?? 0}</span>
-          )}
+        <NewsThumb src={thumb.src} fallback={thumb.fallback} />
+        <div className="hfeed-news__body">
+          <a className="hfeed-news__title" href={item.url} target="_blank" rel="noreferrer">
+            {item.title}
+          </a>
+          <div className="hfeed-news__meta tnum">
+            포인트 <b className="hfeed-news__stat">{item.points ?? 0}</b>
+            {' · '}
+            {item.comments_url ? (
+              <a className="hfeed-news__thread" href={item.comments_url} target="_blank" rel="noreferrer">
+                댓글 {item.comments_count ?? 0}
+              </a>
+            ) : (
+              <span>댓글 {item.comments_count ?? 0}</span>
+            )}
+          </div>
         </div>
       </div>
     )
@@ -80,23 +119,26 @@ function NewsItemView({ source, item }: { source: NewsSource; item: NewsItemDto 
     const bodyUrl = item.comments_url ?? item.url
     return (
       <div className="hfeed-news__item hfeed-news__item--gn">
-        <a className="hfeed-news__title" href={bodyUrl} target="_blank" rel="noreferrer">
-          {item.title}
-        </a>
-        <a className="hfeed-news__source" href={item.url} target="_blank" rel="noreferrer">
-          {hostnameOf(item.url)}
-        </a>
-        {(item.points != null || item.comments_count != null) && (
-          <div className="hfeed-news__meta tnum">
-            {item.points != null && (
-              <>
-                포인트 <b className="hfeed-news__stat">{item.points}</b>
-              </>
-            )}
-            {item.points != null && item.comments_count != null && ' · '}
-            {item.comments_count != null && <span>댓글 {item.comments_count}</span>}
-          </div>
-        )}
+        <NewsThumb src={thumb.src} fallback={thumb.fallback} />
+        <div className="hfeed-news__body">
+          <a className="hfeed-news__title" href={bodyUrl} target="_blank" rel="noreferrer">
+            {item.title}
+          </a>
+          <a className="hfeed-news__source" href={item.url} target="_blank" rel="noreferrer">
+            {hostnameOf(item.url)}
+          </a>
+          {(item.points != null || item.comments_count != null) && (
+            <div className="hfeed-news__meta tnum">
+              {item.points != null && (
+                <>
+                  포인트 <b className="hfeed-news__stat">{item.points}</b>
+                </>
+              )}
+              {item.points != null && item.comments_count != null && ' · '}
+              {item.comments_count != null && <span>댓글 {item.comments_count}</span>}
+            </div>
+          )}
+        </div>
       </div>
     )
   }
@@ -105,14 +147,17 @@ function NewsItemView({ source, item }: { source: NewsSource; item: NewsItemDto 
   const repoName = rest.join('/') || item.title
   return (
     <div className="hfeed-news__item hfeed-news__item--gh">
-      <a className="hfeed-news__repo" href={item.url} target="_blank" rel="noreferrer">
-        {rest.length > 0 && <span className="owner">{owner}/</span>}
-        <b>{repoName}</b>
-      </a>
-      {item.description && <div className="hfeed-news__desc">{item.description}</div>}
-      <div className="hfeed-news__meta tnum">
-        <span className={`hfeed-news__langdot${langDotClass(item.language)}`} />
-        {item.language ?? '알 수 없음'} · 스타 <b className="hfeed-news__stat">{formatStars(item.stars)}</b>
+      <NewsThumb src={thumb.src} fallback={thumb.fallback} />
+      <div className="hfeed-news__body">
+        <a className="hfeed-news__repo" href={item.url} target="_blank" rel="noreferrer">
+          {rest.length > 0 && <span className="owner">{owner}/</span>}
+          <b>{repoName}</b>
+        </a>
+        {item.description && <div className="hfeed-news__desc">{item.description}</div>}
+        <div className="hfeed-news__meta tnum">
+          <span className={`hfeed-news__langdot${langDotClass(item.language)}`} />
+          {item.language ?? '알 수 없음'} · 스타 <b className="hfeed-news__stat">{formatStars(item.stars)}</b>
+        </div>
       </div>
     </div>
   )
@@ -123,9 +168,12 @@ function NewsListSkeleton() {
     <>
       {[0, 1, 2].map((i) => (
         <div key={i} className="hfeed-news__item" aria-hidden="true">
-          <div className="hfeed-skel" style={{ width: '90%', height: 13 }} />
-          <div className="hfeed-skel" style={{ width: '55%', height: 13, marginTop: 6 }} />
-          <div className="hfeed-skel" style={{ width: '40%', height: 11, marginTop: 8 }} />
+          <div className="hfeed-skel" style={{ width: 36, height: 36, borderRadius: 9, flex: 'none' }} />
+          <div className="hfeed-news__body">
+            <div className="hfeed-skel" style={{ width: '90%', height: 13 }} />
+            <div className="hfeed-skel" style={{ width: '55%', height: 13, marginTop: 6 }} />
+            <div className="hfeed-skel" style={{ width: '40%', height: 11, marginTop: 8 }} />
+          </div>
         </div>
       ))}
     </>
@@ -198,7 +246,7 @@ function PostingListCard({
 }
 
 export default function HomeNewsPanel({ isAuthed, pool }: { isAuthed: boolean; pool: 'all' | 'domestic' | 'global' }) {
-  const [activeTab, setActiveTab] = useState<NewsSource>('hackernews')
+  const [activeTab, setActiveTab] = useState<NewsSource>(DEFAULT_NEWS_SOURCE)
   const [cache, setCache] = useState<Partial<Record<NewsSource, NewsResponseDto>>>({})
   const [newsLoading, setNewsLoading] = useState(false)
   const [newsFetchFailed, setNewsFetchFailed] = useState(false)

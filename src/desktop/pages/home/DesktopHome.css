@@ -436,12 +436,26 @@
 .hfeed-news__tabs button:focus-visible { outline: 2px solid var(--c-ink); outline-offset: 2px; }
 .hfeed-news__list { margin-top: 8px; }
 .hfeed-news__item {
-  display: block; padding: 12px 8px; margin: 0 -8px;
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 12px 8px; margin: 0 -8px;
   border-radius: 12px; border-bottom: 1px solid var(--line2, #f0f0f1);
   transition: background 0.15s;
 }
 .hfeed-news__item:last-child { border-bottom: none; }
 .hfeed-news__item:hover { background: #f2f2f4; }
+.hfeed-news__body { flex: 1; min-width: 0; }
+/* 왼쪽 썸네일 — 파비콘/아바타를 중립 프레임에 담아 저채도 톤과 어울리게 한다 */
+.hfeed-news__thumb {
+  flex: none; width: 36px; height: 36px; margin-top: 1px;
+  border-radius: 9px; overflow: hidden; border: 1px solid var(--line);
+  background: var(--hf-viz-blue-soft);
+  display: grid; place-items: center;
+}
+.hfeed-news__thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hfeed-news__thumb-fb {
+  font-size: 14px; font-weight: 800; text-transform: uppercase;
+  color: var(--hf-viz-blue-text);
+}
 .hfeed-news__title {
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   font-size: 13px; font-weight: 650; line-height: 1.4; color: var(--c-ink);
