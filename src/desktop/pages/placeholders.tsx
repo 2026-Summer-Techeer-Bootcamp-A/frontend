@@ -857,7 +857,6 @@ export function DesktopMarket() {
   ), [liveNewcomer])
   const maxOpenRate = Math.max(...newcomerTop.map((i) => i.open_rate), 1)
 
-  const [liveHotCompanies, setLiveHotCompanies] = useState<Array<{ company: string; count: number }> | null>(null)
   const [liveRegionDensity, setLiveRegionDensity] = useState<Array<{ district: string; count: number }> | null>(null)
   const [calendarState, setCalendarState] = useState<
     | { status: 'loading' }
@@ -870,35 +869,6 @@ export function DesktopMarket() {
     const item = MARKET_WIDGETS.find((w) => w.id === id)!
     return getWidgetSize('market', id, item.defaultSize)
   }
-
-  // ④-b 최근 90일 활발 기업 — 풀 셀렉터에 반응(스펙: "국내/글로벌 모두"). 'all'은 회사별 건수를
-  // 합산해서 상위 5개를 뽑는다(점유율%이 아닌 원 건수 합산이라 §4-1의 "합산 금지"에 해당하지 않음).
-  // P2 — days는 백엔드 hot-companies 엔드포인트 상한(le=90)에 맞춘다. 과거 3650(누적)을 보내면
-  // 422로 실패해 목 폴백(2건 등 거의 빈 값)으로 떨어졌었다 — "누적"이 아니라 "최근 90일"로
-  // 라벨도 정직하게 맞춘다(실측이 정상적으로 뜨므로 목 폴백보다 실데이터 우선).
-  useEffect(() => {
-    let cancelled = false
-    Promise.allSettled(poolsForQuery(pool).map((p) => marketApi.hotCompanies({ pool: p, days: 90, limit: 8 })))
-      .then((results) => {
-        if (cancelled) return
-        const lists = results.flatMap((r) => (r.status === 'fulfilled' && r.value.items.length
-          ? [r.value.items.map((i) => ({ key: i.company, count: i.posting_count }))]
-          : []))
-        if (lists.length) setLiveHotCompanies(mergeCounts(lists).slice(0, 5).map((r) => ({ company: r.key, count: r.count })))
-        else setLiveHotCompanies(null)
-      })
-    return () => { cancelled = true }
-  }, [pool])
-
-  const mockHotCompanies = useMemo(() => {
-    const domesticAll = (data.postings as { pool: string; company: string; title: string; techs: string[] }[])
-      .filter((p) => p.pool === '국내' && (!scoped || derivePosition(p.title, p.techs) === myCategory))
-    const counts: Record<string, number> = {}
-    domesticAll.forEach((p) => { counts[p.company] = (counts[p.company] ?? 0) + 1 })
-    return Object.entries(counts).map(([company, count]) => ({ company, count })).sort((a, b) => b.count - a.count).slice(0, 5)
-  }, [scoped, myCategory])
-  const hotCompanies = liveHotCompanies ?? mockHotCompanies
-  const maxHot = Math.max(...hotCompanies.map((c) => c.count), 1)
 
   // ④-a 지역별 공고 밀도 — 국내 전용(§1: 글로벌 region_district 전 행 NULL). pool과 무관하게
   // 항상 국내로 조회하고, 글로벌/전체 탭에서는 카드를 dim 처리한다.
@@ -950,12 +920,12 @@ export function DesktopMarket() {
   // 라벨 섹션 표시 여부 — 섹션 내 위젯이 전부 숨겨지면 섹션 헤더째로 렌더하지 않는다.
   const sec1Visible = !isWidgetHidden('market', 'yearly-trend') || !isWidgetHidden('market', 'group-share-frontend')
     || !isWidgetHidden('market', 'group-share-backend') || !isWidgetHidden('market', 'group-share-database')
-    || !isWidgetHidden('market', 'movers') || !isWidgetHidden('market', 'posting-calendar')
+    || !isWidgetHidden('market', 'group-share-language') || !isWidgetHidden('market', 'movers')
+    || !isWidgetHidden('market', 'posting-calendar')
   const sec2Visible = !isWidgetHidden('market', 'demand-growth-scatter') || !isWidgetHidden('market', 'cooccurrence-bar')
     || !isWidgetHidden('market', 'skill-count-stat') || !isWidgetHidden('market', 'skill-count-dist')
   const sec3Visible = !isWidgetHidden('market', 'network') || !isWidgetHidden('market', 'concept-tech-sankey')
-  const sec4Visible = !isWidgetHidden('market', 'region-density') || !isWidgetHidden('market', 'hot-companies')
-    || !isWidgetHidden('market', 'scatter')
+  const sec4Visible = !isWidgetHidden('market', 'region-density') || !isWidgetHidden('market', 'scatter')
   // ⑤ 글로벌·해외 트렌드는 pool≠'domestic'일 때만 렌더(스펙 §4-1 — 국내 탭에선 섹션째 숨김).
   const sec5Visible = pool !== 'domestic' && (
     !isWidgetHidden('market', 'global-domestic-lag') || !isWidgetHidden('market', 'hype-vs-hire')
@@ -1053,18 +1023,17 @@ export function DesktopMarket() {
                 <GroupShareCard group={'database' as GroupKey} pool={pool} />
               </div>
             )}
-            {!isWidgetHidden('market', 'movers') && (
-              <div className="dmkt2__card-item" style={spanStyle(widgetSize('movers'))}>
-                <section className="dcard">
-                  <SectionHeader title="급상승 · 급감" hint="5년" />
-                  <TechMoversBar />
-                </section>
+            {!isWidgetHidden('market', 'group-share-language') && (
+              <div className="dmkt2__card-item" style={spanStyle(widgetSize('group-share-language'))}>
+                <GroupShareCard group={'programming_language' as GroupKey} pool={pool} />
               </div>
             )}
           </div>
-          {!isWidgetHidden('market', 'posting-calendar') && (
-            <div className="dmkt2__card-item dmkt2__card-item--calendar" style={{ marginTop: 10 }}>
-              <section className="dcard dcard--posting-calendar">
+          {(!isWidgetHidden('market', 'posting-calendar') || !isWidgetHidden('market', 'movers')) && (
+            <div className="dmkt2__calendar-movers-row">
+              {!isWidgetHidden('market', 'posting-calendar') && (
+                <div className="dmkt2__card-item dmkt2__card-item--calendar">
+                  <section className="dcard dcard--posting-calendar">
                 <SectionHeader
                   title="채용 공고 등록 캘린더"
                   hint={`최근 1년 · ${scoped ? myCategory ?? '내 직무' : pool === 'domestic' ? '국내' : pool === 'global' ? '글로벌' : '국내+글로벌'}`}
@@ -1088,7 +1057,17 @@ export function DesktopMarket() {
                     scopeLabel={scoped ? myCategory ?? '내 직무' : '전체 직무'}
                   />
                 )}
-              </section>
+                  </section>
+                </div>
+              )}
+              {!isWidgetHidden('market', 'movers') && (
+                <div className="dmkt2__card-item dmkt2__card-item--movers-side">
+                  <section className="dcard dcard--movers">
+                    <SectionHeader title="급상승 · 급감" hint="5년" />
+                    <TechMoversBar />
+                  </section>
+                </div>
+              )}
             </div>
           )}
         </section>
@@ -1188,7 +1167,7 @@ export function DesktopMarket() {
           </header>
           <div className="dmkt2__sec-grid dmkt2__sec-grid--region4">
             {!isWidgetHidden('market', 'region-density') && (
-              <div className={`dmkt2__card-item${regionDisabled ? ' dmkt2__card-item--disabled' : ''}`} style={spanStyle(widgetSize('region-density'))}>
+              <div className={`dmkt2__card-item dmkt2__card-item--region${regionDisabled ? ' dmkt2__card-item--disabled' : ''}`}>
                 <section className="dcard">
                   <SectionHeader title="지역별 공고 밀도" hint={scoped ? `구 단위 · ${myCategory}` : '구 단위 · 국내'} />
                   <div className="dmkt2__bars">
@@ -1204,24 +1183,8 @@ export function DesktopMarket() {
                 </section>
               </div>
             )}
-            {!isWidgetHidden('market', 'hot-companies') && (
-              <div className="dmkt2__card-item" style={spanStyle(widgetSize('hot-companies'))}>
-                <section className="dcard">
-                  <SectionHeader title="최근 90일 활발 기업" hint={scoped ? myCategory ?? undefined : undefined} />
-                  <div className="dmkt2__bars">
-                    {hotCompanies.map((c) => (
-                      <div key={c.company} className="dmkt2__bar">
-                        <span className="dmkt2__bar-t">{c.company}</span>
-                        <span className="dmkt2__bar-track"><i style={{ width: `${(c.count / maxHot) * 100}%` }} /></span>
-                        <span className="dmkt2__bar-v">{c.count}건</span>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              </div>
-            )}
             {!isWidgetHidden('market', 'scatter') && (
-              <div className="dmkt2__card-item" style={spanStyle(widgetSize('scatter'))}>
+              <div className="dmkt2__card-item dmkt2__card-item--market-scatter">
                 <section className="dcard">
                   <SectionHeader title="수요 × 빈도" hint="국내 · 상위 16개 기술" />
                   <MarketScatter items={scatterItems} />

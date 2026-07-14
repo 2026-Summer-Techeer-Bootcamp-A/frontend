@@ -1121,7 +1121,7 @@ const MKT = marketDataRaw as {
    현재 점유율(share)은 §1 실측치(그룹 union 기준 대략치) 그대로. 연도 추이(yearly)는
    백엔드 group-share가 아직 없어 방향성만 맞춘 추정값 — 카드/모달에 "추정" 고지.
    ──────────────────────────────────────────────────────────────── */
-export type GroupKey = 'frontend_fw' | 'backend_fw' | 'database'
+export type GroupKey = 'frontend_fw' | 'backend_fw' | 'database' | 'programming_language'
 type GroupShareItem = { tech: string; share: number; yearly: number[]; trend: 'up' | 'down' }
 type GroupShareGroup = { key: GroupKey; label: string; union: number; asOf: string; items: GroupShareItem[] }
 
@@ -1160,6 +1160,16 @@ const GROUP_SHARE_MOCK: Record<GroupKey, GroupShareGroup> = {
       gsItem('PostgreSQL', [9.8, 14.2, 18.1, 22.0]),
       gsItem('Redis', [12.0, 14.6, 16.8, 18.7]),
       gsItem('MariaDB', [18.5, 17.4, 16.5, 15.8]),
+    ],
+  },
+  programming_language: {
+    key: 'programming_language', label: '프로그래밍 언어', union: 18420, asOf: '2026-07-14',
+    items: [
+      gsItem('Java', [45.8, 43.6, 41.4, 39.8]),
+      gsItem('Python', [28.1, 31.5, 35.7, 38.9]),
+      gsItem('JavaScript', [35.2, 34.9, 34.5, 34.1]),
+      gsItem('TypeScript', [16.4, 21.8, 27.2, 31.6]),
+      gsItem('Kotlin', [8.1, 9.7, 11.3, 12.8]),
     ],
   },
 }
@@ -1207,6 +1217,7 @@ export function GroupShareCard({ group, pool }: { group: GroupKey; pool: PoolCho
   const [globalLive, setGlobalLive] = useState<GroupShareGroup | null>(null)
 
   useEffect(() => {
+    if (group === 'programming_language') return
     let cancelled = false
     marketApi.groupShare({ group, pool: 'domestic' }).then((r) => {
       if (cancelled || !r.items.length) return
@@ -1220,6 +1231,7 @@ export function GroupShareCard({ group, pool }: { group: GroupKey; pool: PoolCho
 
   useEffect(() => {
     if (pool === 'domestic') { setGlobalLive(null); return }
+    if (group === 'programming_language') { setGlobalLive(null); return }
     let cancelled = false
     marketApi.groupShare({ group, pool: 'global' }).then((r) => {
       if (cancelled || !r.items.length) return
@@ -1255,7 +1267,7 @@ export function GroupShareCard({ group, pool }: { group: GroupKey; pool: PoolCho
         </div>
         {showGlobal && (
           <div className="mktgs__globalnote">
-            {globalReady ? `글로벌 1위 · ${globalLive!.items[0].tech}` : '글로벌 프레임워크 판도 준비 중'}
+            {globalReady ? `글로벌 1위 · ${globalLive!.items[0].tech}` : '글로벌 판도 준비 중'}
           </div>
         )}
         <span className="mktgs__cta">클릭 → 전체 순위 · 연도 추이</span>
@@ -1279,7 +1291,7 @@ export function GroupShareCard({ group, pool }: { group: GroupKey; pool: PoolCho
                 ))}
               </div>
               <div className="mktmodal__chart">
-                <div className="mktmodal__chart-t">프레임워크별 연도 점유율 추이 {pool === 'global' && globalReady ? '' : '(추정)'}</div>
+                <div className="mktmodal__chart-t">기술별 연도 점유율 추이 {pool === 'global' && globalReady ? '' : '(추정)'}</div>
                 <ReactECharts option={groupShareModalOption(modalData)} style={{ height: 200 }} notMerge />
               </div>
             </div>

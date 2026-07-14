@@ -80,9 +80,31 @@
 
 /* 기업 · 역량 — 카드 크기에 맞춰 2~3열로 채워지는 auto-fill */
 .dmkt2__sec-grid--company { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
-.dmkt2__card-item--calendar { grid-column: span 3; height: auto; }
+.dmkt2__calendar-movers-row { display: grid; grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); gap: 16px; margin-top: 16px; align-items: stretch; }
+.dmkt2__card-item--calendar { min-width: 0; height: auto; }
 .dmkt2__card-item--calendar > .dcard { flex: none; height: auto; }
-.dcard--posting-calendar { padding: 12px 14px 10px; }
+.dcard--posting-calendar { padding: 16px 18px; }
+.dmkt2__card-item--movers-side { min-width: 0; height: auto; }
+
+/* 1x1 무버 카드에서는 긴 막대 6개를 두 열의 간결한 랭킹으로 배치한다.
+   데이터는 모두 유지하면서 고정 그리드 행 밖으로 콘텐츠가 넘치지 않게 한다. */
+.dcard--movers { overflow: hidden; }
+.dcard--movers .ins-mov { margin-top: 4px; }
+.dcard--movers .ins-mov__row { min-width: 0; gap: 7px; padding: 5px 0; }
+.dcard--movers .ins-mov__k {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+  gap: 4px;
+  font-size: 11.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dcard--movers .ins-mov__k svg { flex: none; width: 14px; height: 14px; }
+.dcard--movers .ins-mov__tr { display: block; }
+.dcard--movers .ins-mov__v { width: 42px; font-size: 10.5px; }
+.dcard--movers .scr-asof { display: none; }
 
 /* 구조 · 탐색 — 무거운 탐색 그래프 2등분(진행적 공개로 펼쳤을 때만 렌더) */
 .dmkt2__sec-grid--explore { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -105,12 +127,10 @@
   .dmkt2__sec-grid--explore { grid-template-columns: 1fr; }
   .dmkt2__sec-grid--company,
   .dmkt2__sec-grid--global { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .dmkt2__card-item--calendar { grid-column: span 2; }
 }
 @media (max-width: 720px) {
   .dmkt2__sec-grid--company,
   .dmkt2__sec-grid--global { grid-template-columns: 1fr; }
-  .dmkt2__card-item--calendar { grid-column: span 1; }
   .dmkt2__head { flex-direction: column; }
   .dmkt2__head-r { padding-top: 0; }
 }
@@ -238,7 +258,11 @@
 .dmkt2__sec-grid--demand2,
 .dmkt2__sec-grid--tech,
 .dmkt2__sec-grid--global4 { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: 108px; }
-.dmkt2__sec-grid--region4 { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: 100px; }
+.dmkt2__sec-grid--region4 {
+  grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
+  grid-auto-rows: minmax(300px, auto);
+}
+.dmkt2__sec-grid--region4 .dmkt2__card-item { min-height: 300px; }
 
 /* P0/P1 카드 높이 보정(2026-07-14 시각 검증) — Sankey · 산점도 · 네트워크(세로로 긴 차트)와
    ②의 우측 3카드(동반 요구 스킬 · 공고당 요구 스킬 · 요구 스킬 개수 분포)가 기본 108px 행에
@@ -253,15 +277,17 @@
   .dmkt2__sec-grid--flow,
   .dmkt2__sec-grid--demand2,
   .dmkt2__sec-grid--tech,
-  .dmkt2__sec-grid--region4,
   .dmkt2__sec-grid--global4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dmkt2__sec-grid--region4 { grid-template-columns: minmax(0, 3fr) minmax(280px, 2fr); }
 }
 @media (max-width: 720px) {
+  .dmkt2__calendar-movers-row { grid-template-columns: 1fr; }
   .dmkt2__sec-grid--flow,
   .dmkt2__sec-grid--demand2,
   .dmkt2__sec-grid--tech,
   .dmkt2__sec-grid--region4,
   .dmkt2__sec-grid--global4 { grid-template-columns: 1fr; }
+  .dmkt2__sec-grid--region4 { grid-template-columns: 1fr; }
 }
 
 .dmkt2__footnote {
