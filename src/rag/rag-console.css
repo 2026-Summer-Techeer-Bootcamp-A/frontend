@@ -102,6 +102,47 @@
 .rc__empty { font-size: 13px; color: #a2a6b0; padding: 10px 2px; }
 .rc__turn { display: flex; flex-direction: column; gap: 10px; }
 
+/* === 빈 상태 히어로 — 대화 시작 전 ChatGPT류 중앙 정렬 그리팅 + 추천 질문 카드.
+   .rc__body의 유일한 자식일 때 flex:1로 남는 공간을 다 먹으면서 내용을 세로+가로 중앙에 둔다.
+   기존 rc__* 규칙과 달리, 여기서부터 새로 추가하는 규칙은 테마 캐스케이드 토큰(var(--c-*))을 쓴다. */
+.rc__hero {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px 8px;
+}
+.rc__hero-badge {
+  width: 40px; height: 40px; border-radius: var(--c-radius, 12px);
+  background: var(--c-chipbg); color: var(--c-accent);
+  display: grid; place-items: center; margin-bottom: 10px;
+}
+.rc__hero-greet { font-size: 19px; font-weight: 700; color: var(--c-ink); letter-spacing: -0.3px; }
+.rc__hero-sub { font-size: 13px; color: var(--c-muted); margin: 6px 0 22px; }
+
+/* 추천 질문 카드 — 컨테이너 폭에 맞춰 auto-fit으로 2열↔1열이 자연스럽게 접힌다(좁은 분할 뷰 대응). */
+.rc__suggest {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px; width: 100%; max-width: 560px;
+}
+.rc__suggest-card {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  text-align: left; background: var(--c-chipbg); border: none; border-radius: var(--c-radius, 12px);
+  padding: 12px 14px; cursor: pointer; transition: transform .12s ease;
+}
+.rc__suggest-card:hover { transform: translateY(-1px); }
+.rc__suggest-card:active { transform: scale(0.98); }
+.rc__suggest-card:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.rc__suggest-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rc__suggest-title { font-size: 13px; font-weight: 700; color: var(--c-ink); }
+.rc__suggest-q {
+  font-size: 11.5px; color: var(--c-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rc__suggest-chev { flex: none; color: var(--c-muted); opacity: 0.6; }
+
 /* 로딩 스켈레톤 — 단일 뉴트럴 톤, 무지개 시머 금지 */
 .rc__skeleton { display: flex; flex-direction: column; gap: 7px; padding: 2px 0; }
 .rc__skel-line { height: 11px; border-radius: 6px; background: #eef1f6; animation: rc-skel 1.3s ease-in-out infinite; }
@@ -193,4 +234,6 @@
 /* 모바일 — 셸 카드 없이 프레임리스로 렌더되므로 자체 여백을 확보한다 */
 @media (max-width: 1023px) {
   .rc { padding: 16px; min-height: 100dvh; }
+  /* 좁은 화면에서는 추천 카드를 1열로 접어 가독성을 유지한다(auto-fit으로도 대부분 커버되지만 명시적으로 고정) */
+  .rc__suggest { grid-template-columns: 1fr; }
 }
