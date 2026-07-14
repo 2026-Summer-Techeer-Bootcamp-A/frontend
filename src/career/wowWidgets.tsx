@@ -7,11 +7,12 @@ import { AsOf } from './charts'
 import { SectionHeader, useCountUp, MiniScore, PreviewBadge } from './kit'
 import { FONT, tooltipStyle } from '../pages/widgets/base'
 import type { WidgetSize } from './dashboardConfig'
-import { useResumesState, getDynamicPostings } from './state'
+import { useResumesState } from './state'
 import { getAuthToken } from './authStore'
-import { dashboardApi, type UnlockData } from './api'
+import { dashboardApi, jobsApi, type PostingCard, type UnlockData } from './api'
 import { useWidgetData } from './useWidgetData'
 import CompanyLogo from './CompanyLogo'
+import { useBookmarks } from './bookmarkStore'
 import { marketApi } from './api'
 import feedRaw from '../data/feedData.json'
 import y1Raw from '../data/pearl/y1.json'
@@ -51,7 +52,12 @@ const FEED_DAILY = stripHeaderRow<DailyRow>(FEED.daily)
 export function LatestJobsTimeline({ size = '2x2' }: { size?: WidgetSize }) {
   const navigate = useNavigate()
   const { activeResume } = useResumesState()
-  const skills = useMemo(() => activeResume?.skills ?? [], [activeResume])
+  const skills = useMemo(() => activeResume?.skills ?? [], [activeResume?.skills])
+  const bookmarkIds = useBookmarks()
+  const [activeTab, setActiveTab] = useState<'latest' | 'matched' | 'deadline' | 'bookmarks'>('latest')
+  const [apiPostings, setApiPostings] = useState<PostingCard[]>([])
+  const [jobsLoading, setJobsLoading] = useState(false)
+  const [jobsError, setJobsError] = useState<string | null>(null)
   const resumeId = Number(activeResume?.id)
   const token = getAuthToken()
   const identity = Number.isInteger(resumeId) && resumeId > 0 && token ? { resumeId, token } : null
@@ -60,21 +66,100 @@ export function LatestJobsTimeline({ size = '2x2' }: { size?: WidgetSize }) {
     { daily: FEED_DAILY, as_of: FEED._meta.asOf },
   )
   const daily = timeline.value.daily.map((item) => ({ ...item, matched: item.matched ?? 0 }))
-  // 하단 리스트는 careerData 기반(getDynamicPostings)으로 만든다 — feedData의 id는
-  // 상세 페이지(careerData) id와 달라 클릭해도 /job/{id}로 갈 수 없기 때문.
-  // 상단 36일 일별 차트는 계속 feedData를 쓴다(시계열 소스는 그대로 유지).
-  const rankedPostings = useMemo(
-    () => getDynamicPostings(skills).filter((p) => p.pool === '국내').sort((a, b) => b.matchPct - a.matchPct),
-    [skills],
-  )
   const maxTotal = Math.max(...daily.map((d) => d.total), 1)
   const listCount = size === '2x2' ? 14 : size === '2x1' ? 3 : 0
   const matchedTotal = daily.reduce((sum, item) => sum + item.matched, 0)
   const matchedCount = useCountUp(size === '1x1' ? matchedTotal : 0)
+  const bookmarkKey = bookmarkIds.join(',')
+  const tabs = [
+    { key: 'latest', label: '최신' },
+    { key: 'matched', label: '맞춤' },
+    { key: 'deadline', label: '마감 임박' },
+    { key: 'bookmarks', label: '북마크' },
+  ] as const
+
+  useEffect(() => {
+    if (listCount === 0) return
+    if (activeTab === 'matched' && !identity) {
+      setApiPostings([])
+      setJobsError('이력서를 등록하면 맞춤 공고를 확인할 수 있어요.')
+      setJobsLoading(false)
+      return
+    }
+    if (activeTab === 'bookmarks' && bookmarkIds.length === 0) {
+      setApiPostings([])
+      setJobsError(null)
+      setJobsLoading(false)
+      return
+    }
+    let cancelled = false
+    setJobsLoading(true)
+    setJobsError(null)
+    setApiPostings([])
+
+    const load = async () => {
+      if (activeTab === 'bookmarks') {
+        const responses = await Promise.allSettled(
+          bookmarkIds.slice(0, listCount).map((id) => jobsApi.detail(id)),
+        )
+        return responses.flatMap((response) => response.status === 'fulfilled' ? [response.value] : [])
+      }
+
+      const result = await jobsApi.list({
+        pool: 'domestic',
+        position: activeResume?.position || undefined,
+        sort: activeTab === 'matched' ? 'match' : activeTab === 'deadline' ? 'deadline' : 'latest',
+        deadline_within_days: activeTab === 'deadline' ? 7 : undefined,
+        match_only: activeTab === 'matched' ? true : undefined,
+        resume_id: activeTab === 'matched' ? resumeId : undefined,
+        page: 1,
+        page_size: listCount,
+      }, token)
+      return result.items
+    }
+
+    load()
+      .then((items) => { if (!cancelled) setApiPostings(items) })
+      .catch(() => {
+        if (!cancelled) {
+          setApiPostings([])
+          setJobsError('공고를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.')
+        }
+      })
+      .finally(() => { if (!cancelled) setJobsLoading(false) })
+
+    return () => { cancelled = true }
+  }, [activeResume?.position, activeTab, bookmarkKey, listCount, resumeId, token])
+
+  const listLabel = activeTab === 'latest' ? '국내 최신 공고'
+    : activeTab === 'matched' ? '내 이력서 맞춤 공고'
+      : activeTab === 'deadline' ? '7일 안에 마감되는 공고'
+        : '북마크한 공고'
 
   return (
     <div className="dcard wow-card">
-      <SectionHeader title="최신 공고 타임라인" hint="내 매칭 강조" />
+      <SectionHeader
+        title="최신 공고 타임라인"
+        hint="내 매칭 강조"
+        right={size !== '1x1' && timeline.source !== 'live' ? <PreviewBadge /> : undefined}
+      />
+      {size !== '1x1' && (
+        <div
+          className="wow-seg"
+          style={{ width: '100%', justifyContent: 'flex-start', marginTop: 8, marginBottom: 4 }}
+        >
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              className={`wow-seg__btn${activeTab === tab.key ? ' on' : ''}`}
+              onClick={() => setActiveTab(tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="wow-body">
         {size === '1x1' ? (
           <>
@@ -94,9 +179,13 @@ export function LatestJobsTimeline({ size = '2x2' }: { size?: WidgetSize }) {
           </>
         ) : (
           <>
-            <p className="wow-headline">
-              최근 36일 <b>{matchedTotal.toLocaleString()}</b>건이 내 기술과 겹쳐요 · 매일 뜨는 공고를 내 기술로 필터링
-            </p>
+            {timeline.source === 'live' ? (
+              <p className="wow-headline">
+                최근 36일 <b>{matchedTotal.toLocaleString()}</b>건이 내 기술과 겹쳐요 · 차트는 유지하고 목록만 골라보세요
+              </p>
+            ) : (
+              <p className="wow-headline">이력서를 등록하면 내 기술과 매칭된 공고를 확인할 수 있어요</p>
+            )}
             <div className="wow-timeline">
               {daily.map((d, i) => (
                 <div key={d.date} className="wow-timeline__col" title={`${d.date} · 전체 ${d.total} · 매칭 ${d.matched}`}>
@@ -109,14 +198,25 @@ export function LatestJobsTimeline({ size = '2x2' }: { size?: WidgetSize }) {
             </div>
             {listCount > 0 && (
               <>
-                <p className="wow-joblist__label">국내 최신 공고 · 내 매칭순</p>
+                <p className="wow-joblist__label">{listLabel} · {apiPostings.length}건</p>
                 <div className="wow-joblist">
-                  {rankedPostings.slice(0, listCount).map((p) => {
-                    const held = p.techs.filter((t) => skills.includes(t))
+                  {jobsLoading && <div className="dov__empty">공고를 불러오는 중이에요.</div>}
+                  {!jobsLoading && jobsError && <div className="dov__empty">{jobsError}</div>}
+                  {!jobsLoading && !jobsError && apiPostings.length === 0 && (
+                    <div className="dov__empty">
+                      {activeTab === 'bookmarks' ? '북마크한 공고가 없어요.' : '조건에 맞는 공고가 없어요.'}
+                    </div>
+                  )}
+                  {!jobsLoading && !jobsError && apiPostings.map((p) => {
+                    const held = p.skills.filter((tech) => skills.includes(tech))
                     const heldShown = held.slice(0, 3)
                     const heldExtra = held.length - heldShown.length
-                    const gapShown = p.gap.slice(0, 3)
-                    const gapExtra = p.gap.length - gapShown.length
+                    const gap = p.skills.filter((tech) => !skills.includes(tech))
+                    const gapShown = gap.slice(0, 3)
+                    const gapExtra = gap.length - gapShown.length
+                    const matchPct = p.skills.length
+                      ? Math.min(100, Math.round(((p.matched_count ?? held.length) / p.skills.length) * 100))
+                      : 0
                     return (
                       <button
                         key={p.id}
@@ -125,24 +225,23 @@ export function LatestJobsTimeline({ size = '2x2' }: { size?: WidgetSize }) {
                         onClick={() => navigate(`/job/${encodeURIComponent(p.id)}`)}
                       >
                         <div className="wow-joblist__top">
-                          <CompanyLogo logo={p.logo} name={p.company} size={34} radius={9} />
+                          <CompanyLogo logo={p.logo_url ?? undefined} name={p.company ?? '회사명 미등록'} size={34} radius={9} />
                           <div className="wow-joblist__main">
                             <div className="wow-joblist__meta">
-                              <span className="wow-joblist__co">{p.company} · {p.tier}</span>
-                              <span className="wow-joblist__date">{p.postDate.slice(5)}</span>
+                              <span className="wow-joblist__co">{p.company ?? '회사명 미등록'}</span>
+                              <span className="wow-joblist__date">{p.post_date?.slice(5) ?? '상시채용'}</span>
                             </div>
                             <span className="wow-joblist__title">
                               <span className="wow-joblist__title-text">{p.title}</span>
-                              {p.matchPct >= 80 && <span className="wow-jobbadge">추천</span>}
+                              {matchPct >= 80 && <span className="wow-jobbadge">추천</span>}
                             </span>
-                            {(p.region || p.district) && <span className="wow-joblist__loc">{p.region || p.district}</span>}
                           </div>
-                          <MiniScore pct={p.matchPct} size={40} />
+                          {activeTab === 'matched' && <MiniScore pct={matchPct} size={40} />}
                         </div>
                         <div className="wow-joblist__chips">
-                          {heldShown.map((t) => <span key={`h-${t}`} className="wow-chip wow-chip--held">{t}</span>)}
+                          {heldShown.map((tech) => <span key={`h-${tech}`} className="wow-chip wow-chip--held">{tech}</span>)}
                           {heldExtra > 0 && <span className="wow-chip wow-chip--held wow-chip--more">+{heldExtra}</span>}
-                          {gapShown.map((t) => <span key={`g-${t}`} className="wow-chip wow-chip--gap">{t}</span>)}
+                          {gapShown.map((tech) => <span key={`g-${tech}`} className="wow-chip wow-chip--gap">{tech}</span>)}
                           {gapExtra > 0 && <span className="wow-chip wow-chip--gap wow-chip--more">+{gapExtra}</span>}
                         </div>
                       </button>
