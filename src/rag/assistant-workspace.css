@@ -19,6 +19,7 @@
   height: 100%;
   display: flex;
   align-items: stretch;
+  position: relative;
 }
 
 /* pane 카드화 — 회색 배경 위에 흰 카드로 띄운다. AssistantWorkspace.tsx/RagConsole.tsx 구조는
@@ -61,6 +62,9 @@
 }
 .aw__pane--collapsed {
   flex-basis: 0 !important;
+  flex-grow: 0 !important;
+  flex-shrink: 0 !important;
+  width: 0 !important;
   min-width: 0 !important;
   padding-left: 0 !important;
   padding-right: 0 !important;
@@ -72,14 +76,14 @@
    장식이 아니라 실제로 누를 수 있는 컨트롤이라는 걸 버튼 보더로 드러낸다. */
 .aw__divider {
   flex: none;
-  width: 28px;
+  width: 40px;
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 8px 0;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: clamp(96px, 28vh, 220px) 0 8px;
 }
 .aw__divider::before {
   content: '';
@@ -96,9 +100,9 @@
   z-index: 1;
   display: grid;
   place-items: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 7px;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
   border: 1px solid #e2e5ec;
   background: #fff;
   color: #7c7f88;
@@ -112,55 +116,40 @@
   z-index: 1;
   display: grid;
   place-items: center;
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   color: #cdd2db;
   background: #fff;
 }
 
-/* 접힌 패널 — 슬림 레일로 축소되고, 세로 라벨 + 펼치기 화살표만 남는다 */
-.aw__rail {
-  flex: none;
-  width: 34px;
-  align-self: center;
-  min-height: 132px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  background: #f6f8fc;
+/* 접힌 패널 — flex 흐름과 무관하게 화면 가장자리에 복원 버튼을 남긴다. */
+.aw__restore {
+  position: absolute;
+  top: min(50%, 50vh);
+  z-index: 10;
+  width: 32px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  transform: translateY(-50%);
+  background: #fff;
   border: 1px solid #e2e5ec;
-  border-radius: 12px;
   color: #5b5e66;
   cursor: pointer;
-  padding: 16px 6px;
+  padding: 0;
   font-family: 'Pretendard', sans-serif;
-  animation: aw-rail-in 300ms cubic-bezier(0,0,0.2,1) both;
-  animation-delay: 120ms;
+  box-shadow: var(--e1);
+  animation: aw-restore-in 200ms cubic-bezier(0,0,0.2,1) both;
 }
-@keyframes aw-rail-in { from { opacity: 0; transform: translateX(6px); } to { opacity: 1; transform: none; } }
-.aw__rail:hover { background: #eef1f6; color: #1c1d21; }
-.aw__rail:active { transform: scale(0.98); }
-.aw__rail:focus-visible { outline: 2px solid #28539c; outline-offset: 1px; }
-.aw__rail-label {
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
+.aw__restore--left { left: 0; border-radius: 0 10px 10px 0; }
+.aw__restore--right { right: 0; border-radius: 10px 0 0 10px; }
+@keyframes aw-restore-in {
+  from { opacity: 0; transform: translateY(-50%) scale(0.92); }
+  to { opacity: 1; transform: translateY(-50%) scale(1); }
 }
-.aw__rail-label::before,
-.aw__rail-label::after {
-  content: '';
-  display: block;
-  width: 1px;
-  height: 14px;
-  margin: 0 auto 8px;
-  background: #e2e5ec;
-  border-radius: 1px;
-}
-.aw__rail-label::after { margin: 8px auto 0; }
+.aw__restore:hover { background: #eef1f6; color: #1c1d21; }
+.aw__restore:active { transform: translateY(-50%) scale(0.96); }
+.aw__restore:focus-visible { outline: 2px solid #28539c; outline-offset: 1px; }
 
 /* 모바일 — 접기 컨트롤은 데스크톱 전용 어포던스라 감추고, 두 패널을 세로로 쌓아
    각자 프레임리스 화면(rc/ri 자체의 max-width:1023px 보정)으로 자연스럽게 흐르게 둔다. */
@@ -181,7 +170,7 @@
     padding: 0;
     overflow: visible;
   }
-  .aw__divider, .aw__rail { display: none; }
+  .aw__divider, .aw__restore { display: none; }
   .aw__pane--left { border-bottom: 1px solid #e2e5ec; }
 }
 
