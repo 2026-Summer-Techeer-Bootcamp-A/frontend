@@ -620,7 +620,7 @@ button.kit-wcard:active { opacity: 0.6; }
 }
 .kit-trans--tab { animation: kit-tab-in 0.34s cubic-bezier(0, 0, 0.2, 1) backwards; }
 .kit-trans--push { animation: kit-push-in 0.4s cubic-bezier(0, 0, 0.2, 1) backwards; }
-.kit-trans--fade { animation: kit-fade-in 0.3s cubic-bezier(0, 0, 0.2, 1) backwards; }
+.kit-trans--fade { animation: kit-fade-in 0.16s cubic-bezier(0, 0, 0.2, 1) backwards; }
 @media (prefers-reduced-motion: reduce) {
   .kit-trans--tab, .kit-trans--push, .kit-trans--fade { animation: none; }
   .kit-arc__fill, .kit-arc__ghost { transition: none; }
@@ -657,6 +657,8 @@ button.kit-wcard:active { opacity: 0.6; }
   box-shadow: var(--e1);
   cursor: pointer;
   transition: border-color 0.15s, box-shadow 0.15s, transform 0.12s cubic-bezier(0.25, 0.1, 0.25, 1);
+  content-visibility: auto;
+  contain-intrinsic-size: auto 66px;
 }
 .kit-jc:hover { border-color: var(--accent-200); box-shadow: var(--e2); }
 .kit-jc:active { transform: scale(0.99); }

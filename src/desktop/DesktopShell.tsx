@@ -18,6 +18,7 @@ import { THEME, themeVars } from '../career/themes'
 import { useAuth } from '../career/authStore'
 import MacMenu, { type MacMenuEntry } from './MacMenu'
 import GlobalSearch from './GlobalSearch'
+import { PageTransition } from '../career/kit'
 import './DesktopShell.css'
 
 /* 데스크톱 셸 — Phase 3: 아이콘+라벨 레일 + 톱바 필 탭.
@@ -225,7 +226,11 @@ export default function DesktopShell({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <main className={`dshell__content${isGrayBg ? ' dshell__content--home' : ''}`}>{children}</main>
+        <main className={`dshell__content${isGrayBg ? ' dshell__content--home' : ''}`}>
+          <PageTransition type="fade" keyId={location.pathname}>
+            {children}
+          </PageTransition>
+        </main>
       </div>
     </div>
   )
