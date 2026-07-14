@@ -240,6 +240,40 @@
   flex-wrap: wrap;
 }
 
+.djobs__row-score {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+.djobs__deadline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  height: 24px;
+  padding: 0 8px;
+  border: 1px solid var(--line, #e6e9ef);
+  border-radius: 999px;
+  background: var(--accent-50);
+  color: var(--c-muted);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.djobs__deadline--urgent {
+  border-color: rgba(200, 56, 45, 0.22);
+  background: rgba(200, 56, 45, 0.09);
+  color: #b63229;
+}
+.djobs__deadline--closed {
+  background: var(--accent-100);
+  color: var(--c-muted);
+  opacity: 0.72;
+}
+
 .jobs-pagination {
   position: sticky;
   bottom: 0;
