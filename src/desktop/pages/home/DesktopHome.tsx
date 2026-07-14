@@ -188,7 +188,7 @@ export default function DesktopHome() {
   return (
     <div className="hfeed">
       <aside className="hfeed__left">
-        <HomeLeftColumn />
+        <HomeLeftColumn pool={pool} />
       </aside>
 
       <main className="hfeed__center">

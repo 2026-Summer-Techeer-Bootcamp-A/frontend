@@ -166,6 +166,43 @@
 .hfeed-links__row .ct { font-size: 13px; font-weight: 700; color: var(--c-muted); }
 .hfeed-links__row .chev { color: var(--c-muted); flex: none; }
 
+/* ===== 채용 시장 펄스(좌측 하단 데이터 위젯) ===== */
+.hfeed-mpulse { border-radius: 20px; padding: 18px; }
+.hfeed-mpulse__head { display: flex; align-items: baseline; justify-content: space-between; }
+.hfeed-mpulse__head h3 { font-size: 13px; font-weight: 700; margin: 0; }
+.hfeed-mpulse__pool {
+  font-size: 11px; font-weight: 700; color: var(--hf-viz-blue-text);
+  background: var(--hf-viz-blue-soft); border: 1px solid var(--hf-viz-blue-line);
+  border-radius: 7px; padding: 2px 7px;
+}
+.hfeed-mpulse__trend { margin-top: 12px; }
+.hfeed-mpulse__trend-cap { font-size: 12.5px; color: var(--c-muted); }
+.hfeed-mpulse__trend-cap b { color: var(--c-ink); font-weight: 700; }
+.hfeed-mpulse__spark { display: block; width: 100%; height: 44px; margin-top: 8px; overflow: visible; }
+.hfeed-mpulse__skills { margin-top: 16px; display: flex; flex-direction: column; gap: 7px; }
+.hfeed-mpulse__skills-cap { font-size: 12px; color: var(--c-muted); margin-bottom: 2px; }
+.hfeed-mpulse__bar {
+  display: grid; grid-template-columns: 74px 1fr 34px; align-items: center; gap: 8px;
+  width: 100%; text-align: left; border-radius: 8px; padding: 3px 4px; transition: background 0.15s;
+}
+.hfeed-mpulse__bar:hover { background: #f2f2f4; }
+.hfeed-mpulse__bar:focus-visible { outline: 2px solid var(--c-ink); outline-offset: 1px; }
+.hfeed-mpulse__bar-k {
+  font-size: 12.5px; font-weight: 600; color: var(--c-ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.hfeed-mpulse__bar-tr { height: 8px; border-radius: 5px; background: var(--track); overflow: hidden; }
+.hfeed-mpulse__bar-tr i {
+  display: block; height: 100%; border-radius: 5px;
+  transition: width 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.hfeed-mpulse__bar-v { font-size: 11.5px; font-weight: 700; color: var(--c-muted); text-align: right; }
+.hfeed-mpulse__more {
+  display: inline-flex; align-items: center; gap: 2px; margin-top: 6px;
+  font-size: 12px; font-weight: 700; color: var(--accent-700);
+}
+.hfeed-mpulse__skel { margin-top: 12px; }
+
 /* ===== 게스트 CTA (다크) ===== */
 .hfeed-guest {
   border-radius: 22px; padding: 22px 20px; color: #fff;

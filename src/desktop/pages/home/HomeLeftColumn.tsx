@@ -4,12 +4,13 @@ import { useAuth } from '../../../career/authStore'
 import { useResumesState } from '../../../career/state'
 import { useBookmarks } from '../../../career/bookmarkStore'
 import { useRecentViews } from '../../../career/viewHistoryStore'
+import HomeMarketPulse from './HomeMarketPulse'
 
 const MAX_SKILL_CHIPS = 8
 // viewHistoryStore의 MAX_HISTORY(20)와 동일 — 전체 최근 조회 수를 얻기 위한 상한.
 const MAX_RECENT_VIEWS = 20
 
-export default function HomeLeftColumn() {
+export default function HomeLeftColumn({ pool = 'all' }: { pool?: 'all' | 'domestic' | 'global' }) {
   const navigate = useNavigate()
   const { user, isAuthed } = useAuth()
   const { activeResume } = useResumesState()
@@ -102,6 +103,8 @@ export default function HomeLeftColumn() {
           <ChevronRight size={16} className="chev" />
         </button>
       </nav>
+
+      <HomeMarketPulse pool={pool} />
     </>
   )
 }
