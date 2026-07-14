@@ -178,7 +178,7 @@
   min-height: 0;
   margin: 0 8px 8px;
   padding: 18px;
-  border-radius: 24px;
+  border-radius: 16px;
   border: 1px solid #eef1f6;
   background: var(--c-card); /* 콘텐츠는 흰색 카드 */
   overflow-y: auto;
@@ -205,6 +205,9 @@
    보이게 한다(홈 피드 비주얼 스펙 2.0절). 다른 라우트의 흰 배경은 그대로 둔다. */
 .dshell__content--home {
   background: #f7f7f8;
+}
+.dshell__content:has(.aw) {
+  overflow: hidden;
 }
 
 /* ---------- 모바일 유래 화면의 데스크톱 보정 ----------

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Search, SlidersHorizontal } from 'lucide-react'
+import { Lock, Search, SlidersHorizontal } from 'lucide-react'
 import { useAuth } from '../../../career/authStore'
 import { useResumesState } from '../../../career/state'
+import { useSettings } from '../../../career/settingsStore'
 import { homeApi, type FeedPostingDto } from '../../../career/homeApi'
 import { jobsApi } from '../../../career/api'
 import HomeLeftColumn from './HomeLeftColumn'
@@ -60,6 +61,7 @@ function FeedCardSkeleton() {
 export default function DesktopHome() {
   const { isAuthed } = useAuth()
   const { activeResume } = useResumesState()
+  const { settings } = useSettings()
   // 기본 풀은 국내 — 순서도 국내/해외/전체로 노출한다(2026-07-13 사용자 피드백).
   const [pool, setPool] = useState<PoolFilter>('domestic')
   const [category, setCategory] = useState<string | undefined>(undefined)
@@ -135,6 +137,7 @@ export default function DesktopHome() {
           sort,
           industry,
           skills: skills.length > 0 ? skills.join(',') : undefined,
+          rich_only: settings.richOnly || undefined,
         })
         setItems((prev) => (reset ? res.items : [...prev, ...res.items]))
         setTotal(res.total)
@@ -146,14 +149,14 @@ export default function DesktopHome() {
         setLoading(false)
       }
     },
-    [pool, category, district, deadlineWithinDays, minMatch, showMinMatch, sort, industry, skills],
+    [pool, category, district, deadlineWithinDays, minMatch, showMinMatch, sort, industry, skills, settings.richOnly],
   )
 
   useEffect(() => {
     loadPage(1, true)
-    // pool/category/상세 필터/정렬 변경 시 목록을 리셋해서 1페이지부터 다시 불러온다.
+    // pool/category/상세 필터/정렬/표시 설정 변경 시 목록을 리셋해서 1페이지부터 다시 불러온다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pool, category, district, deadlineWithinDays, minMatch, sort, industry, skills])
+  }, [pool, category, district, deadlineWithinDays, minMatch, sort, industry, skills, settings.richOnly])
 
   useEffect(() => {
     const node = sentinelRef.current
@@ -196,37 +199,43 @@ export default function DesktopHome() {
               <button type="button" className={pool === 'global' ? 'is-on' : ''} onClick={() => setPool('global')}>해외</button>
               <button type="button" className={pool === 'all' ? 'is-on' : ''} onClick={() => setPool('all')}>전체</button>
             </div>
-            <div className="hfeed-filter__sort">
-              {showMinMatch ? (
-                <>
-                  <button type="button" className={sort === 'latest' ? 'is-on' : ''} onClick={() => setSort('latest')}>최신순</button>
-                  <button type="button" className={sort === 'match' ? 'is-on' : ''} onClick={() => setSort('match')}>매칭순</button>
-                </>
-              ) : (
-                <span className="hfeed-filter__sort-static">최신순</span>
-              )}
-            </div>
-            <div className="hfeed-filter__more-wrap">
-              <button
-                type="button"
-                className={`hfeed-filter__more${appliedFilterCount > 0 ? ' is-active' : ''}`}
-                onClick={() => setFilterPopoverOpen((v) => !v)}
-                aria-haspopup="dialog"
-                aria-expanded={filterPopoverOpen}
-              >
-                <SlidersHorizontal size={14} />
-                상세 필터
-                {appliedFilterCount > 0 && <span className="hfeed-filter__badge tnum">{appliedFilterCount}</span>}
-              </button>
-              {filterPopoverOpen && (
-                <HomeFilterPopover
-                  values={{ district, deadlineWithinDays, minMatch, industry, skills }}
-                  showMinMatch={showMinMatch}
-                  skillOptions={skillOptions}
-                  onClose={() => setFilterPopoverOpen(false)}
-                  onApply={applyFilterPopover}
-                />
-              )}
+            {/* 정렬 + 상세 필터를 오른쪽으로 묶어서, pool(왼쪽)과 2분할 배치한다 */}
+            <div className="hfeed-filter__row1-right">
+              <div className="hfeed-filter__sort">
+                {showMinMatch ? (
+                  <>
+                    <button type="button" className={sort === 'latest' ? 'is-on' : ''} onClick={() => setSort('latest')}>최신순</button>
+                    <button type="button" className={sort === 'match' ? 'is-on' : ''} onClick={() => setSort('match')}>매칭순</button>
+                  </>
+                ) : (
+                  <span className="hfeed-filter__sort-static" title="매칭순은 로그인하고 이력서를 등록하면 사용할 수 있어요">
+                    <Lock size={12} aria-hidden />
+                    최신순
+                  </span>
+                )}
+              </div>
+              <div className="hfeed-filter__more-wrap">
+                <button
+                  type="button"
+                  className={`hfeed-filter__more${appliedFilterCount > 0 ? ' is-active' : ''}`}
+                  onClick={() => setFilterPopoverOpen((v) => !v)}
+                  aria-haspopup="dialog"
+                  aria-expanded={filterPopoverOpen}
+                >
+                  <SlidersHorizontal size={14} />
+                  상세 필터
+                  {appliedFilterCount > 0 && <span className="hfeed-filter__badge tnum">{appliedFilterCount}</span>}
+                </button>
+                {filterPopoverOpen && (
+                  <HomeFilterPopover
+                    values={{ district, deadlineWithinDays, minMatch, industry, skills }}
+                    showMinMatch={showMinMatch}
+                    skillOptions={skillOptions}
+                    onClose={() => setFilterPopoverOpen(false)}
+                    onApply={applyFilterPopover}
+                  />
+                )}
+              </div>
             </div>
           </div>
           <div className="hfeed-filter__cats">

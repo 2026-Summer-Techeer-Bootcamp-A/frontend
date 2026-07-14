@@ -80,9 +80,9 @@
 
 /* 기업 · 역량 — 카드 크기에 맞춰 2~3열로 채워지는 auto-fill */
 .dmkt2__sec-grid--company { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
-.dmkt2__card-item--calendar { grid-column: 1 / -1; height: auto; }
+.dmkt2__card-item--calendar { grid-column: span 3; height: auto; }
 .dmkt2__card-item--calendar > .dcard { flex: none; height: auto; }
-.dcard--posting-calendar { padding: 14px 16px 12px; }
+.dcard--posting-calendar { padding: 12px 14px 10px; }
 
 /* 구조 · 탐색 — 무거운 탐색 그래프 2등분(진행적 공개로 펼쳤을 때만 렌더) */
 .dmkt2__sec-grid--explore { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -105,10 +105,12 @@
   .dmkt2__sec-grid--explore { grid-template-columns: 1fr; }
   .dmkt2__sec-grid--company,
   .dmkt2__sec-grid--global { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dmkt2__card-item--calendar { grid-column: span 2; }
 }
 @media (max-width: 720px) {
   .dmkt2__sec-grid--company,
   .dmkt2__sec-grid--global { grid-template-columns: 1fr; }
+  .dmkt2__card-item--calendar { grid-column: span 1; }
   .dmkt2__head { flex-direction: column; }
   .dmkt2__head-r { padding-top: 0; }
 }
@@ -161,19 +163,19 @@
 .dmkt2__donut-legend i { width: 8px; height: 8px; border-radius: 50%; flex: none; }
 
 /* 채용 공고 등록 캘린더 — GitHub contribution graph처럼 주(열) × 요일(행)로 날짜별 공고량을 표시. */
-.dmkt2__calendar { display: flex; flex-direction: column; min-width: 0; margin-top: 8px; }
+.dmkt2__calendar { display: flex; flex-direction: column; min-width: 0; margin-top: 5px; }
 .dmkt2__calendar-state { display: flex; min-height: 112px; align-items: center; justify-content: center; gap: 10px; color: var(--c-muted); font-size: 12px; }
 .dmkt2__calendar-state--error { color: #a33a3a; }
 .dmkt2__calendar-state button { border: 1px solid var(--line-strong, #cfd3da); border-radius: 7px; padding: 5px 9px; background: #fff; color: var(--c-ink); font: inherit; font-weight: 700; cursor: pointer; }
 .dmkt2__calendar-state button:hover { background: #f5f6f8; }
-.dmkt2__calendar-summary { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; color: var(--c-muted); font-size: 11px; }
+.dmkt2__calendar-summary { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; color: var(--c-muted); font-size: 11px; }
 .dmkt2__calendar-summary strong { color: var(--c-ink); font-size: 16px; font-weight: 800; letter-spacing: -0.3px; }
 .dmkt2__calendar-summary span + span::before { content: '·'; margin-right: 10px; color: var(--line-strong, #cfd3da); }
 .dmkt2__calendar-outlier { color: #92400e; font-weight: 700; }
 .dmkt2__calendar-scroll { min-width: 0; overflow-x: auto; padding: 1px 0 4px; outline: none; scrollbar-width: thin; }
 .dmkt2__calendar-scroll:focus-visible { border-radius: 8px; box-shadow: 0 0 0 2px var(--accent-100); }
 .dmkt2__calendar-chart { width: max-content; min-width: 100%; }
-.dmkt2__calendar-months { display: grid; column-gap: 3px; min-height: 15px; font-size: 10px; color: var(--c-muted); }
+.dmkt2__calendar-months { display: grid; column-gap: 3px; min-height: 13px; font-size: 10px; color: var(--c-muted); }
 .dmkt2__calendar-months span { white-space: nowrap; }
 .dmkt2__calendar-month-spacer { width: 26px; }
 .dmkt2__calendar-body { display: flex; gap: 5px; }

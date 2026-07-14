@@ -1,15 +1,14 @@
 import { useMemo, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ReactECharts from 'echarts-for-react'
-import { Clock, ArrowUpRight, Sparkles, FileText } from 'lucide-react'
+import { Sparkles, FileText } from 'lucide-react'
 import {
-  ActivityRings, useCountUp, JobCardCompact, SectionHeader, CoverageHistogram,
-  HeroStat, StatTile, PreviewBadge, WidgetSettingsMenu, type RingMetric,
+  ActivityRings, useCountUp, SectionHeader, CoverageHistogram,
+  PreviewBadge, WidgetSettingsMenu, type RingMetric,
 } from '../../career/kit'
 import { IndustryFitRadar } from '../../career/insights'
 import { HBars } from '../../career/charts'
 import { LatestJobsTimeline, LearningPathWidget, SkillUnlockWidget } from '../../career/wowWidgets'
-import CompanyLogo from '../../career/CompanyLogo'
 import { useResumesState, getDynamicPostings, calculateCoverage, ddayInfo } from '../../career/state'
 import { getAuthToken, useAuth } from '../../career/authStore'
 import {
@@ -19,20 +18,14 @@ import { useWidgetData } from '../../career/useWidgetData'
 import { useDashboardConfig, isWidgetHidden, getWidgetSize } from '../../career/dashboardConfig'
 import { DASHBOARD_WIDGETS } from '../../career/widgetCatalog'
 import { useBookmarks } from '../../career/bookmarkStore'
-import { useRecentViews } from '../../career/viewHistoryStore'
 import data from '../../data/careerData.json'
 import marketData from '../../data/marketData.json'
 import './DesktopOverview.css'
 
 const asOf = data.meta.asOf
 const TOTAL = data.meta.totalPostings
-const RECENT_DAYS = 3
+const RECENT_DAYS = 90
 const DEADLINE_SOON_DAYS = 7
-
-function careerLabel(min: number | null, max: number | null) {
-  if (!min) return '신입·무관'
-  return max && max !== min ? `경력 ${min}~${max}년` : `경력 ${min}년+`
-}
 
 /** asOf 기준 며칠 전에 올라온 공고인지. 날짜가 없거나 미래면 null. */
 function daysSince(dateStr: string, ref: string) {
@@ -100,9 +93,8 @@ function LiveCoverageHistogram({ data }: { data: DistributionData }) {
   )
 }
 
-/** 데스크톱 대시보드 — 히어로 1개(커리어 점수) + KPI stat 4개 + 라벨 섹션 3개(내 시장 진단 ·
- * 무엇을 배울까 · 내 공고)로 구성한 위계형 커맨드센터. 좌측 인사이트 존은 [히어로존] +
- * [라벨 섹션들]로 나뉘며, 섹션 내부는 CSS grid로 카드 높이를 통일한다(우측 레일은 유지). */
+/** 데스크톱 대시보드 — 검정 히어로 카드 1개(좌: 커리어 점수, 우: KPI 2x2) + 라벨 섹션 2개(내 시장 진단 ·
+ * 무엇을 배울까)로 구성한 위계형 커맨드센터. 공고 목록은 우측 레일의 최신 공고 타임라인 탭으로 통합됐다. */
 export default function DesktopOverview() {
   const navigate = useNavigate()
   useDashboardConfig() // 위젯 표시/숨김·크기 변경 시 리렌더 트리거
@@ -122,14 +114,11 @@ export default function DesktopOverview() {
   const coverage = activeResume?.coveragePct ?? calculateCoverage(skills, '국내')
   const applicable = domestic.filter((p) => p.matchPct >= 50).length
 
-  const topJobs = useMemo(() => [...postings].sort((a, b) => b.matchPct - a.matchPct).slice(0, 6), [postings])
-
   const deadlineInfos = useMemo(() => {
     return domestic
       .map((p) => ({ p, dd: ddayInfo((p as { closeDate?: string }).closeDate ?? '', asOf) }))
       .filter((x): x is { p: typeof domestic[number]; dd: { d: number; label: string } } => !!x.dd)
   }, [domestic])
-  const deadlines = useMemo(() => [...deadlineInfos].sort((a, b) => a.dd.d - b.dd.d).slice(0, 8), [deadlineInfos])
   const deadlineSoonCount = useMemo(() => deadlineInfos.filter((x) => x.dd.d <= DEADLINE_SOON_DAYS).length, [deadlineInfos])
 
   const recentCount = useMemo(() => {
@@ -168,8 +157,6 @@ export default function DesktopOverview() {
     source: coverageData.source,
   }
   const statsData = { value: { recentCount } }
-  const jobsData = useWidgetData(null, topJobs)
-  const deadlinesData = useWidgetData(null, deadlines)
 
   const rings: RingMetric[] = [
     { key: 'cov', label: '기술 보유율', pct: shownCoverage, color: '#fff' },
@@ -178,19 +165,7 @@ export default function DesktopOverview() {
   const covNum = useCountUp(scoreData.value.coverage)
   const applicableNum = useCountUp(shownApplicable)
 
-  // 개인화 위젯 3종(북마크 · 최근 조회 · 스킬 모멘텀)
   const bookmarkIds = useBookmarks()
-  const bookmarkedPostings = useMemo(
-    () => bookmarkIds.map((id) => postings.find((p) => p.id === id)).filter((p): p is typeof postings[number] => !!p),
-    [bookmarkIds, postings],
-  )
-
-  const recentViewsSize = getWidgetSize('dashboard', 'recent-views', DASHBOARD_WIDGETS.find((w) => w.id === 'recent-views')!.defaultSize)
-  const recentViewIds = useRecentViews(recentViewsSize === '2x1' || recentViewsSize === '1x2' ? 5 : 3)
-  const recentViewPostings = useMemo(
-    () => recentViewIds.map((id) => postings.find((p) => p.id === id)).filter((p): p is typeof postings[number] => !!p),
-    [recentViewIds, postings],
-  )
 
   const domesticShare = marketData.skillShare['국내'] as { items: { tech: string; count: number; share: number; owned: boolean }[] }
   const skillMomentum = useMemo(() => {
@@ -210,13 +185,6 @@ export default function DesktopOverview() {
     return getWidgetSize('dashboard', id, item.defaultSize)
   }
 
-  const topJobsSize = wsize('top-jobs')
-  const topJobsVisible = jobsData.value.slice(0, topJobsSize === '2x2' ? 6 : 3)
-
-  const deadlinesSize = wsize('deadlines')
-  const deadlinesLimit = deadlinesSize === '2x2' ? 8 : deadlinesSize === '2x1' || deadlinesSize === '1x2' ? 5 : 3
-  const deadlinesVisible = deadlinesData.value.slice(0, deadlinesLimit)
-
   const briefSize = wsize('brief')
   const briefLines: ReactNode[] = [
     <li key="dl"><b>{deadlineSoonCount}건</b>이 곧 마감돼요</li>,
@@ -225,25 +193,29 @@ export default function DesktopOverview() {
   ].filter(Boolean) as ReactNode[]
   const briefVisible = briefSize === '1x1' ? briefLines.slice(0, 2) : briefLines
 
-  const bookmarksSize = wsize('bookmarks')
-  const bookmarksLimit = bookmarksSize === '2x2' ? 6 : bookmarksSize === '2x1' ? 3 : bookmarksSize === '1x2' ? 3 : 1
-  const bookmarksVisible = bookmarkedPostings.slice(0, bookmarksLimit)
-
   // 라벨 섹션 표시 여부 — 섹션 내 위젯이 전부 숨겨지면 섹션 헤더째로 렌더하지 않는다.
   const secMarketVisible = !isWidgetHidden('dashboard', 'industry-fit')
     || !isWidgetHidden('dashboard', 'coverage-histogram')
     || !isWidgetHidden('dashboard', 'skill-momentum')
   const secLearnVisible = !isWidgetHidden('dashboard', 'learning-path') || !isWidgetHidden('dashboard', 'skill-unlock')
-  const secJobsVisible = !isWidgetHidden('dashboard', 'top-jobs')
-    || !isWidgetHidden('dashboard', 'brief')
-    || !isWidgetHidden('dashboard', 'deadlines')
-    || !isWidgetHidden('dashboard', 'bookmarks')
-    || !isWidgetHidden('dashboard', 'recent-views')
+
+  const heroScoreVisible = !isWidgetHidden('dashboard', 'hero-score')
+  const kpiTiles = (
+    [
+      !isWidgetHidden('dashboard', 'hero-applicable') && {
+        id: 'hero-applicable', label: '지원 가능 공고', value: hasResume ? applicableNum : '—', unit: hasResume ? '건' : undefined,
+      },
+      !isWidgetHidden('dashboard', 'deadlines') && { id: 'deadlines', label: '마감 임박', value: deadlineSoonCount, unit: '건' },
+      !isWidgetHidden('dashboard', 'stat-recent') && { id: 'stat-recent', label: '최근 3개월 신규 공고', value: statsData.value.recentCount, unit: '건' },
+      !isWidgetHidden('dashboard', 'bookmarks') && { id: 'bookmarks', label: '북마크', value: bookmarkIds.length, unit: '건' },
+    ] as const
+  ).filter((tile): tile is Exclude<typeof tile, false> => !!tile)
+  const heroCardVisible = heroScoreVisible || kpiTiles.length > 0
 
   return (
     <div className="dov">
       <header className="dov__head">
-        <h1 className="dov__title">안녕하세요, {user?.nickname ?? '리버'}님</h1>
+        <h1 className="dov__title">{user?.nickname ? `안녕하세요, ${user.nickname}님` : '로그인하고 나만의 커리어 인사이트를 확인해보세요'}</h1>
         <div className="dov__head-r">
           <div className="dov__asof">기준일 {asOf} · 공고 {TOTAL.toLocaleString()}건</div>
           <WidgetSettingsMenu section="dashboard" items={DASHBOARD_WIDGETS} />
@@ -252,64 +224,62 @@ export default function DesktopOverview() {
 
       <div className="dov__layout">
         <div className="dov__insights">
-          {/* Zone 1 — 히어로존: 히어로 1개(커리어 점수) + KPI stat 4개. above-fold. */}
-          <div className="dov__hero-zone">
-            {!isWidgetHidden('dashboard', 'hero-score') && (
-              <div className="dov__hero-cell">
-                {hasResume ? (
-                  <HeroStat
-                    eyebrow="내 커리어 점수"
-                    value={covNum}
-                    unit="%"
-                    chart={<ActivityRings metrics={rings} size={84} trackColor="rgba(255,255,255,.14)" />}
-                    caption={<>국내 공고 <b>{scoreData.value.domesticTotal.toLocaleString()}건</b> 중 <b>{scoreData.value.applicable.toLocaleString()}건</b> 지원 가능</>}
-                  />
-                ) : (
-                  <section
-                    className="kit-heroStat"
-                    style={{ position: 'relative', alignItems: 'center', justifyContent: 'center', gap: 10, textAlign: 'center' }}
-                  >
-                    <span style={{ position: 'absolute', top: 28, left: 30, fontSize: 12.5, fontWeight: 700, color: 'rgba(255,255,255,.56)' }}>
-                      내 커리어 점수
-                    </span>
-                    <span style={{ display: 'grid', placeItems: 'center', width: 44, height: 44, borderRadius: 14, background: 'rgba(255,255,255,.1)' }}>
-                      <FileText size={22} />
-                    </span>
-                    <strong style={{ fontSize: 18, lineHeight: 1.45 }}>이력서를 등록하면 내 커리어 점수를 확인할 수 있어요.</strong>
-                    <span style={{ fontSize: 12.5, color: 'rgba(255,255,255,.62)' }}>이력서 등록 전에는 아래 분석 위젯에 예시 데이터를 보여드려요.</span>
-                    <button
-                      className="dov__cta-btn"
-                      style={{ marginTop: 4, background: '#fff', color: '#111' }}
-                      onClick={() => navigate('/resume/submit')}
-                    >
-                      이력서 등록하기
-                    </button>
-                  </section>
-                )}
-              </div>
-            )}
+          {/* Zone 1 — 히어로존: 검정 카드 1개, 좌(커리어 점수) · 우(KPI 2x2) 2열. above-fold. */}
+          {heroCardVisible && (
+            <div
+              className="dov__hero-card"
+              style={{ gridTemplateColumns: heroScoreVisible && kpiTiles.length > 0 ? 'minmax(260px, 1fr) minmax(300px, 1fr)' : '1fr' }}
+            >
+              {heroScoreVisible && (
+                <div className="dov__hero-left">
+                  {hasResume ? (
+                    <>
+                      <div className="dov__hero-top">
+                        <span className="dov__hero-eyebrow">내 커리어 점수</span>
+                        <div className="dov__hero-chart"><ActivityRings metrics={rings} size={84} trackColor="rgba(255,255,255,.14)" /></div>
+                      </div>
+                      <div className="dov__hero-bottom">
+                        <div className="dov__hero-num">{covNum}<span>%</span></div>
+                        <div className="dov__hero-caption">
+                          국내 공고 <b>{scoreData.value.domesticTotal.toLocaleString()}건</b> 중 <b>{scoreData.value.applicable.toLocaleString()}건</b> 지원 가능
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="dov__hero-empty">
+                      <span className="dov__hero-eyebrow">내 커리어 점수</span>
+                      <span className="dov__hero-empty-icon"><FileText size={22} /></span>
+                      <strong className="dov__hero-empty-title">이력서를 등록하면 내 커리어 점수를 확인할 수 있어요.</strong>
+                      <span className="dov__hero-empty-sub">이력서 등록 전에는 아래 분석 위젯에 예시 데이터를 보여드려요.</span>
+                      <button
+                        className="dov__cta-btn"
+                        style={{ marginTop: 4, background: '#fff', color: '#111' }}
+                        onClick={() => navigate('/resume/submit')}
+                      >
+                        이력서 등록하기
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
 
-            <div className="dov__kpis">
-              {!isWidgetHidden('dashboard', 'hero-applicable') && (
-                <StatTile label="지원 가능 공고" value={hasResume ? applicableNum : '—'} unit={hasResume ? '건' : undefined} />
-              )}
-              {!isWidgetHidden('dashboard', 'deadlines') && (
-                <StatTile label="마감 임박" value={deadlineSoonCount} unit="건" />
-              )}
-              {!isWidgetHidden('dashboard', 'stat-recent') && (
-                <StatTile label="신규 공고" value={statsData.value.recentCount} unit="건" />
-              )}
-              {!isWidgetHidden('dashboard', 'bookmarks') && (
-                <StatTile label="북마크" value={bookmarkIds.length} unit="건" />
+              {kpiTiles.length > 0 && (
+                <div className="dov__hero-right">
+                  {kpiTiles.map((tile) => (
+                    <div key={tile.id} className="dov__hero-stat">
+                      <span className="dov__hero-stat-label">{tile.label}</span>
+                      <span className="dov__hero-stat-num">{tile.value}{tile.unit && <span>{tile.unit}</span>}</span>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
-          </div>
+          )}
 
           {/* Zone 2 — 내 시장 진단: 업종 적합도 · 커버리지 분포 · 내 스킬 시장 모멘텀 */}
           {secMarketVisible && (
             <section className="dov__sec">
               <h2 className="dov__sec-title">내 시장 진단</h2>
-              <p className="dov__sec-hint">내 스킬이 시장에서 어디쯤인지</p>
               <div className="dov__sec-grid dov__sec-grid--3">
                 {!isWidgetHidden('dashboard', 'industry-fit') && (
                   <div className="dov__card-item">
@@ -365,7 +335,6 @@ export default function DesktopOverview() {
           {secLearnVisible && (
             <section className="dov__sec">
               <h2 className="dov__sec-title">무엇을 배울까</h2>
-              <p className="dov__sec-hint">점수를 올리는 다음 스텝</p>
               <div className="dov__sec-grid dov__sec-grid--2">
                 {!isWidgetHidden('dashboard', 'learning-path') && (
                   <div className="dov__card-item">
@@ -380,115 +349,22 @@ export default function DesktopOverview() {
               </div>
             </section>
           )}
-
-          {/* Zone 3 — 내 공고: 맞춤 공고 Top(조금 크게) · 오늘 브리핑 · 마감 임박 · 북마크 · 최근 본 공고 */}
-          {secJobsVisible && (
-            <section className="dov__sec">
-              <h2 className="dov__sec-title">내 공고</h2>
-              <p className="dov__sec-hint">지금 챙겨야 할 공고들</p>
-              <div className="dov__sec-grid dov__sec-grid--3">
-                {!isWidgetHidden('dashboard', 'top-jobs') && (
-                  <div className="dov__card-item dov__card-item--wide">
-                    <section className="dcard">
-                      <SectionHeader title="맞춤 공고 Top" hint={`${topJobsVisible.length}건`} right={
-                        <div className="dov__hdright">
-                          {!hasResume && jobsData.source === 'mock' && <PreviewBadge />}
-                          <button className="dov__more" onClick={() => navigate('/jobs')}>전체 보기 <ArrowUpRight size={15} /></button>
-                        </div>
-                      } />
-                      <div className="dov__jobs">
-                        {topJobsVisible.map((p) => (
-                          <JobCardCompact
-                            key={p.id}
-                            job={{ company: p.company, title: p.title, matchPct: p.matchPct, careerLabel: careerLabel(p.careerMin, p.careerMax) }}
-                            logo={<CompanyLogo logo={p.logo} name={p.company} size={40} radius={11} />}
-                            onOpen={() => navigate(`/job/${encodeURIComponent(p.id)}`)}
-                          />
-                        ))}
-                      </div>
-                    </section>
-                  </div>
-                )}
-                {!isWidgetHidden('dashboard', 'brief') && (
-                  <div className="dov__card-item">
-                    <section className="dcard">
-                      <span className="dov__card-eyebrow"><Sparkles size={14} /> 오늘 브리핑</span>
-                      <ul className="dov__brief">{briefVisible}</ul>
-                    </section>
-                  </div>
-                )}
-                {!isWidgetHidden('dashboard', 'deadlines') && (
-                  <div className="dov__card-item">
-                    <section className="dcard">
-                      <span className="dov__card-eyebrow"><Clock size={14} /> 마감 임박</span>
-                      <div className="dov__dl">
-                        {deadlinesVisible.length === 0 && <div className="dov__empty">임박한 마감이 없어요.</div>}
-                        {deadlinesVisible.map(({ p, dd }) => (
-                          <button key={p.id} className="dov__dl-row" onClick={() => navigate(`/job/${encodeURIComponent(p.id)}`)}>
-                            <CompanyLogo logo={p.logo} name={p.company} size={30} radius={9} />
-                            <span className="dov__dl-body">
-                              <span className="dov__dl-co">{p.company}</span>
-                              <span className="dov__dl-ti">{p.title}</span>
-                            </span>
-                            <span className={`dov__dday${dd.d <= 3 ? ' urgent' : ''}`}>D-{dd.d}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </section>
-                  </div>
-                )}
-                {!isWidgetHidden('dashboard', 'bookmarks') && (
-                  <div className="dov__card-item">
-                    <section className="dcard">
-                      <SectionHeader title="북마크한 공고" hint={`${bookmarkedPostings.length}건`} right={
-                        <button className="dov__more" onClick={() => navigate('/jobs')}>전체 보기 <ArrowUpRight size={15} /></button>
-                      } />
-                      {bookmarksVisible.length === 0 ? (
-                        <div className="dov__empty">북마크한 공고가 없어요. 공고 상세에서 북마크해보세요.</div>
-                      ) : (
-                        <div className="dov__jobs" style={{ gridTemplateColumns: '1fr' }}>
-                          {bookmarksVisible.map((p) => (
-                            <JobCardCompact
-                              key={p.id}
-                              job={{ company: p.company, title: p.title, matchPct: p.matchPct, careerLabel: careerLabel(p.careerMin, p.careerMax) }}
-                              logo={<CompanyLogo logo={p.logo} name={p.company} size={40} radius={11} />}
-                              onOpen={() => navigate(`/job/${encodeURIComponent(p.id)}`)}
-                            />
-                          ))}
-                        </div>
-                      )}
-                    </section>
-                  </div>
-                )}
-                {!isWidgetHidden('dashboard', 'recent-views') && (
-                  <div className="dov__card-item">
-                    <section className="dcard">
-                      <SectionHeader title="최근 본 공고" hint={`${recentViewPostings.length}건`} />
-                      {recentViewPostings.length === 0 ? (
-                        <div className="dov__empty">최근 본 공고가 없어요.</div>
-                      ) : (
-                        <div className="dov__jobs" style={{ gridTemplateColumns: '1fr' }}>
-                          {recentViewPostings.map((p) => (
-                            <JobCardCompact
-                              key={p.id}
-                              job={{ company: p.company, title: p.title, matchPct: p.matchPct, careerLabel: careerLabel(p.careerMin, p.careerMax) }}
-                              logo={<CompanyLogo logo={p.logo} name={p.company} size={40} radius={11} />}
-                              onOpen={() => navigate(`/job/${encodeURIComponent(p.id)}`)}
-                            />
-                          ))}
-                        </div>
-                      )}
-                    </section>
-                  </div>
-                )}
-              </div>
-            </section>
-          )}
         </div>
 
         <aside className="dov__rail">
-          {/* 최신 공고 타임라인 — 레일에서는 항상 세로로 길게(2x2) */}
-          {!isWidgetHidden('dashboard', 'latest-timeline') && <LatestJobsTimeline size="2x2" />}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minHeight: 0 }}>
+            {!isWidgetHidden('dashboard', 'brief') && (
+              <section className="dcard" style={{ flex: 'none' }}>
+                <span className="dov__card-eyebrow"><Sparkles size={14} /> 오늘 브리핑</span>
+                <ul className="dov__brief">{briefVisible}</ul>
+              </section>
+            )}
+            {!isWidgetHidden('dashboard', 'latest-timeline') && (
+              <div style={{ flex: 1, minHeight: 0 }}>
+                <LatestJobsTimeline size="2x2" />
+              </div>
+            )}
+          </div>
         </aside>
       </div>
     </div>
