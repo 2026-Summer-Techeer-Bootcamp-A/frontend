@@ -26,20 +26,24 @@ export default function AssistantWorkspace() {
         </section>
 
         {collapsed === 'left' && (
-          <button type="button" className="aw__rail" onClick={() => setCollapsed('none')} aria-label="이력서 패널 펼치기">
-            <ChevronsRight size={14} />
-            <span className="aw__rail-label">이력서 요약</span>
+          <button
+            type="button"
+            className="aw__restore aw__restore--left"
+            onClick={() => setCollapsed('none')}
+            aria-label="이력서 패널 펼치기"
+          >
+            <ChevronsRight size={16} />
           </button>
         )}
 
         {collapsed === 'none' && (
           <div className="aw__divider" role="separator" aria-orientation="vertical">
             <button type="button" className="aw__divider-btn" onClick={() => setCollapsed('left')} aria-label="이력서 패널 접기">
-              <ChevronsLeft size={13} />
+              <ChevronsLeft size={17} />
             </button>
-            <span className="aw__divider-grip" aria-hidden="true"><GripVertical size={12} /></span>
+            <span className="aw__divider-grip" aria-hidden="true"><GripVertical size={14} /></span>
             <button type="button" className="aw__divider-btn" onClick={() => setCollapsed('right')} aria-label="어시스턴트 패널 접기">
-              <ChevronsRight size={13} />
+              <ChevronsRight size={17} />
             </button>
           </div>
         )}
@@ -53,9 +57,13 @@ export default function AssistantWorkspace() {
         </section>
 
         {collapsed === 'right' && (
-          <button type="button" className="aw__rail" onClick={() => setCollapsed('none')} aria-label="어시스턴트 패널 펼치기">
-            <span className="aw__rail-label">어시스턴트</span>
-            <ChevronsLeft size={14} />
+          <button
+            type="button"
+            className="aw__restore aw__restore--right"
+            onClick={() => setCollapsed('none')}
+            aria-label="어시스턴트 패널 펼치기"
+          >
+            <ChevronsLeft size={16} />
           </button>
         )}
       </div>
