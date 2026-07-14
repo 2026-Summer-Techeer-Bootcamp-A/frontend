@@ -10,7 +10,7 @@ import {
   StatTile, JobCardCompact, MenuRow,
 } from '../../career/kit'
 import {
-  TechCoNetworkGraph, TechMoversBar, getNetworkTopConnections,
+  TechCoNetworkGraph, TechMoversBar, getNetworkTopConnections, getNetworkTopPairs,
 } from '../../career/insights'
 import {
   HypeVsHireWidget, GithubChronicleWidget, GlobalDomesticGapWidget,
@@ -778,11 +778,14 @@ export function DesktopMarket() {
     return getWidgetSize('market', id, item.defaultSize)
   }
 
-  // ④-b 누적 상위 기업 — 풀 셀렉터에 반응(스펙: "국내/글로벌 모두"). 'all'은 회사별 건수를
+  // ④-b 최근 90일 활발 기업 — 풀 셀렉터에 반응(스펙: "국내/글로벌 모두"). 'all'은 회사별 건수를
   // 합산해서 상위 5개를 뽑는다(점유율%이 아닌 원 건수 합산이라 §4-1의 "합산 금지"에 해당하지 않음).
+  // P2 — days는 백엔드 hot-companies 엔드포인트 상한(le=90)에 맞춘다. 과거 3650(누적)을 보내면
+  // 422로 실패해 목 폴백(2건 등 거의 빈 값)으로 떨어졌었다 — "누적"이 아니라 "최근 90일"로
+  // 라벨도 정직하게 맞춘다(실측이 정상적으로 뜨므로 목 폴백보다 실데이터 우선).
   useEffect(() => {
     let cancelled = false
-    Promise.allSettled(poolsForQuery(pool).map((p) => marketApi.hotCompanies({ pool: p, days: 3650, limit: 8 })))
+    Promise.allSettled(poolsForQuery(pool).map((p) => marketApi.hotCompanies({ pool: p, days: 90, limit: 8 })))
       .then((results) => {
         if (cancelled) return
         const lists = results.flatMap((r) => (r.status === 'fulfilled' && r.value.items.length
@@ -1007,7 +1010,7 @@ export function DesktopMarket() {
           </header>
           <div className="dmkt2__sec-grid dmkt2__sec-grid--demand2">
             {!isWidgetHidden('market', 'demand-growth-scatter') && (
-              <div className="dmkt2__card-item" style={spanStyle(widgetSize('demand-growth-scatter'))}>
+              <div className="dmkt2__card-item dmkt2__card-item--r5" style={spanStyle(widgetSize('demand-growth-scatter'))}>
                 <section className="dcard">
                   <SectionHeader title="수요 × 성장률" hint="가로=현재 수요 · 세로=성장률" />
                   <DemandGrowthScatter pool={pool} size={widgetSize('demand-growth-scatter')} />
@@ -1015,17 +1018,17 @@ export function DesktopMarket() {
               </div>
             )}
             {!isWidgetHidden('market', 'cooccurrence-bar') && (
-              <div className="dmkt2__card-item" style={spanStyle(widgetSize('cooccurrence-bar'))}>
+              <div className="dmkt2__card-item dmkt2__card-item--r3" style={spanStyle(widgetSize('cooccurrence-bar'))}>
                 <CooccurrenceBarWidget pool={pool} headerRight={scopeBadge} />
               </div>
             )}
             {!isWidgetHidden('market', 'skill-count-stat') && (
-              <div className="dmkt2__card-item" style={spanStyle(widgetSize('skill-count-stat'))}>
+              <div className="dmkt2__card-item dmkt2__card-item--r2" style={spanStyle(widgetSize('skill-count-stat'))}>
                 <SkillCountStatWidget />
               </div>
             )}
             {!isWidgetHidden('market', 'skill-count-dist') && (
-              <div className="dmkt2__card-item" style={spanStyle(widgetSize('skill-count-dist'))}>
+              <div className="dmkt2__card-item dmkt2__card-item--r2" style={spanStyle(widgetSize('skill-count-dist'))}>
                 <SkillCountHistogramWidget />
               </div>
             )}
@@ -1042,19 +1045,27 @@ export function DesktopMarket() {
           </header>
           <div className="dmkt2__sec-grid dmkt2__sec-grid--tech">
             {!isWidgetHidden('market', 'network') && (
-              <div className="dmkt2__card-item" style={spanStyle(widgetSize('network'))}>
+              <div className="dmkt2__card-item dmkt2__card-item--r5" style={spanStyle(widgetSize('network'))}>
                 <section className="dcard dmkt2__netcell">
                   <SectionHeader title="기술 관계 네트워크" hint="함께 요구되는 기술 · force graph" right={scopeBadge} />
                   <p className="dmkt2__takeaway">하나 배우면 딸려오는 기술들 — <b>함께 요구되는 스택 지도</b>.</p>
                   <div className="dmkt2__netsplit">
                     <div className="dmkt2__netgraph"><TechCoNetworkGraph skills={NO_SKILLS} /></div>
                     <aside className="dmkt2__netsummary">
-                      <div className="dmkt2__netsummary-t">최다 연결 기술 Top 5</div>
+                      <div className="dmkt2__netsummary-t">최다 연결 기술 Top 5 · 동반 요구 상위</div>
                       {getNetworkTopConnections(5).map((it, i) => (
-                        <div key={it.tech} className="dmkt2__netsummary-row">
-                          <span className="dmkt2__netsummary-rank">{i + 1}</span>
-                          <span className="dmkt2__netsummary-tech">{it.tech}</span>
-                          <span className="dmkt2__netsummary-n">{it.n.toLocaleString()}건</span>
+                        <div key={it.tech} className="dmkt2__netsummary-group">
+                          <div className="dmkt2__netsummary-row">
+                            <span className="dmkt2__netsummary-rank">{i + 1}</span>
+                            <span className="dmkt2__netsummary-tech">{it.tech}</span>
+                            <span className="dmkt2__netsummary-n">{it.n.toLocaleString()}건</span>
+                          </div>
+                          {getNetworkTopPairs(it.tech, 3).map((p) => (
+                            <div key={p.partner} className="dmkt2__netsummary-sub">
+                              <span className="dmkt2__netsummary-pair">{it.tech} ↔ {p.partner}</span>
+                              <span className="dmkt2__netsummary-subn">{p.n.toLocaleString()}건</span>
+                            </div>
+                          ))}
                         </div>
                       ))}
                     </aside>
@@ -1063,7 +1074,7 @@ export function DesktopMarket() {
               </div>
             )}
             {!isWidgetHidden('market', 'concept-tech-sankey') && (
-              <div className="dmkt2__card-item" style={spanStyle(widgetSize('concept-tech-sankey'))}>
+              <div className="dmkt2__card-item dmkt2__card-item--r5" style={spanStyle(widgetSize('concept-tech-sankey'))}>
                 <section className="dcard">
                   <SectionHeader title="개념 → 기술 Sankey" hint="posting_concept 실측" />
                   <p className="dmkt2__takeaway">"이 개념을 하려면 어떤 기술" — 개념이 요구하는 스택 흐름.</p>
@@ -1103,7 +1114,7 @@ export function DesktopMarket() {
             {!isWidgetHidden('market', 'hot-companies') && (
               <div className="dmkt2__card-item" style={spanStyle(widgetSize('hot-companies'))}>
                 <section className="dcard">
-                  <SectionHeader title="누적 상위 기업" hint={scoped ? myCategory ?? undefined : undefined} />
+                  <SectionHeader title="최근 90일 활발 기업" hint={scoped ? myCategory ?? undefined : undefined} />
                   <div className="dmkt2__bars">
                     {hotCompanies.map((c) => (
                       <div key={c.company} className="dmkt2__bar">

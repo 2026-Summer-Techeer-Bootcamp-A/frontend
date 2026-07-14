@@ -139,13 +139,20 @@
 /* 네트워크/전파 그래프 옆 요약패널 — 그래프 62% : 요약 38% */
 .dmkt2__netcell { display: flex; flex-direction: column; }
 .dmkt2__netsplit { display: flex; gap: 14px; flex: 1; min-height: 0; }
-.dmkt2__netgraph { flex: 1.6; min-width: 0; max-height: 300px; overflow: hidden; }
-.dmkt2__netsummary { flex: 1; min-width: 0; border-left: 1px solid var(--line); padding-left: 14px; display: flex; flex-direction: column; gap: 6px; }
+.dmkt2__netgraph { flex: 1.6; min-width: 0; max-height: 420px; overflow: hidden; }
+.dmkt2__netsummary { flex: 1; min-width: 0; border-left: 1px solid var(--line); padding-left: 14px; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; min-height: 0; }
 .dmkt2__netsummary-t { font-size: 11.5px; font-weight: 700; color: var(--c-muted); margin-bottom: 4px; }
+/* Top-5 각 기술 그룹 — 기술 행(1) + 동반 요구 상위 서브행(3) 묶음. 그룹 사이만 간격을 준다. */
+.dmkt2__netsummary-group { display: flex; flex-direction: column; gap: 3px; }
+.dmkt2__netsummary-group + .dmkt2__netsummary-group { margin-top: 8px; }
 .dmkt2__netsummary-row { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
 .dmkt2__netsummary-rank { flex: none; width: 16px; font-weight: 800; color: var(--c-muted); }
 .dmkt2__netsummary-tech { flex: 1; min-width: 0; font-weight: 600; color: var(--c-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dmkt2__netsummary-n { flex: none; font-weight: 700; color: var(--c-muted); }
+/* 동반 요구 상위 3 서브행 — 랭크 숫자(16px)+gap(8px) 만큼 들여쓰기, 작은 폰트·옅은 색 */
+.dmkt2__netsummary-sub { display: flex; align-items: center; gap: 8px; padding-left: 24px; font-size: 11px; }
+.dmkt2__netsummary-pair { flex: 1; min-width: 0; font-weight: 500; color: var(--c-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dmkt2__netsummary-subn { flex: none; font-weight: 600; color: var(--c-muted); opacity: 0.85; }
 
 /* 기업 규모 분포 도넛 — 모노톤 3단계 */
 .dmkt2__donut { display: flex; align-items: center; gap: 14px; margin-top: 8px; }
@@ -230,6 +237,15 @@
 .dmkt2__sec-grid--tech,
 .dmkt2__sec-grid--global4 { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: 108px; }
 .dmkt2__sec-grid--region4 { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: 100px; }
+
+/* P0/P1 카드 높이 보정(2026-07-14 시각 검증) — Sankey · 산점도 · 네트워크(세로로 긴 차트)와
+   ②의 우측 3카드(동반 요구 스킬 · 공고당 요구 스킬 · 요구 스킬 개수 분포)가 기본 108px 행에
+   눌려 캔버스가 100px대로 짓눌리거나(P0) 콘텐츠가 overflow:hidden에 잘려 빈 카드로 보이던
+   문제(P1)를 grid-row span 확장으로 고친다. spanStyle()이 매기는 인라인 style보다 우선해야
+   해서 !important가 필요하다. */
+.dmkt2__card-item--r2 { grid-row: span 2 !important; }
+.dmkt2__card-item--r3 { grid-row: span 3 !important; }
+.dmkt2__card-item--r5 { grid-row: span 5 !important; }
 
 @media (max-width: 1180px) {
   .dmkt2__sec-grid--flow,

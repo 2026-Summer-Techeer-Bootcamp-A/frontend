@@ -193,7 +193,16 @@ export const marketApi = {
   skillCountDist: (params: { pool?: ApiPool } = {}) =>
     request<{ histogram: Array<{ k: number; count: number }>; avg: number; median: number; as_of: string; sample_size: number }>(withQuery('/stats/skill-count-dist', params)),
   globalDomesticLag: () =>
-    request<{ items: Array<{ canonical: string; lag_months: number; global_series: number[]; domestic_series: number[] }>; years: number[]; as_of: string }>('/stats/global-domestic-lag'),
+    request<{
+      items: Array<{
+        canonical: string
+        lag_years: number
+        global_series: Array<{ year: number; share: number }>
+        domestic_series: Array<{ year: number; share: number }>
+      }>
+      as_of: string
+      note: string
+    }>('/stats/global-domestic-lag'),
 }
 
 export const settingsApi = {

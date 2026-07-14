@@ -53,7 +53,7 @@ export const MARKET_WIDGETS: WidgetCatalogItem[] = [
   { id: 'concept-tech-sankey', label: '개념 → 기술 Sankey', shape: 'network', allowedSizes: ['2x2'], defaultSize: '2x2' },
   // ④ 지역 · 기업
   { id: 'region-density', label: '지역별 공고 밀도', shape: 'bars', allowedSizes: ['2x1'], defaultSize: '2x1' },
-  { id: 'hot-companies', label: '누적 상위 기업', shape: 'bars', allowedSizes: ['1x1', '2x1'], defaultSize: '1x1' },
+  { id: 'hot-companies', label: '최근 90일 활발 기업', shape: 'bars', allowedSizes: ['1x1', '2x1'], defaultSize: '1x1' },
   { id: 'scatter', label: '수요 × 빈도', shape: 'scatter', allowedSizes: ['1x1', '2x1', '2x2'], defaultSize: '1x1' },
   // ⑤ 글로벌 · 해외 트렌드 (pool≠domestic 전용)
   { id: 'global-domestic-lag', label: '국내 시차 타임라인', shape: 'line', allowedSizes: ['2x2'], defaultSize: '2x2' },

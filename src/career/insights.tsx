@@ -268,6 +268,16 @@ export function getNetworkTopConnections(limit = 5): { tech: string; n: number }
   return [...N_DATA.data.nodes].sort((a, b) => b.n - a.n).slice(0, limit).map((n) => ({ tech: n.tech, n: n.n }))
 }
 
+/** 요약패널 Top-N 각 기술의 동반출현 상위 상대 기술 — a/b 어느 쪽이든 해당 기술이 걸린
+    엣지에서 상대를 뽑아 동시요구 공고수(n) 내림차순 top-limit. (additive) */
+export function getNetworkTopPairs(tech: string, limit = 3): { partner: string; n: number }[] {
+  return N_DATA.data.edges
+    .filter((e) => e.a === tech || e.b === tech)
+    .map((e) => ({ partner: e.a === tech ? e.b : e.a, n: e.n }))
+    .sort((a, b) => b.n - a.n)
+    .slice(0, limit)
+}
+
 /** 트렌드 전파 그래프 옆 요약패널용 — 선도 기술(출발 엣지 수) 상위. */
 export function getPropagationTopLeaders(limit = 5): { tech: string; count: number }[] {
   const outdeg: Record<string, number> = {}
