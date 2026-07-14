@@ -5,6 +5,7 @@ import { SCENARIOS } from './demoScenarios'
 import { streamChat } from './chatStream'
 import { normalizeStreamResult } from './chatContract'
 import type { Citation, Confidence, Plan, Route, ToolResult, StreamStepKind } from './chatContract'
+import { useAuth } from '../career/authStore'
 import './rag-console.css'
 
 // 실 백엔드(POST /api/v1/chat/stream) 라이브 스트리밍 콘솔.
@@ -49,6 +50,8 @@ export default function RagConsole() {
   const [mode, setMode] = useState<Mode>('basic')
   const [input, setInput] = useState('')
   const bodyRef = useRef<HTMLDivElement>(null)
+  // 빈 상태 그리팅을 로그인 여부에 따라 개인화하는 데만 쓴다.
+  const { user, isAuthed } = useAuth()
 
   const busy = turns.some((t) => t.status === 'loading')
 
@@ -119,7 +122,7 @@ export default function RagConsole() {
 
       <div className="rc__body" ref={bodyRef}>
         {turns.length === 0 && (
-          <div className="rc__empty">궁금한 걸 물어보거나, 아래 추천 질문을 눌러보세요.</div>
+          <RcEmptyState isAuthed={isAuthed} nickname={user?.nickname} busy={busy} onPick={submit} />
         )}
         {turns.map((turn) => (
           <TurnBlock key={turn.id} turn={turn} mode={mode} onRetry={() => retry(turn)} />
@@ -138,14 +141,58 @@ export default function RagConsole() {
             <Send size={16} />
           </button>
         </div>
-        <div className="rc__chips">
-          {SCENARIOS.map((s) => (
-            <button key={s.id} type="button" className="rc__chip" onClick={() => submit(s.userQ)} disabled={busy}>
-              {s.chip} <ChevronRight size={13} className="chev" />
-            </button>
-          ))}
-        </div>
+        {/* 빈 상태에서는 rc__hero의 추천 카드가 같은 역할을 하므로, 대화가 시작된 뒤에만 하단 칩을 보여준다. */}
+        {turns.length > 0 && (
+          <div className="rc__chips">
+            {SCENARIOS.map((s) => (
+              <button key={s.id} type="button" className="rc__chip" onClick={() => submit(s.userQ)} disabled={busy}>
+                {s.chip} <ChevronRight size={13} className="chev" />
+              </button>
+            ))}
+          </div>
+        )}
       </form>
+    </div>
+  )
+}
+
+// 빈 상태(첫 화면) 그리팅 + 추천 질문 카드. 로그인 여부에 따라 문구만 갈라지고,
+// 카드 문구는 하단 rc__chips와 동일하게 SCENARIOS를 그대로 재사용한다(하드코딩 중복 금지).
+interface RcEmptyStateProps {
+  isAuthed: boolean
+  nickname: string | null | undefined
+  busy: boolean
+  onPick: (question: string) => void
+}
+
+function RcEmptyState({ isAuthed, nickname, busy, onPick }: RcEmptyStateProps) {
+  // 로그인 상태면 닉네임(없으면 '리버')으로 개인화하고, 비로그인이면 완전히 중립적인 문구로 대체한다.
+  const greeting = isAuthed
+    ? `${nickname ?? '리버'}님, 오늘은 뭘 볼까요?`
+    : '채용 시장에 대해 무엇이든 물어보세요'
+
+  return (
+    <div className="rc__hero">
+      <span className="rc__hero-badge"><Compass size={20} /></span>
+      <div className="rc__hero-greet">{greeting}</div>
+      <div className="rc__hero-sub">채용 시장, 이력서, 기술 트렌드 — 실제 데이터로 답해드려요.</div>
+      <div className="rc__suggest">
+        {SCENARIOS.map((s) => (
+          <button
+            key={s.id}
+            type="button"
+            className="rc__suggest-card"
+            onClick={() => onPick(s.userQ)}
+            disabled={busy}
+          >
+            <span className="rc__suggest-text">
+              <span className="rc__suggest-title">{s.chip}</span>
+              <span className="rc__suggest-q">{s.userQ}</span>
+            </span>
+            <ChevronRight size={14} className="rc__suggest-chev" />
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
