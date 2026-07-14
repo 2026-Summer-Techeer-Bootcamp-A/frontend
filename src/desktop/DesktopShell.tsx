@@ -99,6 +99,7 @@ const SECTIONS: Section[] = [
     items: [
       { to: '/settings/account', label: '계정' },
       { to: '/settings/notifications', label: '알림' },
+      { to: '/settings/display', label: '표시' },
       { to: '/settings/privacy', label: '개인정보' },
       { to: '/settings/terms', label: '이용약관' },
       { to: '/settings/about', label: '앱 정보' },
@@ -116,12 +117,17 @@ function sectionOf(pathname: string): Section {
   return hit ?? dash
 }
 
+// 콘텐츠 배경을 셸 크롬과 같은 옅은 회색으로 두는 라우트 — 홈 피드처럼
+// 흰 카드가 배경 위에 떠 보이는 레이아웃을 마이·어시스턴트까지 확장한다.
+const grayBgRoutes = ['/home', '/resume', '/assistant']
+
 export default function DesktopShell({ children }: { children: ReactNode }) {
   const location = useLocation()
   const navigate = useNavigate()
   const [accountOpen, setAccountOpen] = useState(false)
   const { user, isAuthed, logout } = useAuth()
   const active = sectionOf(location.pathname)
+  const isGrayBg = grayBgRoutes.includes(location.pathname)
 
   const accountItems: MacMenuEntry[] = [
     { header: { name: isAuthed ? (user?.nickname ?? '사용자') : '게스트', email: user?.email ?? '로그인하고 맞춤 정보를 받아보세요' } },
@@ -219,7 +225,7 @@ export default function DesktopShell({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <main className={`dshell__content${location.pathname === '/home' ? ' dshell__content--home' : ''}`}>{children}</main>
+        <main className={`dshell__content${isGrayBg ? ' dshell__content--home' : ''}`}>{children}</main>
       </div>
     </div>
   )

@@ -9,6 +9,7 @@ export type NotificationSettings = {
 }
 export type Settings = {
   notifications: NotificationSettings
+  richOnly: boolean // 설명이 충분히 상세한 공고만 목록에 노출
 }
 
 const STORAGE_KEY_SETTINGS = 'techeer_settings'
@@ -16,6 +17,7 @@ const SETTINGS_EVENT = 'settings-change'
 
 const DEFAULTS: Settings = {
   notifications: { deadline: true, newJobs: true, trend: false, marketing: false },
+  richOnly: false,
 }
 
 export function getSettings(): Settings {
@@ -52,5 +54,10 @@ export function useSettings() {
     writeSettings({ ...cur, notifications: { ...cur.notifications, [key]: value } })
   }
 
-  return { settings, setNotification }
+  const setRichOnly = (value: boolean) => {
+    const cur = getSettings()
+    writeSettings({ ...cur, richOnly: value })
+  }
+
+  return { settings, setNotification, setRichOnly }
 }
