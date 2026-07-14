@@ -26,6 +26,7 @@ import { useDashboardConfig, isWidgetHidden, getWidgetSize } from '../../career/
 import { MARKET_WIDGETS } from '../../career/widgetCatalog'
 import { useBookmarks } from '../../career/bookmarkStore'
 import { useRecentViews } from '../../career/viewHistoryStore'
+import { useSettings } from '../../career/settingsStore'
 import { SkillManagerModal } from '../SkillManagerModal'
 import { recruitmentApi } from '../../career/recruitmentApi'
 import JobsPagination, { parseJobPage, parseJobPageSize, type JobPageSize } from '../../career/JobsPagination'
@@ -164,6 +165,7 @@ export function DesktopJobs() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const { resumes, activeResume } = useResumesState()
+  const { settings } = useSettings()
   const skills = activeResume?.skills ?? []
 
   const [pool, setPool] = useState<'국내' | '국외'>(() => searchParams.get('pool') === 'global' ? '국외' : '국내')
@@ -211,6 +213,7 @@ export function DesktopJobs() {
       position: positionFilter ? POSITION_API[positionFilter] : undefined,
       sort,
       deadline_within_days: deadlineOnly ? 7 : undefined,
+      rich_only: settings.richOnly || undefined,
       page,
       page_size: pageSize,
       resume_id: hasMatchedResume ? resumeId : undefined,
@@ -220,7 +223,7 @@ export function DesktopJobs() {
       if (!cancelled) setJobsError(reason instanceof Error ? reason.message : '공고를 불러오지 못했습니다.')
     }).finally(() => { if (!cancelled) setJobsLoading(false) })
     return () => { cancelled = true }
-  }, [pool, q, sort, techFilter, deadlineOnly, positionFilter, page, pageSize, activeResume?.id])
+  }, [pool, q, sort, techFilter, deadlineOnly, positionFilter, page, pageSize, activeResume?.id, settings.richOnly])
 
   useEffect(() => {
     if (!remoteCards) return
