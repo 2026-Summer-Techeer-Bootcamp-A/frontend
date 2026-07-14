@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Search, MapPin, ArrowUpRight, FileText, Settings, Award, User, Sparkles } from 'lucide-react'
+import { MapPin, ArrowUpRight, FileText, Settings, Award, User, Sparkles } from 'lucide-react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import catData from '../../data/pearl/n.json'
@@ -31,6 +31,16 @@ import { SkillManagerModal } from '../SkillManagerModal'
 import { recruitmentApi } from '../../career/recruitmentApi'
 import JobsPagination, { parseJobPage, parseJobPageSize, type JobPageSize } from '../../career/JobsPagination'
 import { jobsApi, marketApi } from '../../career/api'
+import JobsFilterPanel, { type PositionFilterOption, type RegionFilterOption } from './JobsFilterPanel'
+import {
+  mergeSkillOptions,
+  normalizeJobSort,
+  parseDeadlineDays,
+  toPositionFilterOptions,
+  type DeadlineDays,
+  type JobPool,
+  type JobSort,
+} from './jobsFilterState'
 import { addMapTileLayer } from '../../career/mapTiles'
 import marketData from '../../data/marketData.json'
 import data from '../../data/careerData.json'
@@ -101,11 +111,6 @@ function CompanyLocationMap({ lat, lng, address }: { lat: number; lng: number; a
    보완하지 않으며, 해당 필드를 요구하는 필터도 노출하지 않는다. */
 const POSITION_CATS = ['백엔드', '프론트엔드', '풀스택', '데이터/AI', '모바일', '인프라/DevOps', '기획/PM', '디자인', 'QA', '기타'] as const
 type PositionCat = typeof POSITION_CATS[number]
-const POSITION_API: Record<PositionCat, string> = {
-  '백엔드': 'backend', '프론트엔드': 'frontend', '풀스택': 'fullstack', '데이터/AI': 'data',
-  '모바일': 'mobile', '인프라/DevOps': 'devops', '기획/PM': 'pm', '디자인': 'design', 'QA': 'qa', '기타': 'other',
-}
-
 /* 기술 스택 필터 카테고리 그룹핑 — SkillManagerModal.tsx와 동일하게 pearl/n.json(기술
    코-네트워크 그래프 데이터)의 {tech, category} 노드를 재사용한다. 별도 매핑 새로 안 만듦. */
 const TECH_CATEGORY_NODES = (catData as { data: { nodes: { tech: string; category: string }[] } }).data.nodes
@@ -164,27 +169,36 @@ function derivePosition(title: string, techs: string[]): PositionCat {
 export function DesktopJobs() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const { resumes, activeResume } = useResumesState()
+  const { activeResume } = useResumesState()
   const { settings } = useSettings()
   const skills = activeResume?.skills ?? []
+  const resumeId = Number(activeResume?.id)
+  const hasMatchedResume = Number.isInteger(resumeId) && !!getAuthToken()
 
-  const [pool, setPool] = useState<'국내' | '국외'>(() => searchParams.get('pool') === 'global' ? '국외' : '국내')
+  const [pool, setPool] = useState<JobPool>(() => searchParams.get('pool') === 'global' ? '국외' : '국내')
   const [q, setQ] = useState(() => searchParams.get('q') ?? '')
-  const [sort, setSort] = useState<'match' | 'latest'>(() => searchParams.get('sort') === 'latest' ? 'latest' : 'match')
+  const [sort, setSort] = useState<JobSort>(() => {
+    const value = searchParams.get('sort')
+    return value === 'latest' || value === 'deadline' || value === 'match' ? value : 'match'
+  })
   const [page, setPage] = useState(() => parseJobPage(searchParams.get('page')))
   const [pageSize, setPageSize] = useState<JobPageSize>(() => parseJobPageSize(searchParams.get('page_size')))
   const [selId, setSelId] = useState<string | null>(null)
   const [techFilter, setTechFilter] = useState<Set<string>>(() => new Set((searchParams.get('tech') ?? '').split(',').filter(Boolean)))
-  const [deadlineOnly, setDeadlineOnly] = useState(searchParams.get('deadline') === '1')
-  const [positionFilter, setPositionFilter] = useState<PositionCat | ''>(() => {
-    const value = searchParams.get('position')
-    return POSITION_CATS.includes(value as PositionCat) ? value as PositionCat : ''
-  })
+  const [skillQuery, setSkillQuery] = useState('')
+  const [baseSkills, setBaseSkills] = useState<string[]>([])
+  const [searchedSkills, setSearchedSkills] = useState<string[]>([])
+  const [deadlineDays, setDeadlineDays] = useState<DeadlineDays | undefined>(() => parseDeadlineDays(searchParams))
+  const [districtFilter, setDistrictFilter] = useState(() => searchParams.get('district') ?? '')
+  const [positionFilter, setPositionFilter] = useState(() => searchParams.get('position') ?? '')
+  const [positionOptions, setPositionOptions] = useState<PositionFilterOption[]>([])
+  const [regionOptions, setRegionOptions] = useState<RegionFilterOption[]>([])
   const [pvTab, setPvTab] = useState<'desc' | 'company'>('desc')
   const [remoteCards, setRemoteCards] = useState<Awaited<ReturnType<typeof jobsApi.list>> | null>(null)
   const [jobsLoading, setJobsLoading] = useState(false)
   const [jobsError, setJobsError] = useState('')
   const [selectedDetail, setSelectedDetail] = useState<Awaited<ReturnType<typeof jobsApi.detail>> | null>(null)
+  const effectiveSort = normalizeJobSort(sort, hasMatchedResume, pool)
 
   useEffect(() => {
     const next = new URLSearchParams()
@@ -192,27 +206,89 @@ export function DesktopJobs() {
     next.set('pool', pool === '국내' ? 'domestic' : 'global')
     next.set('page', String(page))
     next.set('page_size', String(pageSize))
-    next.set('sort', sort)
+    next.set('sort', effectiveSort)
     if (techFilter.size) next.set('tech', [...techFilter].sort().join(','))
     if (positionFilter) next.set('position', positionFilter)
-    if (deadlineOnly) next.set('deadline', '1')
+    if (pool === '국내' && districtFilter) next.set('district', districtFilter)
+    if (pool === '국내' && deadlineDays) next.set('deadline_days', String(deadlineDays))
     setSearchParams(next, { replace: true })
-  }, [q, pool, page, pageSize, sort, techFilter, positionFilter, deadlineOnly, setSearchParams])
+  }, [q, pool, page, pageSize, effectiveSort, techFilter, positionFilter, districtFilter, deadlineDays, setSearchParams])
+
+  useEffect(() => {
+    if (pool === '국외') {
+      setDistrictFilter('')
+      setDeadlineDays(undefined)
+    }
+    if (effectiveSort !== sort) setSort(effectiveSort)
+  }, [pool, sort, effectiveSort])
+
+  useEffect(() => {
+    let cancelled = false
+    setPositionOptions([])
+    jobsApi.categories(pool === '국내' ? 'domestic' : 'global')
+      .then(({ categories }) => {
+        if (cancelled) return
+        const options = toPositionFilterOptions(categories)
+        setPositionOptions(options)
+        setPositionFilter((current) => (
+          current && !options.some((option) => option.value === current) ? '' : current
+        ))
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPositionOptions([])
+          setPositionFilter('')
+        }
+      })
+    return () => { cancelled = true }
+  }, [pool])
+
+  useEffect(() => {
+    let cancelled = false
+    jobsApi.skills('', 100)
+      .then(({ skills: items }) => {
+        if (!cancelled) setBaseSkills(items.map((item) => item.canonical))
+      })
+      .catch(() => undefined)
+    marketApi.regionDensity({ pool: 'domestic', limit: 100 })
+      .then(({ items }) => {
+        if (!cancelled) setRegionOptions(items.map((item) => ({ value: item.region_district, count: item.posting_count })))
+      })
+      .catch(() => undefined)
+    return () => { cancelled = true }
+  }, [])
+
+  useEffect(() => {
+    const query = skillQuery.trim()
+    if (!query) {
+      setSearchedSkills([])
+      return
+    }
+    let cancelled = false
+    const timer = window.setTimeout(() => {
+      jobsApi.skills(query)
+        .then(({ skills: items }) => { if (!cancelled) setSearchedSkills(items.map((item) => item.canonical)) })
+        .catch(() => { if (!cancelled) setSearchedSkills([]) })
+    }, 200)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+    }
+  }, [skillQuery])
 
   useEffect(() => {
     let cancelled = false
     setJobsLoading(true)
     setJobsError('')
     setRemoteCards(null)
-    const resumeId = Number(activeResume?.id)
-    const hasMatchedResume = Number.isInteger(resumeId) && !!getAuthToken()
     jobsApi.list({
       pool: pool === '국내' ? 'domestic' : 'global',
       q: q.trim() || undefined,
       skills: techFilter.size ? [...techFilter].join(',') : undefined,
-      position: positionFilter ? POSITION_API[positionFilter] : undefined,
-      sort,
-      deadline_within_days: deadlineOnly ? 7 : undefined,
+      position: positionFilter || undefined,
+      district: pool === '국내' ? districtFilter || undefined : undefined,
+      sort: effectiveSort,
+      deadline_within_days: pool === '국내' ? deadlineDays : undefined,
       rich_only: settings.richOnly || undefined,
       page,
       page_size: pageSize,
@@ -223,7 +299,7 @@ export function DesktopJobs() {
       if (!cancelled) setJobsError(reason instanceof Error ? reason.message : '공고를 불러오지 못했습니다.')
     }).finally(() => { if (!cancelled) setJobsLoading(false) })
     return () => { cancelled = true }
-  }, [pool, q, sort, techFilter, deadlineOnly, positionFilter, page, pageSize, activeResume?.id, settings.richOnly])
+  }, [pool, q, effectiveSort, techFilter, deadlineDays, districtFilter, positionFilter, page, pageSize, hasMatchedResume, resumeId, settings.richOnly])
 
   useEffect(() => {
     if (!remoteCards) return
@@ -254,8 +330,11 @@ export function DesktopJobs() {
     })
   }, [remoteCards, skills, pool])
   const techOptions = useMemo(
-    () => [...new Set([...techFilter, ...postings.flatMap((posting) => posting.techs)])].sort((a, b) => a.localeCompare(b)),
-    [postings, techFilter],
+    () => mergeSkillOptions(
+      [...techFilter],
+      skillQuery.trim() ? searchedSkills : [...baseSkills, ...postings.flatMap((posting) => posting.techs)],
+    ),
+    [baseSkills, postings, searchedSkills, skillQuery, techFilter],
   )
   const techGroups = useMemo(() => groupTechOptions(techOptions), [techOptions])
   const list = postings
@@ -293,6 +372,26 @@ export function DesktopJobs() {
     setPage(1)
     return next
   })
+  const changePool = (value: JobPool) => {
+    setPool(value)
+    setPositionFilter('')
+    if (value === '국외') {
+      setDistrictFilter('')
+      setDeadlineDays(undefined)
+    }
+    setPage(1)
+  }
+  const resetFilters = () => {
+    setQ('')
+    setPool('국내')
+    setTechFilter(new Set())
+    setSkillQuery('')
+    setPositionFilter('')
+    setDistrictFilter('')
+    setDeadlineDays(undefined)
+    setSort(hasMatchedResume ? 'match' : 'latest')
+    setPage(1)
+  }
   // 링크드인/사람인식 스킬 매치 미니 줄 — "요구 N개 중 M개 보유" 텍스트 +
   // 보유(그린) > 필터에서 고름(중립) > 안 고름(옅게+옅은 빨강) 3단 칩.
   const renderSkillMatch = (techs: string[]) => {
@@ -317,76 +416,33 @@ export function DesktopJobs() {
     <div className="dpage djobs">
       <div className="djobs__grid">
         {/* 필터 */}
-        <aside className="dcard djobs__filters">
-          {resumes.length === 0 ? (
-            <div className="djobs__resume-cta">
-              <span>이력서를 등록하면 필터가 자동으로 채워져요</span>
-              <button onClick={() => navigate('/resume/submit')}>이력서 등록하기</button>
-            </div>
-          ) : (
-            <div className="djobs__fld">
-              <span className="djobs__fld-l">이력서 자동 적용</span>
-              <div className="djobs__resume-active">
-                <FileText size={14} /> {activeResume.title} 기준으로 필터가 채워졌어요
-              </div>
-            </div>
-          )}
-
-          <div className="djobs__search">
-            <Search size={16} />
-            <input value={q} onChange={(e) => { setQ(e.target.value); setPage(1) }} placeholder="회사 · 공고 검색" />
-          </div>
-
-          <div className="djobs__fld">
-            <span className="djobs__fld-l">채용 풀</span>
-            <SegmentedControl value={pool} onChange={(v) => { setPool(v as '국내' | '국외'); setPage(1) }}
-              options={[{ key: '국내', label: '국내' }, { key: '국외', label: '글로벌' }]} />
-          </div>
-
-          <div className="djobs__fld">
-            <span className="djobs__fld-l">기술 스택</span>
-            <div className="djobs__techgroups">
-              {techGroups.map((g) => (
-                <div className="djobs__techgroup" key={g.cat}>
-                  <span className="djobs__techgroup-l">{g.label}</span>
-                  <div className="djobs__chiprow">
-                    {g.techs.map((t) => (
-                      <button key={t} className={techFilter.has(t) ? 'on' : ''} onClick={() => toggleTech(t)}>{t}</button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="djobs__fld">
-            <span className="djobs__fld-l">직무</span>
-            <select
-              className="djobs__select"
-              value={positionFilter}
-              onChange={(e) => { setPositionFilter(e.target.value as PositionCat | ''); setPage(1) }}
-            >
-              <option value="">전체</option>
-              {POSITION_CATS.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-
-          <label className="djobs__toggle">
-            <input type="checkbox" checked={deadlineOnly} onChange={(e) => { setDeadlineOnly(e.target.checked); setPage(1) }} />
-            마감 임박(7일 이내)만
-          </label>
-
-          <div className="djobs__fld">
-            <span className="djobs__fld-l">정렬</span>
-            <div className="djobs__sorts">
-              {([['match', '매칭순'], ['latest', '최신순']] as const).map(([k, lb]) => (
-                <button key={k} className={sort === k ? 'on' : ''} onClick={() => { setSort(k); setPage(1) }}>{lb}</button>
-              ))}
-            </div>
-          </div>
-
-          <div className="djobs__count">{(remoteCards?.total ?? 0).toLocaleString()}건</div>
-        </aside>
+        <JobsFilterPanel
+          hasResume={hasMatchedResume}
+          resumeTitle={activeResume?.title}
+          onResumeRegister={() => navigate('/resume/submit')}
+          query={q}
+          onQueryChange={(value) => { setQ(value); setPage(1) }}
+          pool={pool}
+          onPoolChange={changePool}
+          skillQuery={skillQuery}
+          onSkillQueryChange={setSkillQuery}
+          skillGroups={techGroups}
+          selectedSkills={techFilter}
+          onToggleSkill={toggleTech}
+          onClearSkills={() => { setTechFilter(new Set()); setPage(1) }}
+          position={positionFilter}
+          positionOptions={positionOptions}
+          onPositionChange={(value) => { setPositionFilter(value); setPage(1) }}
+          district={districtFilter}
+          regionOptions={regionOptions}
+          onDistrictChange={(value) => { setDistrictFilter(value); setPage(1) }}
+          deadlineDays={deadlineDays}
+          onDeadlineDaysChange={(value) => { setDeadlineDays(value); setPage(1) }}
+          sort={effectiveSort}
+          onSortChange={(value) => { setSort(value); setPage(1) }}
+          onReset={resetFilters}
+          total={remoteCards?.total ?? 0}
+        />
 
         {/* 결과 리스트 */}
         <div className="dcard djobs__list">
