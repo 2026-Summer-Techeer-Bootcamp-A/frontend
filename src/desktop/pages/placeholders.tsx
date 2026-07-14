@@ -134,6 +134,26 @@ function groupTechOptions(options: string[]): Array<{ cat: string; label: string
     .map((cat) => ({ cat, label: techCategoryLabel(cat), techs: byCat.get(cat)! }))
 }
 
+function deadlineBadge(closeDate: string) {
+  if (!closeDate) return null
+
+  const dateOnly = closeDate.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  const parsed = dateOnly
+    ? { year: Number(dateOnly[1]), month: Number(dateOnly[2]), day: Number(dateOnly[3]) }
+    : null
+  if (!parsed) return null
+
+  const now = new Date()
+  const todayUtc = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())
+  const deadlineUtc = Date.UTC(parsed.year, parsed.month - 1, parsed.day)
+  const daysLeft = Math.round((deadlineUtc - todayUtc) / 86_400_000)
+
+  if (daysLeft < 0) return { label: '마감', tone: 'closed' }
+  if (daysLeft === 0) return { label: 'D-Day', tone: 'urgent' }
+  if (daysLeft <= 7) return { label: `D-${daysLeft}`, tone: 'urgent' }
+  return { label: `D-${daysLeft}`, tone: 'normal' }
+}
+
 function derivePosition(title: string, techs: string[]): PositionCat {
   const t = title.toLowerCase()
   const hasAny = (words: string[]) => words.some((w) => t.includes(w))
@@ -458,7 +478,9 @@ export function DesktopJobs() {
           {jobsLoading && <div className="dpage__empty">공고를 불러오는 중이에요.</div>}
           {jobsError && <div className="dpage__empty">{jobsError}</div>}
           {!jobsLoading && !jobsError && list.length === 0 && <div className="dpage__empty">조건에 맞는 공고가 없어요.</div>}
-          {list.map((p) => (
+          {list.map((p) => {
+            const deadline = deadlineBadge(p.closeDate)
+            return (
             <button
               key={p.id}
               className={`djobs__row${sel?.id === p.id ? ' on' : ''}`}
@@ -472,9 +494,21 @@ export function DesktopJobs() {
                 </span>
                 {renderSkillMatch(p.techs)}
               </span>
-              <MiniScore pct={p.matchPct} size={40} />
+              <span className="djobs__row-score">
+                {deadline && (
+                  <span
+                    className={`djobs__deadline djobs__deadline--${deadline.tone}`}
+                    title={`마감일 ${p.closeDate}`}
+                    aria-label={`마감일 ${p.closeDate}, ${deadline.label}`}
+                  >
+                    {deadline.label}
+                  </span>
+                )}
+                <MiniScore pct={p.matchPct} size={40} />
+              </span>
             </button>
-              ))}
+            )
+          })}
           {!jobsLoading && !jobsError && (
             <JobsPagination
               page={remoteCards?.page ?? page}
