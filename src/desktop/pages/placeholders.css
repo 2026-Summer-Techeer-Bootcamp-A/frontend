@@ -215,8 +215,9 @@
 .dmy__title { font-size: 34px; font-weight: 800; letter-spacing: -1px; line-height: 1.15; color: var(--c-ink); }
 .dmy__sub { font-size: 12.5px; color: var(--c-muted); }
 
-/* 상단 행 — 좌측 컴팩트 프로필 히어로 + 우측 활동 스탯을 한 줄에 나눠 배치(프로필 히어로가
-   더 이상 폭 전체를 차지하지 않도록). 좁은 화면에서는 세로로 쌓인다(아래 미디어쿼리). */
+/* 상단 행 — 좌측 컴팩트 프로필 히어로 + 우측(.dmy__top-side: 활동 스탯 3타일 + 미니 커버리지
+   스냅샷)을 한 줄에 나눠 배치(프로필 히어로가 더 이상 폭 전체를 차지하지 않도록).
+   좁은 화면에서는 세로로 쌓인다(아래 미디어쿼리). */
 .dmy__top { display: grid; grid-template-columns: minmax(0, 520px) 1fr; gap: 16px; align-items: stretch; margin-bottom: 16px; }
 
 /* 프로필 히어로 — 대시보드 검정 히어로(kit-heroStat)와 톤 일치. 슬레이트블루 금지, 순수 흑백.
@@ -257,10 +258,18 @@
 
 .dmy__resume { display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; margin-top: 12px; }
 .dmy__resume-ic { flex: none; width: 40px; height: 40px; border-radius: 11px; display: flex; align-items: center; justify-content: center; color: var(--accent-700); background: var(--accent-50); }
-.dmy__resume-empty { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 12px; }
-.dmy__resume-empty span { font-size: 13px; color: var(--c-muted); }
-.dmy__resume-btn { flex: none; font-size: 12.5px; font-weight: 700; color: #fff; background: var(--c-accent); border-radius: 10px; padding: 9px 15px; transition: transform 0.12s ease, opacity 0.12s ease; }
-.dmy__resume-btn:active { transform: scale(0.96); opacity: 0.85; }
+
+/* 빈 상태 공용 패턴 — 안내 문구 + 행동 유도 버튼을 한 줄에 배치한다.
+   이력서/보유 기술/북마크/최근 본 공고 등 "비어 있지만 다음 행동이 명확한" 자리에서 재사용. */
+.dmy__empty { display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%; margin-top: 12px; }
+.dmy__empty span { font-size: 13px; line-height: 1.5; color: var(--c-muted); }
+.dmy__empty-btn {
+  flex: none; font-size: 12.5px; font-weight: 700; color: #fff;
+  background: var(--c-accent); border-radius: 10px; padding: 9px 15px;
+  transition: transform 0.12s ease, opacity 0.12s ease;
+}
+.dmy__empty-btn:hover { opacity: 0.9; }
+.dmy__empty-btn:active { transform: scale(0.96); opacity: 0.85; }
 
 .dmy__skills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .dmy__manage {
@@ -276,8 +285,36 @@
 .dmy__jobs > * { min-width: 0; }
 .dmy__more-txt { font-size: 12px; color: var(--c-muted); text-align: center; margin-top: 10px; }
 
-/* 활동 요약 stat 타일 — 상단 행에서 프로필 히어로 옆자리를 차지(.dmy__top 참고) */
-.dmy__stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; min-width: 0; }
+/* 상단 우측 — 활동 스탯 3타일 + 미니 커버리지 스냅샷 카드를 한 행에 배치한다.
+   공간이 부족하면 flex-wrap으로 스냅샷 카드가 다음 줄로 자연스럽게 넘어간다. */
+.dmy__top-side { display: flex; gap: 12px; align-items: stretch; min-width: 0; flex-wrap: wrap; }
+
+/* 활동 요약 stat 타일 — .dmy__top-side 안에서 남는 폭을 가진다 */
+.dmy__stats { flex: 1 1 260px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; min-width: 0; }
+
+/* 미니 커버리지 스냅샷 — 도넛 링 + 안내 문구 + 어시스턴트로 이동하는 CTA.
+   비로그인/이력서 없음이면 .dmy__coverage--dim으로 링을 흐리게 하고 안내 문구로 대체한다. */
+.dmy__coverage { flex: 0 0 210px; display: flex; align-items: center; gap: 12px; padding: 14px 16px; min-width: 0; }
+.dmy__coverage-body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.dmy__coverage-label { font-size: 12px; font-weight: 700; color: var(--c-ink); line-height: 1.35; }
+.dmy__coverage-desc { font-size: 11px; color: var(--c-muted); }
+.dmy__coverage-btn {
+  align-self: flex-start; display: inline-flex; align-items: center; gap: 3px; margin-top: 3px;
+  font-size: 11.5px; font-weight: 700; color: var(--accent-700);
+  background: var(--accent-50); border-radius: 999px; padding: 6px 10px;
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+.dmy__coverage-btn:hover { background: var(--accent-100); }
+.dmy__coverage-btn:active { transform: scale(0.96); }
+.dmy__coverage--dim .dmy__coverage-label { color: var(--c-muted); font-weight: 600; }
+
+/* 커버리지 도넛 — stroke-dasharray 기반 인라인 SVG. dim이면 트랙만 점선으로 남기고 반투명 처리 */
+.dmy__ring { flex: none; }
+.dmy__ring-track { stroke: var(--accent-100); }
+.dmy__ring-fill { stroke: var(--c-accent); transition: stroke-dashoffset 0.4s ease; }
+.dmy__ring-txt { font-size: 12.5px; font-weight: 800; fill: var(--c-ink); font-variant-numeric: tabular-nums; }
+.dmy__ring--dim { opacity: 0.5; }
+.dmy__ring--dim .dmy__ring-txt { fill: var(--c-muted); }
 
 /* 최근 본 공고 — 컴팩트 리스트 */
 .dmy__recent { display: flex; flex-direction: column; margin-top: 10px; }
@@ -290,4 +327,5 @@
   .dmkt__quad { grid-row: auto; }
   .dmy__top { grid-template-columns: 1fr; }
   .dmy__body { grid-template-columns: 1fr; }
+  .dmy__coverage { flex-basis: 100%; }
 }
