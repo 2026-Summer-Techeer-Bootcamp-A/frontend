@@ -19,3 +19,10 @@ export function normalizeJobSort(sort: JobSort, hasResume: boolean, pool: JobPoo
 export function mergeSkillOptions(selected: string[], fetched: string[]): string[] {
   return [...new Set([...selected, ...fetched])].sort((a, b) => a.localeCompare(b))
 }
+
+export function toPositionFilterOptions(
+  categories: Array<{ name: string; is_tech: boolean }>,
+): Array<{ value: string; label: string }> {
+  return [...new Set(categories.map((category) => category.name).filter(Boolean))]
+    .map((name) => ({ value: name, label: name }))
+}
