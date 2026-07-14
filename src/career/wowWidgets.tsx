@@ -1326,9 +1326,35 @@ export function DemandGrowthScatter({ pool, size = '2x2' }: { pool: PoolChoice; 
   const points = pool === 'domestic' ? domPoints : pool === 'global' ? (globalPoints.length ? globalPoints : domPoints) : [...domPoints, ...globalPoints]
   const maxX = Math.max(...points.map((p) => p.x), 1)
 
+  // P0-2 — 축 여백·사분면 기준선용 통계치. 중앙값 기준으로 사분면을 나눠 "고수요/저수요 ×
+  // 고성장/저성장" 4개 영역에 중립적 라벨만 붙인다(추천/판단 카피 금지, 스펙 원칙).
+  const median = (arr: number[]) => {
+    if (!arr.length) return 0
+    const sorted = [...arr].sort((a, b) => a - b)
+    const mid = Math.floor(sorted.length / 2)
+    return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
+  }
+  const medianX = useMemo(() => median(points.map((p) => p.x)), [points])
+  const medianY = useMemo(() => median(points.map((p) => p.y)), [points])
+  const xMax = useMemo(() => Math.max(maxX * 1.18, maxX + 2), [maxX])
+  const rawMinY = Math.min(...points.map((p) => p.y), 0)
+  const rawMaxY = Math.max(...points.map((p) => p.y), 0)
+  const yPad = Math.max((rawMaxY - rawMinY) * 0.16, 2)
+  const yMin = useMemo(() => Math.floor(rawMinY - yPad), [rawMinY, yPad])
+  const yMax = useMemo(() => Math.ceil(rawMaxY + yPad), [rawMaxY, yPad])
+
+  // 상시 라벨은 "주목 지점"만 — 최고 수요 상위3 ∪ 최고 성장 상위3(중복 제거). 나머지는
+  // labelLayout으로 겹치면 자동 이동시키되, 기본은 숨기고 hover(emphasis) 시에만 노출.
+  const highlightSet = useMemo(() => {
+    const key = (p: typeof points[number]) => p.tech + p.tag
+    const byDemand = [...points].sort((a, b) => b.x - a.x).slice(0, 3).map(key)
+    const byGrowth = [...points].sort((a, b) => b.y - a.y).slice(0, 3).map(key)
+    return new Set([...byDemand, ...byGrowth])
+  }, [points])
+
   const option = useMemo(() => ({
     animationDuration: 600, animationEasing: 'cubicOut',
-    grid: { left: 46, right: 24, top: 20, bottom: 40 },
+    grid: { left: 50, right: 34, top: 32, bottom: 42 },
     tooltip: {
       ...tooltipStyle, trigger: 'item',
       formatter: (p: { data: { raw: typeof points[number] } }) => {
@@ -1337,30 +1363,46 @@ export function DemandGrowthScatter({ pool, size = '2x2' }: { pool: PoolChoice; 
       },
     },
     xAxis: {
-      type: 'value', name: '현재 수요(점유율) →', min: 0, nameTextStyle: { color: '#7c7f88', fontFamily: FONT, fontSize: 10 },
+      type: 'value', name: '현재 수요(점유율) →', min: 0, max: xMax, nameTextStyle: { color: '#7c7f88', fontFamily: FONT, fontSize: 10 },
       splitLine: { lineStyle: { color: '#eef1f6' } }, axisLine: { lineStyle: { color: '#e6e9ef' } },
       axisLabel: { color: '#7c7f88', fontFamily: FONT, fontSize: 10, formatter: '{value}%' },
     },
     yAxis: {
-      type: 'value', name: '성장률(Δ) →', nameTextStyle: { color: '#7c7f88', fontFamily: FONT, fontSize: 10 },
+      type: 'value', name: '성장률(Δ) →', min: yMin, max: yMax, nameTextStyle: { color: '#7c7f88', fontFamily: FONT, fontSize: 10 },
       splitLine: { lineStyle: { color: '#eef1f6' } }, axisLine: { lineStyle: { color: '#e6e9ef' } },
       axisLabel: { color: '#7c7f88', fontFamily: FONT, fontSize: 10, formatter: '{value}%p' },
     },
     series: [{
       type: 'scatter',
-      data: points.map((d) => ({
-        value: [d.x, d.y], raw: d,
-        symbolSize: 10 + Math.sqrt(d.x / maxX) * 26,
-        itemStyle: { color: d.tag === 'global' ? '#d9822b' : '#5b78d1', opacity: d.tag === 'global' ? 0.75 : 0.85 },
-        label: { show: true, formatter: d.tech, position: 'top', color: '#43454c', fontFamily: FONT, fontSize: 9.5, fontWeight: 700 },
-      })),
+      labelLayout: { moveOverlap: 'shiftY' },
       markLine: {
         silent: true, symbol: 'none', animation: false,
-        lineStyle: { color: '#d4d4d8', type: 'dashed', width: 1 }, label: { show: false },
-        data: [{ yAxis: 0 }],
+        lineStyle: { color: '#dcdfe6', type: 'dashed', width: 1 }, label: { show: false },
+        data: [{ xAxis: medianX }, { yAxis: medianY }],
       },
+      markArea: {
+        silent: true,
+        itemStyle: { color: 'transparent' },
+        label: { formatter: '{b}', color: '#b4b7c0', fontFamily: FONT, fontSize: 10, fontWeight: 700 },
+        data: [
+          [{ name: '고수요 · 고성장', xAxis: medianX, yAxis: medianY, label: { position: 'insideTopRight' } }, { xAxis: xMax, yAxis: yMax }],
+          [{ name: '저수요 · 고성장', xAxis: 0, yAxis: medianY, label: { position: 'insideTopLeft' } }, { xAxis: medianX, yAxis: yMax }],
+          [{ name: '고수요 · 저성장', xAxis: medianX, yAxis: yMin, label: { position: 'insideBottomRight' } }, { xAxis: xMax, yAxis: medianY }],
+          [{ name: '저수요 · 저성장', xAxis: 0, yAxis: yMin, label: { position: 'insideBottomLeft' } }, { xAxis: medianX, yAxis: medianY }],
+        ],
+      },
+      data: points.map((d) => {
+        const isHighlight = highlightSet.has(d.tech + d.tag)
+        return {
+          value: [d.x, d.y], raw: d,
+          symbolSize: Math.min(30, 9 + Math.sqrt(d.x / maxX) * 20),
+          itemStyle: { color: d.tag === 'global' ? '#d9822b' : '#5b78d1', opacity: 0.6 },
+          label: { show: isHighlight, formatter: d.tech, position: 'top', color: '#43454c', fontFamily: FONT, fontSize: 9.5, fontWeight: 700 },
+          emphasis: { label: { show: true } },
+        }
+      }),
     }],
-  }), [points, maxX])
+  }), [points, maxX, xMax, yMin, yMax, medianX, medianY, highlightSet])
 
   return <ReactECharts option={option} style={{ height: size === '2x1' ? 200 : 300 }} notMerge />
 }
@@ -1513,36 +1555,89 @@ export function SkillCountHistogramWidget() {
    신규 concept-tech 엔드포인트가 붙기 전까지는 이 실측 목이 사실상 라이브 수준의 정확도.
    ──────────────────────────────────────────────────────────────── */
 const CONCEPT_FOR_SANKEY = (conceptRaw as unknown as { concepts: ConceptItem[] }).concepts
-type SankeyNode = { name: string }
+type SankeyNode = { name: string; kind: 'concept' | 'tech' }
 type SankeyLink = { source: string; target: string; value: number }
 type SankeyPayload = { nodes: SankeyNode[]; links: SankeyLink[] }
 
 function buildConceptSankeyMock(): SankeyPayload {
   const top = [...CONCEPT_FOR_SANKEY].sort((a, b) => b.demand - a.demand).slice(0, 5)
-  const names = new Set<string>()
+  const conceptNames = new Set<string>()
+  const techNames = new Set<string>()
   const links: SankeyLink[] = []
   top.forEach((c) => {
-    names.add(c.label)
+    conceptNames.add(c.label)
     c.signature.slice(0, 4).forEach((t) => {
-      names.add(t.tech)
+      techNames.add(t.tech)
       links.push({ source: c.label, target: t.tech, value: Math.max(1, t.n) })
     })
   })
-  return { nodes: [...names].map((name) => ({ name })), links }
+  const nodes: SankeyNode[] = [
+    ...[...conceptNames].map((name) => ({ name, kind: 'concept' as const })),
+    ...[...techNames].map((name) => ({ name, kind: 'tech' as const })),
+  ]
+  return { nodes, links }
 }
 const CONCEPT_SANKEY_MOCK = buildConceptSankeyMock()
+
+// 개념 노드 구분용 저채도 팔레트(모노톤 계열에 어울리는 뮤트 톤 — 원색/쨍한 색 금지).
+// 개념마다 하나씩 배정하고, 그 개념에서 나가는 링크는 같은 색을 낮은 opacity로 물려받아
+// 흐름의 출처를 색으로 추적하게 한다. 기술 노드는 중립 회색으로 둬서 "색 있는 축"을 개념 쪽에 둔다.
+const SANKEY_CONCEPT_RGB: Array<[number, number, number]> = [
+  [107, 124, 156], // 뮤트 슬레이트 블루
+  [127, 156, 134], // 뮤트 세이지 그린
+  [165, 138, 111], // 뮤트 웜 토프
+  [154, 129, 153], // 뮤트 모브
+  [111, 149, 153], // 뮤트 틸
+]
+const SANKEY_TECH_COLOR = '#aab0bb' // 중립 회색(기술 노드)
+const sankeyRgb = (c: [number, number, number]) => `rgb(${c[0]}, ${c[1]}, ${c[2]})`
+const sankeyRgba = (c: [number, number, number], a: number) => `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${a})`
+
+// P0-1 — 노드 과밀 완화: 라이브·목 데이터 어느 쪽이든 "상위 개념 5개 × 개념당 상위 기술 4개"로
+// 균일하게 슬라이스한다(목은 이미 이 기준으로 생성되어 사실상 no-op, 라이브는 방어적 캡).
+function sliceSankeyPayload(payload: SankeyPayload, topConcepts = 5, topTechsPerConcept = 4): SankeyPayload {
+  const concepts = payload.nodes.filter((n) => n.kind === 'concept')
+  const totals = new Map<string, number>()
+  payload.links.forEach((l) => totals.set(l.source, (totals.get(l.source) ?? 0) + l.value))
+  const keepConcepts = [...concepts]
+    .sort((a, b) => (totals.get(b.name) ?? 0) - (totals.get(a.name) ?? 0))
+    .slice(0, topConcepts)
+    .map((c) => c.name)
+  const keptLinks: SankeyLink[] = []
+  keepConcepts.forEach((name) => {
+    const top = payload.links.filter((l) => l.source === name).sort((a, b) => b.value - a.value).slice(0, topTechsPerConcept)
+    keptLinks.push(...top)
+  })
+  const techNames = new Set(keptLinks.map((l) => l.target))
+  const nodes: SankeyNode[] = [
+    ...keepConcepts.map((name) => ({ name, kind: 'concept' as const })),
+    ...[...techNames].map((name) => ({ name, kind: 'tech' as const })),
+  ]
+  return { nodes, links: keptLinks }
+}
 
 export function ConceptTechSankeyWidget({ pool }: { pool: PoolChoice }) {
   const [live, setLive] = useState<SankeyPayload | null>(null)
   useEffect(() => {
     let cancelled = false
-    marketApi.conceptTech({ pool: poolToApi(pool) }).then((r) => {
+    marketApi.conceptTech({ pool: poolToApi(pool), top_concepts: 5, top_techs: 4 }).then((r) => {
       if (cancelled || !r.links.length) return
-      setLive({ nodes: r.nodes.map((n) => ({ name: n.name })), links: r.links })
+      const nodes: SankeyNode[] = r.nodes.map((n) => ({ name: n.name, kind: n.type === 'tech' ? 'tech' : 'concept' }))
+      setLive({ nodes, links: r.links })
     }).catch(() => undefined)
     return () => { cancelled = true }
   }, [pool])
-  const data = live ?? CONCEPT_SANKEY_MOCK
+  const raw = live ?? CONCEPT_SANKEY_MOCK
+  const data = useMemo(() => sliceSankeyPayload(raw), [raw])
+
+  // 개념 노드 순서대로 저채도 색을 배정 — 노드 색 + 링크 tint 색의 단일 출처.
+  const conceptColor = useMemo(() => {
+    const map = new Map<string, [number, number, number]>()
+    data.nodes.filter((n) => n.kind === 'concept').forEach((n, i) => {
+      map.set(n.name, SANKEY_CONCEPT_RGB[i % SANKEY_CONCEPT_RGB.length])
+    })
+    return map
+  }, [data])
 
   const option = useMemo(() => ({
     animationDuration: 700, animationEasing: 'cubicOut',
@@ -1554,16 +1649,30 @@ export function ConceptTechSankeyWidget({ pool }: { pool: PoolChoice }) {
       },
     },
     series: [{
-      type: 'sankey', layout: 'none', nodeGap: 10, nodeWidth: 12,
+      type: 'sankey', layout: 'none', nodeGap: 18, nodeWidth: 14,
+      left: '15%', right: '18%', top: 14, bottom: 14,
       emphasis: { focus: 'adjacency' },
-      data: data.nodes, links: data.links,
-      lineStyle: { color: 'gradient', curveness: 0.5, opacity: 0.35 },
-      itemStyle: { color: '#5b78d1', borderColor: '#fff' },
-      label: { fontFamily: FONT, fontSize: 10.5, fontWeight: 600, color: '#43454c' },
+      data: data.nodes.map((n) => {
+        const c = conceptColor.get(n.name)
+        return {
+          name: n.name,
+          itemStyle: { color: n.kind === 'concept' && c ? sankeyRgb(c) : SANKEY_TECH_COLOR, borderColor: '#fff' },
+          label: {
+            fontFamily: FONT, fontSize: 12, fontWeight: 700, color: '#43454c',
+            position: n.kind === 'concept' ? 'left' : 'right',
+          },
+        }
+      }),
+      // 링크는 출발 개념의 색을 낮은 opacity로 tint — 어느 흐름이 어느 개념에서 나왔는지 색으로 추적.
+      links: data.links.map((l) => {
+        const c = conceptColor.get(l.source)
+        return { ...l, lineStyle: { color: c ? sankeyRgba(c, 0.4) : 'rgba(170, 176, 187, 0.35)' } }
+      }),
+      lineStyle: { curveness: 0.5 },
     }],
-  }), [data])
+  }), [data, conceptColor])
 
-  return <ReactECharts option={option} style={{ height: 300 }} notMerge />
+  return <ReactECharts option={option} style={{ height: 420 }} notMerge />
 }
 
 /* ────────────────────────────────────────────────────────────────
@@ -1586,9 +1695,11 @@ export function GlobalDomesticLagWidget() {
     if (!top) throw new Error('empty')
     return {
       tech: top.canonical,
-      globalYears: r.years.map(String), globalShares: top.global_series,
-      domesticYears: r.years.map(String), domesticShares: top.domestic_series,
-      lagLabel: `약 ${top.lag_months}개월`,
+      globalYears: top.global_series.map((p) => String(p.year)),
+      globalShares: top.global_series.map((p) => p.share),
+      domesticYears: top.domestic_series.map((p) => String(p.year)),
+      domesticShares: top.domestic_series.map((p) => p.share),
+      lagLabel: top.lag_years === 0 ? '거의 동시' : `약 ${top.lag_years}년`,
     } as LagSeries
   }), GLOBAL_LAG_MOCK)
   const d = data.value
