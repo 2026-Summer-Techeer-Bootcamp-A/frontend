@@ -206,6 +206,9 @@
 .dshell__content--home {
   background: #f7f7f8;
 }
+.dshell__content:has(.aw) {
+  overflow: hidden;
+}
 
 /* ---------- 모바일 유래 화면의 데스크톱 보정 ----------
    셸 안에 그대로 얹힌 모바일 화면(.dsub 하위)이 넓은 화면을 조금 더 쓰게 한다.

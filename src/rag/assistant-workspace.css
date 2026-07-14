@@ -2,7 +2,7 @@
    셸 콘텐츠 배경이 회색(/assistant는 grayBgRoutes)으로 바뀌었으므로, 이제 여기서 각 pane 안쪽을
    흰 카드로 감싼다. ResumeInsight(.ri)/RagConsole(.rc)은 자체 rc__head/rc__body 구조를 그대로 쓰고,
    워크스페이스는 좌우 배치·높이·접기 + pane 카드 크롬(배경/보더/라운딩/섀도)만 담당한다.
-   .dshell(themeVars)에는 --c-ink/--c-accent/--c-muted/--c-card는 있지만 --line/--accent-*/--e1은
+   .dshell(themeVars)에는 --c-ink/--c-accent/--c-muted/--c-card는 있지만 --line/--accent-* 계열/--e1은
    없어 여기서 보강한다(placeholders.css의 .dpage, DesktopOverview.css의 .dov와 같은 패턴). */
 .aw {
   height: 100%;
