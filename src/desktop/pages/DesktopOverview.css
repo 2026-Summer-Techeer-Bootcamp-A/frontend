@@ -66,48 +66,68 @@
    섹션 내부 카드 높이를 grid로 통일한다(리스트형 카드는 내부 스크롤로 흡수). */
 .dov__insights { min-width: 0; }
 
-/* Zone 1 — 히어로존: 히어로(검정, 크게) + KPI stat 4개. above-fold. */
-.dov__hero-zone { display: flex; flex-direction: column; gap: 14px; margin-bottom: 32px; }
-.dov__hero-cell { width: 100%; }
-.dov__hero-zone .kit-heroStat { min-height: 240px; padding: 28px 30px; }
-.dov__hero-zone .kit-heroStat__eyebrow { font-size: 12.5px; }
-.dov__hero-zone .kit-heroStat__num { font-size: 68px; }
-.dov__hero-zone .kit-heroStat__num span { font-size: 30px; }
-.dov__hero-zone .kit-heroStat__caption { font-size: 14px; }
+/* Zone 1 — 히어로존: 검정 카드 1개, 좌(커리어 점수) · 우(KPI 2x2) 2열. above-fold. */
+.dov__hero-card {
+  display: grid;
+  gap: 30px;
+  align-items: stretch;
+  background: #0d0d0d;
+  color: #fff;
+  border-radius: 20px;
+  padding: 32px 34px;
+  margin-bottom: 36px;
+  min-height: 280px;
+  box-shadow: var(--e2);
+}
+.dov__hero-left { display: flex; flex-direction: column; justify-content: space-between; min-width: 0; }
+.dov__hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.dov__hero-eyebrow { font-size: 12.5px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: rgba(255, 255, 255, 0.56); }
+.dov__hero-chart { flex: none; }
+.dov__hero-bottom { margin-top: auto; padding-top: 22px; }
+.dov__hero-num { font-size: 68px; font-weight: 800; letter-spacing: -2px; line-height: 1; font-variant-numeric: tabular-nums; }
+.dov__hero-num span { font-size: 30px; font-weight: 700; color: rgba(255, 255, 255, 0.6); margin-left: 3px; }
+.dov__hero-caption { margin-top: 14px; font-size: 14px; color: rgba(255, 255, 255, 0.68); line-height: 1.5; }
+.dov__hero-caption b { color: #fff; font-weight: 700; }
 
-.dov__kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
-.dov__kpis > * { min-width: 0; height: 100%; }
+.dov__hero-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; height: 100%; }
+.dov__hero-empty-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; background: rgba(255, 255, 255, 0.1); }
+.dov__hero-empty-title { font-size: 18px; line-height: 1.45; }
+.dov__hero-empty-sub { font-size: 12.5px; color: rgba(255, 255, 255, 0.62); }
 
-/* Zone 2~3 — 라벨 섹션. 섹션 사이 32px, 섹션 내부 카드 14~16px. */
-.dov__sec { margin-bottom: 32px; }
+.dov__hero-right { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.dov__hero-stat {
+  display: flex; flex-direction: column; justify-content: space-between; min-width: 0;
+  background: #fff; color: #111; border-radius: 16px; padding: 18px 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  transition: background 0.15s ease;
+}
+.dov__hero-stat:hover { background: #f4f4f5; }
+.dov__hero-stat-label { font-size: 12px; font-weight: 700; color: #52525b; }
+.dov__hero-stat-num { margin-top: auto; padding-top: 12px; font-size: 32px; font-weight: 800; letter-spacing: -1px; line-height: 1; font-variant-numeric: tabular-nums; }
+.dov__hero-stat-num span { font-size: 13px; font-weight: 700; color: #71717a; margin-left: 2px; }
+
+/* Zone 2~2b — 라벨 섹션. 섹션 사이 36px, 섹션 내부 카드 18px, 카드 자체는 좀 더 낙낙하게. */
+.dov__sec { margin-bottom: 36px; }
 .dov__sec:last-child { margin-bottom: 0; }
-.dov__sec-title { font-size: 17px; font-weight: 800; letter-spacing: -0.3px; color: var(--c-ink); }
-.dov__sec-hint { font-size: 12.5px; color: var(--c-muted); margin-top: 3px; margin-bottom: 16px; }
+.dov__sec-title { font-size: 17px; font-weight: 800; letter-spacing: -0.3px; color: var(--c-ink); margin-bottom: 16px; }
 
-.dov__sec-grid { display: grid; gap: 16px; align-items: stretch; grid-auto-rows: 1fr; }
+.dov__sec-grid { display: grid; gap: 18px; align-items: stretch; grid-auto-rows: 1fr; }
 .dov__sec-grid > * { min-width: 0; height: 100%; }
 .dov__sec-grid .dcard,
 .dov__sec-grid > .dov__card-item > * { height: 100%; display: flex; flex-direction: column; }
+.dov__sec-grid .dcard { min-height: 320px; padding: 22px; }
 .dov__sec-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .dov__sec-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.dov__card-item--wide { grid-column: span 2; }
-
-/* 리스트형 카드(맞춤 공고/마감 임박/브리핑/북마크/최근 본 공고)는 섹션 grid의 equal-height
-   stretch를 내부 스크롤로 흡수해, 짧은 카드까지 무리하게 늘어나지 않게 한다. */
-.dov__sec-grid .dov__jobs,
-.dov__sec-grid .dov__dl,
-.dov__sec-grid .dov__brief { max-height: 340px; overflow-y: auto; }
 
 @media (max-width: 1180px) {
-  .dov__kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dov__hero-card { grid-template-columns: 1fr !important; }
   .dov__sec-grid--3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 720px) {
-  .dov__kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dov__hero-right { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .dov__sec-grid--3,
   .dov__sec-grid--2 { grid-template-columns: 1fr; }
-  .dov__card-item--wide { grid-column: span 1; }
-  .dov__hero-zone .kit-heroStat__num { font-size: 52px; }
+  .dov__hero-num { font-size: 52px; }
 }
 
 .dov__card-eyebrow {
@@ -119,50 +139,8 @@
   color: var(--c-muted);
 }
 
-.dov__hdright { display: flex; align-items: center; gap: 10px; }
-
-.dov__more {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--accent-700);
-}
-
-/* 맞춤 공고 그리드 (2열) */
-.dov__jobs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
-.dov__jobs > * { min-width: 0; }
-
 /* 사이드 카드에 담기는 차트류(레이더/로드맵) 여백 정리 */
 .dov__aside-chart { margin-top: 12px; }
-
-/* 마감 임박 */
-.dov__dl { display: flex; flex-direction: column; margin-top: 12px; }
-.dov__dl-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 4px;
-  text-align: left;
-  transition: background 0.14s ease;
-  border-radius: 10px;
-}
-.dov__dl-row + .dov__dl-row { border-top: 1px solid var(--line); }
-.dov__dl-row:hover { background: var(--accent-50); }
-.dov__dl-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.dov__dl-co { font-size: 13px; font-weight: 700; color: var(--c-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dov__dl-ti { font-size: 11.5px; color: var(--c-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dov__dday {
-  flex: none;
-  font-size: 12px;
-  font-weight: 800;
-  color: var(--accent-700);
-  background: var(--accent-50);
-  border-radius: 8px;
-  padding: 4px 8px;
-}
-.dov__dday.urgent { color: #0d0d0d; background: #f3d9b8; }
 
 /* 브리핑 */
 .dov__brief { margin-top: 12px; display: flex; flex-direction: column; gap: 9px; }
@@ -190,8 +168,3 @@
 .dov__gap-chip span { font-size: 10.5px; font-weight: 800; color: var(--accent-700); background: var(--accent-50); border-radius: 6px; padding: 1px 6px; }
 
 .dov__empty { font-size: 13px; color: var(--c-muted); padding: 8px 2px; }
-
-/* 좁은 화면: 맞춤 공고 그리드 1열로 접힘 */
-@media (max-width: 720px) {
-  .dov__jobs { grid-template-columns: 1fr; }
-}
