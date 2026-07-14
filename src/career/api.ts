@@ -184,6 +184,16 @@ export const marketApi = {
   hypeVsHire: (skill: string) => request<{ skill: string; quarters: Array<{ quarter: string; interest_value: number; posting_count: number }>; as_of: string; sample_size: number; note: string }>(withQuery('/trend/hype-vs-hire', { skill })),
   githubChronicle: () => request<{ years: number[]; lines: Array<{ tech: string; repo: string; points: Array<{ year: number; rank: number; stars: number }> }>; events?: Array<unknown>; as_of: string }>('/trend/github-chronicle'),
   githubTopics: () => request<{ items: Array<{ canonical: string; category: string; repo_reach: number; reach_pct: number; job_demand_pct: number | null; owned: boolean | null }>; opportunities?: Array<unknown>; as_of: string }>('/trend/github-topics'),
+  // ── v8 시장 탭 재구성(feat/market-stats-v2) 신규 엔드포인트 — 백엔드 미배선.
+  // 시그니처만 먼저 열어두고, 프론트는 useWidgetData 하이브리드로 실패 시 목 데이터 폴백한다.
+  groupShare: (params: { group: 'frontend_fw' | 'backend_fw' | 'database'; pool?: ApiPool } = { group: 'frontend_fw' }) =>
+    request<{ group: string; union_count: number; items: Array<{ canonical: string; count: number; share: number }>; as_of: string }>(withQuery('/stats/group-share', params)),
+  conceptTech: (params: { pool?: ApiPool; top_concepts?: number; top_techs?: number } = {}) =>
+    request<{ nodes: Array<{ name: string; type: 'concept' | 'tech' }>; links: Array<{ source: string; target: string; value: number }>; as_of: string }>(withQuery('/stats/concept-tech', params)),
+  skillCountDist: (params: { pool?: ApiPool } = {}) =>
+    request<{ histogram: Array<{ k: number; count: number }>; avg: number; median: number; as_of: string; sample_size: number }>(withQuery('/stats/skill-count-dist', params)),
+  globalDomesticLag: () =>
+    request<{ items: Array<{ canonical: string; lag_months: number; global_series: number[]; domestic_series: number[] }>; years: number[]; as_of: string }>('/stats/global-domestic-lag'),
 }
 
 export const settingsApi = {
