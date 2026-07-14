@@ -17,6 +17,7 @@ export default function CompanyLogo({ logo, name, size = 44, radius = 12, style 
       <img
         src={logo}
         alt={name}
+        loading="lazy"
         onError={() => setBroken(true)}
         style={{ ...base, objectFit: 'cover', background: '#fff', border: '1px solid #eef0f4' }}
       />

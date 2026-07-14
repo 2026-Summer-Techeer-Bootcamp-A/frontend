@@ -10,4 +10,36 @@ export default defineConfig({
       '/api': 'http://localhost:8000',
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('echarts') || id.includes('zrender')) {
+              return 'vendor-echarts';
+            }
+            if (id.includes('d3')) {
+              return 'vendor-d3';
+            }
+            if (id.includes('leaflet')) {
+              return 'vendor-leaflet';
+            }
+            if (id.includes('highlight.js')) {
+              return 'vendor-highlight';
+            }
+            return 'vendor-libs';
+          }
+          if (id.includes('src/design/')) {
+            return 'vendor-design';
+          }
+          if (id.includes('src/pages/widgets/')) {
+            return 'vendor-widgets';
+          }
+          if (id.includes('src/pages/') && !id.includes('src/pages/widgets/')) {
+            return 'vendor-lab-pages';
+          }
+        }
+      }
+    }
+  }
 })
