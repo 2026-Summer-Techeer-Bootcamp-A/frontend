@@ -35,7 +35,7 @@ export const THEME: CareerTheme = {
   cardBg: '#ffffff',
   chipBg: '#f0f0f1',
   chipText: '#18181b',
-  radius: 22,
+  radius: 14,
   headingWeight: 700,
   letterSpacing: '-0.6px',
   navActive: '#0b0b0c',
