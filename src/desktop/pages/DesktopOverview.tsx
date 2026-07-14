@@ -107,6 +107,7 @@ export default function DesktopOverview() {
     const token = getAuthToken()
     return Number.isInteger(resumeId) && resumeId > 0 && token ? { resumeId, token } : null
   }, [activeResume?.id])
+  const dashboardRefreshKey = identity ? `${identity.resumeId}:${skills.join('|')}` : 'preview'
 
   const postings = useMemo(() => getDynamicPostings(skills), [skills])
   const domestic = useMemo(() => postings.filter((p) => p.pool === '국내'), [postings])
@@ -135,18 +136,21 @@ export default function DesktopOverview() {
   }, [domestic])
 
   const coverageData = useWidgetData(
-    identity ? () => dashboardApi.coverage(identity, activeResume?.position) : null,
+    identity ? () => dashboardApi.coverage(identity) : null,
     { coverage_score: coverage, top_skills: [] },
+    dashboardRefreshKey,
   )
   const countData = useWidgetData(
-    identity ? () => dashboardApi.applicableCount(identity, activeResume?.position) : null,
+    identity ? () => dashboardApi.applicableCount(identity) : null,
     { total: applicable },
+    dashboardRefreshKey,
   )
   const distributionData = useWidgetData<DistributionData | null>(
-    identity ? () => dashboardApi.distribution(identity, activeResume?.position) : null,
+    identity ? () => dashboardApi.distribution(identity) : null,
     null,
+    dashboardRefreshKey,
   )
-  const pivotData = useWidgetData<PivotData | null>(identity ? () => dashboardApi.pivot(identity) : null, null)
+  const pivotData = useWidgetData<PivotData | null>(identity ? () => dashboardApi.pivot(identity) : null, null, dashboardRefreshKey)
   const shareData = useWidgetData(identity ? () => dashboardApi.skillShare() : null, { items: [] })
   const shownCoverage = Math.round(coverageData.value.coverage_score)
   const shownApplicable = countData.value.total
