@@ -15,7 +15,7 @@ import {
 import {
   HypeVsHireWidget, GithubChronicleWidget, GlobalDomesticGapWidget,
   GroupShareCard, DemandRaceChart, DemandGrowthScatter, CooccurrenceBarWidget,
-  SkillCountStatWidget, SkillCountHistogramWidget, ConceptTechSankeyWidget,
+  CareerLevelDistributionWidget, MarketSkillUnlockWidget, ConceptTechSankeyWidget,
   GlobalDomesticLagWidget, MarketChangeStrip,
   type GroupKey, type PoolChoice,
 } from '../../career/wowWidgets'
@@ -900,16 +900,15 @@ export function DesktopMarket() {
     let cancelled = false
     setCalendarState({ status: 'loading' })
     const position = scoped && myCategory ? CALENDAR_POSITION_API[myCategory] : undefined
-    Promise.allSettled(poolsForQuery(pool).map((p) => marketApi.postingTimeline({ pool: p, days: 365, position: p === 'domestic' ? position : undefined })))
+    Promise.all(poolsForQuery(pool).map((p) => marketApi.postingTimeline({ pool: p, days: 365, position: p === 'domestic' ? position : undefined })))
       .then((results) => {
         if (cancelled) return
-        const fulfilled = results.flatMap((r) => (r.status === 'fulfilled' ? [r.value] : []))
-        if (!fulfilled.length) {
-          setCalendarState({ status: 'error', message: '캘린더 데이터를 불러오지 못했습니다.' })
-          return
-        }
-        const merged = mergeCounts(fulfilled.map((r) => r.daily.map((d) => ({ key: d.date, count: d.total }))))
-        setCalendarState({ status: 'ready', daily: merged.map((m) => ({ date: m.key, total: m.count })), asOf: fulfilled[0].as_of })
+        const merged = mergeCounts(results.map((r) => r.daily.map((d) => ({ key: d.date, count: d.total }))))
+        setCalendarState({ status: 'ready', daily: merged.map((m) => ({ date: m.key, total: m.count })), asOf: results[0].as_of })
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return
+        setCalendarState({ status: 'error', message: error instanceof Error ? error.message : '캘린더 데이터를 불러오지 못했습니다.' })
       })
     return () => { cancelled = true }
   }, [scoped, myCategory, calendarRetry, pool])
@@ -923,7 +922,7 @@ export function DesktopMarket() {
     || !isWidgetHidden('market', 'group-share-language') || !isWidgetHidden('market', 'movers')
     || !isWidgetHidden('market', 'posting-calendar')
   const sec2Visible = !isWidgetHidden('market', 'demand-growth-scatter') || !isWidgetHidden('market', 'cooccurrence-bar')
-    || !isWidgetHidden('market', 'skill-count-stat') || !isWidgetHidden('market', 'skill-count-dist')
+    || !isWidgetHidden('market', 'career-level-dist') || !isWidgetHidden('market', 'market-skill-unlock')
   const sec3Visible = !isWidgetHidden('market', 'network') || !isWidgetHidden('market', 'concept-tech-sankey')
   const sec4Visible = !isWidgetHidden('market', 'region-density') || !isWidgetHidden('market', 'scatter')
   // ⑤ 글로벌·해외 트렌드는 pool≠'domestic'일 때만 렌더(스펙 §4-1 — 국내 탭에선 섹션째 숨김).
@@ -1094,14 +1093,14 @@ export function DesktopMarket() {
                 <CooccurrenceBarWidget pool={pool} headerRight={scopeBadge} />
               </div>
             )}
-            {!isWidgetHidden('market', 'skill-count-stat') && (
-              <div className="dmkt2__card-item dmkt2__card-item--r2" style={spanStyle(widgetSize('skill-count-stat'))}>
-                <SkillCountStatWidget />
+            {!isWidgetHidden('market', 'career-level-dist') && (
+              <div className="dmkt2__card-item dmkt2__card-item--r2" style={spanStyle(widgetSize('career-level-dist'))}>
+                <CareerLevelDistributionWidget />
               </div>
             )}
-            {!isWidgetHidden('market', 'skill-count-dist') && (
-              <div className="dmkt2__card-item dmkt2__card-item--r2" style={spanStyle(widgetSize('skill-count-dist'))}>
-                <SkillCountHistogramWidget />
+            {!isWidgetHidden('market', 'market-skill-unlock') && (
+              <div className="dmkt2__card-item dmkt2__card-item--r2" style={spanStyle(widgetSize('market-skill-unlock'))}>
+                <MarketSkillUnlockWidget />
               </div>
             )}
           </div>

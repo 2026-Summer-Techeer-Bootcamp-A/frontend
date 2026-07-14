@@ -81,10 +81,11 @@
 /* 기업 · 역량 — 카드 크기에 맞춰 2~3열로 채워지는 auto-fill */
 .dmkt2__sec-grid--company { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
 .dmkt2__calendar-movers-row { display: grid; grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); gap: 16px; margin-top: 16px; align-items: stretch; }
-.dmkt2__card-item--calendar { min-width: 0; height: auto; }
-.dmkt2__card-item--calendar > .dcard { flex: none; height: auto; }
+.dmkt2__calendar-movers-row > .dmkt2__card-item { height: 100%; }
+.dmkt2__card-item--calendar { min-width: 0; }
+.dmkt2__card-item--calendar > .dcard { flex: 1; height: 100%; }
 .dcard--posting-calendar { padding: 16px 18px; }
-.dmkt2__card-item--movers-side { min-width: 0; height: auto; }
+.dmkt2__card-item--movers-side { min-width: 0; }
 
 /* 1x1 무버 카드에서는 긴 막대 6개를 두 열의 간결한 랭킹으로 배치한다.
    데이터는 모두 유지하면서 고정 그리드 행 밖으로 콘텐츠가 넘치지 않게 한다. */
@@ -265,7 +266,7 @@
 .dmkt2__sec-grid--region4 .dmkt2__card-item { min-height: 300px; }
 
 /* P0/P1 카드 높이 보정(2026-07-14 시각 검증) — Sankey · 산점도 · 네트워크(세로로 긴 차트)와
-   ②의 우측 3카드(동반 요구 스킬 · 공고당 요구 스킬 · 요구 스킬 개수 분포)가 기본 108px 행에
+   ②의 우측 3카드(동반 요구 스킬 · 경력 수준 분포 · 기술 추가 시 지원 증가)가 기본 108px 행에
    눌려 캔버스가 100px대로 짓눌리거나(P0) 콘텐츠가 overflow:hidden에 잘려 빈 카드로 보이던
    문제(P1)를 grid-row span 확장으로 고친다. spanStyle()이 매기는 인라인 style보다 우선해야
    해서 !important가 필요하다. */
@@ -349,11 +350,8 @@
 .mktmodal__chart-t { font-size: 10.5px; font-weight: 700; color: var(--c-muted); margin-bottom: 4px; }
 .mktmodal__foot { flex: none; padding: 10px 16px; border-top: 1px solid var(--line); font-size: 10.5px; color: var(--c-muted); }
 
-/* ②-b 동반 요구 스킬 앵커 탭 캡션 · ②-c 공고당 요구 스킬 스탯 */
+/* ②-b 동반 요구 스킬 앵커 탭 캡션 */
 .wow-takeaway-inline { font-size: 12px; font-weight: 600; color: var(--c-ink); margin: 4px 0 8px; line-height: 1.45; }
-.wow-skillcount { display: flex; align-items: baseline; gap: 4px; margin: 4px 0; }
-.wow-skillcount__num { font-size: 30px; font-weight: 800; color: var(--c-ink); letter-spacing: -0.5px; }
-.wow-skillcount__num small { font-size: 14px; font-weight: 600; color: var(--c-muted); }
 
 /* 수요 × 빈도 분포 — 순수 시장 산점도(보유/미보유 이분법 없음) */
 .dmkt2__scatter { display: flex; flex-direction: column; flex: 1; margin-top: 6px; }
