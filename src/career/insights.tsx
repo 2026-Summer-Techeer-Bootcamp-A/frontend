@@ -152,9 +152,28 @@ const CAT_LABEL: Record<string, string> = {
 }
 const OWNED_RING = '#18181b'
 
-export function TechCoNetworkGraph({ skills = RESUME }: { skills?: string[] }) {
+export function TechCoNetworkGraph({ skills = RESUME, resumeOnly = false }: { skills?: string[]; resumeOnly?: boolean }) {
   const resumeSet = useMemo(() => new Set(skills), [skills])
-  const nodes = N_DATA.data.nodes
+  const focusedTechs = useMemo(() => {
+    if (!resumeOnly || resumeSet.size === 0) return null
+    const visible = new Set(skills.filter((skill) => NODE_MAP.has(skill)))
+    skills.forEach((skill) => {
+      N_DATA.data.edges
+        .filter((edge) => edge.a === skill || edge.b === skill)
+        .sort((a, b) => b.strength - a.strength)
+        .slice(0, 5)
+        .forEach((edge) => { visible.add(edge.a); visible.add(edge.b) })
+    })
+    return visible.size > 0 ? visible : null
+  }, [resumeOnly, resumeSet, skills])
+  const nodes = useMemo(
+    () => focusedTechs ? N_DATA.data.nodes.filter((node) => focusedTechs.has(node.tech)) : N_DATA.data.nodes,
+    [focusedTechs],
+  )
+  const edges = useMemo(
+    () => focusedTechs ? N_DATA.data.edges.filter((edge) => focusedTechs.has(edge.a) && focusedTechs.has(edge.b)) : N_DATA.data.edges,
+    [focusedTechs],
+  )
   const maxN = Math.max(...nodes.map((n) => n.n))
   const categories = [...new Set(nodes.map((n) => n.category))]
   const option = useMemo(() => ({
@@ -189,15 +208,15 @@ export function TechCoNetworkGraph({ skills = RESUME }: { skills?: string[] }) {
           },
         }
       }),
-      links: N_DATA.data.edges.map((e) => ({
+      links: edges.map((e) => ({
         source: e.a, target: e.b, raw: e,
         lineStyle: { width: 0.6 + e.strength * 3.2, color: 'rgba(90,100,120,0.28)', curveness: 0.1 },
       })),
     }],
-  }), [nodes, maxN, resumeSet])
+  }), [nodes, edges, maxN, resumeSet])
   return (
     <div>
-      <ReactECharts option={option} style={{ height: 300 }} notMerge />
+      <ReactECharts option={option} className="ins-network-chart" style={{ height: 420 }} notMerge />
       <div className="ins-legend" style={{ marginTop: 8, flexWrap: 'wrap' }}>
         {categories.map((c) => <span key={c}><i style={{ background: CAT_COLOR[c] }} /> {CAT_LABEL[c]}</span>)}
         <span><i style={{ background: 'transparent', border: `2px solid ${OWNED_RING}` }} /> 보유</span>

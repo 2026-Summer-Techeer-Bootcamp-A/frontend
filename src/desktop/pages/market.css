@@ -162,7 +162,17 @@
 /* 네트워크/전파 그래프 옆 요약패널 — 그래프 62% : 요약 38% */
 .dmkt2__netcell { display: flex; flex-direction: column; }
 .dmkt2__netsplit { display: flex; gap: 14px; flex: 1; min-height: 0; }
-.dmkt2__netgraph { flex: 1.6; min-width: 0; max-height: 420px; overflow: hidden; }
+.dmkt2__netgraph { flex: 1.8; min-width: 0; overflow: hidden; }
+.dmkt2__card-item--network { grid-column: 1 / -1 !important; min-height: 590px; }
+.dmkt2__card-item--sankey { grid-column: span 2; }
+.dmkt2__network-filter {
+  display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+  padding: 5px 9px; border: 1px solid var(--line); border-radius: 8px;
+  background: #fff; color: var(--c-ink); font-size: 11.5px; font-weight: 700;
+}
+.dmkt2__network-filter:hover { background: var(--accent-50); }
+.dmkt2__network-filter input { width: 14px; height: 14px; margin: 0; accent-color: #18181b; }
+.dmkt2__network-filter.is-disabled { cursor: not-allowed; color: var(--c-muted); opacity: .55; }
 .dmkt2__netsummary { flex: 1; min-width: 0; border-left: 1px solid var(--line); padding-left: 14px; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; min-height: 0; }
 .dmkt2__netsummary-t { font-size: 11.5px; font-weight: 700; color: var(--c-muted); margin-bottom: 4px; }
 /* Top-5 각 기술 그룹 — 기술 행(1) + 동반 요구 상위 서브행(3) 묶음. 그룹 사이만 간격을 준다. */
@@ -280,6 +290,7 @@
   .dmkt2__sec-grid--tech,
   .dmkt2__sec-grid--global4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .dmkt2__sec-grid--region4 { grid-template-columns: minmax(0, 3fr) minmax(280px, 2fr); }
+  .dmkt2__card-item--sankey { grid-column: 1 / -1; }
 }
 @media (max-width: 720px) {
   .dmkt2__calendar-movers-row { grid-template-columns: 1fr; }
