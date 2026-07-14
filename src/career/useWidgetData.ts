@@ -11,17 +11,23 @@ import { useEffect, useState } from 'react'
 
 export type WidgetData<T> = { value: T; source: 'live' | 'mock'; loading: boolean; error?: string }
 
-const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined) || ''
-
-export function useWidgetData<T>(fetchLive: (() => Promise<T>) | null, mock: T): WidgetData<T> {
+export function useWidgetData<T>(
+  fetchLive: (() => Promise<T>) | null,
+  mock: T,
+  refreshKey: string | number | null = null,
+): WidgetData<T> {
+  const enabled = fetchLive !== null
   const [state, setState] = useState<WidgetData<T>>(() =>
-    API_BASE && fetchLive
+    enabled
       ? { value: mock, source: 'mock', loading: true }
       : { value: mock, source: 'mock', loading: false },
   )
 
   useEffect(() => {
-    if (!API_BASE || !fetchLive) return
+    if (!fetchLive) {
+      setState({ value: mock, source: 'mock', loading: false })
+      return
+    }
     let cancelled = false
     setState({ value: mock, source: 'mock', loading: true })
     fetchLive()
@@ -35,9 +41,9 @@ export function useWidgetData<T>(fetchLive: (() => Promise<T>) | null, mock: T):
         setState({ value: mock, source: 'mock', loading: false, error: err instanceof Error ? err.message : String(err) })
       })
     return () => { cancelled = true }
-    // fetchLive/mock은 호출부에서 매 렌더 새로 만들어질 수 있어 의도적으로 최초 마운트에만 실행한다.
+    // 인라인 fetch 함수의 정체성은 무시하고, 활성화 상태 또는 refreshKey가 바뀔 때만 다시 실행한다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [enabled, refreshKey])
 
   return state
 }

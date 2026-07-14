@@ -69,9 +69,11 @@ export function LatestJobsTimeline({ size = '2x2' }: { size?: WidgetSize }) {
   const resumeId = Number(activeResume?.id)
   const token = getAuthToken()
   const identity = Number.isInteger(resumeId) && resumeId > 0 && token ? { resumeId, token } : null
+  const timelineRefreshKey = identity ? `${resumeId}:${skills.join('|')}` : 'preview'
   const timeline = useWidgetData(
     identity ? () => dashboardApi.timeline(identity) : null,
     { daily: FEED_DAILY, as_of: FEED._meta.asOf },
+    timelineRefreshKey,
   )
   const daily = timeline.value.daily.map((item) => ({ ...item, matched: item.matched ?? 0 }))
   const maxTotal = Math.max(...daily.map((d) => d.total), 1)
@@ -115,7 +117,6 @@ export function LatestJobsTimeline({ size = '2x2' }: { size?: WidgetSize }) {
 
       const result = await jobsApi.list({
         pool: 'domestic',
-        position: activeResume?.position || undefined,
         sort: activeTab === 'matched' ? 'match' : activeTab === 'deadline' ? 'deadline' : 'latest',
         deadline_within_days: activeTab === 'deadline' ? 7 : undefined,
         match_only: activeTab === 'matched' ? true : undefined,
@@ -137,7 +138,7 @@ export function LatestJobsTimeline({ size = '2x2' }: { size?: WidgetSize }) {
       .finally(() => { if (!cancelled) setJobsLoading(false) })
 
     return () => { cancelled = true }
-  }, [activeResume?.position, activeTab, bookmarkKey, listCount, resumeId, token])
+  }, [activeTab, bookmarkKey, listCount, resumeId, token])
 
   const listLabel = activeTab === 'latest' ? '국내 최신 공고'
     : activeTab === 'matched' ? '내 이력서 맞춤 공고'
@@ -217,11 +218,10 @@ export function LatestJobsTimeline({ size = '2x2' }: { size?: WidgetSize }) {
                   )}
                   {!jobsLoading && !jobsError && apiPostings.map((p) => {
                     const held = p.skills.filter((tech) => skills.includes(tech))
-                    const heldShown = held.slice(0, 3)
-                    const heldExtra = held.length - heldShown.length
-                    const gap = p.skills.filter((tech) => !skills.includes(tech))
-                    const gapShown = gap.slice(0, 3)
-                    const gapExtra = gap.length - gapShown.length
+                    const remaining = p.skills.filter((tech) => !skills.includes(tech))
+                    const orderedSkills = [...held, ...remaining]
+                    const shownSkills = orderedSkills.slice(0, 3)
+                    const skillsExtra = orderedSkills.length - shownSkills.length
                     const matchPct = p.skills.length
                       ? Math.min(100, Math.round(((p.matched_count ?? held.length) / p.skills.length) * 100))
                       : 0
@@ -243,14 +243,21 @@ export function LatestJobsTimeline({ size = '2x2' }: { size?: WidgetSize }) {
                               <span className="wow-joblist__title-text">{p.title}</span>
                               {matchPct >= 80 && <span className="wow-jobbadge">추천</span>}
                             </span>
+                            {shownSkills.length > 0 && (
+                              <div className="wow-joblist__chips">
+                                {shownSkills.map((tech) => (
+                                  <span
+                                    key={tech}
+                                    className={`wow-chip ${skills.includes(tech) ? 'wow-chip--held' : 'wow-chip--gap'}`}
+                                  >
+                                    {tech}
+                                  </span>
+                                ))}
+                                {skillsExtra > 0 && <span className="wow-chip wow-chip--gap wow-chip--more">+{skillsExtra}</span>}
+                              </div>
+                            )}
                           </div>
                           {activeTab === 'matched' && <MiniScore pct={matchPct} size={40} />}
-                        </div>
-                        <div className="wow-joblist__chips">
-                          {heldShown.map((tech) => <span key={`h-${tech}`} className="wow-chip wow-chip--held">{tech}</span>)}
-                          {heldExtra > 0 && <span className="wow-chip wow-chip--held wow-chip--more">+{heldExtra}</span>}
-                          {gapShown.map((tech) => <span key={`g-${tech}`} className="wow-chip wow-chip--gap">{tech}</span>)}
-                          {gapExtra > 0 && <span className="wow-chip wow-chip--gap wow-chip--more">+{gapExtra}</span>}
                         </div>
                       </button>
                     )
@@ -279,14 +286,16 @@ export function LearningPathWidget({ size = '2x1' }: { size?: WidgetSize }) {
   const resumeId = Number(activeResume?.id)
   const token = getAuthToken()
   const identity = Number.isInteger(resumeId) && resumeId > 0 && token ? { resumeId, token } : null
+  const roadmapRefreshKey = identity ? `${resumeId}:${activeResume?.skills.join('|') ?? ''}` : 'preview'
   const mockData = {
     start_matched: Y1.data.start_matched, total: Y1.data.total,
     steps: Y1.data.steps.map((step) => ({ ...step, canonical: step.tech })),
     as_of: Y1.as_of, sample_size: Y1.sample_size,
   }
   const roadmap = useWidgetData(
-    identity ? () => dashboardApi.roadmap(identity, activeResume?.position) : null,
+    identity ? () => dashboardApi.roadmap(identity) : null,
     mockData,
+    roadmapRefreshKey,
   )
   const D = roadmap.value.steps.length ? roadmap.value : mockData
   const stepCount = size === '2x2' ? D.steps.length : 3
