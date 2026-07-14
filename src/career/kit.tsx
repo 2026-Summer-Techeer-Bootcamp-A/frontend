@@ -451,17 +451,60 @@ export function SkillChip({ tech, onRemove }: { tech: string; onRemove?: () => v
   )
 }
 
+const TECH_CATEGORY_LABEL: Record<string, string> = {
+  language: '언어',
+  backend: '백엔드',
+  frontend: '프론트엔드',
+  data_db: '데이터·DB',
+  cloud_services: '클라우드',
+  devops: 'DevOps',
+  mobile: '모바일',
+  ai_llm: 'AI·LLM',
+  testing: '테스트',
+  design: '디자인',
+  collab_pm: '협업·PM',
+  enterprise_saas: '엔터프라이즈·SaaS',
+  ide: 'IDE',
+  embedded: '임베디드',
+  desktop: '데스크톱',
+  graphics_game: '그래픽·게임',
+  cad_eda: 'CAD·EDA',
+  security: '보안',
+  media: '미디어',
+}
+const TECH_CATEGORY_ORDER = [
+  'language', 'backend', 'frontend', 'data_db', 'cloud_services', 'devops', 'mobile', 'ai_llm',
+  'testing', 'design', 'collab_pm', 'enterprise_saas',
+  'ide', 'embedded', 'desktop', 'graphics_game', 'cad_eda',
+  'security', 'media', 'etc',
+]
+function techCategoryLabel(cat: string): string {
+  return TECH_CATEGORY_LABEL[cat] ?? '기타'
+}
+
 export function TechSearchSheet({
   open, onClose, all, owned, onToggle,
 }: {
   open: boolean; onClose: () => void
-  all: { tech: string; count: number }[]; owned: string[]; onToggle: (t: string) => void
+  all: { tech: string; count: number; category: string }[]; owned: string[]; onToggle: (t: string) => void
 }) {
   const [q, setQ] = useState('')
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase()
     return all.filter((t) => !s || t.tech.toLowerCase().includes(s)).slice(0, 100)
   }, [q, all])
+  const grouped = useMemo(() => {
+    const byCat = new Map<string, { tech: string; count: number; category: string }[]>()
+    for (const t of filtered) {
+      const cat = t.category ?? 'etc'
+      const bucket = byCat.get(cat)
+      if (bucket) bucket.push(t)
+      else byCat.set(cat, [t])
+    }
+    return TECH_CATEGORY_ORDER
+      .map((cat) => ({ cat, label: techCategoryLabel(cat), items: byCat.get(cat) ?? [] }))
+      .filter((g) => g.items.length > 0)
+  }, [filtered])
   return (
     <BottomSheet open={open} onClose={onClose}>
       <div className="kit-picker__hd">기술 추가 <span>{owned.length}개 보유</span></div>
@@ -470,17 +513,22 @@ export function TechSearchSheet({
         <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="기술 검색 (예: React)" />
       </div>
       <div className="kit-picker__list">
-        {filtered.map((t) => {
-          const on = owned.includes(t.tech)
-          return (
-            <button key={t.tech} className={`kit-picker__row${on ? ' on' : ''}`} onClick={() => onToggle(t.tech)}>
-              <TechIcon tech={t.tech} size={26} />
-              <span className="nm">{t.tech}</span>
-              <span className="ct">{t.count.toLocaleString()}</span>
-              <span className="act">{on ? <Check size={16} /> : <Plus size={16} />}</span>
-            </button>
-          )
-        })}
+        {grouped.map((g) => (
+          <div key={g.cat} className="kit-picker__cat-group">
+            <div className="kit-picker__cat">{g.label} <span>{g.items.length}</span></div>
+            {g.items.map((t) => {
+              const on = owned.includes(t.tech)
+              return (
+                <button key={t.tech} className={`kit-picker__row${on ? ' on' : ''}`} onClick={() => onToggle(t.tech)}>
+                  <TechIcon tech={t.tech} size={26} />
+                  <span className="nm">{t.tech}</span>
+                  <span className="ct">{t.count.toLocaleString()}</span>
+                  <span className="act">{on ? <Check size={16} /> : <Plus size={16} />}</span>
+                </button>
+              )
+            })}
+          </div>
+        ))}
         {filtered.length === 0 && <div className="kit-picker__empty">검색 결과가 없어요</div>}
       </div>
     </BottomSheet>

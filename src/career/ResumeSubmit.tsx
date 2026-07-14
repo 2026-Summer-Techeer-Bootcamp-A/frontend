@@ -10,7 +10,7 @@ import { getAuthToken } from './authStore'
 import { useIsDesktop } from '../shared/useMediaQuery'
 import techs from '../data/techs.json'
 
-const TECHS = techs as { tech: string; count: number }[]
+const TECHS = techs as { tech: string; count: number; category: string }[]
 
 // 채용 카테고리(직무). 실제 값은 백엔드 GET /job-categories(name·is_tech)로 대체 가능.
 const POSITIONS = [
@@ -225,7 +225,6 @@ export default function ResumeSubmit() {
     <>
       <div className="scr-intro">
         <div className="scr-intro__text">몇 가지 선호를 알려주시면 추천을 더 정확하게 맞춰드려요.</div>
-        <span className="scr-intro__badge">예상 소요 약 2분</span>
       </div>
 
       <div className="scr-segfull">
