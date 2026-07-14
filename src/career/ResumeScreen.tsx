@@ -8,7 +8,7 @@ import { useAuth } from './authStore'
 import LogoutSheet from './auth/LogoutSheet'
 import techs from '../data/techs.json'
 
-const TECHS = techs as { tech: string; count: number }[]
+const TECHS = techs as { tech: string; count: number; category: string }[]
 
 function careerText(min: number | null, max: number | null) {
   if (min === null && max === null) return '신입·무관'
