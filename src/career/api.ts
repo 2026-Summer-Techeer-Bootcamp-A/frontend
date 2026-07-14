@@ -122,15 +122,6 @@ export const authApi = {
   },
 }
 
-async function rootRequest<T>(path: string): Promise<T> {
-  const response = await fetch(path)
-  if (!response.ok) {
-    const data = await response.json().catch(() => null)
-    throw new Error(formatApiError(data?.detail))
-  }
-  return response.json() as Promise<T>
-}
-
 export const jobsApi = {
   list(params: {
     pool?: ApiPool; position?: string; sort?: 'latest' | 'deadline' | 'match'; district?: string
@@ -153,11 +144,11 @@ export const jobsApi = {
   map(params: { resume_id?: number; session_id?: string } = {}, token?: string | null) {
     return request<PostingMap>(withQuery('/postings/map', params), { headers: authHeaders(token) })
   },
-  categories(pool?: string) {
+  categories(pool?: ApiPool) {
     return request<{ categories: Array<{ name: string; is_tech: boolean }> }>(withQuery('/job-categories', { pool }))
   },
-  skills(q = '') {
-    return rootRequest<{ skills: Array<{ canonical: string; category: string; aliases: string[] }> }>(withQuery('/skills', { q, limit: 20 }))
+  skills(q = '', limit = 20) {
+    return request<{ skills: Array<{ canonical: string; category: string; aliases: string[] }> }>(withQuery('/skills', { q, limit }))
   },
 }
 
