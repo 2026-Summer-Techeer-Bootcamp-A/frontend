@@ -47,8 +47,8 @@ export const MARKET_WIDGETS: WidgetCatalogItem[] = [
   // ② 기술 수요 · 성장
   { id: 'demand-growth-scatter', label: '수요 × 성장률', shape: 'scatter', allowedSizes: ['2x1', '2x2'], defaultSize: '2x2' },
   { id: 'cooccurrence-bar', label: '동반 요구 스킬', shape: 'bars', allowedSizes: ['2x1'], defaultSize: '2x1' },
-  { id: 'skill-count-stat', label: '공고당 요구 스킬', shape: 'stat', allowedSizes: ['1x1'], defaultSize: '1x1' },
-  { id: 'skill-count-dist', label: '요구 스킬 개수 분포', shape: 'bars', allowedSizes: ['1x1'], defaultSize: '1x1' },
+  { id: 'career-level-dist', label: '경력 요구 수준 분포', shape: 'bars', allowedSizes: ['1x1'], defaultSize: '1x1' },
+  { id: 'market-skill-unlock', label: '기술 추가 시 지원 증가', shape: 'bars', allowedSizes: ['1x1'], defaultSize: '1x1' },
   // ③ 기술 지형 · 관계
   { id: 'network', label: '기술 관계 네트워크', shape: 'network', allowedSizes: ['2x2'], defaultSize: '2x2' },
   { id: 'concept-tech-sankey', label: '개념 → 기술 Sankey', shape: 'network', allowedSizes: ['2x2'], defaultSize: '2x2' },

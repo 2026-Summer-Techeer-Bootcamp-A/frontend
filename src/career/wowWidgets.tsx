@@ -334,7 +334,9 @@ type UnlockRole = { n: number; funnel: UnlockFunnel; applyPct: number; coverageN
 type UnlockMeta = { source: string; asOf: string; myTech: string[]; roles: { key: string; label: string; n: number }[]; note: string }
 const MATCH = matchRaw as unknown as { _meta: UnlockMeta; byRole: Record<string, UnlockRole> }
 
-export function SkillUnlockWidget({ size = '2x1' }: { size?: WidgetSize }) {
+export function SkillUnlockWidget({
+  size = '2x1', title = '한계 해금', hint = '하나만 배우면',
+}: { size?: WidgetSize; title?: string; hint?: string }) {
   const [role, setRole] = useState('all')
   const { activeResume } = useResumesState()
   const resumeId = Number(activeResume?.id)
@@ -375,7 +377,7 @@ export function SkillUnlockWidget({ size = '2x1' }: { size?: WidgetSize }) {
   if (!top) {
     return (
       <div className="dcard wow-card">
-        <SectionHeader title="한계 해금" right={!liveData ? <PreviewBadge /> : undefined} />
+        <SectionHeader title={title} right={!liveData ? <PreviewBadge /> : undefined} />
         <div className="wow-body"><div className="dov__empty">추천할 기술 데이터가 없어요.</div></div>
         <AsOf asOf={liveData?.as_of ?? MATCH._meta.asOf} n={roleData.n} />
       </div>
@@ -385,11 +387,17 @@ export function SkillUnlockWidget({ size = '2x1' }: { size?: WidgetSize }) {
   if (size === '1x1') {
     return (
       <div className="dcard wow-card">
-        <SectionHeader title="한계 해금" right={!liveData ? <PreviewBadge /> : undefined} />
+        <SectionHeader title={title} hint={hint} right={!liveData ? <PreviewBadge /> : undefined} />
         <div className="wow-body">
-          <div className="wow-unlock-mini">
-            <span className="wow-unlock-mini__tech">{top.tech}</span>
-            <span className="wow-unlock-mini__delta">+{top.marginalApply}건</span>
+          <p className="wow-takeaway-inline"><b>{top.tech}</b>를 추가하면 <b>+{top.marginalApply.toLocaleString()}건</b></p>
+          <div className="wow-unlock-list wow-unlock-list--compact">
+            {candidates.slice(0, 3).map((candidate) => (
+              <div key={candidate.tech} className="wow-unlock-row">
+                <span className="wow-unlock-row__tech">{candidate.tech}</span>
+                <div className="wow-unlock-row__track"><i style={{ width: `${(candidate.marginalApply / maxMarginal) * 100}%` }} /></div>
+                <span className="wow-unlock-row__val">+{candidate.marginalApply.toLocaleString()}</span>
+              </div>
+            ))}
           </div>
         </div>
         <AsOf asOf={liveData?.as_of ?? MATCH._meta.asOf} n={roleData.n} />
@@ -400,7 +408,7 @@ export function SkillUnlockWidget({ size = '2x1' }: { size?: WidgetSize }) {
   return (
     <div className="dcard wow-card">
       <SectionHeader
-        title="한계 해금" hint="하나만 배우면"
+        title={title} hint={hint}
         right={
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
             {!liveData && <PreviewBadge />}
@@ -1523,6 +1531,12 @@ export function DemandGrowthScatter({ pool, size = '2x2' }: { pool: PoolChoice; 
    ──────────────────────────────────────────────────────────────── */
 const COOC_ANCHORS = Object.keys(MKT.cooccurrence)
 
+/** co_rate의 백엔드 계약은 0~1 비율이다. 이전 목 데이터(0~100)도 함께 지원한다. */
+export function normalizeCooccurrenceRate(rate: number): number {
+  const percent = rate <= 1 ? rate * 100 : rate
+  return Math.round(percent * 10) / 10
+}
+
 export function CooccurrenceBarWidget({ pool, headerRight }: { pool: PoolChoice; headerRight?: ReactNode }) {
   const [anchor, setAnchor] = useState(COOC_ANCHORS[0])
   const mockItems = (MKT.cooccurrence[anchor]?.items ?? []).slice(0, 4).map((i) => ({ tech: i.tech, coRate: i.coRate }))
@@ -1535,7 +1549,10 @@ export function CooccurrenceBarWidget({ pool, headerRight }: { pool: PoolChoice;
       if (cancelled) return
       const items = r.links
         .filter((l) => l.source === anchor || l.target === anchor)
-        .map((l) => ({ tech: l.source === anchor ? l.target : l.source, coRate: l.co_rate }))
+        .map((l) => ({
+          tech: l.source === anchor ? l.target : l.source,
+          coRate: normalizeCooccurrenceRate(l.co_rate),
+        }))
         .sort((a, b) => b.coRate - a.coRate)
         .slice(0, 4)
       if (items.length) setLive(items)
@@ -1550,7 +1567,7 @@ export function CooccurrenceBarWidget({ pool, headerRight }: { pool: PoolChoice;
     animationDuration: 500, animationEasing: 'cubicOut',
     grid: { left: 84, right: 40, top: 6, bottom: 6, containLabel: true },
     tooltip: { ...tooltipStyle, trigger: 'item', formatter: (p: { name: string; value: number }) => `<b>${p.name}</b><br/>${anchor}와 함께 요구되는 공고 ${p.value}%` },
-    xAxis: { type: 'value', max: Math.max(100, maxRate), show: false },
+    xAxis: { type: 'value', max: 100, show: false },
     yAxis: {
       type: 'category', data: items.map((i) => i.tech).reverse(),
       axisLabel: { color: '#43454c', fontFamily: FONT, fontSize: 11.5, fontWeight: 700 },
@@ -1584,80 +1601,67 @@ export function CooccurrenceBarWidget({ pool, headerRight }: { pool: PoolChoice;
 }
 
 /* ────────────────────────────────────────────────────────────────
-   ②-c/d 공고당 요구 스킬 — skill-count-dist 신규 엔드포인트(§5) 목 폴백.
-   §1 실측: 평균 4.3개 · 중앙값 4개. 히스토그램 형태는 실측치가 없어 정규분포 근사(라벨 고지).
+   ②-c 경력 요구 수준 분포 — 현재 백엔드가 제공하는 career_min 기반 신입 가능 집계를 사용한다.
+   상세 연차 구간 API가 생기기 전까지 근거 없는 4구간 수치를 만들지 않고 2단계로 표시한다.
    ──────────────────────────────────────────────────────────────── */
-type SkillCountPayload = { avg: number; median: number; sample_size: number; as_of: string; histogram: { k: number; pct: number }[] }
-const SKILL_COUNT_MOCK: SkillCountPayload = {
-  avg: 4.3, median: 4, sample_size: 442768, as_of: '2026-07-14',
-  histogram: [
-    { k: 1, pct: 6 }, { k: 2, pct: 12 }, { k: 3, pct: 19 }, { k: 4, pct: 23 },
-    { k: 5, pct: 18 }, { k: 6, pct: 11 }, { k: 7, pct: 6 }, { k: 8, pct: 3 }, { k: 9, pct: 2 },
-  ],
+type CareerLevelPayload = { newcomerPct: number; experiencedPct: number; sample_size: number; as_of: string }
+const CAREER_LEVEL_MOCK: CareerLevelPayload = {
+  newcomerPct: 13.5, experiencedPct: 86.5, sample_size: 291776, as_of: '2026-07-14',
 }
 
-function useSkillCountDist(): { value: SkillCountPayload; isLive: boolean } {
-  const [live, setLive] = useState<SkillCountPayload | null>(null)
+function useCareerLevelDistribution(): { value: CareerLevelPayload; isLive: boolean } {
+  const [live, setLive] = useState<CareerLevelPayload | null>(null)
   useEffect(() => {
     let cancelled = false
-    marketApi.skillCountDist({ pool: 'domestic' }).then((r) => {
-      if (cancelled || !r.histogram.length) return
-      const total = r.histogram.reduce((sum, h) => sum + h.count, 0) || 1
+    marketApi.newcomerGate().then((r) => {
+      if (cancelled || !r.items.length) return
+      // 상위 기술별 공고는 서로 겹치므로 단순 합계가 아니라 공고 수 가중 평균을 쓴다.
+      const totalWeight = r.items.reduce((sum, item) => sum + item.postings, 0) || 1
+      const newcomerPct = Math.round(
+        r.items.reduce((sum, item) => sum + item.open_rate * item.postings, 0) / totalWeight * 10,
+      ) / 10
       setLive({
-        avg: r.avg, median: r.median, sample_size: r.sample_size, as_of: r.as_of,
-        histogram: r.histogram.map((h) => ({ k: h.k, pct: Math.round((h.count / total) * 1000) / 10 })),
+        newcomerPct, experiencedPct: Math.round((100 - newcomerPct) * 10) / 10,
+        sample_size: r.sample_size, as_of: r.as_of,
       })
     }).catch(() => undefined)
     return () => { cancelled = true }
   }, [])
-  return { value: live ?? SKILL_COUNT_MOCK, isLive: !!live }
+  return { value: live ?? CAREER_LEVEL_MOCK, isLive: !!live }
 }
 
-export function SkillCountStatWidget() {
-  const { value: d, isLive } = useSkillCountDist()
+export function CareerLevelDistributionWidget() {
+  const { value: d, isLive } = useCareerLevelDistribution()
+  const option = useMemo(() => ({
+    animationDuration: 500, animationEasing: 'cubicOut',
+    grid: { left: 4, right: 4, top: 8, bottom: 8 },
+    tooltip: { ...tooltipStyle, trigger: 'item', formatter: (p: { seriesName: string; value: number }) => `${p.seriesName} ${p.value}%` },
+    xAxis: { type: 'value', max: 100, show: false },
+    yAxis: { type: 'category', data: ['국내'], show: false },
+    series: [
+      { name: '신입 가능', type: 'bar', stack: 'career', barWidth: 24, data: [d.newcomerPct], itemStyle: { color: '#1f9d57', borderRadius: [7, 0, 0, 7] } },
+      { name: '경력 요구', type: 'bar', stack: 'career', barWidth: 24, data: [d.experiencedPct], itemStyle: { color: '#dfe5f3', borderRadius: [0, 7, 7, 0] } },
+    ],
+  }), [d])
+
   return (
     <div className="dcard wow-card">
-      <SectionHeader title="공고당 요구 스킬" hint="국내" />
+      <SectionHeader title="경력 요구 수준 분포" hint="국내 · 상위 수요 기술" />
       <div className="wow-body">
-        <div className="wow-skillcount">
-          <span className="wow-skillcount__num">{d.avg}<small>개</small></span>
+        <ReactECharts option={option} style={{ height: 54 }} notMerge />
+        <div className="wow-career-legend">
+          <span><i className="entry" />신입 가능 <b>{d.newcomerPct}%</b></span>
+          <span><i className="experienced" />경력 요구 <b>{d.experiencedPct}%</b></span>
         </div>
-        <p className="wow-takeaway-inline">중앙값 <b>{d.median}개</b> · 핵심 스킬 5개면 대다수 공고에 등장해요.</p>
       </div>
-      <AsOf asOf={d.as_of} n={d.sample_size} note={isLive ? undefined : '실측(§1 DB 실사) · 국내 기준'} />
+      <AsOf asOf={d.as_of} n={d.sample_size} note={isLive ? 'career_min≤0을 신입 가능으로 집계' : '프리뷰 · career_min 기준'} />
     </div>
   )
 }
 
-export function SkillCountHistogramWidget() {
-  const { value: d, isLive } = useSkillCountDist()
-  const maxPct = Math.max(...d.histogram.map((h) => h.pct), 1)
-  const option = useMemo(() => ({
-    animationDuration: 500, animationEasing: 'cubicOut',
-    grid: { left: 6, right: 6, top: 6, bottom: 20 },
-    tooltip: { ...tooltipStyle, trigger: 'item', formatter: (p: { name: string; value: number }) => `요구 스킬 ${p.name}개 · 공고의 ${p.value}%` },
-    xAxis: {
-      type: 'category', data: d.histogram.map((h) => `${h.k}`),
-      axisLine: { lineStyle: { color: '#e6e9ef' } }, axisTick: { show: false },
-      axisLabel: { color: '#7c7f88', fontFamily: FONT, fontSize: 10 },
-    },
-    yAxis: { type: 'value', show: false },
-    series: [{
-      type: 'bar', barWidth: '68%',
-      data: d.histogram.map((h) => ({
-        value: h.pct,
-        itemStyle: { color: h.k === d.median ? '#1f9d57' : '#5b78d1', opacity: h.k === d.median ? 1 : 0.55 + 0.25 * (h.pct / maxPct) },
-      })),
-    }],
-  }), [d, maxPct])
+export function MarketSkillUnlockWidget() {
   return (
-    <div className="dcard wow-card">
-      <SectionHeader title="요구 스킬 개수 분포" hint="국내" />
-      <div className="wow-body">
-        <ReactECharts option={option} style={{ height: 110 }} notMerge />
-      </div>
-      <AsOf asOf={d.as_of} n={d.sample_size} note={isLive ? undefined : '분포 형태는 근사(§1 평균·중앙값 실측 기반)'} />
-    </div>
+    <SkillUnlockWidget size="1x1" title="기술 추가 시 지원 증가" hint="내 이력서 기준" />
   )
 }
 
