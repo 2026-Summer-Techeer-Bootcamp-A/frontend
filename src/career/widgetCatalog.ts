@@ -41,6 +41,7 @@ export const MARKET_WIDGETS: WidgetCatalogItem[] = [
   { id: 'group-share-frontend', label: '판도 · 프론트 프레임워크', shape: 'list', allowedSizes: ['1x1'], defaultSize: '1x1' },
   { id: 'group-share-backend', label: '판도 · 백엔드 프레임워크', shape: 'list', allowedSizes: ['1x1'], defaultSize: '1x1' },
   { id: 'group-share-database', label: '판도 · 데이터베이스', shape: 'list', allowedSizes: ['1x1'], defaultSize: '1x1' },
+  { id: 'group-share-language', label: '판도 · 프로그래밍 언어', shape: 'list', allowedSizes: ['1x1'], defaultSize: '1x1' },
   { id: 'movers', label: '급상승 · 급감', shape: 'bars', allowedSizes: ['1x1', '2x1'], defaultSize: '1x1' },
   { id: 'posting-calendar', label: '채용 공고 등록 캘린더', shape: 'line', allowedSizes: ['2x1'], defaultSize: '2x1' },
   // ② 기술 수요 · 성장
@@ -53,7 +54,6 @@ export const MARKET_WIDGETS: WidgetCatalogItem[] = [
   { id: 'concept-tech-sankey', label: '개념 → 기술 Sankey', shape: 'network', allowedSizes: ['2x2'], defaultSize: '2x2' },
   // ④ 지역 · 기업
   { id: 'region-density', label: '지역별 공고 밀도', shape: 'bars', allowedSizes: ['2x1'], defaultSize: '2x1' },
-  { id: 'hot-companies', label: '최근 90일 활발 기업', shape: 'bars', allowedSizes: ['1x1', '2x1'], defaultSize: '1x1' },
   { id: 'scatter', label: '수요 × 빈도', shape: 'scatter', allowedSizes: ['1x1', '2x1', '2x2'], defaultSize: '1x1' },
   // ⑤ 글로벌 · 해외 트렌드 (pool≠domestic 전용)
   { id: 'global-domestic-lag', label: '국내 시차 타임라인', shape: 'line', allowedSizes: ['2x2'], defaultSize: '2x2' },
