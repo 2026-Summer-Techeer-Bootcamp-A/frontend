@@ -1,0 +1,293 @@
+<div style="background:#f4f4f5;color:#18181b;padding:22px 26px;border-radius:14px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.4;">
+
+  <!-- 헤더 + 국내/글로벌/전체 셀렉터 -->
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;gap:16px;">
+    <div>
+      <div style="font-size:22px;font-weight:800;letter-spacing:-.02em;">채용 시장 — 전체 레이아웃 <span style="color:#5b78d1;">v8 (모달 그래프 + 글로벌 탭 섹션)</span></div>
+      <div style="color:#71717a;font-size:13px;margin-top:3px;">국내/글로벌/전체 풀 셀렉터 · 지역 등 국내전용 위젯은 글로벌/전체에서 자동 비활성 · 성장 산점도는 사실만</div>
+    </div>
+    <div style="flex-shrink:0;text-align:right;">
+      <div style="display:inline-flex;background:#e4e4e7;border-radius:10px;padding:3px;font-size:13px;font-weight:700;">
+        <span style="background:#18181b;color:#fff;padding:6px 16px;border-radius:8px;">국내</span>
+        <span style="color:#52525b;padding:6px 16px;cursor:pointer;">글로벌</span>
+        <span style="color:#52525b;padding:6px 16px;cursor:pointer;">전체</span>
+      </div>
+      <div style="font-size:10px;color:#a1a1aa;margin-top:4px;">국내 443K · 글로벌 122K</div>
+    </div>
+  </div>
+
+  <!-- 검정 풀폭 변화 스트립 -->
+  <div style="background:#18181b;color:#fafafa;border-radius:12px;padding:14px 20px;margin-bottom:16px;display:flex;align-items:stretch;">
+    <div style="display:flex;align-items:center;gap:10px;padding-right:20px;border-right:1px solid #3f3f46;">
+      <span style="font-size:20px;">⭐</span>
+      <div><div style="font-size:10px;color:#a1a1aa;">올해의 스킬</div><div style="font-size:17px;font-weight:800;">Python <span style="color:#4ade80;font-size:12px;">↗ +8.5%p</span></div></div>
+    </div>
+    <div style="flex:1;display:flex;align-items:center;justify-content:space-around;padding-left:8px;">
+      <div style="text-align:center;"><div style="font-size:10px;color:#a1a1aa;">언어 판도</div><div style="font-size:14px;font-weight:800;"><span style="color:#4ade80;">↗</span> Python, Java 추월</div></div>
+      <div style="width:1px;height:30px;background:#3f3f46;"></div>
+      <div style="text-align:center;"><div style="font-size:10px;color:#a1a1aa;">급부상 (무→상위)</div><div style="font-size:14px;font-weight:800;"><span style="color:#4ade80;">↗</span> Next.js · FastAPI · PostgreSQL</div></div>
+      <div style="width:1px;height:30px;background:#3f3f46;"></div>
+      <div style="text-align:center;"><div style="font-size:10px;color:#a1a1aa;">판도 선두</div><div style="font-size:14px;font-weight:800;">React · Spring · MySQL</div></div>
+    </div>
+  </div>
+
+  <!-- ============ SECTION 1 : 시장 흐름 ============ -->
+  <div style="font-size:15px;font-weight:800;margin-bottom:8px;">① 시장 흐름 <span style="color:#71717a;font-weight:500;font-size:13px;">— "판도가 어디로 이동하나" (연 단위)</span></div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:96px;gap:10px;margin-bottom:10px;">
+    <div style="grid-column:span 2;grid-row:span 2;background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;">
+      <div style="display:flex;justify-content:space-between;"><div style="font-weight:700;font-size:14px;">연도별 수요 레이스 <span style="background:#e0e7ff;color:#3730a3;padding:1px 6px;border-radius:6px;font-size:10px;font-weight:700;">재활용</span></div><span style="font-size:11px;background:#18181b;color:#fff;padding:2px 7px;border-radius:6px;font-weight:700;">2×2</span></div>
+      <div style="color:#71717a;font-size:11px;">점유율% 순위 변동 · <b style="color:#166534;">Python이 Java 추월</b></div>
+      <svg viewBox="0 0 260 126" style="flex:1;width:100%;">
+        <g font-size="8" fill="#a1a1aa"><text x="6" y="124">'20</text><text x="90" y="124">'22</text><text x="174" y="124">'24</text><text x="242" y="124">'26</text></g>
+        <polyline points="10,58 90,42 170,20 250,48" fill="none" stroke="#dc6b6b" stroke-width="3"/>
+        <polyline points="10,92 90,66 170,30 250,14" fill="none" stroke="#1f9d57" stroke-width="3.5"/>
+        <polyline points="10,74 90,50 170,26 250,40" fill="none" stroke="#5b78d1" stroke-width="2.5" opacity=".8"/>
+        <g font-size="9" fill="#52525b"><text x="0" y="56">Java</text><text x="0" y="94">Py</text></g>
+        <circle cx="205" cy="26" r="13" fill="none" stroke="#166534" stroke-width="1.5" stroke-dasharray="3 2"/><text x="188" y="12" font-size="8" fill="#166534" font-weight="700">추월</text>
+        <g fill="#fff" stroke-width="2"><circle cx="250" cy="14" r="4" stroke="#1f9d57"/><circle cx="250" cy="48" r="4" stroke="#dc6b6b"/></g>
+      </svg>
+      <div style="font-size:10px;color:#5b78d1;font-weight:700;">ECharts · bump · 🟢</div>
+    </div>
+    <div style="background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:11px 12px;display:flex;flex-direction:column;">
+      <div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-weight:700;font-size:12px;">프론트 프레임워크</div><span style="font-size:9px;color:#5b78d1;font-weight:700;cursor:pointer;">전체 ⊕</span></div>
+      <div style="font-size:11px;line-height:1.5;margin-top:3px;">
+        <div style="display:flex;justify-content:space-between;"><span><b>1</b> React</span><b style="color:#1f9d57;">77%</b></div>
+        <div style="display:flex;justify-content:space-between;color:#52525b;"><span><b>2</b> Vue</span><span>34%</span></div>
+        <div style="display:flex;justify-content:space-between;color:#52525b;"><span><b>3</b> Next.js</span><span>23%</span></div>
+      </div>
+      <div style="font-size:8px;color:#a1a1aa;font-weight:700;margin-top:auto;">클릭 → 전체 순위 모달</div>
+    </div>
+    <div style="background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:11px 12px;display:flex;flex-direction:column;">
+      <div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-weight:700;font-size:12px;">백엔드 프레임워크</div><span style="font-size:9px;color:#5b78d1;font-weight:700;cursor:pointer;">전체 ⊕</span></div>
+      <div style="font-size:11px;line-height:1.5;margin-top:3px;">
+        <div style="display:flex;justify-content:space-between;"><span><b>1</b> Spring</span><b style="color:#1f9d57;">48%</b></div>
+        <div style="display:flex;justify-content:space-between;color:#52525b;"><span><b>2</b> Node.js</span><span>31%</span></div>
+        <div style="display:flex;justify-content:space-between;color:#52525b;"><span><b>3</b> .NET</span><span>14%</span></div>
+      </div>
+      <div style="font-size:8px;color:#a1a1aa;font-weight:700;margin-top:auto;">클릭 → 전체 순위 모달</div>
+    </div>
+    <div style="background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:11px 12px;display:flex;flex-direction:column;">
+      <div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-weight:700;font-size:12px;">데이터베이스</div><span style="font-size:9px;color:#5b78d1;font-weight:700;cursor:pointer;">전체 ⊕</span></div>
+      <div style="font-size:11px;line-height:1.5;margin-top:3px;">
+        <div style="display:flex;justify-content:space-between;"><span><b>1</b> MySQL</span><b style="color:#1f9d57;">57%</b></div>
+        <div style="display:flex;justify-content:space-between;color:#52525b;"><span><b>2</b> Oracle</span><span>27%</span></div>
+        <div style="display:flex;justify-content:space-between;color:#52525b;"><span><b>3</b> PostgreSQL</span><span>22%</span></div>
+      </div>
+      <div style="font-size:8px;color:#a1a1aa;font-weight:700;margin-top:auto;">클릭 → 전체 순위 모달</div>
+    </div>
+    <div style="background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:11px 12px;display:flex;flex-direction:column;">
+      <div style="font-weight:700;font-size:12px;">급상승·급감 <span style="color:#71717a;font-size:9px;">5년</span></div>
+      <svg viewBox="0 0 110 54" style="flex:1;width:100%;">
+        <line x1="55" y1="4" x2="55" y2="50" stroke="#e4e4e7"/>
+        <rect x="55" y="6" width="45" height="7" fill="#1f9d57" rx="1"/><text x="2" y="12" font-size="7" fill="#166534">Py↗</text>
+        <rect x="55" y="18" width="28" height="7" fill="#1f9d57" rx="1" opacity=".7"/><text x="2" y="24" font-size="7" fill="#166534">Next↗</text>
+        <rect x="30" y="30" width="25" height="7" fill="#dc6b6b" rx="1" opacity=".7"/><text x="2" y="36" font-size="7" fill="#991b1b">Vue↘</text>
+        <rect x="22" y="42" width="33" height="7" fill="#dc6b6b" rx="1"/><text x="0" y="48" font-size="7" fill="#991b1b">Java↘</text>
+      </svg>
+      <div style="font-size:8px;color:#5b78d1;font-weight:700;">diverging</div>
+    </div>
+  </div>
+  <!-- 모달 미리보기 -->
+  <div style="display:flex;gap:12px;align-items:center;background:#f0f0f2;border:1px dashed #c7c7cc;border-radius:12px;padding:10px 14px;margin-bottom:22px;">
+    <div style="font-size:11px;color:#71717a;font-weight:700;white-space:nowrap;">판도 카드 클릭 시 →</div>
+    <div style="background:#fff;border:1px solid #e4e4e7;border-radius:10px;padding:12px 16px;box-shadow:0 8px 24px rgba(0,0,0,.12);display:flex;gap:18px;">
+      <div style="min-width:145px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><b style="font-size:13px;">프론트 프레임워크</b><span style="color:#a1a1aa;font-size:14px;">✕</span></div>
+        <div style="font-size:11px;line-height:1.7;">
+          <div style="display:flex;justify-content:space-between;"><span><b>1</b> React</span><span><b style="color:#1f9d57;">77%</b> ↗</span></div>
+          <div style="display:flex;justify-content:space-between;"><span><b>2</b> Vue</span><span>34% <span style="color:#991b1b;">↘</span></span></div>
+          <div style="display:flex;justify-content:space-between;"><span><b>3</b> Next.js</span><span>23% ↗</span></div>
+          <div style="display:flex;justify-content:space-between;color:#52525b;"><span><b>4</b> Angular</span><span>11%</span></div>
+          <div style="display:flex;justify-content:space-between;color:#52525b;"><span><b>5</b> Svelte</span><span>1%</span></div>
+        </div>
+      </div>
+      <div style="border-left:1px solid #e4e4e7;padding-left:16px;">
+        <div style="font-size:10px;color:#71717a;font-weight:700;margin-bottom:2px;">프레임워크별 연도 점유율 추이</div>
+        <svg viewBox="0 0 220 96" style="width:220px;">
+          <g font-size="7" fill="#a1a1aa"><text x="4" y="94">'20</text><text x="100" y="94">'23</text><text x="196" y="94">'26</text></g>
+          <polyline points="8,66 70,46 130,28 210,16" fill="none" stroke="#1f9d57" stroke-width="2.5"/><text x="176" y="13" font-size="8" fill="#166534">React</text>
+          <polyline points="8,80 70,70 130,64 210,72" fill="none" stroke="#dc6b6b" stroke-width="2"/><text x="182" y="84" font-size="8" fill="#991b1b">Vue</text>
+          <polyline points="8,88 70,76 130,54 210,36" fill="none" stroke="#5b78d1" stroke-width="2"/><text x="146" y="34" font-size="8" fill="#3730a3">Next.js</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- 채용 등록 캘린더 (검증완료 · 풀폭) -->
+  <div style="background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:12px 16px;margin-bottom:22px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div style="font-weight:700;font-size:14px;">채용 공고 등록 캘린더 <span style="background:#e0e7ff;color:#3730a3;padding:1px 6px;border-radius:6px;font-size:10px;font-weight:700;">재활용</span> <span style="color:#71717a;font-weight:500;font-size:11px;">최근 1년 · GitHub 스타일</span></div>
+      <span style="font-size:10px;color:#166534;font-weight:700;">🟢 요일패턴·9월 성수기 실측 확인</span>
+    </div>
+    <div style="color:#71717a;font-size:11px;margin:2px 0 6px;">언제 공고가 몰리나 — 평일↑·주말↓, <b style="color:#166534;">9월 하반기 공채 성수기</b> 보임 · <span style="color:#991b1b;">단일 덤프일(2026-07-10) 캡 처리</span></div>
+    <svg viewBox="0 0 640 60" style="width:100%;">
+      <g>
+        <!-- 5 rows x 52 weeks heatmap, sparse -->
+        <g fill="#1f9d57">
+          <!-- generate rows -->
+          <g transform="translate(0,0)"><rect x="0" y="0" width="9" height="9" rx="1" opacity=".2"/><rect x="12" y="0" width="9" height="9" rx="1" opacity=".3"/><rect x="24" y="0" width="9" height="9" rx="1" opacity=".5"/><rect x="60" y="0" width="9" height="9" rx="1" opacity=".4"/><rect x="120" y="0" width="9" height="9" rx="1" opacity=".25"/><rect x="240" y="0" width="9" height="9" rx="1" opacity=".7"/><rect x="252" y="0" width="9" height="9" rx="1" opacity=".9"/><rect x="264" y="0" width="9" height="9" rx="1" opacity=".85"/><rect x="360" y="0" width="9" height="9" rx="1" opacity=".3"/><rect x="480" y="0" width="9" height="9" rx="1" opacity=".5"/><rect x="600" y="0" width="9" height="9" rx="1" opacity=".9"/></g>
+          <g transform="translate(0,12)"><rect x="12" y="0" width="9" height="9" rx="1" opacity=".4"/><rect x="72" y="0" width="9" height="9" rx="1" opacity=".55"/><rect x="132" y="0" width="9" height="9" rx="1" opacity=".3"/><rect x="240" y="0" width="9" height="9" rx="1" opacity=".95"/><rect x="252" y="0" width="9" height="9" rx="1" opacity=".8"/><rect x="264" y="0" width="9" height="9" rx="1" opacity=".9"/><rect x="276" y="0" width="9" height="9" rx="1" opacity=".7"/><rect x="372" y="0" width="9" height="9" rx="1" opacity=".45"/><rect x="492" y="0" width="9" height="9" rx="1" opacity=".6"/><rect x="600" y="0" width="9" height="9" rx="1" opacity="1"/></g>
+          <g transform="translate(0,24)"><rect x="0" y="0" width="9" height="9" rx="1" opacity=".3"/><rect x="84" y="0" width="9" height="9" rx="1" opacity=".4"/><rect x="228" y="0" width="9" height="9" rx="1" opacity=".85"/><rect x="240" y="0" width="9" height="9" rx="1" opacity=".9"/><rect x="252" y="0" width="9" height="9" rx="1" opacity=".95"/><rect x="264" y="0" width="9" height="9" rx="1" opacity=".8"/><rect x="384" y="0" width="9" height="9" rx="1" opacity=".35"/><rect x="504" y="0" width="9" height="9" rx="1" opacity=".55"/></g>
+          <g transform="translate(0,36)"><rect x="24" y="0" width="9" height="9" rx="1" opacity=".25"/><rect x="240" y="0" width="9" height="9" rx="1" opacity=".7"/><rect x="252" y="0" width="9" height="9" rx="1" opacity=".85"/><rect x="360" y="0" width="9" height="9" rx="1" opacity=".3"/><rect x="516" y="0" width="9" height="9" rx="1" opacity=".5"/></g>
+          <g transform="translate(0,48)"><rect x="36" y="0" width="9" height="9" rx="1" opacity=".2"/><rect x="240" y="0" width="9" height="9" rx="1" opacity=".6"/><rect x="252" y="0" width="9" height="9" rx="1" opacity=".75"/></g>
+        </g>
+      </g>
+      <text x="228" y="59" font-size="9" fill="#166534" font-weight="700">↑ 9월 성수기</text>
+    </svg>
+    <div style="font-size:10px;color:#5b78d1;font-weight:700;">ECharts · calendar heatmap · 🟢 <span style="color:#a1a1aa;">/stats/posting-timeline · 국내/글로벌 모두 post_date 있음</span></div>
+  </div>
+
+  <!-- ============ SECTION 2 : 기술 수요·성장 (사실 시각화) ============ -->
+  <div style="font-size:15px;font-weight:800;margin-bottom:8px;">② 기술 수요·성장 <span style="color:#71717a;font-weight:500;font-size:13px;">— 사실 시각화 (판단은 사용자 몫 · 신입 문호 자리 대체)</span></div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:96px;gap:10px;margin-bottom:22px;">
+    <!-- 수요 × 성장률 (중립 산점도) -->
+    <div style="grid-column:span 2;grid-row:span 2;background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;">
+      <div style="display:flex;justify-content:space-between;"><div style="font-weight:700;font-size:14px;">수요 × 성장률 <span style="background:#dcfce7;color:#166534;padding:1px 6px;border-radius:6px;font-size:10px;font-weight:700;">NEW</span></div><span style="font-size:11px;background:#18181b;color:#fff;padding:2px 7px;border-radius:6px;font-weight:700;">2×2</span></div>
+      <div style="color:#71717a;font-size:11px;">가로=현재 수요(쓰는 회사 수), 세로=성장률, 크기=수요 · <b>사실만</b></div>
+      <svg viewBox="0 0 260 122" style="flex:1;width:100%;">
+        <line x1="26" y1="6" x2="26" y2="108" stroke="#e4e4e7"/><line x1="26" y1="108" x2="254" y2="108" stroke="#e4e4e7"/>
+        <text x="96" y="119" font-size="8" fill="#a1a1aa">현재 수요 (쓰는 회사 많음) →</text>
+        <text x="14" y="20" font-size="8" fill="#a1a1aa" transform="rotate(-90 14 60)">성장률 ↑</text>
+        <g fill="#5b78d1">
+          <circle cx="60" cy="28" r="7"/><circle cx="98" cy="42" r="8"/><circle cx="74" cy="20" r="5"/><circle cx="124" cy="52" r="8" opacity=".9"/><circle cx="158" cy="70" r="10" opacity=".85"/><circle cx="216" cy="86" r="15" opacity=".7"/>
+        </g>
+        <g font-size="9" fill="#52525b"><text x="70" y="31">FastAPI</text><text x="108" y="45">Next.js</text><text x="82" y="18">Rust</text><text x="136" y="55">PostgreSQL</text><text x="170" y="73">Spring</text><text x="196" y="106">Java·JS</text></g>
+      </svg>
+      <div style="font-size:10px;color:#5b78d1;font-weight:700;">ECharts · bubble scatter · 🟢 수요=공고수, 성장률=연도Δ</div>
+    </div>
+    <!-- 학습 ROI -->
+    <div style="grid-column:span 2;background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;">
+      <div style="display:flex;justify-content:space-between;"><div style="font-weight:700;font-size:14px;">동반 요구 스킬 <span style="background:#dcfce7;color:#166534;padding:1px 6px;border-radius:6px;font-size:10px;font-weight:700;">NEW</span></div><span style="font-size:11px;background:#3f3f46;color:#fff;padding:2px 7px;border-radius:6px;font-weight:700;">2×1</span></div>
+      <div style="color:#71717a;font-size:11px;">이 스택이 등장하는 공고에 <b>함께 나오는 비율</b></div>
+      <svg viewBox="0 0 240 44" style="flex:1;width:100%;">
+        <g font-size="8" fill="#52525b"><text x="0" y="11">AWS</text><text x="0" y="23">Docker</text><text x="0" y="35">TypeScript</text></g>
+        <g fill="#5b78d1"><rect x="52" y="3" width="160" height="8" rx="2"/><text x="216" y="10" font-size="8" fill="#52525b" font-weight="700">+18%p</text>
+        <rect x="52" y="15" width="112" height="8" rx="2" opacity=".8"/><text x="168" y="22" font-size="8" fill="#52525b">+12%p</text>
+        <rect x="52" y="27" width="84" height="8" rx="2" opacity=".7"/><text x="140" y="34" font-size="8" fill="#52525b">+9%p</text></g>
+      </svg>
+      <div style="font-size:10px;color:#5b78d1;font-weight:700;">ECharts · bar · 🟢 cooccurrence (사실)</div>
+    </div>
+    <div style="background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:11px 12px;display:flex;flex-direction:column;justify-content:center;">
+      <div style="font-weight:700;font-size:12px;">공고당 요구 스킬</div>
+      <div style="font-size:26px;font-weight:800;margin:2px 0;">4.3<span style="font-size:13px;color:#71717a;">개</span></div>
+      <div style="color:#71717a;font-size:10px;">중앙값 4 · 핵심 5개면 72% 등장</div>
+      <div style="font-size:9px;color:#5b78d1;font-weight:700;">stat · 🟢</div>
+    </div>
+    <div style="background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:11px 12px;display:flex;flex-direction:column;">
+      <div style="font-weight:700;font-size:12px;">요구 스킬 개수 분포</div>
+      <svg viewBox="0 0 110 44" style="flex:1;width:100%;">
+        <g fill="#5b78d1"><rect x="4" y="28" width="12" height="12" rx="1" opacity=".4"/><rect x="20" y="18" width="12" height="22" rx="1" opacity=".7"/><rect x="36" y="10" width="12" height="30" rx="1"/><rect x="52" y="16" width="12" height="24" rx="1" opacity=".8"/><rect x="68" y="26" width="12" height="14" rx="1" opacity=".55"/><rect x="84" y="32" width="12" height="8" rx="1" opacity=".35"/></g>
+      </svg>
+      <div style="font-size:9px;color:#5b78d1;font-weight:700;">histogram · 🟢</div>
+    </div>
+  </div>
+
+  <!-- ============ SECTION 3 : 기술 지형·관계 ============ -->
+  <div style="font-size:15px;font-weight:800;margin-bottom:8px;">③ 기술 지형·관계 <span style="color:#71717a;font-weight:500;font-size:13px;">— "기술이 어떻게 얽혀 있나"</span> <span style="background:#fef3c7;color:#92400e;font-size:11px;padding:2px 8px;border-radius:999px;font-weight:700;">네트워크 + 개념 Sankey 主役</span></div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:98px;gap:10px;margin-bottom:22px;">
+    <div style="grid-column:span 2;grid-row:span 2;background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;">
+      <div style="display:flex;justify-content:space-between;"><div style="font-weight:700;font-size:14px;">기술 관계 네트워크 <span style="background:#e0e7ff;color:#3730a3;padding:1px 6px;border-radius:6px;font-size:10px;font-weight:700;">재활용</span></div><span style="font-size:11px;background:#18181b;color:#fff;padding:2px 7px;border-radius:6px;font-weight:700;">2×2</span></div>
+      <div style="color:#71717a;font-size:11px;">함께 요구되는 기술끼리 연결 — 딸려오는 스택</div>
+      <svg viewBox="0 0 260 150" style="flex:1;width:100%;">
+        <g stroke="#d4d4d8" stroke-width="1.2"><line x1="130" y1="72" x2="66" y2="40"/><line x1="130" y1="72" x2="200" y2="44"/><line x1="130" y1="72" x2="86" y2="118"/><line x1="130" y1="72" x2="196" y2="112"/><line x1="66" y1="40" x2="200" y2="44"/><line x1="200" y1="44" x2="222" y2="92"/></g>
+        <g>
+          <circle cx="130" cy="72" r="17" fill="#27272a"/><text x="130" y="76" font-size="9" fill="#fff" text-anchor="middle">JS</text>
+          <circle cx="66" cy="40" r="12" fill="#5b78d1"/><text x="66" y="43" font-size="8" fill="#fff" text-anchor="middle">React</text>
+          <circle cx="200" cy="44" r="13" fill="#5b78d1"/><text x="200" y="47" font-size="8" fill="#fff" text-anchor="middle">TS</text>
+          <circle cx="86" cy="118" r="11" fill="#71717a"/><text x="86" y="121" font-size="7" fill="#fff" text-anchor="middle">Node</text>
+          <circle cx="196" cy="112" r="11" fill="#71717a"/><text x="196" y="115" font-size="7" fill="#fff" text-anchor="middle">AWS</text>
+          <circle cx="222" cy="92" r="8" fill="#a1a1aa"/>
+        </g>
+      </svg>
+      <div style="font-size:10px;color:#5b78d1;font-weight:700;">ECharts · graph(force) · 🟢 cooccurrence</div>
+    </div>
+    <div style="grid-column:span 2;grid-row:span 2;background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;">
+      <div style="display:flex;justify-content:space-between;"><div style="font-weight:700;font-size:14px;">개념 → 기술 Sankey <span style="background:#dcfce7;color:#166534;padding:1px 6px;border-radius:6px;font-size:10px;font-weight:700;">NEW</span></div><span style="font-size:11px;background:#18181b;color:#fff;padding:2px 7px;border-radius:6px;font-weight:700;">2×2</span></div>
+      <div style="color:#71717a;font-size:11px;">"이 개념을 하려면 어떤 기술" — 개념이 요구하는 스택 흐름</div>
+      <svg viewBox="0 0 260 150" style="flex:1;width:100%;">
+        <rect x="4" y="12" width="9" height="30" fill="#8b5cf6" rx="2"/><rect x="4" y="52" width="9" height="30" fill="#5b78d1" rx="2"/><rect x="4" y="92" width="9" height="30" fill="#1f9d57" rx="2"/>
+        <rect x="247" y="8" width="9" height="18" fill="#27272a" rx="2"/><rect x="247" y="32" width="9" height="18" fill="#27272a" rx="2"/><rect x="247" y="56" width="9" height="18" fill="#27272a" rx="2"/><rect x="247" y="80" width="9" height="18" fill="#27272a" rx="2"/><rect x="247" y="104" width="9" height="18" fill="#27272a" rx="2"/>
+        <g fill-opacity="0.32">
+          <path d="M13,16 C130,16 130,12 247,12 L247,22 C130,26 130,34 13,28 Z" fill="#8b5cf6"/>
+          <path d="M13,30 C130,36 130,38 247,38 L247,48 C130,50 130,42 13,40 Z" fill="#8b5cf6"/>
+          <path d="M13,56 C130,60 130,60 247,60 L247,70 C130,72 130,72 13,68 Z" fill="#5b78d1"/>
+          <path d="M13,70 C130,80 130,84 247,84 L247,94 C130,92 130,78 13,78 Z" fill="#5b78d1"/>
+          <path d="M13,96 C130,104 130,108 247,108 L247,118 C130,116 130,108 13,108 Z" fill="#1f9d57"/>
+        </g>
+        <g font-size="7.5" fill="#52525b"><text x="16" y="30">생성형 AI·LLM</text><text x="16" y="70">확장성·성능</text><text x="16" y="110">CI/CD·자동화</text></g>
+        <g font-size="7" fill="#52525b" text-anchor="end"><text x="243" y="19">Python</text><text x="243" y="43">PyTorch</text><text x="243" y="67">Kafka</text><text x="243" y="91">Redis</text><text x="243" y="115">Docker</text></g>
+      </svg>
+      <div style="font-size:10px;color:#5b78d1;font-weight:700;">ECharts · sankey · <span style="color:#1f9d57;">🟢 posting_concept 19.6만행 라이브</span></div>
+    </div>
+  </div>
+
+  <!-- ============ SECTION 4 : 지역·기업 ============ -->
+  <div style="font-size:15px;font-weight:800;margin-bottom:8px;">④ 지역·기업 <span style="color:#71717a;font-weight:500;font-size:13px;">— "어디서, 누가 뽑나" (누적)</span></div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:82px;gap:10px;margin-bottom:20px;">
+    <div style="grid-column:span 2;background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:10px 14px;display:flex;flex-direction:column;">
+      <div style="display:flex;justify-content:space-between;"><div style="font-weight:700;font-size:13px;">지역별 공고 밀도 <span style="background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:6px;font-size:10px;font-weight:700;">국내 전용</span></div><span style="font-size:10px;background:#3f3f46;color:#fff;padding:2px 6px;border-radius:6px;font-weight:700;">2×1</span></div>
+      <svg viewBox="0 0 240 38" style="flex:1;width:100%;">
+        <g font-size="8" fill="#52525b"><text x="0" y="11">강남</text><text x="0" y="23">서초</text><text x="0" y="35">분당</text></g>
+        <g fill="#5b78d1"><rect x="40" y="4" width="185" height="8" rx="2"/><rect x="40" y="16" width="60" height="8" rx="2" opacity=".7"/><rect x="40" y="28" width="58" height="8" rx="2" opacity=".65"/></g>
+        <g font-size="7" fill="#71717a"><text x="228" y="11">11,880</text><text x="103" y="23">3,838</text><text x="101" y="35">3,749</text></g>
+      </svg>
+      <div style="font-size:9px;color:#92400e;font-weight:700;">글로벌/전체 선택 시 비활성 (region 데이터 없음)</div>
+    </div>
+    <div style="background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;">
+      <div style="font-weight:700;font-size:13px;">누적 상위 기업</div>
+      <svg viewBox="0 0 110 30" style="flex:1;width:100%;"><g fill="#71717a"><rect x="0" y="2" width="95" height="6" rx="2"/><rect x="0" y="12" width="72" height="6" rx="2"/><rect x="0" y="22" width="55" height="6" rx="2"/></g></svg>
+      <div style="font-size:9px;color:#5b78d1;font-weight:700;">bar · 국내/글로벌 모두</div>
+    </div>
+    <div style="background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;">
+      <div style="font-weight:700;font-size:13px;">수요 × 빈도</div>
+      <svg viewBox="0 0 110 30" style="flex:1;width:100%;"><g fill="#5b78d1"><circle cx="20" cy="22" r="4"/><circle cx="45" cy="14" r="5"/><circle cx="70" cy="18" r="3"/><circle cx="88" cy="8" r="6" fill="#d9822b"/></g></svg>
+      <div style="font-size:9px;color:#5b78d1;font-weight:700;">scatter</div>
+    </div>
+  </div>
+
+  <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:9px 14px;margin-bottom:12px;font-size:11px;">
+    <b style="color:#991b1b;">숨김/제거</b> <span style="color:#7f1d1d;">신입 문호(직무별·비율) 숨김(복구 가능) · 지역×스택 지문 제거 · 응답률(NULL)·기업규모(mock) 제거 · <b>채용 캘린더는 재검증 후 복귀</b></span>
+  </div>
+
+  <div style="font-size:15px;font-weight:800;margin-bottom:8px;">⑤ 글로벌 · 해외 트렌드 <span style="background:#e0e7ff;color:#3730a3;font-size:11px;padding:2px 8px;border-radius:999px;font-weight:700;">글로벌/전체 탭 선택 시 노출</span> <span style="color:#71717a;font-weight:500;font-size:12px;">— GitHub · HN · 해외 공고 122K</span></div>
+  <div style="position:relative;margin-bottom:14px;">
+    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2;pointer-events:none;"><span style="background:#18181b;color:#fff;font-size:12px;font-weight:700;padding:6px 14px;border-radius:999px;">🌐 국내 탭에선 숨김</span></div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:90px;gap:10px;opacity:.5;">
+      <div style="grid-column:span 2;grid-row:span 2;background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;">
+        <div style="display:flex;justify-content:space-between;"><div style="font-weight:700;font-size:14px;">국내 시차 타임라인 <span style="background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:6px;font-size:10px;font-weight:700;">참신 ★</span></div><span style="font-size:11px;background:#18181b;color:#fff;padding:2px 7px;border-radius:6px;font-weight:700;">2×2</span></div>
+        <div style="color:#71717a;font-size:11px;">해외에서 뜬 기술이 <b>국내 채용에 오기까지</b> — 미리 준비 단서</div>
+        <svg viewBox="0 0 260 116" style="flex:1;width:100%;">
+          <polyline points="8,40 70,30 130,24 200,20 250,18" fill="none" stroke="#5b78d1" stroke-width="2.5"/><text x="10" y="36" font-size="8" fill="#3730a3">글로벌(HN·GitHub) 선행</text>
+          <polyline points="8,92 70,86 130,72 200,52 250,44" fill="none" stroke="#1f9d57" stroke-width="2.5"/><text x="10" y="106" font-size="8" fill="#166534">국내 채용 후행</text>
+          <line x1="128" y1="24" x2="128" y2="72" stroke="#d9822b" stroke-dasharray="3 2"/><text x="132" y="52" font-size="9" fill="#92400e" font-weight="700">지연 산출</text>
+        </svg>
+        <div style="font-size:10px;color:#5b78d1;font-weight:700;">ECharts · dual line/lag · 🟢 글로벌↔국내 연도 트렌드</div>
+      </div>
+      <div style="grid-column:span 2;background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:11px 14px;display:flex;flex-direction:column;">
+        <div style="display:flex;justify-content:space-between;"><div style="font-weight:700;font-size:13px;">Hype vs Hire</div><span style="font-size:10px;background:#3f3f46;color:#fff;padding:2px 6px;border-radius:6px;font-weight:700;">2×1</span></div>
+        <div style="color:#71717a;font-size:11px;">HN 언급 vs 실제 채용 — 말만 많은 기술 / 조용한 강자</div>
+        <svg viewBox="0 0 240 30" style="flex:1;width:100%;"><g fill="#8b5cf6"><circle cx="30" cy="20" r="4"/><circle cx="70" cy="9" r="5"/><circle cx="120" cy="15" r="4"/><circle cx="170" cy="22" r="3"/><circle cx="212" cy="11" r="6" fill="#1f9d57"/></g></svg>
+        <div style="font-size:9px;color:#5b78d1;font-weight:700;">ECharts · scatter · 🟢 HN mentions</div>
+      </div>
+      <div style="background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:11px 12px;display:flex;flex-direction:column;">
+        <div style="font-weight:700;font-size:12px;">해외서 더 뜨는 기술</div>
+        <div style="color:#71717a;font-size:10px;">= 다음에 올 후보</div>
+        <svg viewBox="0 0 110 26" style="flex:1;width:100%;"><g fill="#8b5cf6"><rect x="0" y="2" width="80" height="6" rx="2"/><rect x="0" y="11" width="60" height="6" rx="2" opacity=".7"/><rect x="0" y="20" width="45" height="6" rx="2" opacity=".55"/></g></svg>
+        <div style="font-size:9px;color:#5b78d1;font-weight:700;">diverging · 🟢</div>
+      </div>
+      <div style="background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:11px 12px;display:flex;flex-direction:column;">
+        <div style="font-weight:700;font-size:12px;">GitHub 스타 모멘텀</div>
+        <div style="color:#71717a;font-size:10px;">커뮤니티가 미는 것</div>
+        <svg viewBox="0 0 110 26" style="flex:1;width:100%;"><polyline points="4,22 30,17 60,10 90,5 106,3" fill="none" stroke="#1f9d57" stroke-width="2"/></svg>
+        <div style="font-size:9px;color:#5b78d1;font-weight:700;">line · 🟢 github-chronicle</div>
+      </div>
+    </div>
+  </div>
+  <div style="font-size:11px;color:#71717a;background:#fafafa;border:1px dashed #d4d4d8;border-radius:10px;padding:8px 14px;">그 외(국내 더보기): 직무→스킬 Sankey · 신입 문호(숨김·복구 가능)</div>
+
+  <div class="options" style="margin-top:22px;">
+    <div class="option" data-choice="approve" onclick="toggleSelect(this)"><div class="letter">A</div><div class="content"><h3>이 전체 레이아웃(v8)으로 확정</h3><p>국내/글로벌/전체 탭 + 사실형 산점도 + 캘린더 복귀 + 4섹션. 스펙에 반영</p></div></div>
+    <div class="option" data-choice="tweak" onclick="toggleSelect(this)"><div class="letter">B</div><div class="content"><h3>더 손볼 데 있다</h3><p>특정 위젯·배치·문구 조정 (터미널로)</p></div></div>
+  </div>
+
+</div>
