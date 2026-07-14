@@ -18,7 +18,7 @@
 .dcard {
   background: var(--c-card);
   border: 1px solid var(--line);
-  border-radius: 18px;
+  border-radius: 12px;
   box-shadow: var(--e1);
   padding: 18px;
 }
