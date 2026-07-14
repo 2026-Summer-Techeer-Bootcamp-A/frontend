@@ -208,6 +208,16 @@
 .wow-unlock-row__track i { display: block; height: 100%; border-radius: 999px; background: #d9822b; }
 .wow-unlock-row__val { flex: none; font-size: 11.5px; font-weight: 800; color: #d9822b; width: 44px; text-align: right; }
 .wow-unlock-row__req { flex: none; font-size: 10.5px; color: var(--c-muted); width: 56px; text-align: right; }
+.wow-unlock-list--compact { gap: 9px; overflow: visible; }
+.wow-unlock-list--compact .wow-unlock-row__tech { width: 68px; }
+.wow-unlock-list--compact .wow-unlock-row__val { width: 58px; }
+
+.wow-career-legend { display: grid; gap: 7px; }
+.wow-career-legend span { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--c-muted); }
+.wow-career-legend span b { margin-left: auto; color: var(--c-ink); font-size: 12px; }
+.wow-career-legend i { width: 8px; height: 8px; border-radius: 50%; }
+.wow-career-legend i.entry { background: #1f9d57; }
+.wow-career-legend i.experienced { background: #dfe5f3; }
 
 /* ---------- 위젯 4: Hype vs Hire ---------- */
 .wow-scatter-stack { display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0; }
