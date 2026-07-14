@@ -9,7 +9,7 @@ import { FONT, tooltipStyle } from '../pages/widgets/base'
 import type { WidgetSize } from './dashboardConfig'
 import { useResumesState } from './state'
 import { getAuthToken } from './authStore'
-import { dashboardApi, jobsApi, type PostingCard, type UnlockData } from './api'
+import { dashboardApi, jobsApi, type PostingCard, type UnlockData, type ApiPool } from './api'
 import { useWidgetData } from './useWidgetData'
 import CompanyLogo from './CompanyLogo'
 import { useBookmarks } from './bookmarkStore'
@@ -25,7 +25,15 @@ import conceptChronicleRaw from '../data/conceptData.json'
 import lRaw from '../data/pearl/l.json'
 import oRaw from '../data/pearl/o.json'
 import uRaw from '../data/pearl/u.json'
+import marketDataRaw from '../data/marketData.json'
 import './wowWidgets.css'
+
+/** 국내/글로벌/전체 풀 셀렉터(v8 시장 탭) — DesktopMarket과 이 파일의 신규 위젯이 공유하는
+ * 삼중 상태. 'all'은 점유율을 합산하지 않고 국내·글로벌을 병렬로 보여준다(설계 스펙 §4-1). */
+export type PoolChoice = 'domestic' | 'global' | 'all'
+function poolToApi(pool: PoolChoice, fallback: ApiPool = 'domestic'): ApiPool {
+  return pool === 'global' ? 'global' : pool === 'domestic' ? 'domestic' : fallback
+}
 
 /* ============================================================
    와우포인트 위젯 7종 — 대시보드/시장 그리드(.wcell) 컴팩트 카드.
@@ -1092,6 +1100,792 @@ export function GithubTopicsWidget({ size = '2x1' }: { size?: WidgetSize }) {
         </div>
       </div>
       <AsOf asOf={TOPICS.as_of} n={TOPICS.sample_size} note={TOPICS.sample_note} />
+    </div>
+  )
+}
+
+/* ============================================================================================
+   v8 시장 탭 재구성(2026-07-14) — 신규 위젯 12종
+   실데이터 실사(§1) 기준. 라이브 엔드포인트가 있는 것(연도별 추이·공동출현)은 marketApi를
+   그대로 쓰고, 신규 엔드포인트(group-share·concept-tech·skill-count-dist·global-domestic-lag)는
+   아직 백엔드 미배선이라 useWidgetData 하이브리드로 실패 시 목 데이터로 폴백한다.
+   ============================================================================================ */
+
+const MKT = marketDataRaw as {
+  techYearly: { asOf: string; source: string; N: number; years: string[]; series: { tech: string; shares: number[]; delta: number }[] }
+  cooccurrence: Record<string, { base: number; items: { tech: string; coRate: number; coCount: number }[] }>
+}
+
+/* ────────────────────────────────────────────────────────────────
+   ① 판도 카드(프론트/백/DB) — group-share 목 데이터
+   현재 점유율(share)은 §1 실측치(그룹 union 기준 대략치) 그대로. 연도 추이(yearly)는
+   백엔드 group-share가 아직 없어 방향성만 맞춘 추정값 — 카드/모달에 "추정" 고지.
+   ──────────────────────────────────────────────────────────────── */
+export type GroupKey = 'frontend_fw' | 'backend_fw' | 'database'
+type GroupShareItem = { tech: string; share: number; yearly: number[]; trend: 'up' | 'down' }
+type GroupShareGroup = { key: GroupKey; label: string; union: number; asOf: string; items: GroupShareItem[] }
+
+const GROUP_SHARE_YEARS = ['2023', '2024', '2025', '2026']
+
+function gsItem(tech: string, yearly: number[]): GroupShareItem {
+  return { tech, share: yearly[yearly.length - 1], yearly, trend: yearly[yearly.length - 1] >= yearly[0] ? 'up' : 'down' }
+}
+
+const GROUP_SHARE_MOCK: Record<GroupKey, GroupShareGroup> = {
+  frontend_fw: {
+    key: 'frontend_fw', label: '프론트 프레임워크', union: 8036, asOf: '2026-07-14',
+    items: [
+      gsItem('React', [72.4, 74.6, 76.1, 77.0]),
+      gsItem('Vue', [39.8, 37.2, 35.0, 33.5]),
+      gsItem('Next.js', [9.5, 14.8, 19.0, 22.6]),
+      gsItem('Angular', [15.6, 13.9, 12.3, 11.2]),
+      gsItem('Svelte', [0.2, 0.4, 0.6, 0.9]),
+    ],
+  },
+  backend_fw: {
+    key: 'backend_fw', label: '백엔드 프레임워크', union: 14250, asOf: '2026-07-14',
+    items: [
+      gsItem('Spring', [55.2, 52.4, 50.0, 48.1]),
+      gsItem('Node.js', [24.8, 27.3, 29.5, 31.3]),
+      gsItem('.NET', [19.0, 17.2, 15.4, 13.9]),
+      gsItem('Django', [6.0, 6.5, 6.9, 7.3]),
+      gsItem('NestJS', [1.2, 3.0, 4.9, 6.5]),
+    ],
+  },
+  database: {
+    key: 'database', label: '데이터베이스', union: 9684, asOf: '2026-07-14',
+    items: [
+      gsItem('MySQL', [58.6, 57.8, 57.1, 56.5]),
+      gsItem('Oracle', [35.0, 31.8, 28.9, 26.7]),
+      gsItem('PostgreSQL', [9.8, 14.2, 18.1, 22.0]),
+      gsItem('Redis', [12.0, 14.6, 16.8, 18.7]),
+      gsItem('MariaDB', [18.5, 17.4, 16.5, 15.8]),
+    ],
+  },
+}
+
+function groupShareModalOption(group: GroupShareGroup) {
+  const colors = ['#1f9d57', '#c8382d', '#5b78d1', '#a1a1aa', '#d9822b']
+  return {
+    animationDuration: 600, animationEasing: 'cubicOut',
+    grid: { left: 8, right: 60, top: 16, bottom: 26, containLabel: true },
+    tooltip: {
+      ...tooltipStyle, trigger: 'item',
+      formatter: (p: { seriesName: string }) => {
+        const item = group.items.find((i) => i.tech === p.seriesName)!
+        return `<b>${item.tech}</b><br/>${GROUP_SHARE_YEARS.map((y, i) => `${y} <b>${item.yearly[i]}%</b>`).join('<br/>')}`
+      },
+    },
+    xAxis: {
+      type: 'category', boundaryGap: false, data: GROUP_SHARE_YEARS,
+      axisLine: { lineStyle: { color: '#e6e9ef' } }, axisTick: { show: false },
+      axisLabel: { color: '#43454c', fontFamily: FONT, fontSize: 10.5, fontWeight: 700 },
+    },
+    yAxis: {
+      type: 'value', axisLabel: { color: '#7c7f88', fontFamily: FONT, fontSize: 10, formatter: '{value}%' },
+      splitLine: { lineStyle: { color: '#eef1f6' } }, axisLine: { show: false },
+    },
+    series: group.items.map((item, i) => ({
+      name: item.tech, type: 'line', data: item.yearly, smooth: 0.15,
+      symbol: 'circle', symbolSize: i === 0 ? 6 : 4,
+      lineStyle: { color: colors[i % colors.length], width: i === 0 ? 2.6 : 1.4, opacity: i === 0 ? 1 : 0.7 },
+      itemStyle: { color: colors[i % colors.length], borderColor: '#fff', borderWidth: 1 },
+      endLabel: { show: true, formatter: item.tech, color: colors[i % colors.length], fontFamily: FONT, fontSize: 9.5, fontWeight: 700, distance: 5 },
+    })),
+  }
+}
+
+/** 판도 카드 — 1~3위 + 그룹내 점유% 요약. 클릭하면 전체 순위 + 증감 화살표 + 연도별
+ * 점유율 추이(멀티라인) 모달을 연다(스펙 §4-2). 라이브 group-share가 아직 없어 domestic은
+ * §1 실측 목, global은 (표본에 프레임워크 항목이 없어) 값을 지어내는 대신 "준비 중"으로
+ * 정직하게 비워둔다 — marketApi.groupShare 연동 시 이 컴포넌트 변경 없이 자동으로 채워진다. */
+export function GroupShareCard({ group, pool }: { group: GroupKey; pool: PoolChoice }) {
+  const navigate = useNavigate()
+  const mock = GROUP_SHARE_MOCK[group]
+  const [open, setOpen] = useState(false)
+  const [domesticLive, setDomesticLive] = useState<GroupShareGroup | null>(null)
+  const [globalLive, setGlobalLive] = useState<GroupShareGroup | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    marketApi.groupShare({ group, pool: 'domestic' }).then((r) => {
+      if (cancelled || !r.items.length) return
+      setDomesticLive({
+        key: group, label: mock.label, union: r.union_count, asOf: r.as_of,
+        items: r.items.map((it) => gsItem(it.canonical, [it.share, it.share, it.share, it.share])),
+      })
+    }).catch(() => undefined)
+    return () => { cancelled = true }
+  }, [group, mock.label])
+
+  useEffect(() => {
+    if (pool === 'domestic') { setGlobalLive(null); return }
+    let cancelled = false
+    marketApi.groupShare({ group, pool: 'global' }).then((r) => {
+      if (cancelled || !r.items.length) return
+      setGlobalLive({
+        key: group, label: mock.label, union: r.union_count, asOf: r.as_of,
+        items: r.items.map((it) => gsItem(it.canonical, [it.share, it.share, it.share, it.share])),
+      })
+    }).catch(() => undefined)
+    return () => { cancelled = true }
+  }, [group, pool, mock.label])
+
+  const showGlobal = pool !== 'domestic'
+  const globalReady = !!globalLive
+  const domesticData = domesticLive ?? mock
+  const top3 = domesticData.items.slice(0, 3)
+  const modalData = pool === 'global' && globalLive ? globalLive : domesticData
+
+  return (
+    <>
+      <button type="button" className="mktgs" onClick={() => setOpen(true)}>
+        <div className="mktgs__head">
+          <span className="mktgs__t">{mock.label}</span>
+          <span className="mktgs__open">전체 ⊕</span>
+        </div>
+        <div className="mktgs__list">
+          {top3.map((it, i) => (
+            <div key={it.tech} className="mktgs__row">
+              <span className="mktgs__rank">{i + 1}</span>
+              <span className="mktgs__tech">{it.tech}</span>
+              <span className={`mktgs__share${i === 0 ? ' lead' : ''}`}>{it.share}%</span>
+            </div>
+          ))}
+        </div>
+        {showGlobal && (
+          <div className="mktgs__globalnote">
+            {globalReady ? `글로벌 1위 · ${globalLive!.items[0].tech}` : '글로벌 프레임워크 판도 준비 중'}
+          </div>
+        )}
+        <span className="mktgs__cta">클릭 → 전체 순위 · 연도 추이</span>
+      </button>
+      {open && (
+        <div className="mktmodal__backdrop" onClick={() => setOpen(false)}>
+          <div className="mktmodal__card" role="dialog" aria-modal="true" aria-label={`${mock.label} 전체 순위`} onClick={(e) => e.stopPropagation()}>
+            <div className="mktmodal__head">
+              <b>{mock.label}</b>
+              <button type="button" className="mktmodal__close" onClick={() => setOpen(false)} aria-label="닫기">✕</button>
+            </div>
+            <div className="mktmodal__body">
+              <div className="mktmodal__ranklist">
+                {modalData.items.map((it, i) => (
+                  <button key={it.tech} type="button" className="mktmodal__rankrow" onClick={() => navigate(`/tech/${encodeURIComponent(it.tech)}`)}>
+                    <span className="mktmodal__rank">{i + 1}</span>
+                    <span className="mktmodal__tech">{it.tech}</span>
+                    <span className="mktmodal__share">{it.share}%</span>
+                    <span className={`mktmodal__trend ${it.trend}`}>{it.trend === 'up' ? '↗' : '↘'}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="mktmodal__chart">
+                <div className="mktmodal__chart-t">프레임워크별 연도 점유율 추이 {pool === 'global' && globalReady ? '' : '(추정)'}</div>
+                <ReactECharts option={groupShareModalOption(modalData)} style={{ height: 200 }} notMerge />
+              </div>
+            </div>
+            <div className="mktmodal__foot">
+              그룹 union 기준 대략치 · {modalData.union.toLocaleString()}건 · 기준일 {modalData.asOf}
+              {group === 'database' && <> · PostgreSQL은 3위지만 성장세는 1위예요.</>}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
+/* ────────────────────────────────────────────────────────────────
+   ①-a 연도별 수요 레이스 — 언어 점유율 추이 + 추월 강조(Python↗ vs Java↘)
+   라이브: marketApi.yearlyTrend(pool). 목: marketData.techYearly(국내 jumpit 단일소스).
+   ──────────────────────────────────────────────────────────────── */
+type YearlySeriesItem = { canonical: string; shares: number[]; delta: number }
+type YearlyPayload = { years: string[]; series: YearlySeriesItem[] }
+
+const YEARLY_MOCK: YearlyPayload = {
+  years: MKT.techYearly.years,
+  series: MKT.techYearly.series.map((r) => ({ canonical: r.tech, shares: r.shares, delta: r.delta })),
+}
+
+function pickRaceLines(payload: YearlyPayload, limit = 3): YearlySeriesItem[] {
+  const forced = ['Python', 'Java'].map((t) => payload.series.find((s) => s.canonical === t)).filter((s): s is YearlySeriesItem => !!s)
+  const rest = [...payload.series]
+    .filter((s) => !forced.includes(s))
+    .sort((a, b) => (b.shares[b.shares.length - 1] ?? 0) - (a.shares[a.shares.length - 1] ?? 0))
+  return [...forced, ...rest].slice(0, limit)
+}
+
+/** Python이 Java를 추월하는 해(첫 역전 연도)를 찾는다 — 없으면 -1. */
+function findCrossoverIndex(payload: YearlyPayload): number {
+  const py = payload.series.find((s) => s.canonical === 'Python')
+  const jv = payload.series.find((s) => s.canonical === 'Java')
+  if (!py || !jv) return -1
+  for (let i = 1; i < payload.years.length; i += 1) {
+    if (jv.shares[i - 1] >= py.shares[i - 1] && py.shares[i] > jv.shares[i]) return i
+  }
+  return -1
+}
+
+export function DemandRaceChart({ pool }: { pool: PoolChoice }) {
+  const [domestic, setDomestic] = useState<YearlyPayload | null>(null)
+  const [global, setGlobalData] = useState<YearlyPayload | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    marketApi.yearlyTrend('domestic').then((r) => {
+      if (!cancelled && r.series.length) setDomestic({ years: r.years.map(String), series: r.series })
+    }).catch(() => undefined)
+    return () => { cancelled = true }
+  }, [])
+  useEffect(() => {
+    if (pool === 'domestic') { setGlobalData(null); return }
+    let cancelled = false
+    marketApi.yearlyTrend('global').then((r) => {
+      if (!cancelled && r.series.length) setGlobalData({ years: r.years.map(String), series: r.series })
+    }).catch(() => undefined)
+    return () => { cancelled = true }
+  }, [pool])
+
+  const dom = domestic ?? YEARLY_MOCK
+  const domLines = useMemo(() => pickRaceLines(dom), [dom])
+  const globalLines = useMemo(() => (pool !== 'domestic' && global ? pickRaceLines(global) : []), [pool, global])
+  const crossoverIdx = useMemo(() => findCrossoverIndex(dom), [dom])
+  const colors = ['#1f9d57', '#c8382d', '#5b78d1']
+
+  const option = useMemo(() => ({
+    animationDuration: 700, animationEasing: 'cubicOut',
+    grid: { left: 8, right: 64, top: 20, bottom: 26, containLabel: true },
+    tooltip: {
+      ...tooltipStyle, trigger: 'axis',
+      formatter: (params: { seriesName: string; axisValue: string; value: number }[]) =>
+        `${params[0]?.axisValue}<br/>${params.map((p) => `${p.seriesName} <b>${p.value}%</b>`).join('<br/>')}`,
+    },
+    xAxis: {
+      type: 'category', boundaryGap: false, data: dom.years,
+      axisLine: { lineStyle: { color: '#e6e9ef' } }, axisTick: { show: false },
+      axisLabel: { color: '#43454c', fontFamily: FONT, fontSize: 11, fontWeight: 700 },
+    },
+    yAxis: {
+      type: 'value', axisLabel: { color: '#7c7f88', fontFamily: FONT, fontSize: 10, formatter: '{value}%' },
+      splitLine: { lineStyle: { color: '#eef1f6' } }, axisLine: { show: false },
+    },
+    series: [
+      ...domLines.map((s, i) => ({
+        name: s.canonical, type: 'line', data: s.shares, smooth: 0.15,
+        symbol: 'circle', symbolSize: 6,
+        lineStyle: { color: colors[i % colors.length], width: 2.8 },
+        itemStyle: { color: colors[i % colors.length], borderColor: '#fff', borderWidth: 1.2 },
+        endLabel: { show: true, formatter: s.canonical, color: colors[i % colors.length], fontFamily: FONT, fontSize: 10.5, fontWeight: 700, distance: 6 },
+        markPoint: (i < 2 && crossoverIdx > 0) ? {
+          silent: true, symbol: 'circle', symbolSize: 1,
+          data: [{ coord: [dom.years[crossoverIdx], s.shares[crossoverIdx]] }],
+          label: { show: i === 0, formatter: '추월', position: 'top', color: '#166534', fontFamily: FONT, fontSize: 10, fontWeight: 800 },
+        } : undefined,
+        z: 5,
+      })),
+      ...globalLines.map((s, i) => ({
+        name: `${s.canonical}(글로벌)`, type: 'line', data: s.shares, smooth: 0.15,
+        symbol: 'circle', symbolSize: 4,
+        lineStyle: { color: colors[i % colors.length], width: 1.4, type: 'dashed', opacity: 0.65 },
+        itemStyle: { color: colors[i % colors.length], borderColor: '#fff', borderWidth: 1, opacity: 0.65 },
+        z: 2,
+      })),
+    ],
+  }), [dom, domLines, globalLines, crossoverIdx])
+
+  return (
+    <ReactECharts option={option} style={{ height: 250 }} notMerge />
+  )
+}
+
+/* ────────────────────────────────────────────────────────────────
+   ②-a 수요 × 성장률 버블 산점도 — "기회/포화" 판단 카피 없이 좌표만 제공(스펙 요구).
+   x=최근 연도 점유율(수요 프록시) · y=Δ(성장률) · size=x. yearlyTrend 재사용, 신규 목 없음.
+   ──────────────────────────────────────────────────────────────── */
+export function DemandGrowthScatter({ pool, size = '2x2' }: { pool: PoolChoice; size?: WidgetSize }) {
+  const [domestic, setDomestic] = useState<YearlyPayload | null>(null)
+  const [global, setGlobalData] = useState<YearlyPayload | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    marketApi.yearlyTrend('domestic').then((r) => { if (!cancelled && r.series.length) setDomestic({ years: r.years.map(String), series: r.series }) }).catch(() => undefined)
+    return () => { cancelled = true }
+  }, [])
+  useEffect(() => {
+    if (pool === 'domestic') { setGlobalData(null); return }
+    let cancelled = false
+    marketApi.yearlyTrend('global').then((r) => { if (!cancelled && r.series.length) setGlobalData({ years: r.years.map(String), series: r.series }) }).catch(() => undefined)
+    return () => { cancelled = true }
+  }, [pool])
+
+  const dom = domestic ?? YEARLY_MOCK
+  const toPoints = (payload: YearlyPayload, tag: 'domestic' | 'global') => payload.series.map((s) => ({
+    tech: s.canonical, x: s.shares[s.shares.length - 1] ?? 0, y: s.delta, tag,
+  }))
+  const domPoints = useMemo(() => toPoints(dom, 'domestic'), [dom])
+  const globalPoints = useMemo(() => (global ? toPoints(global, 'global') : []), [global])
+  const points = pool === 'domestic' ? domPoints : pool === 'global' ? (globalPoints.length ? globalPoints : domPoints) : [...domPoints, ...globalPoints]
+  const maxX = Math.max(...points.map((p) => p.x), 1)
+
+  // P0-2 — 축 여백·사분면 기준선용 통계치. 중앙값 기준으로 사분면을 나눠 "고수요/저수요 ×
+  // 고성장/저성장" 4개 영역에 중립적 라벨만 붙인다(추천/판단 카피 금지, 스펙 원칙).
+  const median = (arr: number[]) => {
+    if (!arr.length) return 0
+    const sorted = [...arr].sort((a, b) => a - b)
+    const mid = Math.floor(sorted.length / 2)
+    return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
+  }
+  const medianX = useMemo(() => median(points.map((p) => p.x)), [points])
+  const medianY = useMemo(() => median(points.map((p) => p.y)), [points])
+  const xMax = useMemo(() => Math.max(maxX * 1.18, maxX + 2), [maxX])
+  const rawMinY = Math.min(...points.map((p) => p.y), 0)
+  const rawMaxY = Math.max(...points.map((p) => p.y), 0)
+  const yPad = Math.max((rawMaxY - rawMinY) * 0.16, 2)
+  const yMin = useMemo(() => Math.floor(rawMinY - yPad), [rawMinY, yPad])
+  const yMax = useMemo(() => Math.ceil(rawMaxY + yPad), [rawMaxY, yPad])
+
+  // 상시 라벨은 "주목 지점"만 — 최고 수요 상위3 ∪ 최고 성장 상위3(중복 제거). 나머지는
+  // labelLayout으로 겹치면 자동 이동시키되, 기본은 숨기고 hover(emphasis) 시에만 노출.
+  const highlightSet = useMemo(() => {
+    const key = (p: typeof points[number]) => p.tech + p.tag
+    const byDemand = [...points].sort((a, b) => b.x - a.x).slice(0, 3).map(key)
+    const byGrowth = [...points].sort((a, b) => b.y - a.y).slice(0, 3).map(key)
+    return new Set([...byDemand, ...byGrowth])
+  }, [points])
+
+  const option = useMemo(() => ({
+    animationDuration: 600, animationEasing: 'cubicOut',
+    grid: { left: 50, right: 34, top: 32, bottom: 42 },
+    tooltip: {
+      ...tooltipStyle, trigger: 'item',
+      formatter: (p: { data: { raw: typeof points[number] } }) => {
+        const d = p.data.raw
+        return `<b>${d.tech}</b>${d.tag === 'global' ? ' · 글로벌' : ''}<br/>현재 수요(점유율) ${d.x}% · 성장률 ${d.y > 0 ? '+' : ''}${d.y}%p`
+      },
+    },
+    xAxis: {
+      type: 'value', name: '현재 수요(점유율) →', min: 0, max: xMax, nameTextStyle: { color: '#7c7f88', fontFamily: FONT, fontSize: 10 },
+      splitLine: { lineStyle: { color: '#eef1f6' } }, axisLine: { lineStyle: { color: '#e6e9ef' } },
+      axisLabel: { color: '#7c7f88', fontFamily: FONT, fontSize: 10, formatter: '{value}%' },
+    },
+    yAxis: {
+      type: 'value', name: '성장률(Δ) →', min: yMin, max: yMax, nameTextStyle: { color: '#7c7f88', fontFamily: FONT, fontSize: 10 },
+      splitLine: { lineStyle: { color: '#eef1f6' } }, axisLine: { lineStyle: { color: '#e6e9ef' } },
+      axisLabel: { color: '#7c7f88', fontFamily: FONT, fontSize: 10, formatter: '{value}%p' },
+    },
+    series: [{
+      type: 'scatter',
+      labelLayout: { moveOverlap: 'shiftY' },
+      markLine: {
+        silent: true, symbol: 'none', animation: false,
+        lineStyle: { color: '#dcdfe6', type: 'dashed', width: 1 }, label: { show: false },
+        data: [{ xAxis: medianX }, { yAxis: medianY }],
+      },
+      markArea: {
+        silent: true,
+        itemStyle: { color: 'transparent' },
+        label: { formatter: '{b}', color: '#b4b7c0', fontFamily: FONT, fontSize: 10, fontWeight: 700 },
+        data: [
+          [{ name: '고수요 · 고성장', xAxis: medianX, yAxis: medianY, label: { position: 'insideTopRight' } }, { xAxis: xMax, yAxis: yMax }],
+          [{ name: '저수요 · 고성장', xAxis: 0, yAxis: medianY, label: { position: 'insideTopLeft' } }, { xAxis: medianX, yAxis: yMax }],
+          [{ name: '고수요 · 저성장', xAxis: medianX, yAxis: yMin, label: { position: 'insideBottomRight' } }, { xAxis: xMax, yAxis: medianY }],
+          [{ name: '저수요 · 저성장', xAxis: 0, yAxis: yMin, label: { position: 'insideBottomLeft' } }, { xAxis: medianX, yAxis: medianY }],
+        ],
+      },
+      data: points.map((d) => {
+        const isHighlight = highlightSet.has(d.tech + d.tag)
+        return {
+          value: [d.x, d.y], raw: d,
+          symbolSize: Math.min(30, 9 + Math.sqrt(d.x / maxX) * 20),
+          itemStyle: { color: d.tag === 'global' ? '#d9822b' : '#5b78d1', opacity: 0.6 },
+          label: { show: isHighlight, formatter: d.tech, position: 'top', color: '#43454c', fontFamily: FONT, fontSize: 9.5, fontWeight: 700 },
+          emphasis: { label: { show: true } },
+        }
+      }),
+    }],
+  }), [points, maxX, xMax, yMin, yMax, medianX, medianY, highlightSet])
+
+  return <ReactECharts option={option} style={{ height: size === '2x1' ? 200 : 300 }} notMerge />
+}
+
+/* ────────────────────────────────────────────────────────────────
+   ②-b 동반 요구 스킬 — cooccurrence 재활용(라이브 시도 → 실패 시 marketData.cooccurrence 목).
+   ──────────────────────────────────────────────────────────────── */
+const COOC_ANCHORS = Object.keys(MKT.cooccurrence)
+
+export function CooccurrenceBarWidget({ pool, headerRight }: { pool: PoolChoice; headerRight?: ReactNode }) {
+  const [anchor, setAnchor] = useState(COOC_ANCHORS[0])
+  const mockItems = (MKT.cooccurrence[anchor]?.items ?? []).slice(0, 4).map((i) => ({ tech: i.tech, coRate: i.coRate }))
+  const [live, setLive] = useState<{ tech: string; coRate: number }[] | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    setLive(null)
+    marketApi.cooccurrence({ pool: poolToApi(pool), skill: anchor, top_k: 10 }).then((r) => {
+      if (cancelled) return
+      const items = r.links
+        .filter((l) => l.source === anchor || l.target === anchor)
+        .map((l) => ({ tech: l.source === anchor ? l.target : l.source, coRate: l.co_rate }))
+        .sort((a, b) => b.coRate - a.coRate)
+        .slice(0, 4)
+      if (items.length) setLive(items)
+    }).catch(() => undefined)
+    return () => { cancelled = true }
+  }, [anchor, pool])
+
+  const items = live ?? mockItems
+  const maxRate = Math.max(...items.map((i) => i.coRate), 1)
+
+  const option = useMemo(() => ({
+    animationDuration: 500, animationEasing: 'cubicOut',
+    grid: { left: 84, right: 40, top: 6, bottom: 6, containLabel: true },
+    tooltip: { ...tooltipStyle, trigger: 'item', formatter: (p: { name: string; value: number }) => `<b>${p.name}</b><br/>${anchor}와 함께 요구되는 공고 ${p.value}%` },
+    xAxis: { type: 'value', max: Math.max(100, maxRate), show: false },
+    yAxis: {
+      type: 'category', data: items.map((i) => i.tech).reverse(),
+      axisLabel: { color: '#43454c', fontFamily: FONT, fontSize: 11.5, fontWeight: 700 },
+      axisLine: { show: false }, axisTick: { show: false },
+    },
+    series: [{
+      type: 'bar', barWidth: 14,
+      data: [...items].reverse().map((i) => ({
+        value: i.coRate,
+        itemStyle: { color: '#5b78d1', borderRadius: [0, 6, 6, 0] },
+        label: { show: true, position: 'right', formatter: `${i.coRate}%`, color: '#43454c', fontFamily: FONT, fontSize: 11, fontWeight: 700 },
+      })),
+    }],
+  }), [items, maxRate, anchor])
+
+  return (
+    <div className="dcard wow-card">
+      <SectionHeader title="동반 요구 스킬" hint="함께 등장하는 비율" right={headerRight} />
+      <div className="wow-seg wow-seg--scroll" style={{ marginBottom: 6 }}>
+        {COOC_ANCHORS.map((a) => (
+          <button key={a} type="button" className={`wow-seg__btn${a === anchor ? ' on' : ''}`} onClick={() => setAnchor(a)}>{a}</button>
+        ))}
+      </div>
+      <div className="wow-body">
+        <p className="wow-takeaway-inline"><b>{anchor}</b>가 등장하는 공고에 <b>{items[0]?.tech}</b>가 <b>{items[0]?.coRate}%</b> 함께 나와요.</p>
+        <ReactECharts option={option} style={{ height: 140 }} notMerge />
+      </div>
+      <AsOf asOf={MKT.techYearly.asOf} note={live ? undefined : `목 데이터 · ${anchor} 기준`} />
+    </div>
+  )
+}
+
+/* ────────────────────────────────────────────────────────────────
+   ②-c/d 공고당 요구 스킬 — skill-count-dist 신규 엔드포인트(§5) 목 폴백.
+   §1 실측: 평균 4.3개 · 중앙값 4개. 히스토그램 형태는 실측치가 없어 정규분포 근사(라벨 고지).
+   ──────────────────────────────────────────────────────────────── */
+type SkillCountPayload = { avg: number; median: number; sample_size: number; as_of: string; histogram: { k: number; pct: number }[] }
+const SKILL_COUNT_MOCK: SkillCountPayload = {
+  avg: 4.3, median: 4, sample_size: 442768, as_of: '2026-07-14',
+  histogram: [
+    { k: 1, pct: 6 }, { k: 2, pct: 12 }, { k: 3, pct: 19 }, { k: 4, pct: 23 },
+    { k: 5, pct: 18 }, { k: 6, pct: 11 }, { k: 7, pct: 6 }, { k: 8, pct: 3 }, { k: 9, pct: 2 },
+  ],
+}
+
+function useSkillCountDist(): { value: SkillCountPayload; isLive: boolean } {
+  const [live, setLive] = useState<SkillCountPayload | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    marketApi.skillCountDist({ pool: 'domestic' }).then((r) => {
+      if (cancelled || !r.histogram.length) return
+      const total = r.histogram.reduce((sum, h) => sum + h.count, 0) || 1
+      setLive({
+        avg: r.avg, median: r.median, sample_size: r.sample_size, as_of: r.as_of,
+        histogram: r.histogram.map((h) => ({ k: h.k, pct: Math.round((h.count / total) * 1000) / 10 })),
+      })
+    }).catch(() => undefined)
+    return () => { cancelled = true }
+  }, [])
+  return { value: live ?? SKILL_COUNT_MOCK, isLive: !!live }
+}
+
+export function SkillCountStatWidget() {
+  const { value: d, isLive } = useSkillCountDist()
+  return (
+    <div className="dcard wow-card">
+      <SectionHeader title="공고당 요구 스킬" hint="국내" />
+      <div className="wow-body">
+        <div className="wow-skillcount">
+          <span className="wow-skillcount__num">{d.avg}<small>개</small></span>
+        </div>
+        <p className="wow-takeaway-inline">중앙값 <b>{d.median}개</b> · 핵심 스킬 5개면 대다수 공고에 등장해요.</p>
+      </div>
+      <AsOf asOf={d.as_of} n={d.sample_size} note={isLive ? undefined : '실측(§1 DB 실사) · 국내 기준'} />
+    </div>
+  )
+}
+
+export function SkillCountHistogramWidget() {
+  const { value: d, isLive } = useSkillCountDist()
+  const maxPct = Math.max(...d.histogram.map((h) => h.pct), 1)
+  const option = useMemo(() => ({
+    animationDuration: 500, animationEasing: 'cubicOut',
+    grid: { left: 6, right: 6, top: 6, bottom: 20 },
+    tooltip: { ...tooltipStyle, trigger: 'item', formatter: (p: { name: string; value: number }) => `요구 스킬 ${p.name}개 · 공고의 ${p.value}%` },
+    xAxis: {
+      type: 'category', data: d.histogram.map((h) => `${h.k}`),
+      axisLine: { lineStyle: { color: '#e6e9ef' } }, axisTick: { show: false },
+      axisLabel: { color: '#7c7f88', fontFamily: FONT, fontSize: 10 },
+    },
+    yAxis: { type: 'value', show: false },
+    series: [{
+      type: 'bar', barWidth: '68%',
+      data: d.histogram.map((h) => ({
+        value: h.pct,
+        itemStyle: { color: h.k === d.median ? '#1f9d57' : '#5b78d1', opacity: h.k === d.median ? 1 : 0.55 + 0.25 * (h.pct / maxPct) },
+      })),
+    }],
+  }), [d, maxPct])
+  return (
+    <div className="dcard wow-card">
+      <SectionHeader title="요구 스킬 개수 분포" hint="국내" />
+      <div className="wow-body">
+        <ReactECharts option={option} style={{ height: 110 }} notMerge />
+      </div>
+      <AsOf asOf={d.as_of} n={d.sample_size} note={isLive ? undefined : '분포 형태는 근사(§1 평균·중앙값 실측 기반)'} />
+    </div>
+  )
+}
+
+/* ────────────────────────────────────────────────────────────────
+   ③-b 개념 → 기술 Sankey — conceptReal.json(posting_concept 실측, 19.6만행)을 그대로 재사용.
+   신규 concept-tech 엔드포인트가 붙기 전까지는 이 실측 목이 사실상 라이브 수준의 정확도.
+   ──────────────────────────────────────────────────────────────── */
+const CONCEPT_FOR_SANKEY = (conceptRaw as unknown as { concepts: ConceptItem[] }).concepts
+type SankeyNode = { name: string; kind: 'concept' | 'tech' }
+type SankeyLink = { source: string; target: string; value: number }
+type SankeyPayload = { nodes: SankeyNode[]; links: SankeyLink[] }
+
+function buildConceptSankeyMock(): SankeyPayload {
+  const top = [...CONCEPT_FOR_SANKEY].sort((a, b) => b.demand - a.demand).slice(0, 5)
+  const conceptNames = new Set<string>()
+  const techNames = new Set<string>()
+  const links: SankeyLink[] = []
+  top.forEach((c) => {
+    conceptNames.add(c.label)
+    c.signature.slice(0, 4).forEach((t) => {
+      techNames.add(t.tech)
+      links.push({ source: c.label, target: t.tech, value: Math.max(1, t.n) })
+    })
+  })
+  const nodes: SankeyNode[] = [
+    ...[...conceptNames].map((name) => ({ name, kind: 'concept' as const })),
+    ...[...techNames].map((name) => ({ name, kind: 'tech' as const })),
+  ]
+  return { nodes, links }
+}
+const CONCEPT_SANKEY_MOCK = buildConceptSankeyMock()
+
+// 개념 노드 구분용 저채도 팔레트(모노톤 계열에 어울리는 뮤트 톤 — 원색/쨍한 색 금지).
+// 개념마다 하나씩 배정하고, 그 개념에서 나가는 링크는 같은 색을 낮은 opacity로 물려받아
+// 흐름의 출처를 색으로 추적하게 한다. 기술 노드는 중립 회색으로 둬서 "색 있는 축"을 개념 쪽에 둔다.
+const SANKEY_CONCEPT_RGB: Array<[number, number, number]> = [
+  [107, 124, 156], // 뮤트 슬레이트 블루
+  [127, 156, 134], // 뮤트 세이지 그린
+  [165, 138, 111], // 뮤트 웜 토프
+  [154, 129, 153], // 뮤트 모브
+  [111, 149, 153], // 뮤트 틸
+]
+const SANKEY_TECH_COLOR = '#aab0bb' // 중립 회색(기술 노드)
+const sankeyRgb = (c: [number, number, number]) => `rgb(${c[0]}, ${c[1]}, ${c[2]})`
+const sankeyRgba = (c: [number, number, number], a: number) => `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${a})`
+
+// P0-1 — 노드 과밀 완화: 라이브·목 데이터 어느 쪽이든 "상위 개념 5개 × 개념당 상위 기술 4개"로
+// 균일하게 슬라이스한다(목은 이미 이 기준으로 생성되어 사실상 no-op, 라이브는 방어적 캡).
+function sliceSankeyPayload(payload: SankeyPayload, topConcepts = 5, topTechsPerConcept = 4): SankeyPayload {
+  const concepts = payload.nodes.filter((n) => n.kind === 'concept')
+  const totals = new Map<string, number>()
+  payload.links.forEach((l) => totals.set(l.source, (totals.get(l.source) ?? 0) + l.value))
+  const keepConcepts = [...concepts]
+    .sort((a, b) => (totals.get(b.name) ?? 0) - (totals.get(a.name) ?? 0))
+    .slice(0, topConcepts)
+    .map((c) => c.name)
+  const keptLinks: SankeyLink[] = []
+  keepConcepts.forEach((name) => {
+    const top = payload.links.filter((l) => l.source === name).sort((a, b) => b.value - a.value).slice(0, topTechsPerConcept)
+    keptLinks.push(...top)
+  })
+  const techNames = new Set(keptLinks.map((l) => l.target))
+  const nodes: SankeyNode[] = [
+    ...keepConcepts.map((name) => ({ name, kind: 'concept' as const })),
+    ...[...techNames].map((name) => ({ name, kind: 'tech' as const })),
+  ]
+  return { nodes, links: keptLinks }
+}
+
+export function ConceptTechSankeyWidget({ pool }: { pool: PoolChoice }) {
+  const [live, setLive] = useState<SankeyPayload | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    marketApi.conceptTech({ pool: poolToApi(pool), top_concepts: 5, top_techs: 4 }).then((r) => {
+      if (cancelled || !r.links.length) return
+      const nodes: SankeyNode[] = r.nodes.map((n) => ({ name: n.name, kind: n.type === 'tech' ? 'tech' : 'concept' }))
+      setLive({ nodes, links: r.links })
+    }).catch(() => undefined)
+    return () => { cancelled = true }
+  }, [pool])
+  const raw = live ?? CONCEPT_SANKEY_MOCK
+  const data = useMemo(() => sliceSankeyPayload(raw), [raw])
+
+  // 개념 노드 순서대로 저채도 색을 배정 — 노드 색 + 링크 tint 색의 단일 출처.
+  const conceptColor = useMemo(() => {
+    const map = new Map<string, [number, number, number]>()
+    data.nodes.filter((n) => n.kind === 'concept').forEach((n, i) => {
+      map.set(n.name, SANKEY_CONCEPT_RGB[i % SANKEY_CONCEPT_RGB.length])
+    })
+    return map
+  }, [data])
+
+  const option = useMemo(() => ({
+    animationDuration: 700, animationEasing: 'cubicOut',
+    tooltip: {
+      ...tooltipStyle, trigger: 'item',
+      formatter: (p: { dataType: string; name: string; data: { source?: string; target?: string; value?: number } }) => {
+        if (p.dataType === 'edge') return `<b>${p.data.source}</b> → <b>${p.data.target}</b><br/>공고 ${p.data.value?.toLocaleString()}건`
+        return `<b>${p.name}</b>`
+      },
+    },
+    series: [{
+      type: 'sankey', layout: 'none', nodeGap: 18, nodeWidth: 14,
+      left: '15%', right: '18%', top: 14, bottom: 14,
+      emphasis: { focus: 'adjacency' },
+      data: data.nodes.map((n) => {
+        const c = conceptColor.get(n.name)
+        return {
+          name: n.name,
+          itemStyle: { color: n.kind === 'concept' && c ? sankeyRgb(c) : SANKEY_TECH_COLOR, borderColor: '#fff' },
+          label: {
+            fontFamily: FONT, fontSize: 12, fontWeight: 700, color: '#43454c',
+            position: n.kind === 'concept' ? 'left' : 'right',
+          },
+        }
+      }),
+      // 링크는 출발 개념의 색을 낮은 opacity로 tint — 어느 흐름이 어느 개념에서 나왔는지 색으로 추적.
+      links: data.links.map((l) => {
+        const c = conceptColor.get(l.source)
+        return { ...l, lineStyle: { color: c ? sankeyRgba(c, 0.4) : 'rgba(170, 176, 187, 0.35)' } }
+      }),
+      lineStyle: { curveness: 0.5 },
+    }],
+  }), [data, conceptColor])
+
+  return <ReactECharts option={option} style={{ height: 420 }} notMerge />
+}
+
+/* ────────────────────────────────────────────────────────────────
+   ⑤-a 국내 시차 타임라인 — "해외에서 뜬 기술이 국내 채용에 오기까지".
+   신규 global-domestic-lag 엔드포인트 목(§5, 근사·범위로 고지). pool≠domestic일 때만 렌더된다.
+   ──────────────────────────────────────────────────────────────── */
+type LagSeries = { tech: string; globalYears: string[]; globalShares: number[]; domesticYears: string[]; domesticShares: number[]; lagLabel: string }
+const GLOBAL_LAG_MOCK: LagSeries = {
+  tech: 'FastAPI',
+  globalYears: ['2020', '2021', '2022', '2023', '2024'],
+  globalShares: [1.0, 3.2, 6.5, 9.8, 12.4],
+  domesticYears: ['2022', '2023', '2024', '2025'],
+  domesticShares: [0.2, 1.1, 1.7, 4.3],
+  lagLabel: '약 1~2년',
+}
+
+export function GlobalDomesticLagWidget() {
+  const data = useWidgetData(() => marketApi.globalDomesticLag().then((r) => {
+    const top = r.items[0]
+    if (!top) throw new Error('empty')
+    return {
+      tech: top.canonical,
+      globalYears: top.global_series.map((p) => String(p.year)),
+      globalShares: top.global_series.map((p) => p.share),
+      domesticYears: top.domestic_series.map((p) => String(p.year)),
+      domesticShares: top.domestic_series.map((p) => p.share),
+      lagLabel: top.lag_years === 0 ? '거의 동시' : `약 ${top.lag_years}년`,
+    } as LagSeries
+  }), GLOBAL_LAG_MOCK)
+  const d = data.value
+
+  const allYears = useMemo(() => [...new Set([...d.globalYears, ...d.domesticYears])].sort(), [d])
+  const option = useMemo(() => ({
+    animationDuration: 700, animationEasing: 'cubicOut',
+    grid: { left: 8, right: 12, top: 20, bottom: 26, containLabel: true },
+    tooltip: { ...tooltipStyle, trigger: 'axis' },
+    xAxis: {
+      type: 'category', boundaryGap: false, data: allYears,
+      axisLine: { lineStyle: { color: '#e6e9ef' } }, axisTick: { show: false },
+      axisLabel: { color: '#43454c', fontFamily: FONT, fontSize: 11, fontWeight: 700 },
+    },
+    yAxis: {
+      type: 'value', axisLabel: { color: '#7c7f88', fontFamily: FONT, fontSize: 10, formatter: '{value}%' },
+      splitLine: { lineStyle: { color: '#eef1f6' } }, axisLine: { show: false },
+    },
+    series: [
+      {
+        name: `${d.tech}(글로벌)`, type: 'line', smooth: 0.2, symbol: 'circle', symbolSize: 6,
+        data: allYears.map((y) => { const idx = d.globalYears.indexOf(y); return idx >= 0 ? d.globalShares[idx] : null }),
+        connectNulls: true,
+        lineStyle: { color: '#5b78d1', width: 2.6 }, itemStyle: { color: '#5b78d1', borderColor: '#fff', borderWidth: 1.2 },
+        endLabel: { show: true, formatter: '글로벌 선행', color: '#3730a3', fontFamily: FONT, fontSize: 10, fontWeight: 700 },
+      },
+      {
+        name: `${d.tech}(국내)`, type: 'line', smooth: 0.2, symbol: 'circle', symbolSize: 6,
+        data: allYears.map((y) => { const idx = d.domesticYears.indexOf(y); return idx >= 0 ? d.domesticShares[idx] : null }),
+        connectNulls: true,
+        lineStyle: { color: '#1f9d57', width: 2.6 }, itemStyle: { color: '#1f9d57', borderColor: '#fff', borderWidth: 1.2 },
+        endLabel: { show: true, formatter: '국내 후행', color: '#166534', fontFamily: FONT, fontSize: 10, fontWeight: 700 },
+      },
+    ],
+  }), [d, allYears])
+
+  return (
+    <div className="dcard wow-card">
+      <SectionHeader title="국내 시차 타임라인" hint="해외 선행 → 국내 후행" />
+      <div className="wow-body">
+        <p className="wow-headline">
+          <b>{d.tech}</b>는 해외에서 뜬 뒤 국내 채용까지 <b>{d.lagLabel}</b> 걸렸어요 — 미리 준비할 단서.
+        </p>
+        <ReactECharts option={option} style={{ height: 210 }} notMerge />
+      </div>
+      <AsOf asOf="2026-07-14" note={data.source === 'live' ? undefined : '근사치 · 표본·정렬 한계로 범위로만 제공(§5)'} />
+    </div>
+  )
+}
+
+/* ────────────────────────────────────────────────────────────────
+   상단 검정 풀폭 변화 스트립 — 카운트 아닌 방향/판도만(스펙 §2). marketData.techYearly +
+   GROUP_SHARE_MOCK(판도 선두)에서 파생. 국내 단일소스 기준(잼핏) — 풀 셀렉터 비반응.
+   ──────────────────────────────────────────────────────────────── */
+export function MarketChangeStrip() {
+  const topDelta = useMemo(() => [...YEARLY_MOCK.series].sort((a, b) => b.delta - a.delta)[0], [])
+  const py = YEARLY_MOCK.series.find((s) => s.canonical === 'Python')
+  const jv = YEARLY_MOCK.series.find((s) => s.canonical === 'Java')
+  const overtaken = !!(py && jv && py.shares[py.shares.length - 1] > jv.shares[jv.shares.length - 1])
+  const risingFromZero = useMemo(() => (
+    [...YEARLY_MOCK.series].filter((s) => s.shares[0] < 1 && s.delta > 0).sort((a, b) => b.delta - a.delta).slice(0, 3)
+  ), [])
+  const leaders = [GROUP_SHARE_MOCK.frontend_fw.items[0], GROUP_SHARE_MOCK.backend_fw.items[0], GROUP_SHARE_MOCK.database.items[0]]
+
+  return (
+    <div className="mktstrip">
+      <div className="mktstrip__hero">
+        <span className="mktstrip__icon">⭐</span>
+        <div>
+          <div className="mktstrip__lbl">올해의 스킬</div>
+          <div className="mktstrip__v">{topDelta.canonical} <span className="mktstrip__up">↗ +{topDelta.delta.toFixed(1)}%p</span></div>
+        </div>
+      </div>
+      <div className="mktstrip__cells">
+        <div className="mktstrip__cell">
+          <div className="mktstrip__lbl">언어 판도</div>
+          <div className="mktstrip__v2">{overtaken ? <><span className="mktstrip__up">↗</span> Python, Java 추월</> : 'Python 급부상 중'}</div>
+        </div>
+        <div className="mktstrip__cell">
+          <div className="mktstrip__lbl">급부상 (무→상위)</div>
+          <div className="mktstrip__v2"><span className="mktstrip__up">↗</span> {risingFromZero.map((r) => r.canonical).join(' · ')}</div>
+        </div>
+        <div className="mktstrip__cell">
+          <div className="mktstrip__lbl">판도 선두</div>
+          <div className="mktstrip__v2">{leaders.map((l) => l.tech).join(' · ')}</div>
+        </div>
+      </div>
     </div>
   )
 }

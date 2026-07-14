@@ -32,26 +32,32 @@ export const DASHBOARD_WIDGETS: WidgetCatalogItem[] = [
   { id: 'skill-unlock', label: '한계 해금', shape: 'bars', allowedSizes: ['1x1', '2x1', '2x2'], defaultSize: '2x1' },
 ]
 
+// v8 재구성(2026-07-14) — 스트립(변화 브리핑)·풀 셀렉터는 구조 요소라 카탈로그 밖.
+// 신입 문호는 §6에 따라 코드는 남기고 렌더만 끈다(SHOW_NEWCOMER 플래그, DesktopMarket 참고) —
+// 토글 인프라가 "기본 숨김"을 지원하지 않아 카탈로그엔 올리지 않는다.
 export const MARKET_WIDGETS: WidgetCatalogItem[] = [
-  { id: 'hero-demand', label: '수요 리더보드', shape: 'hero', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
-  { id: 'leaderboard', label: '상위 요구 기술 Top14', shape: 'bars', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
-  { id: 'network', label: '기술 공동출현 네트워크', shape: 'network', allowedSizes: ['2x2'], defaultSize: '2x2' },
-  { id: 'propagation', label: '트렌드 전파 네트워크', shape: 'network', allowedSizes: ['2x2'], defaultSize: '2x2' },
-  { id: 'yearly-trend', label: '연도별 점유율 추이', shape: 'line', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
-  { id: 'movers', label: '급상승 · 급감 Top', shape: 'bars', allowedSizes: ['1x1', '2x1'], defaultSize: '2x1' },
-  { id: 'tier-compare', label: '기업 규모별 요구 차이', shape: 'bars', allowedSizes: ['1x1', '2x1'], defaultSize: '2x1' },
-  { id: 'generation-trend', label: '레거시 → 신진 스택 변화', shape: 'line', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
-  { id: 'scatter', label: '수요 × 빈도 분포', shape: 'scatter', allowedSizes: ['2x1', '2x2'], defaultSize: '2x2' },
-  { id: 'hot-companies', label: '이번 달 활발 기업', shape: 'bars', allowedSizes: ['1x1', '2x1'], defaultSize: '2x1' },
-  { id: 'region-density', label: '지역별 공고 밀도', shape: 'bars', allowedSizes: ['1x1', '2x1'], defaultSize: '2x1' },
-  { id: 'tier-donut', label: '기업 규모 분포', shape: 'ring', allowedSizes: ['1x1'], defaultSize: '1x1' },
+  // ① 시장 흐름
+  { id: 'yearly-trend', label: '연도별 수요 레이스', shape: 'line', allowedSizes: ['2x2'], defaultSize: '2x2' },
+  { id: 'group-share-frontend', label: '판도 · 프론트 프레임워크', shape: 'list', allowedSizes: ['1x1'], defaultSize: '1x1' },
+  { id: 'group-share-backend', label: '판도 · 백엔드 프레임워크', shape: 'list', allowedSizes: ['1x1'], defaultSize: '1x1' },
+  { id: 'group-share-database', label: '판도 · 데이터베이스', shape: 'list', allowedSizes: ['1x1'], defaultSize: '1x1' },
+  { id: 'movers', label: '급상승 · 급감', shape: 'bars', allowedSizes: ['1x1', '2x1'], defaultSize: '1x1' },
   { id: 'posting-calendar', label: '채용 공고 등록 캘린더', shape: 'line', allowedSizes: ['2x1'], defaultSize: '2x1' },
-  { id: 'hype-vs-hire', label: 'Hype vs Hire', shape: 'scatter', allowedSizes: ['2x1', '2x2'], defaultSize: '2x2' },
-  { id: 'competency', label: '회사가 원하는 역량', shape: 'bars', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
-  { id: 'response-rate', label: '응답 잘 오는 회사', shape: 'stat', allowedSizes: ['1x1', '2x1'], defaultSize: '2x1' },
-  { id: 'concept-signal', label: '개념 → 기술 시그니처', shape: 'radar', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
-  { id: 'trend-chronicle', label: '기술 트렌드 연대기', shape: 'line', allowedSizes: ['2x1', '2x2'], defaultSize: '2x2' },
-  { id: 'github-chronicle', label: 'GitHub 스타 순위 변천사', shape: 'line', allowedSizes: ['2x1', '2x2'], defaultSize: '2x2' },
-  { id: 'global-domestic-gap', label: '글로벌 vs 국내 격차', shape: 'bars', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
-  { id: 'github-topics', label: '오픈소스 관심 vs 수요', shape: 'scatter', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
+  // ② 기술 수요 · 성장
+  { id: 'demand-growth-scatter', label: '수요 × 성장률', shape: 'scatter', allowedSizes: ['2x1', '2x2'], defaultSize: '2x2' },
+  { id: 'cooccurrence-bar', label: '동반 요구 스킬', shape: 'bars', allowedSizes: ['2x1'], defaultSize: '2x1' },
+  { id: 'skill-count-stat', label: '공고당 요구 스킬', shape: 'stat', allowedSizes: ['1x1'], defaultSize: '1x1' },
+  { id: 'skill-count-dist', label: '요구 스킬 개수 분포', shape: 'bars', allowedSizes: ['1x1'], defaultSize: '1x1' },
+  // ③ 기술 지형 · 관계
+  { id: 'network', label: '기술 관계 네트워크', shape: 'network', allowedSizes: ['2x2'], defaultSize: '2x2' },
+  { id: 'concept-tech-sankey', label: '개념 → 기술 Sankey', shape: 'network', allowedSizes: ['2x2'], defaultSize: '2x2' },
+  // ④ 지역 · 기업
+  { id: 'region-density', label: '지역별 공고 밀도', shape: 'bars', allowedSizes: ['2x1'], defaultSize: '2x1' },
+  { id: 'hot-companies', label: '최근 90일 활발 기업', shape: 'bars', allowedSizes: ['1x1', '2x1'], defaultSize: '1x1' },
+  { id: 'scatter', label: '수요 × 빈도', shape: 'scatter', allowedSizes: ['1x1', '2x1', '2x2'], defaultSize: '1x1' },
+  // ⑤ 글로벌 · 해외 트렌드 (pool≠domestic 전용)
+  { id: 'global-domestic-lag', label: '국내 시차 타임라인', shape: 'line', allowedSizes: ['2x2'], defaultSize: '2x2' },
+  { id: 'hype-vs-hire', label: 'Hype vs Hire', shape: 'scatter', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
+  { id: 'global-domestic-gap', label: '해외서 더 뜨는 기술', shape: 'bars', allowedSizes: ['1x1', '2x1', '2x2'], defaultSize: '1x1' },
+  { id: 'github-chronicle', label: 'GitHub 스타 모멘텀', shape: 'line', allowedSizes: ['1x1', '2x1', '2x2'], defaultSize: '1x1' },
 ]
