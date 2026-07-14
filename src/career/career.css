@@ -679,6 +679,8 @@
   box-shadow: var(--e1);
   cursor: pointer;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.12s cubic-bezier(0.25, 0.1, 0.25, 1);
+  content-visibility: auto;
+  contain-intrinsic-size: auto 150px;
 }
 .cr-card:hover {
   border-color: var(--accent-200);
