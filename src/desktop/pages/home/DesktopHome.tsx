@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Lock, Search, SlidersHorizontal } from 'lucide-react'
 import { useAuth } from '../../../career/authStore'
 import { useResumesState } from '../../../career/state'
+import { useSettings } from '../../../career/settingsStore'
 import { homeApi, type FeedPostingDto } from '../../../career/homeApi'
 import { jobsApi } from '../../../career/api'
 import HomeLeftColumn from './HomeLeftColumn'
@@ -60,6 +61,7 @@ function FeedCardSkeleton() {
 export default function DesktopHome() {
   const { isAuthed } = useAuth()
   const { activeResume } = useResumesState()
+  const { settings } = useSettings()
   // 기본 풀은 국내 — 순서도 국내/해외/전체로 노출한다(2026-07-13 사용자 피드백).
   const [pool, setPool] = useState<PoolFilter>('domestic')
   const [category, setCategory] = useState<string | undefined>(undefined)
@@ -135,6 +137,7 @@ export default function DesktopHome() {
           sort,
           industry,
           skills: skills.length > 0 ? skills.join(',') : undefined,
+          rich_only: settings.richOnly || undefined,
         })
         setItems((prev) => (reset ? res.items : [...prev, ...res.items]))
         setTotal(res.total)
@@ -146,14 +149,14 @@ export default function DesktopHome() {
         setLoading(false)
       }
     },
-    [pool, category, district, deadlineWithinDays, minMatch, showMinMatch, sort, industry, skills],
+    [pool, category, district, deadlineWithinDays, minMatch, showMinMatch, sort, industry, skills, settings.richOnly],
   )
 
   useEffect(() => {
     loadPage(1, true)
-    // pool/category/상세 필터/정렬 변경 시 목록을 리셋해서 1페이지부터 다시 불러온다.
+    // pool/category/상세 필터/정렬/표시 설정 변경 시 목록을 리셋해서 1페이지부터 다시 불러온다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pool, category, district, deadlineWithinDays, minMatch, sort, industry, skills])
+  }, [pool, category, district, deadlineWithinDays, minMatch, sort, industry, skills, settings.richOnly])
 
   useEffect(() => {
     const node = sentinelRef.current
