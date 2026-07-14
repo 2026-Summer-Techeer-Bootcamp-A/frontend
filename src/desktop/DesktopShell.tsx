@@ -99,6 +99,7 @@ const SECTIONS: Section[] = [
     items: [
       { to: '/settings/account', label: '계정' },
       { to: '/settings/notifications', label: '알림' },
+      { to: '/settings/display', label: '표시' },
       { to: '/settings/privacy', label: '개인정보' },
       { to: '/settings/terms', label: '이용약관' },
       { to: '/settings/about', label: '앱 정보' },
