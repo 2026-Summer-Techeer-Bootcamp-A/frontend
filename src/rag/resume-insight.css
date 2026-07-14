@@ -35,6 +35,8 @@
 .ri__pill:disabled { opacity: 0.5; cursor: not-allowed; }
 .ri__pill:focus-visible { outline: 2px solid #28539c; outline-offset: 1px; }
 
+.ri__field > .rc__seg { align-self: flex-start; }
+
 /* 기술 칩 입력 */
 .ri__skillbox {
   display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
