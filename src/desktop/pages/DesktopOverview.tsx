@@ -215,7 +215,7 @@ export default function DesktopOverview() {
   return (
     <div className="dov">
       <header className="dov__head">
-        <h1 className="dov__title">안녕하세요, {user?.nickname ?? '리버'}님</h1>
+        <h1 className="dov__title">{user?.nickname ? `안녕하세요, ${user.nickname}님` : '로그인하고 나만의 커리어 인사이트를 확인해보세요'}</h1>
         <div className="dov__head-r">
           <div className="dov__asof">기준일 {asOf} · 공고 {TOTAL.toLocaleString()}건</div>
           <WidgetSettingsMenu section="dashboard" items={DASHBOARD_WIDGETS} />
