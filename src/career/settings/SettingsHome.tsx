@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
-import { User, Bell, FileText, Shield, Info, LogOut } from 'lucide-react'
+import { User, Bell, FileText, ListFilter, Shield, Info, LogOut } from 'lucide-react'
 import { SubScreen } from '../charts'
 import { MenuRow, SectionHeader } from '../kit'
 import LogoutSheet from '../auth/LogoutSheet'
@@ -25,6 +25,11 @@ export default function SettingsHome() {
       <div className="kit-menulist">
         <MenuRow icon={<User size={18} />} tint="#0b0b0c" label="계정 관리" onClick={() => navigate('/settings/account')} />
         <MenuRow icon={<Bell size={18} />} tint="#c76a2e" label="알림 설정" onClick={() => navigate('/settings/notifications')} />
+      </div>
+
+      <SectionHeader title="표시" />
+      <div className="kit-menulist">
+        <MenuRow icon={<ListFilter size={18} />} tint="#218a58" label="표시 설정" onClick={() => navigate('/settings/display')} />
       </div>
 
       <SectionHeader title="정보" />
