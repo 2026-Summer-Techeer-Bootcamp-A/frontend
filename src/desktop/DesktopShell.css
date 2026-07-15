@@ -91,6 +91,7 @@
 
 .dshell__topbar {
   position: relative;
+  z-index: 100;
   flex: none;
   height: 62px;
   display: flex;
