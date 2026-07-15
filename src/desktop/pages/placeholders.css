@@ -58,7 +58,15 @@
   display: flex; align-items: center; gap: 8px;
   border: 1px solid var(--line); border-radius: 11px; padding: 10px 12px; color: var(--c-muted);
 }
-.djobs__search input { flex: 1; min-width: 0; font-size: 13.5px; color: var(--c-ink); }
+.djobs__search input {
+  flex: 1;
+  min-width: 0;
+  font-size: 13.5px;
+  color: var(--c-ink);
+  border: 0;
+  outline: 0;
+  background: transparent;
+}
 .djobs__fld { display: flex; flex-direction: column; gap: 8px; }
 .djobs__fld-l { font-size: 12px; font-weight: 700; color: var(--c-muted); }
 .djobs__sorts { display: flex; gap: 6px; }
