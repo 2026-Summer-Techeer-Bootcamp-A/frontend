@@ -5,6 +5,7 @@ import { SCENARIOS } from './demoScenarios'
 import { streamChat } from './chatStream'
 import { normalizeStreamResult } from './chatContract'
 import type { Citation, Confidence, Plan, Route, ToolResult, StreamStepKind } from './chatContract'
+import AssistantVisualizer from './AssistantVisualizer'
 import { useAuth } from '../career/authStore'
 import './rag-console.css'
 
@@ -246,6 +247,10 @@ function TurnBlock({ turn, mode, onRetry }: { turn: Turn; mode: Mode; onRetry: (
             {turn.steps.map((s, i) => <StepRow key={i} step={s} />)}
           </div>
         </div>
+      )}
+
+      {mode === 'verbose' && turn.results.length > 0 && (
+        <AssistantVisualizer results={turn.results} route={turn.route} />
       )}
 
       {mode === 'verbose' && turn.results.length > 0 && (
