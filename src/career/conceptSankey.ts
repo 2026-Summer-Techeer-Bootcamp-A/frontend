@@ -1,10 +1,21 @@
 export const CURATED_SANKEY_CONCEPTS = [
   'MSA·분산',
   '대규모 트래픽',
+  '실시간·스트리밍',
   '보안·컴플라이언스',
   '데이터 파이프라인',
+  '클라우드 네이티브',
   'DevOps·자동화',
 ] as const
+
+export const SANKEY_CHART_LAYOUT = {
+  height: 500,
+  nodeGap: 18,
+  top: 30,
+  bottom: 30,
+  left: '25%',
+  right: '18%',
+} as const
 
 export type SankeyNode = { name: string; kind: 'concept' | 'tech' }
 export type SankeyLink = { source: string; target: string; value: number }
