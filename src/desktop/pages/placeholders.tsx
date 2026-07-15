@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { MapPin, ArrowUpRight, FileText, Settings, Award, User, Sparkles } from 'lucide-react'
+import { MapPin, ArrowUpRight, Bookmark, FileText, Settings, Award, User, Sparkles } from 'lucide-react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import catData from '../../data/pearl/n.json'
@@ -25,7 +25,7 @@ import { useResumesState, getDynamicPostings, calculateCoverage, resumeToUpsertP
 import { getAuthToken, useAuth } from '../../career/authStore'
 import { useDashboardConfig, isWidgetHidden, getWidgetSize, type WidgetSize } from '../../career/dashboardConfig'
 import { MARKET_WIDGETS } from '../../career/widgetCatalog'
-import { useBookmarks } from '../../career/bookmarkStore'
+import { loadBookmarkDetails, toggleBookmark, useBookmarks } from '../../career/bookmarkStore'
 import { useRecentViews } from '../../career/viewHistoryStore'
 import { useSettings } from '../../career/settingsStore'
 import { SkillManagerModal } from '../SkillManagerModal'
@@ -188,6 +188,7 @@ function derivePosition(title: string, techs: string[]): PositionCat {
 export function DesktopJobs() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
+  const bookmarkIds = useBookmarks()
   const { activeResume } = useResumesState()
   const { settings } = useSettings()
   const skills = activeResume?.skills ?? []
@@ -368,6 +369,7 @@ export function DesktopJobs() {
   }, [list])
 
   const sel = list.find((p) => p.id === selId) ?? list[0]
+  const selectedBookmarked = sel ? bookmarkIds.includes(sel.id) : false
 
   useEffect(() => setPvTab('desc'), [sel?.id])
 
@@ -527,6 +529,15 @@ export function DesktopJobs() {
                 <CompanyLogo logo={sel.logo} name={sel.company} size={52} radius={14} />
                 <div className="djobs__pv-head-r">
                   <MiniScore pct={sel.matchPct} size={54} />
+                  <button
+                    type="button"
+                    className={`djobs__pv-bookmark${selectedBookmarked ? ' on' : ''}`}
+                    aria-label={selectedBookmarked ? '북마크 해제' : '북마크 추가'}
+                    aria-pressed={selectedBookmarked}
+                    onClick={() => toggleBookmark(sel.id)}
+                  >
+                    <Bookmark size={16} />
+                  </button>
                   <span
                     className="djobs__pv-full"
                     title="전체 화면에서 보기"
@@ -1271,9 +1282,48 @@ export function DesktopMy() {
   const postings = useMemo(() => getDynamicPostings(skills), [skills])
 
   const bookmarkIds = useBookmarks()
+  const bookmarkKey = bookmarkIds.join(',')
+  const [bookmarkedDetails, setBookmarkedDetails] = useState<Awaited<ReturnType<typeof jobsApi.detail>>[]>([])
+
+  useEffect(() => {
+    let cancelled = false
+    if (bookmarkIds.length === 0) {
+      setBookmarkedDetails([])
+      return
+    }
+
+    loadBookmarkDetails(bookmarkIds, (id) => jobsApi.detail(id))
+      .then((details) => { if (!cancelled) setBookmarkedDetails(details) })
+
+    return () => { cancelled = true }
+    // bookmarkKey is the stable value used to refresh API-backed bookmarks.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookmarkKey])
+
   const bookmarkedPostings = useMemo(
-    () => bookmarkIds.map((id) => postings.find((p) => p.id === id)).filter((p): p is typeof postings[number] => !!p),
-    [bookmarkIds, postings],
+    () => {
+      const detailsById = new Map(bookmarkedDetails.map((detail) => [String(detail.id), detail]))
+      return bookmarkIds.flatMap((id) => {
+        const mockPosting = postings.find((posting) => posting.id === id)
+        if (mockPosting) return [mockPosting]
+
+        const detail = detailsById.get(id)
+        if (!detail) return []
+        const held = detail.skills.filter((skill) => skills.includes(skill))
+        return [{
+          id,
+          title: detail.title,
+          company: detail.company ?? '회사명 미상',
+          logo: detail.logo_url ?? '',
+          matchPct: detail.skills.length
+            ? Math.round(((detail.matched_count ?? held.length) / detail.skills.length) * 100)
+            : 0,
+          careerMin: detail.career_min,
+          careerMax: detail.career_max,
+        }]
+      })
+    },
+    [bookmarkIds, bookmarkedDetails, postings, skills],
   )
   const bookmarksVisible = bookmarkedPostings.slice(0, 5)
 
@@ -1301,7 +1351,7 @@ export function DesktopMy() {
                 <div className="dmy__hero-stats">
                   <span><b>{skills.length}</b> 보유 기술</span>
                   <span><b>{coverage}%</b> 커버리지</span>
-                  <span><b>{bookmarkedPostings.length}</b> 북마크</span>
+                  <span><b>{bookmarkIds.length}</b> 북마크</span>
                 </div>
               </>
             ) : (
@@ -1315,7 +1365,7 @@ export function DesktopMy() {
 
         <div className="dmy__top-side">
           <div className="dmy__stats">
-            <StatTile label="북마크" value={bookmarkedPostings.length} unit="건" />
+            <StatTile label="북마크" value={bookmarkIds.length} unit="건" />
             <StatTile label="최근 본 공고" value={recentViewPostings.length} unit="건" />
             <StatTile label="커버리지" value={coverage} unit="%" />
           </div>
@@ -1396,7 +1446,7 @@ export function DesktopMy() {
           </section>
 
           <section className="dcard">
-            <SectionHeader title="북마크한 공고" hint={`${bookmarkedPostings.length}건`} right={
+            <SectionHeader title="북마크한 공고" hint={`${bookmarkIds.length}건`} right={
               <button className="dpage__more" onClick={() => navigate('/jobs')}>전체 보기</button>
             } />
             {bookmarksVisible.length === 0 ? (
