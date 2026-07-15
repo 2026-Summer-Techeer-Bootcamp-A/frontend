@@ -1147,15 +1147,34 @@ const MKT = marketDataRaw as {
 }
 
 /* ────────────────────────────────────────────────────────────────
-   ① 판도 카드(프론트/백/DB) — group-share 목 데이터
-   현재 점유율(share)은 §1 실측치(그룹 union 기준 대략치) 그대로. 연도 추이(yearly)는
-   백엔드 group-share가 아직 없어 방향성만 맞춘 추정값 — 카드/모달에 "추정" 고지.
+   ① 판도 카드(프론트/백/DB) — 현재 점유율은 group-share,
+   모달의 연도 추이는 skill-trend-yearly 실측 데이터를 사용한다.
    ──────────────────────────────────────────────────────────────── */
 export type GroupKey = 'frontend_fw' | 'backend_fw' | 'database' | 'programming_language'
 type GroupShareItem = { tech: string; share: number; yearly: number[]; trend: 'up' | 'down' }
-type GroupShareGroup = { key: GroupKey; label: string; union: number; asOf: string; items: GroupShareItem[] }
+type GroupShareGroup = { key: GroupKey; label: string; union: number; asOf: string; years: string[]; items: GroupShareItem[] }
 
 const GROUP_SHARE_YEARS = ['2023', '2024', '2025', '2026']
+const GROUP_SHARE_TECHS: Record<GroupKey, string[]> = {
+  programming_language: ['Java', 'Python', 'JavaScript', 'TypeScript', 'Kotlin', 'Go', 'C#', 'PHP', 'Ruby'],
+  backend_fw: ['Spring', 'Node.js', '.NET', 'Django', 'NestJS', 'FastAPI', 'Flask', 'Express'],
+  frontend_fw: ['React', 'Vue', 'Next.js', 'Angular', 'Svelte'],
+  database: ['MySQL', 'Oracle', 'PostgreSQL', 'Redis', 'MariaDB', 'MongoDB'],
+}
+
+type YearlyTrendResponse = Awaited<ReturnType<typeof marketApi.yearlyTrend>>
+const yearlyTrendRequests = new Map<ApiPool, Promise<YearlyTrendResponse>>()
+
+function getYearlyTrend(pool: ApiPool): Promise<YearlyTrendResponse> {
+  const pending = yearlyTrendRequests.get(pool)
+  if (pending) return pending
+  const request = marketApi.yearlyTrend(pool).catch((error) => {
+    yearlyTrendRequests.delete(pool)
+    throw error
+  })
+  yearlyTrendRequests.set(pool, request)
+  return request
+}
 
 function gsItem(tech: string, yearly: number[]): GroupShareItem {
   return { tech, share: yearly[yearly.length - 1], yearly, trend: yearly[yearly.length - 1] >= yearly[0] ? 'up' : 'down' }
@@ -1163,7 +1182,7 @@ function gsItem(tech: string, yearly: number[]): GroupShareItem {
 
 const GROUP_SHARE_MOCK: Record<GroupKey, GroupShareGroup> = {
   frontend_fw: {
-    key: 'frontend_fw', label: '프론트 프레임워크', union: 8036, asOf: '2026-07-14',
+    key: 'frontend_fw', label: '프론트 프레임워크', union: 8036, asOf: '2026-07-14', years: GROUP_SHARE_YEARS,
     items: [
       gsItem('React', [72.4, 74.6, 76.1, 77.0]),
       gsItem('Vue', [39.8, 37.2, 35.0, 33.5]),
@@ -1173,7 +1192,7 @@ const GROUP_SHARE_MOCK: Record<GroupKey, GroupShareGroup> = {
     ],
   },
   backend_fw: {
-    key: 'backend_fw', label: '백엔드 프레임워크', union: 14250, asOf: '2026-07-14',
+    key: 'backend_fw', label: '백엔드 프레임워크', union: 14250, asOf: '2026-07-14', years: GROUP_SHARE_YEARS,
     items: [
       gsItem('Spring', [55.2, 52.4, 50.0, 48.1]),
       gsItem('Node.js', [24.8, 27.3, 29.5, 31.3]),
@@ -1183,7 +1202,7 @@ const GROUP_SHARE_MOCK: Record<GroupKey, GroupShareGroup> = {
     ],
   },
   database: {
-    key: 'database', label: '데이터베이스', union: 9684, asOf: '2026-07-14',
+    key: 'database', label: '데이터베이스', union: 9684, asOf: '2026-07-14', years: GROUP_SHARE_YEARS,
     items: [
       gsItem('MySQL', [58.6, 57.8, 57.1, 56.5]),
       gsItem('Oracle', [35.0, 31.8, 28.9, 26.7]),
@@ -1193,7 +1212,7 @@ const GROUP_SHARE_MOCK: Record<GroupKey, GroupShareGroup> = {
     ],
   },
   programming_language: {
-    key: 'programming_language', label: '프로그래밍 언어', union: 18420, asOf: '2026-07-14',
+    key: 'programming_language', label: '프로그래밍 언어', union: 18420, asOf: '2026-07-14', years: GROUP_SHARE_YEARS,
     items: [
       gsItem('Java', [45.8, 43.6, 41.4, 39.8]),
       gsItem('Python', [28.1, 31.5, 35.7, 38.9]),
@@ -1213,11 +1232,11 @@ function groupShareModalOption(group: GroupShareGroup) {
       ...tooltipStyle, trigger: 'item',
       formatter: (p: { seriesName: string }) => {
         const item = group.items.find((i) => i.tech === p.seriesName)!
-        return `<b>${item.tech}</b><br/>${GROUP_SHARE_YEARS.map((y, i) => `${y} <b>${item.yearly[i]}%</b>`).join('<br/>')}`
+        return `<b>${item.tech}</b><br/>${group.years.map((y, i) => `${y} <b>${item.yearly[i]}%</b>`).join('<br/>')}`
       },
     },
     xAxis: {
-      type: 'category', boundaryGap: false, data: GROUP_SHARE_YEARS,
+      type: 'category', boundaryGap: false, data: group.years,
       axisLine: { lineStyle: { color: '#e6e9ef' } }, axisTick: { show: false },
       axisLabel: { color: '#43454c', fontFamily: FONT, fontSize: 10.5, fontWeight: 700 },
     },
@@ -1235,6 +1254,24 @@ function groupShareModalOption(group: GroupShareGroup) {
   }
 }
 
+function groupShareFromYearly(group: GroupKey, label: string, response: YearlyTrendResponse): GroupShareGroup | null {
+  const techs = new Set(GROUP_SHARE_TECHS[group])
+  const items = response.series
+    .filter((item) => techs.has(item.canonical) && item.shares.length === response.years.length && item.shares.length > 0)
+    .map((item) => gsItem(item.canonical, item.shares))
+    .sort((a, b) => b.share - a.share)
+
+  if (!items.length || !response.years.length) return null
+  return {
+    key: group,
+    label,
+    union: response.sample_size,
+    asOf: response.as_of,
+    years: response.years.map(String),
+    items,
+  }
+}
+
 /** 판도 카드 — 1~3위 + 그룹내 점유% 요약. 클릭하면 전체 순위 + 증감 화살표 + 연도별
  * 점유율 추이(멀티라인) 모달을 연다(스펙 §4-2). 라이브 group-share가 아직 없어 domestic은
  * §1 실측 목, global은 (표본에 프레임워크 항목이 없어) 값을 지어내는 대신 "준비 중"으로
@@ -1245,6 +1282,8 @@ export function GroupShareCard({ group, pool }: { group: GroupKey; pool: PoolCho
   const [open, setOpen] = useState(false)
   const [domesticLive, setDomesticLive] = useState<GroupShareGroup | null>(null)
   const [globalLive, setGlobalLive] = useState<GroupShareGroup | null>(null)
+  const [yearlyLive, setYearlyLive] = useState<GroupShareGroup | null>(null)
+  const [yearlyLoading, setYearlyLoading] = useState(true)
 
   useEffect(() => {
     if (group === 'programming_language') return
@@ -1252,7 +1291,7 @@ export function GroupShareCard({ group, pool }: { group: GroupKey; pool: PoolCho
     marketApi.groupShare({ group, pool: 'domestic' }).then((r) => {
       if (cancelled || !r.items.length) return
       setDomesticLive({
-        key: group, label: mock.label, union: r.union_count, asOf: r.as_of,
+        key: group, label: mock.label, union: r.union_count, asOf: r.as_of, years: GROUP_SHARE_YEARS,
         items: r.items.map((it) => gsItem(it.canonical, [it.share, it.share, it.share, it.share])),
       })
     }).catch(() => undefined)
@@ -1266,10 +1305,26 @@ export function GroupShareCard({ group, pool }: { group: GroupKey; pool: PoolCho
     marketApi.groupShare({ group, pool: 'global' }).then((r) => {
       if (cancelled || !r.items.length) return
       setGlobalLive({
-        key: group, label: mock.label, union: r.union_count, asOf: r.as_of,
+        key: group, label: mock.label, union: r.union_count, asOf: r.as_of, years: GROUP_SHARE_YEARS,
         items: r.items.map((it) => gsItem(it.canonical, [it.share, it.share, it.share, it.share])),
       })
     }).catch(() => undefined)
+    return () => { cancelled = true }
+  }, [group, pool, mock.label])
+
+  useEffect(() => {
+    let cancelled = false
+    setYearlyLive(null)
+    setYearlyLoading(true)
+    const trendPool: ApiPool = pool === 'global' ? 'global' : 'domestic'
+    getYearlyTrend(trendPool)
+      .then((response) => {
+        if (!cancelled) setYearlyLive(groupShareFromYearly(group, mock.label, response))
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (!cancelled) setYearlyLoading(false)
+      })
     return () => { cancelled = true }
   }, [group, pool, mock.label])
 
@@ -1321,8 +1376,14 @@ export function GroupShareCard({ group, pool }: { group: GroupKey; pool: PoolCho
                 ))}
               </div>
               <div className="mktmodal__chart">
-                <div className="mktmodal__chart-t">기술별 연도 점유율 추이 {pool === 'global' && globalReady ? '' : '(추정)'}</div>
-                <ReactECharts option={groupShareModalOption(modalData)} style={{ height: 200 }} notMerge />
+                <div className="mktmodal__chart-t">기술별 연도 점유율 추이</div>
+                {yearlyLive ? (
+                  <ReactECharts option={groupShareModalOption(yearlyLive)} style={{ height: 200 }} notMerge />
+                ) : (
+                  <div style={{ height: 200, display: 'grid', placeItems: 'center', color: '#7c7f88', fontSize: 12 }}>
+                    {yearlyLoading ? '실제 데이터를 불러오는 중…' : '연도별 실제 데이터가 없습니다.'}
+                  </div>
+                )}
               </div>
             </div>
             <div className="mktmodal__foot">
@@ -1546,7 +1607,7 @@ export function DemandRaceChart({ pool, right }: { pool: PoolChoice; right?: Rea
         )}
       />
       <p className="dmkt2__takeaway">
-        2020–2026 점유율% 순위 변동
+        2022-2026 점유율% 순위 변동
         {category === 'programming_language' && <> · <b className="dmkt2__takeaway-up">Python이 Java 추월</b></>}
       </p>
       <ReactECharts option={option} style={{ height: 250 }} notMerge />
