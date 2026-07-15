@@ -16,8 +16,9 @@ import { useBookmarks } from './bookmarkStore'
 import { marketApi } from './api'
 import {
   buildConceptSankeyFallback,
+  CURATED_SANKEY_CONCEPTS,
   curateConceptSankey,
-  getConceptNodeLocalY,
+  omitConceptFromSankey,
   SANKEY_CHART_LAYOUT,
   type SankeyNode,
   type SankeyPayload,
@@ -1688,6 +1689,7 @@ export function MarketSkillUnlockWidget() {
    ──────────────────────────────────────────────────────────────── */
 const CONCEPT_FOR_SANKEY = (conceptRaw as unknown as { concepts: ConceptItem[] }).concepts
 const CONCEPT_SANKEY_FALLBACK = buildConceptSankeyFallback(CONCEPT_FOR_SANKEY)
+const OMITTED_SANKEY_CONCEPT = '클라우드 네이티브'
 
 // 개념 노드 구분용 저채도 팔레트(모노톤 계열에 어울리는 뮤트 톤 — 원색/쨍한 색 금지).
 // 개념마다 하나씩 배정하고, 그 개념에서 나가는 링크는 같은 색을 낮은 opacity로 물려받아
@@ -1717,13 +1719,24 @@ export function ConceptTechSankeyWidget({ pool }: { pool: PoolChoice }) {
     return () => { cancelled = true }
   }, [pool])
   const raw = live ?? CONCEPT_SANKEY_FALLBACK
-  const data = useMemo(() => curateConceptSankey(raw, CONCEPT_SANKEY_FALLBACK), [raw])
+  const data = useMemo(
+    () => omitConceptFromSankey(
+      curateConceptSankey(raw, CONCEPT_SANKEY_FALLBACK),
+      OMITTED_SANKEY_CONCEPT,
+    ),
+    [raw],
+  )
+  const visibleConceptNames = useMemo(
+    () => data.nodes.filter((node) => node.kind === 'concept').map((node) => node.name),
+    [data],
+  )
 
   // 개념 노드 순서대로 저채도 색을 배정 — 노드 색 + 링크 tint 색의 단일 출처.
   const conceptColor = useMemo(() => {
     const map = new Map<string, [number, number, number]>()
-    data.nodes.filter((n) => n.kind === 'concept').forEach((n, i) => {
-      map.set(n.name, SANKEY_CONCEPT_RGB[i % SANKEY_CONCEPT_RGB.length])
+    data.nodes.filter((n) => n.kind === 'concept').forEach((n) => {
+      const colorIndex = CURATED_SANKEY_CONCEPTS.indexOf(n.name as typeof CURATED_SANKEY_CONCEPTS[number])
+      map.set(n.name, SANKEY_CONCEPT_RGB[Math.max(0, colorIndex) % SANKEY_CONCEPT_RGB.length])
     })
     return map
   }, [data])
@@ -1744,10 +1757,18 @@ export function ConceptTechSankeyWidget({ pool }: { pool: PoolChoice }) {
       emphasis: { focus: 'adjacency' },
       data: data.nodes.map((n) => {
         const c = conceptColor.get(n.name)
+        const conceptIndex = visibleConceptNames.indexOf(n.name)
+        const conceptLocalY = conceptIndex >= 0
+          ? 0.18 + conceptIndex * (0.63 / Math.max(1, visibleConceptNames.length - 1))
+          : undefined
         return {
           name: n.name,
-          localY: n.kind === 'concept' ? getConceptNodeLocalY(n.name) : undefined,
-          itemStyle: { color: n.kind === 'concept' && c ? sankeyRgb(c) : SANKEY_TECH_COLOR, borderColor: '#fff' },
+          localY: conceptLocalY,
+          itemStyle: {
+            color: n.kind === 'concept' && c ? sankeyRgb(c) : SANKEY_TECH_COLOR,
+            borderColor: n.kind === 'concept' && c ? sankeyRgb(c) : '#fff',
+            borderWidth: n.kind === 'concept' ? 2 : 1,
+          },
           label: {
             fontFamily: FONT, fontSize: SANKEY_CHART_LAYOUT.labelFontSize, fontWeight: 700, color: '#43454c',
             position: n.kind === 'concept' ? 'left' : 'right',
@@ -1757,11 +1778,19 @@ export function ConceptTechSankeyWidget({ pool }: { pool: PoolChoice }) {
       // 링크는 출발 개념의 색을 낮은 opacity로 tint — 어느 흐름이 어느 개념에서 나왔는지 색으로 추적.
       links: data.links.map((l) => {
         const c = conceptColor.get(l.source)
-        return { ...l, lineStyle: { color: c ? sankeyRgba(c, 0.4) : 'rgba(170, 176, 187, 0.35)' } }
+        return {
+          ...l,
+          lineStyle: {
+            color: c ? sankeyRgb(c) : 'rgb(170, 176, 187)',
+            opacity: 0.56,
+            borderWidth: 1,
+            borderColor: c ? sankeyRgba(c, 0.42) : 'rgba(170, 176, 187, 0.42)',
+          },
+        }
       }),
       lineStyle: { curveness: 0.5 },
     }],
-  }), [data, conceptColor])
+  }), [data, conceptColor, visibleConceptNames])
 
   return <ReactECharts option={option} style={{ height: SANKEY_CHART_LAYOUT.height }} notMerge />
 }

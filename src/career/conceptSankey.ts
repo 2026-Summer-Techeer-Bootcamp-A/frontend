@@ -63,6 +63,16 @@ export function curateConceptSankey(payload: SankeyPayload, fallback: SankeyPayl
   return createPayload(links)
 }
 
+export function omitConceptFromSankey(payload: SankeyPayload, conceptName: string): SankeyPayload {
+  const links = payload.links.filter((link) => link.source !== conceptName)
+  const linkedTechNames = new Set(links.map((link) => link.target))
+  const nodes = payload.nodes.filter((node) => (
+    node.kind === 'concept' ? node.name !== conceptName : linkedTechNames.has(node.name)
+  ))
+
+  return { nodes, links }
+}
+
 function createPayload(links: SankeyLink[]): SankeyPayload {
   const techNames = [...new Set(links.map((link) => link.target))]
   const nodes: SankeyNode[] = [
