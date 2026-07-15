@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { authApi } from './api'
+import { authApi } from './api.ts'
 
 export type AuthUser = { id: number; email: string; nickname: string | null }
 

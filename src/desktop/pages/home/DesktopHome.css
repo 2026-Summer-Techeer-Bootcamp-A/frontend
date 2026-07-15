@@ -178,7 +178,18 @@
 .hfeed-mpulse__trend { margin-top: 12px; }
 .hfeed-mpulse__trend-cap { font-size: 12.5px; color: var(--c-muted); }
 .hfeed-mpulse__trend-cap b { color: var(--c-ink); font-weight: 700; }
+.hfeed-mpulse__trend-meta {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  margin-top: 5px; font-size: 11.5px; color: var(--c-muted);
+}
+.hfeed-mpulse__trend-meta b { color: var(--c-ink); font-weight: 700; }
+.hfeed-mpulse__outlier { color: var(--hf-viz-clay-text); }
+.hfeed-mpulse__outlier b { color: inherit; }
 .hfeed-mpulse__spark { display: block; width: 100%; height: 44px; margin-top: 8px; overflow: visible; }
+.hfeed-mpulse__outlier-dot {
+  fill: var(--hf-viz-clay); stroke: #fff; stroke-width: 1.5;
+}
+.hfeed-mpulse__asof { margin-top: 4px; font-size: 10.5px; color: var(--c-muted); text-align: right; }
 .hfeed-mpulse__skills { margin-top: 16px; display: flex; flex-direction: column; gap: 7px; }
 .hfeed-mpulse__skills-cap { font-size: 12px; color: var(--c-muted); margin-bottom: 2px; }
 .hfeed-mpulse__bar {
