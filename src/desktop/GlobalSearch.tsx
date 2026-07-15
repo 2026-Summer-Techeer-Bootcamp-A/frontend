@@ -62,8 +62,8 @@ export default function GlobalSearch({ variant = 'default' }: GlobalSearchProps)
       </div>
       {open && (
         <div style={isLarge
-          ? { position: 'absolute', zIndex: 300, top: 56, left: 0, width: '100%', maxHeight: 480, overflowY: 'auto', padding: 8, border: '1px solid var(--c-line, #dedee3)', borderRadius: 14, background: 'var(--c-surface, #fff)', boxShadow: '0 18px 48px rgba(0,0,0,.16)' }
-          : { position: 'absolute', zIndex: 300, top: 42, right: 0, width: 380, maxHeight: 480, overflowY: 'auto', padding: 8, border: '1px solid var(--c-line, #dedee3)', borderRadius: 14, background: 'var(--c-surface, #fff)', boxShadow: '0 18px 48px rgba(0,0,0,.16)' }}>
+          ? { position: 'absolute', zIndex: 300, top: 56, left: 0, width: '100%', maxHeight: 'min(320px, calc(100dvh - 128px))', overflowY: 'auto', overscrollBehavior: 'contain', scrollbarWidth: 'thin', padding: 8, border: '1px solid var(--c-line, #dedee3)', borderRadius: 14, background: 'var(--c-surface, #fff)', boxShadow: '0 18px 48px rgba(0,0,0,.16)' }
+          : { position: 'absolute', zIndex: 300, top: 42, right: 0, width: 380, maxHeight: 'min(320px, calc(100dvh - 108px))', overflowY: 'auto', overscrollBehavior: 'contain', scrollbarWidth: 'thin', padding: 8, border: '1px solid var(--c-line, #dedee3)', borderRadius: 14, background: 'var(--c-surface, #fff)', boxShadow: '0 18px 48px rgba(0,0,0,.16)' }}>
           {!hasResults && !loading && <div style={{ padding: 18, color: 'var(--c-muted)', fontSize: 13 }}>검색 결과가 없어요.</div>}
           {results.postings.length > 0 && <SearchSection title="공고">
             {results.postings.map((item) => <ResultButton key={item.id} onClick={() => go(`/job/${item.id}`)} title={item.title} meta={`${item.company} · ${item.pool}`} />)}
