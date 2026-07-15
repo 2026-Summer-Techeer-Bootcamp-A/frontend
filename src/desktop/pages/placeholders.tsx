@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { MapPin, ArrowUpRight, Bookmark, FileText, Settings, Award, User, Sparkles, Plus, Trash2, CheckCircle2 } from 'lucide-react'
+import { MapPin, ArrowUpRight, Bookmark, FileText, Settings, Award, User, Sparkles, Plus, Trash2, CheckCircle2, X } from 'lucide-react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import catData from '../../data/pearl/n.json'
@@ -1276,6 +1276,7 @@ export function DesktopMy() {
   const initial = (user ? (user.nickname || user.email) : 'RV').slice(0, 2).toUpperCase()
 
   const [skillModalOpen, setSkillModalOpen] = useState(false)
+  const [postingListOpen, setPostingListOpen] = useState<'bookmarks' | 'recent' | null>(null)
 
   const postings = useMemo(() => getDynamicPostings(skills), [skills])
 
@@ -1323,13 +1324,59 @@ export function DesktopMy() {
     },
     [bookmarkIds, bookmarkedDetails, postings, skills],
   )
-  const bookmarksVisible = bookmarkedPostings.slice(0, 5)
-
   const recentViewIds = useRecentViews(5)
+  const recentViewKey = recentViewIds.join(',')
+  const [recentViewDetails, setRecentViewDetails] = useState<Awaited<ReturnType<typeof jobsApi.detail>>[]>([])
+
+  useEffect(() => {
+    let cancelled = false
+    if (recentViewIds.length === 0) {
+      setRecentViewDetails([])
+      return
+    }
+
+    loadBookmarkDetails(recentViewIds, (id) => jobsApi.detail(id))
+      .then((details) => { if (!cancelled) setRecentViewDetails(details) })
+
+    return () => { cancelled = true }
+    // recentViewKey is the stable value used to refresh API-backed view history.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recentViewKey])
+
   const recentViewPostings = useMemo(
-    () => recentViewIds.map((id) => postings.find((p) => p.id === id)).filter((p): p is typeof postings[number] => !!p),
-    [recentViewIds, postings],
+    () => {
+      const detailsById = new Map(recentViewDetails.map((detail) => [String(detail.id), detail]))
+      return recentViewIds.flatMap((id) => {
+        const mockPosting = postings.find((posting) => posting.id === id)
+        if (mockPosting) return [mockPosting]
+
+        const detail = detailsById.get(id)
+        if (!detail) return []
+        const held = detail.skills.filter((skill) => skills.includes(skill))
+        return [{
+          id,
+          title: detail.title,
+          company: detail.company ?? '회사명 미상',
+          logo: detail.logo_url ?? '',
+          matchPct: detail.skills.length
+            ? Math.round(((detail.matched_count ?? held.length) / detail.skills.length) * 100)
+            : 0,
+          careerMin: detail.career_min,
+          careerMax: detail.career_max,
+        }]
+      })
+    },
+    [recentViewIds, recentViewDetails, postings, skills],
   )
+
+  useEffect(() => {
+    if (!postingListOpen) return
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setPostingListOpen(null)
+    }
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [postingListOpen])
 
   return (
     <div className="dpage dmy">
@@ -1363,8 +1410,20 @@ export function DesktopMy() {
 
         <div className="dmy__top-side">
           <div className="dmy__stats">
-            <StatTile label="북마크" value={bookmarkIds.length} unit="건" />
-            <StatTile label="최근 본 공고" value={recentViewPostings.length} unit="건" />
+            <StatTile
+              label="북마크"
+              value={bookmarkIds.length}
+              unit="건"
+              onClick={() => setPostingListOpen('bookmarks')}
+              ariaLabel={`북마크한 공고 ${bookmarkIds.length}건 보기`}
+            />
+            <StatTile
+              label="최근 본 공고"
+              value={recentViewIds.length}
+              unit="건"
+              onClick={() => setPostingListOpen('recent')}
+              ariaLabel={`최근 본 공고 ${recentViewIds.length}건 보기`}
+            />
             <StatTile label="커버리지" value={coverage} unit="%" />
           </div>
 
@@ -1450,58 +1509,9 @@ export function DesktopMy() {
             </div>
           </section>
 
-          <section className="dcard dmy__section-card">
-            <SectionHeader title="북마크한 공고" hint={`${bookmarkIds.length}건`} right={
-              <button className="dpage__more" onClick={() => navigate('/jobs')}>전체 보기</button>
-            } />
-            {bookmarksVisible.length === 0 ? (
-              <div className="dmy__empty">
-                <span>아직 북마크한 공고가 없어요. 마음에 드는 공고를 담아두면 여기 모여요.</span>
-                <button className="dmy__empty-btn" onClick={() => navigate('/jobs')}>공고 둘러보기</button>
-              </div>
-            ) : (
-              <>
-                <div className="dmy__jobs">
-                  {bookmarksVisible.map((p) => (
-                    <JobCardCompact
-                      key={p.id}
-                      job={{ company: p.company, title: p.title, matchPct: p.matchPct, careerLabel: careerLabel(p.careerMin, p.careerMax) }}
-                      logo={<CompanyLogo logo={p.logo} name={p.company} size={40} radius={11} />}
-                      onOpen={() => navigate(`/job/${encodeURIComponent(p.id)}`)}
-                    />
-                  ))}
-                </div>
-                {bookmarkedPostings.length > bookmarksVisible.length && (
-                  <div className="dmy__more-txt">{bookmarkedPostings.length - bookmarksVisible.length}개 더</div>
-                )}
-              </>
-            )}
-          </section>
         </div>
 
         <aside className="dmy__aside">
-          <section className="dcard">
-            <SectionHeader title="최근 본 공고" />
-            {recentViewPostings.length === 0 ? (
-              <div className="dmy__empty">
-                <span>최근 본 공고가 아직 없어요.</span>
-                <button className="dmy__empty-btn" onClick={() => navigate('/jobs')}>공고 보러 가기</button>
-              </div>
-            ) : (
-              <div className="dmy__recent">
-                {recentViewPostings.map((p) => (
-                  <button key={p.id} className="djobs__row" onClick={() => navigate(`/job/${encodeURIComponent(p.id)}`)}>
-                    <CompanyLogo logo={p.logo} name={p.company} size={34} radius={9} />
-                    <span className="djobs__row-b">
-                      <span className="djobs__row-t">{p.title}</span>
-                      <span className="djobs__row-c">{p.company}</span>
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </section>
-
           <section className="dcard">
             <SectionHeader title="바로가기" />
             <div className="kit-menulist">
@@ -1513,6 +1523,49 @@ export function DesktopMy() {
           </section>
         </aside>
       </div>
+
+      {postingListOpen && (
+        <div className="dmy__posting-modal" role="presentation" onMouseDown={() => setPostingListOpen(null)}>
+          <section
+            className="dmy__posting-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="dmy-posting-dialog-title"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="dmy__posting-dialog-head">
+              <div>
+                <h2 id="dmy-posting-dialog-title">{postingListOpen === 'bookmarks' ? '북마크한 공고' : '최근 본 공고'}</h2>
+                <span>{postingListOpen === 'bookmarks' ? bookmarkIds.length : recentViewIds.length}건</span>
+              </div>
+              <button type="button" onClick={() => setPostingListOpen(null)} aria-label="닫기"><X size={18} /></button>
+            </div>
+
+            {(postingListOpen === 'bookmarks' ? bookmarkedPostings : recentViewPostings).length === 0 ? (
+              <div className="dmy__posting-dialog-empty">
+                <span>{postingListOpen === 'bookmarks' ? '아직 북마크한 공고가 없어요.' : '최근 본 공고가 아직 없어요.'}</span>
+                <button type="button" className="dmy__empty-btn" onClick={() => navigate('/jobs')}>공고 둘러보기</button>
+              </div>
+            ) : (
+              <div className="dmy__posting-dialog-list">
+                {(postingListOpen === 'bookmarks' ? bookmarkedPostings : recentViewPostings).map((posting) => (
+                  <JobCardCompact
+                    key={posting.id}
+                    job={{
+                      company: posting.company,
+                      title: posting.title,
+                      matchPct: posting.matchPct,
+                      careerLabel: careerLabel(posting.careerMin, posting.careerMax),
+                    }}
+                    logo={<CompanyLogo logo={posting.logo} name={posting.company} size={40} radius={11} />}
+                    onOpen={() => navigate(`/job/${encodeURIComponent(posting.id)}`)}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+      )}
 
       <SkillManagerModal
         open={skillModalOpen && !!activeResume}
