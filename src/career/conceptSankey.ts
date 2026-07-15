@@ -10,12 +10,20 @@ export const CURATED_SANKEY_CONCEPTS = [
 
 export const SANKEY_CHART_LAYOUT = {
   height: 500,
-  nodeGap: 18,
+  nodeGap: 24,
+  labelFontSize: 14,
   top: 30,
   bottom: 30,
   left: '25%',
   right: '18%',
 } as const
+
+const SANKEY_CONCEPT_LOCAL_Y = [0.15, 0.26, 0.37, 0.48, 0.59, 0.70, 0.81] as const
+
+export function getConceptNodeLocalY(name: string): number | undefined {
+  const conceptIndex = CURATED_SANKEY_CONCEPTS.findIndex((concept) => concept === name)
+  return conceptIndex >= 0 ? SANKEY_CONCEPT_LOCAL_Y[conceptIndex] : undefined
+}
 
 export type SankeyNode = { name: string; kind: 'concept' | 'tech' }
 export type SankeyLink = { source: string; target: string; value: number }

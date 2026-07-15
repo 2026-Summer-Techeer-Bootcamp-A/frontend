@@ -15,7 +15,7 @@ import {
 import {
   HypeVsHireWidget, GithubChronicleWidget, GlobalDomesticGapWidget,
   GroupShareCard, DemandRaceChart, DemandGrowthScatter, CooccurrenceBarWidget,
-  CareerLevelDistributionWidget, MarketSkillUnlockWidget, ConceptTechSankeyWidget,
+  CareerLevelDistributionWidget, MarketSkillUnlockWidget,
   GlobalDomesticLagWidget, MarketChangeStrip,
   type GroupKey, type PoolChoice,
 } from '../../career/wowWidgets'
@@ -1083,16 +1083,9 @@ export function DesktopMarket() {
               </div>
             )}
             {!isWidgetHidden('market', 'concept-tech-sankey') && (
-              <>
-                <div className="dmkt2__card-item dmkt2__card-item--sankey dmkt2__card-item--r5" style={spanStyle(widgetSize('concept-tech-sankey'))}>
-                  <section className="dcard">
-                    <SectionHeader title="개념 → 기술 Sankey" hint="posting_concept 실측" />
-                    <p className="dmkt2__takeaway">"이 개념을 하려면 어떤 기술" — 개념이 요구하는 스택 흐름.</p>
-                    <ConceptTechSankeyWidget pool={pool} />
-                  </section>
-                </div>
+              <div className="dmkt2__card-item dmkt2__card-item--sankey dmkt2__card-item--r5" style={spanStyle(widgetSize('concept-tech-sankey'))}>
                 <ConceptAlternativeCharts pool={pool} />
-              </>
+              </div>
             )}
           </div>
         </section>
