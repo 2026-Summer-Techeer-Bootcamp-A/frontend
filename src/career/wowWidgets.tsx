@@ -1403,194 +1403,290 @@ export function GroupShareCard({ group, pool }: { group: GroupKey; pool: PoolCho
    ──────────────────────────────────────────────────────────────── */
 type YearlySeriesItem = { canonical: string; shares: number[]; delta: number }
 type YearlyPayload = { years: string[]; series: YearlySeriesItem[] }
-type DemandRaceCategory = 'programming_language' | 'backend_fw' | 'frontend_fw' | 'database'
 
 const YEARLY_MOCK: YearlyPayload = {
   years: MKT.techYearly.years,
   series: MKT.techYearly.series.map((r) => ({ canonical: r.tech, shares: r.shares, delta: r.delta })),
 }
 
-const DEMAND_RACE_CATEGORIES: Array<{ key: DemandRaceCategory; label: string; hint: string; techs: string[] }> = [
-  { key: 'programming_language', label: '언어', hint: '언어 판도', techs: ['Java', 'Python', 'JavaScript', 'TypeScript', 'Kotlin', 'Go', 'C#', 'PHP', 'Ruby'] },
-  { key: 'backend_fw', label: '백엔드', hint: '백엔드 판도', techs: ['Spring', 'Node.js', '.NET', 'Django', 'NestJS', 'FastAPI', 'Flask', 'Express'] },
-  { key: 'frontend_fw', label: '프론트엔드', hint: '프론트엔드 판도', techs: ['React', 'Vue', 'Next.js', 'Angular', 'Svelte'] },
-  { key: 'database', label: 'DB', hint: 'DB 판도', techs: ['MySQL', 'Oracle', 'PostgreSQL', 'Redis', 'MariaDB', 'MongoDB'] },
+/* ── 연도별 수요 레이스 — 범프 차트(순위 기반).
+   절대 점유율(%)은 소스별 수집 규모 차이로 오염돼 있어 표시하지 않고 연도별 순위만 쓴다.
+   백엔드 GET /stats/skills/rank-history(category별)에서 순위를 받아 그린다. */
+type RankCategory = 'language' | 'backend' | 'frontend' | 'db'
+type RankSeries = { name: string; ranks: Array<number | null> }
+type RankHistory = { years: number[]; skills: RankSeries[] }
+
+const RANK_TABS: Array<{ key: RankCategory; label: string; hint: string }> = [
+  { key: 'language', label: '언어', hint: '언어 판도' },
+  { key: 'backend', label: '백엔드', hint: '백엔드 판도' },
+  { key: 'frontend', label: '프론트엔드', hint: '프론트엔드 판도' },
+  { key: 'db', label: 'DB', hint: 'DB 판도' },
 ]
 
-const demandRaceItem = (canonical: string, shares: number[]): YearlySeriesItem => ({
-  canonical,
-  shares,
-  delta: Number((shares[shares.length - 1] - shares[0]).toFixed(1)),
-})
+// 기술별 고정 색상 — 탭을 오가거나 데이터가 바뀌어도 같은 기술은 항상 같은 색을 유지한다.
+const SKILL_COLORS: Record<string, string> = {
+  Python: '#3d7dca', JavaScript: '#d99a17', Java: '#e0603a', TypeScript: '#4a3aa7', Go: '#4b9db8',
+  Kotlin: '#9a6bd6', 'C#': '#5b8a3a', PHP: '#7b7fb5', Ruby: '#c73f3f', 'C++': '#6f7d8c', Rust: '#b0703a',
+  Spring: '#5aa03a', 'Node.js': '#4c9a52', Django: '#2e6b4f', FastAPI: '#3aa08c', NestJS: '#d6335f',
+  Express: '#7a7f88', '.NET': '#6a4fc0', Flask: '#5a5f66', Laravel: '#e0603a',
+  React: '#3aa0c0', Vue: '#4caf7a', 'Next.js': '#3a3f47', Angular: '#d0403a', Svelte: '#e0603a',
+  MySQL: '#5b7d9e', PostgreSQL: '#3d6da8', Oracle: '#c0392b', Redis: '#c73f3f', MariaDB: '#8a6247',
+  MongoDB: '#4caf50', SQLite: '#5a8fb0',
+}
+const RANK_PALETTE = ['#3d7dca', '#e0603a', '#4b9db8', '#9a6bd6', '#5aa03a', '#d99a17', '#c73f3f', '#4a3aa7', '#3aa08c', '#7a7f88']
+function colorForSkill(name: string): string {
+  if (SKILL_COLORS[name]) return SKILL_COLORS[name]
+  let h = 0
+  for (let i = 0; i < name.length; i += 1) h = (h * 31 + name.charCodeAt(i)) >>> 0
+  return RANK_PALETTE[h % RANK_PALETTE.length]
+}
 
-const DEMAND_RACE_MOCK: Record<DemandRaceCategory, YearlyPayload> = {
-  programming_language: {
-    years: ['2020', '2021', '2022', '2023', '2024', '2025', '2026'],
-    series: [
-      demandRaceItem('Java', [47.5, 46.9, 46.1, 45.8, 43.6, 41.4, 39.8]),
-      demandRaceItem('Python', [24.5, 25.8, 27.0, 28.1, 31.5, 37.2, 42.9]),
-      demandRaceItem('JavaScript', [36.8, 36.5, 35.8, 35.2, 34.9, 34.5, 34.1]),
-      demandRaceItem('TypeScript', [8.9, 11.2, 13.8, 16.4, 21.8, 27.2, 31.6]),
-      demandRaceItem('Kotlin', [5.9, 6.6, 7.4, 8.1, 9.7, 11.3, 12.8]),
+// 백엔드 미배선/실패 시 폴백 목업(순위만). 언어 예시는 문서 예시(Python 3→1위)와 동일.
+const RANK_MOCK: Record<RankCategory, RankHistory> = {
+  language: {
+    years: [2022, 2023, 2024, 2025, 2026],
+    skills: [
+      { name: 'Python', ranks: [3, 3, 2, 2, 1] },
+      { name: 'JavaScript', ranks: [1, 1, 1, 1, 2] },
+      { name: 'Java', ranks: [2, 2, 3, 3, 3] },
+      { name: 'TypeScript', ranks: [5, 4, 4, 4, 4] },
+      { name: 'Go', ranks: [4, 5, 5, 5, 5] },
     ],
   },
-  backend_fw: {
-    years: ['2020', '2021', '2022', '2023', '2024', '2025', '2026'],
-    series: [
-      demandRaceItem('Spring', [60.0, 58.5, 56.8, 55.2, 52.4, 50.0, 48.1]),
-      demandRaceItem('Node.js', [18.4, 20.1, 22.6, 24.8, 27.3, 29.5, 31.3]),
-      demandRaceItem('.NET', [23.0, 22.1, 20.6, 19.0, 17.2, 15.4, 13.9]),
-      demandRaceItem('Django', [5.1, 5.4, 5.7, 6.0, 6.5, 6.9, 7.3]),
-      demandRaceItem('NestJS', [0.2, 0.4, 0.7, 1.2, 3.0, 4.9, 6.5]),
+  backend: {
+    years: [2022, 2023, 2024, 2025, 2026],
+    skills: [
+      { name: 'Spring', ranks: [1, 1, 1, 1, 1] },
+      { name: 'Node.js', ranks: [3, 3, 2, 2, 2] },
+      { name: '.NET', ranks: [2, 2, 3, 3, 4] },
+      { name: 'Django', ranks: [4, 4, 4, 4, 3] },
+      { name: 'NestJS', ranks: [5, 5, 5, 5, 5] },
     ],
   },
-  frontend_fw: {
-    years: ['2020', '2021', '2022', '2023', '2024', '2025', '2026'],
-    series: [
-      demandRaceItem('React', [65.0, 67.8, 70.1, 72.4, 74.6, 76.1, 77.0]),
-      demandRaceItem('Vue', [45.0, 43.8, 41.6, 39.8, 37.2, 35.0, 33.5]),
-      demandRaceItem('Next.js', [3.2, 4.6, 6.8, 9.5, 14.8, 19.0, 22.6]),
-      demandRaceItem('Angular', [19.8, 18.7, 17.1, 15.6, 13.9, 12.3, 11.2]),
-      demandRaceItem('Svelte', [0.1, 0.1, 0.1, 0.2, 0.4, 0.6, 0.9]),
+  frontend: {
+    years: [2022, 2023, 2024, 2025, 2026],
+    skills: [
+      { name: 'React', ranks: [1, 1, 1, 1, 1] },
+      { name: 'Vue', ranks: [2, 2, 2, 3, 3] },
+      { name: 'Next.js', ranks: [4, 4, 3, 2, 2] },
+      { name: 'Angular', ranks: [3, 3, 4, 4, 4] },
+      { name: 'Svelte', ranks: [5, 5, 5, 5, 5] },
     ],
   },
-  database: {
-    years: ['2020', '2021', '2022', '2023', '2024', '2025', '2026'],
-    series: [
-      demandRaceItem('MySQL', [61.2, 60.4, 59.5, 58.6, 57.8, 57.1, 56.5]),
-      demandRaceItem('Oracle', [42.0, 40.1, 37.6, 35.0, 31.8, 28.9, 26.7]),
-      demandRaceItem('PostgreSQL', [5.2, 6.4, 7.8, 9.8, 14.2, 18.1, 22.0]),
-      demandRaceItem('Redis', [7.1, 8.5, 10.1, 12.0, 14.6, 16.8, 18.7]),
-      demandRaceItem('MariaDB', [21.0, 20.3, 19.4, 18.5, 17.4, 16.5, 15.8]),
+  db: {
+    years: [2022, 2023, 2024, 2025, 2026],
+    skills: [
+      { name: 'MySQL', ranks: [1, 1, 1, 1, 1] },
+      { name: 'Oracle', ranks: [2, 2, 3, 3, 4] },
+      { name: 'PostgreSQL', ranks: [4, 4, 2, 2, 2] },
+      { name: 'Redis', ranks: [3, 3, 4, 4, 3] },
+      { name: 'MariaDB', ranks: [5, 5, 5, 5, 5] },
     ],
   },
 }
 
-function limitYearlyPayload(payload: YearlyPayload, from = 2020, to = 2026): YearlyPayload {
-  const indexes = payload.years
-    .map((year, index) => ({ year: Number(year), index }))
-    .filter(({ year }) => year >= from && year <= to)
+type Overtake = { x: number; y: number; key: string }
 
-  return {
-    years: indexes.map(({ year }) => String(year)),
-    series: payload.series.map((item) => {
-      const shares = indexes.map(({ index }) => item.shares[index])
-      return {
-        ...item,
-        shares,
-        delta: shares.length > 1 ? Number(((shares[shares.length - 1] ?? 0) - (shares[0] ?? 0)).toFixed(1)) : item.delta,
+// 연속한 두 연도 사이 A·B 순위가 뒤바뀌는(선이 교차하는) 지점을 찾는다.
+function computeOvertakes(data: RankHistory, xOf: (i: number) => number, yOf: (r: number) => number): Overtake[] {
+  const out: Overtake[] = []
+  const seen = new Set<string>()
+  const s = data.skills
+  for (let a = 0; a < s.length; a += 1) {
+    for (let b = a + 1; b < s.length; b += 1) {
+      for (let i = 0; i < data.years.length - 1; i += 1) {
+        const ai = s[a].ranks[i], aj = s[a].ranks[i + 1], bi = s[b].ranks[i], bj = s[b].ranks[i + 1]
+        if (ai == null || aj == null || bi == null || bj == null) continue
+        const d0 = ai - bi, d1 = aj - bj
+        if (d0 === 0 || d1 === 0 || (d0 < 0) === (d1 < 0)) continue // 순서가 안 바뀜 → 교차 아님
+        const yA0 = yOf(ai), yA1 = yOf(aj), yB0 = yOf(bi), yB1 = yOf(bj)
+        const denom = (yA1 - yA0) - (yB1 - yB0)
+        const t = denom !== 0 ? Math.max(0, Math.min(1, (yB0 - yA0) / denom)) : 0.5
+        const x0 = xOf(i), x1 = xOf(i + 1)
+        const cx = x0 + t * (x1 - x0)
+        const cy = yA0 + t * (yA1 - yA0)
+        const key = `${Math.round(cx / 12)}:${Math.round(cy / 12)}`
+        if (seen.has(key)) continue
+        seen.add(key)
+        out.push({ x: cx, y: cy, key })
       }
-    }),
+    }
   }
+  return out
 }
 
-function categoryYearlyPayload(payload: YearlyPayload, category: DemandRaceCategory): YearlyPayload {
-  const techs = new Set(DEMAND_RACE_CATEGORIES.find((item) => item.key === category)?.techs ?? [])
-  const filtered = limitYearlyPayload({ ...payload, series: payload.series.filter((item) => techs.has(item.canonical)) })
-  return filtered.years.length > 0 && filtered.series.length >= 2
-    ? filtered
-    : DEMAND_RACE_MOCK[category]
-}
-
-function pickRaceLines(payload: YearlyPayload, limit = 3): YearlySeriesItem[] {
-  const forced = ['Python', 'Java'].map((t) => payload.series.find((s) => s.canonical === t)).filter((s): s is YearlySeriesItem => !!s)
-  const rest = [...payload.series]
-    .filter((s) => !forced.includes(s))
-    .sort((a, b) => (b.shares[b.shares.length - 1] ?? 0) - (a.shares[a.shares.length - 1] ?? 0))
-  return [...forced, ...rest].slice(0, limit)
-}
-
-/** Python이 Java를 추월하는 해(첫 역전 연도)를 찾는다 — 없으면 -1. */
-function findCrossoverIndex(payload: YearlyPayload): number {
-  const py = payload.series.find((s) => s.canonical === 'Python')
-  const jv = payload.series.find((s) => s.canonical === 'Java')
-  if (!py || !jv) return -1
-  for (let i = 1; i < payload.years.length; i += 1) {
-    if (jv.shares[i - 1] >= py.shares[i - 1] && py.shares[i] > jv.shares[i]) return i
+// 최신까지 순위가 가장 많이 오른 기술(테이크어웨이용). 없으면 null.
+function bestRiser(data: RankHistory): { name: string; from: number; to: number } | null {
+  let best: { name: string; from: number; to: number } | null = null
+  for (const sk of data.skills) {
+    const first = sk.ranks.find((r) => r != null)
+    const last = [...sk.ranks].reverse().find((r) => r != null)
+    if (first == null || last == null) continue
+    const imp = first - last
+    if (imp > 0 && (best == null || imp > best.from - best.to)) best = { name: sk.name, from: first, to: last }
   }
-  return -1
+  return best
 }
 
-export function DemandRaceChart({ pool, right }: { pool: PoolChoice; right?: ReactNode }) {
-  const [category, setCategory] = useState<DemandRaceCategory>('programming_language')
-  const [domestic, setDomestic] = useState<YearlyPayload | null>(null)
-  const [global, setGlobalData] = useState<YearlyPayload | null>(null)
+function bumpTip(data: RankHistory, name: string): string {
+  const sk = data.skills.find((x) => x.name === name)
+  if (!sk) return ''
+  return data.years
+    .map((yr, i) => (sk.ranks[i] != null ? `${yr}년 ${sk.ranks[i]}위` : null))
+    .filter(Boolean)
+    .join(' · ')
+}
 
+function BumpChart({ data }: { data: RankHistory }) {
+  const [hovered, setHovered] = useState<string | null>(null)
+  const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null)
+
+  const years = data.years
+  const nY = years.length
+  const W = 720, H = 260, padL = 18, padR = 104, padT = 28, padB = 28
+  const plotW = W - padL - padR, plotH = H - padT - padB
+  const allRanks = data.skills.flatMap((sk) => sk.ranks.filter((r): r is number => r != null))
+  const maxRank = Math.max(1, ...allRanks)
+  const xOf = (i: number) => (nY <= 1 ? padL + plotW / 2 : padL + (i / (nY - 1)) * plotW)
+  const yOf = (rank: number) => (maxRank <= 1 ? padT + plotH / 2 : padT + ((rank - 1) / (maxRank - 1)) * plotH)
+
+  const lines = data.skills
+    .map((sk) => {
+      const pts = sk.ranks
+        .map((r, i) => (r == null ? null : { i, x: xOf(i), y: yOf(r) }))
+        .filter((p): p is { i: number; x: number; y: number } => p != null)
+      // null로 끊긴 구간은 별도 세그먼트로 나눠 선이 끊기게 한다.
+      const runs: Array<Array<{ x: number; y: number }>> = []
+      let run: Array<{ x: number; y: number }> = []
+      let prevI = -2
+      for (const p of pts) {
+        if (p.i === prevI + 1) run.push({ x: p.x, y: p.y })
+        else { if (run.length) runs.push(run); run = [{ x: p.x, y: p.y }] }
+        prevI = p.i
+      }
+      if (run.length) runs.push(run)
+      return { name: sk.name, color: colorForSkill(sk.name), pts, runs, last: pts[pts.length - 1] ?? null }
+    })
+    .filter((l) => l.pts.length > 0)
+
+  const overtakes = useMemo(() => computeOvertakes(data, xOf, yOf), [data]) // eslint-disable-line react-hooks/exhaustive-deps
+  const dim = (name: string) => hovered != null && hovered !== name
+
+  return (
+    <div
+      className="dmkt2__bump"
+      style={{ position: 'relative', width: '100%' }}
+      onMouseLeave={() => { setHovered(null); setCursor(null) }}
+    >
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        width="100%"
+        style={{ display: 'block', height: 'auto' }}
+        role="img"
+        aria-label={`연도별 순위 변화 범프 차트. ${data.skills.map((s) => s.name).join(', ')}`}
+        onMouseMove={(e) => setCursor({ x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY })}
+      >
+        {Array.from({ length: maxRank }, (_, k) => k + 1).map((r) => (
+          <line key={`g${r}`} x1={padL} x2={padL + plotW} y1={yOf(r)} y2={yOf(r)} stroke="#eef1f6" strokeWidth={1} />
+        ))}
+        {Array.from({ length: maxRank }, (_, k) => k + 1).map((r) => (
+          <text key={`yl${r}`} x={padL - 5} y={yOf(r) + 3} textAnchor="end" fontFamily={FONT} fontSize={9} fill="#a1a1aa">{r}</text>
+        ))}
+        {years.map((yr, i) => (
+          <text key={`x${yr}`} x={xOf(i)} y={H - 9} textAnchor="middle" fontFamily={FONT} fontSize={11} fontWeight={700} fill="#43454c">{yr}</text>
+        ))}
+
+        {lines.map((l) => {
+          const stroke = dim(l.name) ? '#c2c6cc' : l.color
+          const active = hovered === l.name
+          return (
+            <g
+              key={l.name}
+              opacity={dim(l.name) ? 0.25 : 1}
+              style={{ transition: 'opacity 200ms', cursor: 'pointer' }}
+              onMouseEnter={() => setHovered(l.name)}
+              onMouseLeave={() => setHovered(null)}
+            >
+              {l.runs.map((run, ri) => (
+                <polyline key={`hit${ri}`} points={run.map((p) => `${p.x},${p.y}`).join(' ')} fill="none" stroke="transparent" strokeWidth={16} style={{ pointerEvents: 'stroke' }} />
+              ))}
+              {l.runs.map((run, ri) => (
+                <polyline
+                  key={ri}
+                  points={run.map((p) => `${p.x},${p.y}`).join(' ')}
+                  fill="none"
+                  stroke={stroke}
+                  strokeWidth={active ? 3.4 : 2.6}
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                  style={{ transition: 'stroke 200ms, stroke-width 200ms' }}
+                />
+              ))}
+              {l.pts.map((p) => (
+                <circle key={p.i} cx={p.x} cy={p.y} r={active ? 4.6 : 3.6} fill="#fff" stroke={stroke} strokeWidth={2} style={{ transition: 'stroke 200ms, r 200ms' }} />
+              ))}
+              {l.last && (
+                <text x={l.last.x + 9} y={l.last.y + 3.5} fontFamily={FONT} fontSize={11} fontWeight={700} fill={stroke} style={{ transition: 'fill 200ms', pointerEvents: 'none' }}>
+                  {l.name}
+                </text>
+              )}
+            </g>
+          )
+        })}
+
+        {overtakes.map((o) => (
+          <g key={o.key} opacity={hovered ? 0.12 : 1} style={{ transition: 'opacity 200ms', pointerEvents: 'none' }}>
+            <rect x={o.x - 15} y={o.y - 21} width={30} height={15} rx={7.5} fill="#e7f3ec" stroke="#bfe0cd" />
+            <text x={o.x} y={o.y - 10.5} textAnchor="middle" fontFamily={FONT} fontSize={9} fontWeight={800} fill="#166534">추월</text>
+          </g>
+        ))}
+      </svg>
+
+      {hovered && cursor && (
+        <div
+          className="dmkt2__bump-tip"
+          style={{
+            position: 'absolute', left: cursor.x + 14, top: cursor.y + 14, pointerEvents: 'none',
+            maxWidth: 240, background: '#101114', color: '#fff', borderRadius: 8, padding: '7px 10px',
+            fontSize: 11, fontWeight: 600, lineHeight: 1.5, boxShadow: '0 6px 20px rgba(0,0,0,0.22)', zIndex: 5,
+          }}
+        >
+          <b style={{ color: colorForSkill(hovered) }}>{hovered}</b>
+          <div style={{ color: 'rgba(255,255,255,0.82)' }}>{bumpTip(data, hovered)}</div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export function DemandRaceChart({ right }: { pool: PoolChoice; right?: ReactNode }) {
+  const [category, setCategory] = useState<RankCategory>('language')
+  const [data, setData] = useState<RankHistory | null>(null)
+
+  // 탭(category) 변경 시 rank-history를 다시 fetch한다. 실패/빈 결과는 목업으로 폴백.
   useEffect(() => {
     let cancelled = false
-    marketApi.yearlyTrend('domestic').then((r) => {
-      if (!cancelled && r.series.length) setDomestic({ years: r.years.map(String), series: r.series })
-    }).catch(() => undefined)
+    marketApi.skillRankHistory({ category }).then((r) => {
+      if (cancelled) return
+      setData(r.skills.length > 0 ? r : null)
+    }).catch(() => { if (!cancelled) setData(null) })
     return () => { cancelled = true }
-  }, [])
-  useEffect(() => {
-    if (pool === 'domestic') { setGlobalData(null); return }
-    let cancelled = false
-    marketApi.yearlyTrend('global').then((r) => {
-      if (!cancelled && r.series.length) setGlobalData({ years: r.years.map(String), series: r.series })
-    }).catch(() => undefined)
-    return () => { cancelled = true }
-  }, [pool])
+  }, [category])
 
-  const dom = useMemo(() => categoryYearlyPayload(domestic ?? YEARLY_MOCK, category), [domestic, category])
-  const domLines = useMemo(() => pickRaceLines(dom), [dom])
-  const globalLines = useMemo(() => (
-    pool !== 'domestic' && global ? pickRaceLines(categoryYearlyPayload(global, category)) : []
-  ), [pool, global, category])
-  const crossoverIdx = useMemo(() => category === 'programming_language' ? findCrossoverIndex(dom) : -1, [dom, category])
-  const colors = ['#1f9d57', '#c8382d', '#5b78d1']
-  const activeCategory = DEMAND_RACE_CATEGORIES.find((item) => item.key === category)!
-
-  const option = useMemo(() => ({
-    animationDuration: 700, animationEasing: 'cubicOut',
-    grid: { left: 8, right: 64, top: 20, bottom: 26, containLabel: true },
-    tooltip: {
-      ...tooltipStyle, trigger: 'axis',
-      formatter: (params: { seriesName: string; axisValue: string; value: number }[]) =>
-        `${params[0]?.axisValue}<br/>${params.map((p) => `${p.seriesName} <b>${p.value}%</b>`).join('<br/>')}`,
-    },
-    xAxis: {
-      type: 'category', boundaryGap: false, data: dom.years,
-      axisLine: { lineStyle: { color: '#e6e9ef' } }, axisTick: { show: false },
-      axisLabel: { color: '#43454c', fontFamily: FONT, fontSize: 11, fontWeight: 700 },
-    },
-    yAxis: {
-      type: 'value', axisLabel: { color: '#7c7f88', fontFamily: FONT, fontSize: 10, formatter: '{value}%' },
-      splitLine: { lineStyle: { color: '#eef1f6' } }, axisLine: { show: false },
-    },
-    series: [
-      ...domLines.map((s, i) => ({
-        name: s.canonical, type: 'line', data: s.shares, smooth: 0.15,
-        symbol: 'circle', symbolSize: 6,
-        lineStyle: { color: colors[i % colors.length], width: 2.8 },
-        itemStyle: { color: colors[i % colors.length], borderColor: '#fff', borderWidth: 1.2 },
-        endLabel: { show: true, formatter: s.canonical, color: colors[i % colors.length], fontFamily: FONT, fontSize: 10.5, fontWeight: 700, distance: 6 },
-        markPoint: (i < 2 && crossoverIdx > 0) ? {
-          silent: true, symbol: 'circle', symbolSize: 1,
-          data: [{ coord: [dom.years[crossoverIdx], s.shares[crossoverIdx]] }],
-          label: { show: i === 0, formatter: '추월', position: 'top', color: '#166534', fontFamily: FONT, fontSize: 10, fontWeight: 800 },
-        } : undefined,
-        z: 5,
-      })),
-      ...globalLines.map((s, i) => ({
-        name: `${s.canonical}(글로벌)`, type: 'line', data: s.shares, smooth: 0.15,
-        symbol: 'circle', symbolSize: 4,
-        lineStyle: { color: colors[i % colors.length], width: 1.4, type: 'dashed', opacity: 0.65 },
-        itemStyle: { color: colors[i % colors.length], borderColor: '#fff', borderWidth: 1, opacity: 0.65 },
-        z: 2,
-      })),
-    ],
-  }), [dom, domLines, globalLines, crossoverIdx])
+  const active = RANK_TABS.find((t) => t.key === category)!
+  const view = data ?? RANK_MOCK[category]
+  const takeaway = useMemo(() => bestRiser(view), [view])
+  const lastYear = view.years[view.years.length - 1]
 
   return (
     <>
       <SectionHeader
         title="연도별 수요 레이스"
-        hint={activeCategory.hint}
+        hint={active.hint}
         right={(
           <div className="dmkt2__race-tools">
             <div className="wow-seg dmkt2__race-filter" role="group" aria-label="기술 분류">
-              {DEMAND_RACE_CATEGORIES.map((item) => (
+              {RANK_TABS.map((item) => (
                 <button
                   key={item.key}
                   type="button"
@@ -1607,10 +1703,10 @@ export function DemandRaceChart({ pool, right }: { pool: PoolChoice; right?: Rea
         )}
       />
       <p className="dmkt2__takeaway">
-        2022-2026 점유율% 순위 변동
-        {category === 'programming_language' && <> · <b className="dmkt2__takeaway-up">Python이 Java 추월</b></>}
+        {view.years[0]}-{lastYear} 순위 변동
+        {takeaway && <> · <b className="dmkt2__takeaway-up">{takeaway.name} {takeaway.from}위→{takeaway.to}위</b></>}
       </p>
-      <ReactECharts option={option} style={{ height: 250 }} notMerge />
+      <BumpChart data={view} />
     </>
   )
 }
