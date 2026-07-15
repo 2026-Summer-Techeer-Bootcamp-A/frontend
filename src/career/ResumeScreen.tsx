@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Award, Bookmark, Bell, Shield, Settings, LogOut, LogIn, Plus, Briefcase, User, FileText, ChevronRight, Trash2, CheckCircle2 } from 'lucide-react'
+import { Award, Bookmark, Bell, Shield, Settings, LogOut, LogIn, Plus, Briefcase, User, FileText, Trash2, CheckCircle2 } from 'lucide-react'
 import { CareerScreen, ScreenHead } from './charts'
 import { MenuRow, SectionHeader, SkillChip, TechSearchSheet } from './kit'
 import { useResumesState, resumeToUpsertPayload } from './state'
@@ -72,11 +72,10 @@ export default function ResumeScreen() {
 
       {/* 내 이력서 — 다중 관리: 목록 + 기본 지정 + 삭제 + 추가 */}
       <SectionHeader title="내 이력서" hint={`${resumes.length}개`} />
-      {resumes.length === 0 ? (
-        <button className="cr-activeresume" onClick={() => navigate('/resume/new')}>
-          <span className="cr-activeresume__ic"><FileText size={18} /></span>
-          <span className="cr-activeresume__body"><span className="t">이력서를 추가해보세요</span></span>
-          <ChevronRight size={17} className="cr-activeresume__chev" />
+      {!isAuthed || resumes.length === 0 ? (
+        <button className="cr-resume-add-button" onClick={() => navigate('/resume/new')}>
+          <span className="cr-activeresume__ic"><Plus size={18} /></span>
+          <span>이력서 등록하기</span>
         </button>
       ) : (
         <>
@@ -88,11 +87,12 @@ export default function ResumeScreen() {
                 <span className="s">{r.position || '직무 미정'} · 보유 기술 {r.skills.length}개</span>
               </span>
               {r.isPrimary ? (
-                <span className="cr-analysisbadge"><CheckCircle2 size={13} style={{ verticalAlign: -2 }} /> 기본</span>
+                <span className="cr-resume-primary-badge"><CheckCircle2 size={13} /> 기본</span>
               ) : (
                 <button className="cr-analysisbadge" onClick={() => setPrimary(r.id)}>기본으로 설정</button>
               )}
               <button
+                className="cr-resume-delete-button"
                 aria-label={`${r.title} 삭제`}
                 onClick={() => { if (window.confirm(`'${r.title}'을(를) 삭제할까요?`)) deleteResume(r.id) }}
               >
@@ -100,9 +100,9 @@ export default function ResumeScreen() {
               </button>
             </div>
           ))}
-          <button className="cr-activeresume" onClick={() => navigate('/resume/new')}>
+          <button className="cr-resume-add-button" onClick={() => navigate('/resume/new')}>
             <span className="cr-activeresume__ic"><Plus size={18} /></span>
-            <span className="cr-activeresume__body"><span className="t">새 이력서 추가</span></span>
+            <span>새 이력서 추가</span>
           </button>
         </>
       )}

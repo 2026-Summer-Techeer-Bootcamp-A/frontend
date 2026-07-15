@@ -263,23 +263,54 @@
 .dmy__body { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; align-items: start; }
 .dmy__main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .dmy__aside { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.dmy__section-card { display: flex; flex-direction: column; min-height: 132px; }
+.dmy__section-card > .kit-sec { align-items: center; }
 
 .dmy__resume { display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; margin-top: 12px; }
 .dmy__resume-ic { flex: none; width: 40px; height: 40px; border-radius: 11px; display: flex; align-items: center; justify-content: center; color: var(--accent-700); background: var(--accent-50); }
+.dmy__resume-add-button {
+  display: inline-flex; align-items: center; gap: 5px;
+  min-height: 32px; padding: 6px 11px;
+  border: 1px solid var(--line); border-radius: 999px;
+  background: var(--c-card); color: var(--c-ink);
+  box-shadow: var(--e1); font-size: 12.5px; font-weight: 700;
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+.dmy__resume-add-button:hover { background: var(--accent-50); }
+.dmy__resume-add-button:active { transform: scale(0.97); }
+.dmy__resume-primary-badge {
+  flex: none; display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 8px; border-radius: 999px;
+  background: var(--accent-50); color: var(--accent-700);
+  font-size: 10px; font-weight: 700; white-space: nowrap;
+}
+.dmy__resume-delete-button {
+  flex: none; width: 32px; height: 32px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--line); border-radius: 9px;
+  background: var(--c-card); color: var(--c-muted);
+}
+.dmy__resume-delete-button:hover { color: #b5342a; border-color: currentColor; }
 
 /* 빈 상태 공용 패턴 — 안내 문구 + 행동 유도 버튼을 한 줄에 배치한다.
    이력서/보유 기술/북마크/최근 본 공고 등 "비어 있지만 다음 행동이 명확한" 자리에서 재사용. */
-.dmy__empty { display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%; margin-top: 12px; }
+.dmy__empty {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px; width: 100%; min-height: 64px; margin-top: 12px;
+}
+.dmy__section-card > .dmy__empty { flex: 1; }
 .dmy__empty span { font-size: 13px; line-height: 1.5; color: var(--c-muted); }
 .dmy__empty-btn {
-  flex: none; font-size: 12.5px; font-weight: 700; color: #fff;
+  flex: none; align-self: center; display: inline-flex; align-items: center; justify-content: center;
+  min-height: 40px; font-size: 12.5px; line-height: 1; font-weight: 700; color: #fff;
   background: var(--c-accent); border-radius: 10px; padding: 9px 15px;
   transition: transform 0.12s ease, opacity 0.12s ease;
 }
 .dmy__empty-btn:hover { opacity: 0.9; }
 .dmy__empty-btn:active { transform: scale(0.96); opacity: 0.85; }
 
-.dmy__skills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.dmy__skills { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+.dmy__section-card > .dmy__skills { flex: 1; }
 .dmy__manage {
   font-size: 12.5px; font-weight: 700; color: var(--accent-700);
   background: var(--accent-50); border-radius: 999px; padding: 6px 12px;
