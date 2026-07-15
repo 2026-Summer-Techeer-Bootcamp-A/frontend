@@ -1048,6 +1048,33 @@
 .dsub .djd-card {
   border-radius: 18px;
 }
+.djd-loading__head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.djd-loading__logo {
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  flex: none;
+}
+.djd-loading__titles {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+}
+.djd-loading__titles .crd-skel:first-child { width: 34%; }
+.djd-loading__titles .crd-skel:last-child { width: 72%; }
+.djd-loading__side-card,
+.djd-loading__reco { padding: 22px; }
+.djd-loading__score {
+  width: 60px;
+  height: 60px;
+  align-self: center;
+  border-radius: 50%;
+}
 /* 3열째 추천 레일 — 사이드(2열)와 같은 sticky 톤, 1280px 미만에서는 본문 아래로 전체 폭 배치 */
 .dsub .djd-reco {
   position: sticky;
