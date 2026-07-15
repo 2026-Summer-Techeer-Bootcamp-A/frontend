@@ -1980,10 +1980,8 @@ export function StackComboInsightWidget({ pool = 'domestic' }: { pool?: PoolChoi
   }, [options, base])
 
   const [combos, setCombos] = useState<StackCombo[] | null>(null)
-  const [insight, setInsight] = useState<{ text: string; ai: boolean } | null>(null)
-  const [insightLoading, setInsightLoading] = useState(false)
 
-  // 조건부 비율 막대 — 기존 co-occurrence 엔드포인트 재사용.
+  // 조건부 비율 막대 — 기존 co-occurrence 엔드포인트 재사용. 카드를 넘지 않게 상위 4개만.
   useEffect(() => {
     if (!base) return
     let cancelled = false
@@ -1994,26 +1992,11 @@ export function StackComboInsightWidget({ pool = 'domestic' }: { pool?: PoolChoi
         .map((l) => ({ skill: l.source === base ? l.target : l.source, coRate: normalizeCooccurrenceRate(l.co_rate) }))
         .filter((i) => i.skill !== base)
         .sort((a, b) => b.coRate - a.coRate)
-        .slice(0, 5)
+        .slice(0, 4)
       setCombos(items)
     }).catch(() => { if (!cancelled) setCombos([]) })
     return () => { cancelled = true }
   }, [base, pool])
-
-  // AI 한 줄 인사이트 — 실패 시 문장만 숨기고 막대는 그대로 둔다.
-  const ownedKey = ownedSkills.join('|')
-  useEffect(() => {
-    if (!base) return
-    let cancelled = false
-    setInsight(null)
-    setInsightLoading(true)
-    marketApi.stackInsight({ base_skill: base, pool: poolToApi(pool), owned_skills: ownedSkills })
-      .then((r) => { if (!cancelled) setInsight({ text: r.insight, ai: r.ai_generated }) })
-      .catch(() => { if (!cancelled) setInsight(null) })
-      .finally(() => { if (!cancelled) setInsightLoading(false) })
-    return () => { cancelled = true }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [base, pool, ownedKey])
 
   const items = combos ?? []
   const maxRate = Math.max(...items.map((i) => i.coRate), 1)
@@ -2030,15 +2013,6 @@ export function StackComboInsightWidget({ pool = 'domestic' }: { pool?: PoolChoi
         )}
       />
       <div className="wow-body">
-        {insight ? (
-          <p className="wow-takeaway-inline stackins__insight">
-            {insight.ai && <span className="stackins__ai" title="AI가 DB 집계 숫자로 작성">AI</span>}
-            {insight.text}
-          </p>
-        ) : insightLoading ? (
-          <p className="wow-takeaway-inline stackins__muted">인사이트 생성 중…</p>
-        ) : null}
-
         {combos == null ? (
           <div className="stackins__bars" aria-hidden>
             {[0, 1, 2].map((i) => (
