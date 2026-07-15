@@ -15,7 +15,7 @@ import {
 import {
   HypeVsHireWidget, GithubChronicleWidget, GlobalDomesticGapWidget,
   GroupShareCard, DemandRaceChart, DemandGrowthScatter, CooccurrenceBarWidget,
-  CareerLevelDistributionWidget, MarketSkillUnlockWidget,
+  CareerLevelDistributionWidget, StackComboInsightWidget,
   GlobalDomesticLagWidget, MarketChangeStrip,
   type GroupKey, type PoolChoice,
 } from '../../career/wowWidgets'
@@ -1028,7 +1028,7 @@ export function DesktopMarket() {
             )}
             {!isWidgetHidden('market', 'market-skill-unlock') && (
               <div className="dmkt2__card-item dmkt2__card-item--r2" style={spanStyle(widgetSize('market-skill-unlock'))}>
-                <MarketSkillUnlockWidget />
+                <StackComboInsightWidget pool={pool} />
               </div>
             )}
           </div>

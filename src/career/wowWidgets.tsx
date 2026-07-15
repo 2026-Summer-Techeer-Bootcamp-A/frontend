@@ -1960,6 +1960,115 @@ export function MarketSkillUnlockWidget() {
 }
 
 /* ────────────────────────────────────────────────────────────────
+   ②-d 함께 요구되는 기술 (스택 조합 인사이트) — What-if("추가하면 +N건")를 대체.
+   GET /stats/cooccurrence의 조건부 비율(co_rate)로 "선택 기술과 함께 요구되는 Top5"를 보여주고,
+   POST /insights/stack의 LLM 한 줄(숫자는 DB 집계만 주입)을 얹는다. 절대 건수가 아니라 비율이라
+   수집 규모 오염에 강하고, What-if("다음에 뭘 배우나")와 역할이 분리된다.
+   ──────────────────────────────────────────────────────────────── */
+const STACK_DEFAULT_SKILLS = ['Python', 'JavaScript', 'Java', 'React', 'Spring', 'Node.js', 'SQL', 'AWS', 'Docker', 'TypeScript']
+
+type StackCombo = { skill: string; coRate: number }
+
+export function StackComboInsightWidget({ pool = 'domestic' }: { pool?: PoolChoice }) {
+  const { activeResume } = useResumesState()
+  const ownedSkills = useMemo(() => activeResume?.skills ?? [], [activeResume])
+  // 기준 기술 옵션 — 이력서 스택을 앞에 두고(자동 선택), 없으면 대표 기술로 폴백.
+  const options = useMemo(() => [...new Set([...ownedSkills, ...STACK_DEFAULT_SKILLS])].slice(0, 14), [ownedSkills])
+  const [base, setBase] = useState('')
+  useEffect(() => {
+    if (!base && options.length) setBase(options[0])
+  }, [options, base])
+
+  const [combos, setCombos] = useState<StackCombo[] | null>(null)
+  const [insight, setInsight] = useState<{ text: string; ai: boolean } | null>(null)
+  const [insightLoading, setInsightLoading] = useState(false)
+
+  // 조건부 비율 막대 — 기존 co-occurrence 엔드포인트 재사용.
+  useEffect(() => {
+    if (!base) return
+    let cancelled = false
+    setCombos(null)
+    marketApi.cooccurrence({ pool: poolToApi(pool), skill: base, top_k: 12 }).then((r) => {
+      if (cancelled) return
+      const items = r.links
+        .map((l) => ({ skill: l.source === base ? l.target : l.source, coRate: normalizeCooccurrenceRate(l.co_rate) }))
+        .filter((i) => i.skill !== base)
+        .sort((a, b) => b.coRate - a.coRate)
+        .slice(0, 5)
+      setCombos(items)
+    }).catch(() => { if (!cancelled) setCombos([]) })
+    return () => { cancelled = true }
+  }, [base, pool])
+
+  // AI 한 줄 인사이트 — 실패 시 문장만 숨기고 막대는 그대로 둔다.
+  const ownedKey = ownedSkills.join('|')
+  useEffect(() => {
+    if (!base) return
+    let cancelled = false
+    setInsight(null)
+    setInsightLoading(true)
+    marketApi.stackInsight({ base_skill: base, pool: poolToApi(pool), owned_skills: ownedSkills })
+      .then((r) => { if (!cancelled) setInsight({ text: r.insight, ai: r.ai_generated }) })
+      .catch(() => { if (!cancelled) setInsight(null) })
+      .finally(() => { if (!cancelled) setInsightLoading(false) })
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [base, pool, ownedKey])
+
+  const items = combos ?? []
+  const maxRate = Math.max(...items.map((i) => i.coRate), 1)
+
+  return (
+    <div className="dcard wow-card">
+      <SectionHeader
+        title="함께 요구되는 기술"
+        hint="스택 조합 인사이트"
+        right={(
+          <select className="stackins__select" value={base} onChange={(e) => setBase(e.target.value)} aria-label="기준 기술 선택">
+            {options.map((o) => <option key={o} value={o}>{o}</option>)}
+          </select>
+        )}
+      />
+      <div className="wow-body">
+        {insight ? (
+          <p className="wow-takeaway-inline stackins__insight">
+            {insight.ai && <span className="stackins__ai" title="AI가 DB 집계 숫자로 작성">AI</span>}
+            {insight.text}
+          </p>
+        ) : insightLoading ? (
+          <p className="wow-takeaway-inline stackins__muted">인사이트 생성 중…</p>
+        ) : null}
+
+        {combos == null ? (
+          <div className="stackins__bars" aria-hidden>
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="stackins__row">
+                <span className="stackins__skel" style={{ width: 54 }} />
+                <span className="stackins__tr"><i style={{ width: `${60 - i * 14}%`, background: '#e6e9ef' }} /></span>
+                <span className="stackins__skel" style={{ width: 30 }} />
+              </div>
+            ))}
+          </div>
+        ) : items.length === 0 ? (
+          <div className="stackins__muted">{base} 공고와 함께 요구되는 기술 데이터가 아직 없어요.</div>
+        ) : (
+          <div className="stackins__bars">
+            {items.map((it) => (
+              <div key={it.skill} className="stackins__row">
+                <span className="stackins__k" title={it.skill}>{it.skill}</span>
+                <span className="stackins__tr"><i style={{ width: `${(it.coRate / maxRate) * 100}%` }} /></span>
+                <span className="stackins__v tnum">{it.coRate}%</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      <AsOf asOf={new Date().toISOString().slice(0, 10)} note={`${base} 공고 기준 · 조건부 비율(함께 요구된 비율)`} />
+    </div>
+  )
+}
+
+/* ────────────────────────────────────────────────────────────────
    ③-b 개념 → 기술 Sankey — conceptReal.json(posting_concept 실측, 19.6만행)을 그대로 재사용.
    신규 concept-tech 엔드포인트가 붙기 전까지는 이 실측 목이 사실상 라이브 수준의 정확도.
    ──────────────────────────────────────────────────────────────── */
