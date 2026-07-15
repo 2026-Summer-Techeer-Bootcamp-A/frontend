@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
+import * as conceptSankeyModule from '../src/career/conceptSankey.ts'
 import {
   CURATED_SANKEY_CONCEPTS,
   buildConceptSankeyFallback,
@@ -33,7 +34,7 @@ const fallback: SankeyPayload = {
   ],
 }
 
-test('승인된 다섯 개념을 지정 순서로 선택한다', () => {
+test('승인된 일곱 개념을 지정 순서로 선택한다', () => {
   const live: SankeyPayload = {
     nodes: [
       { name: 'AI·LLM', kind: 'concept' },
@@ -48,11 +49,49 @@ test('승인된 다섯 개념을 지정 순서로 선택한다', () => {
 
   const result = curateConceptSankey(live, fallback)
 
+  assert.deepEqual([...CURATED_SANKEY_CONCEPTS], [
+    'MSA·분산',
+    '대규모 트래픽',
+    '실시간·스트리밍',
+    '보안·컴플라이언스',
+    '데이터 파이프라인',
+    '클라우드 네이티브',
+    'DevOps·자동화',
+  ])
   assert.deepEqual(
     result.nodes.filter((node) => node.kind === 'concept').map((node) => node.name),
     [...CURATED_SANKEY_CONCEPTS],
   )
   assert.equal(result.links.some((link) => link.source === 'AI·LLM'), false)
+})
+
+test('새 개념도 conceptReal 형식의 실측 폴백에 포함한다', () => {
+  const result = buildConceptSankeyFallback([
+    {
+      label: '실시간·스트리밍',
+      signature: [{ tech: 'Kafka', n: 146 }],
+    },
+    {
+      label: '클라우드 네이티브',
+      signature: [{ tech: 'Kubernetes', n: 295 }],
+    },
+  ])
+
+  assert.deepEqual(result.links, [
+    { source: '실시간·스트리밍', target: 'Kafka', value: 146 },
+    { source: '클라우드 네이티브', target: 'Kubernetes', value: 295 },
+  ])
+})
+
+test('일곱 개념 Sankey 배치 값을 중앙 정렬용으로 고정한다', () => {
+  assert.deepEqual(Reflect.get(conceptSankeyModule, 'SANKEY_CHART_LAYOUT'), {
+    height: 500,
+    nodeGap: 18,
+    top: 30,
+    bottom: 30,
+    left: '25%',
+    right: '18%',
+  })
 })
 
 test('개념별 공동출현 값이 큰 기술 네 개만 남긴다', () => {
