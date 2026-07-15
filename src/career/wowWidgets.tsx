@@ -1342,10 +1342,93 @@ export function GroupShareCard({ group, pool }: { group: GroupKey; pool: PoolCho
    ──────────────────────────────────────────────────────────────── */
 type YearlySeriesItem = { canonical: string; shares: number[]; delta: number }
 type YearlyPayload = { years: string[]; series: YearlySeriesItem[] }
+type DemandRaceCategory = 'programming_language' | 'backend_fw' | 'frontend_fw' | 'database'
 
 const YEARLY_MOCK: YearlyPayload = {
   years: MKT.techYearly.years,
   series: MKT.techYearly.series.map((r) => ({ canonical: r.tech, shares: r.shares, delta: r.delta })),
+}
+
+const DEMAND_RACE_CATEGORIES: Array<{ key: DemandRaceCategory; label: string; hint: string; techs: string[] }> = [
+  { key: 'programming_language', label: '언어', hint: '언어 판도', techs: ['Java', 'Python', 'JavaScript', 'TypeScript', 'Kotlin', 'Go', 'C#', 'PHP', 'Ruby'] },
+  { key: 'backend_fw', label: '백엔드', hint: '백엔드 판도', techs: ['Spring', 'Node.js', '.NET', 'Django', 'NestJS', 'FastAPI', 'Flask', 'Express'] },
+  { key: 'frontend_fw', label: '프론트엔드', hint: '프론트엔드 판도', techs: ['React', 'Vue', 'Next.js', 'Angular', 'Svelte'] },
+  { key: 'database', label: 'DB', hint: 'DB 판도', techs: ['MySQL', 'Oracle', 'PostgreSQL', 'Redis', 'MariaDB', 'MongoDB'] },
+]
+
+const demandRaceItem = (canonical: string, shares: number[]): YearlySeriesItem => ({
+  canonical,
+  shares,
+  delta: Number((shares[shares.length - 1] - shares[0]).toFixed(1)),
+})
+
+const DEMAND_RACE_MOCK: Record<DemandRaceCategory, YearlyPayload> = {
+  programming_language: {
+    years: ['2020', '2021', '2022', '2023', '2024', '2025', '2026'],
+    series: [
+      demandRaceItem('Java', [47.5, 46.9, 46.1, 45.8, 43.6, 41.4, 39.8]),
+      demandRaceItem('Python', [24.5, 25.8, 27.0, 28.1, 31.5, 37.2, 42.9]),
+      demandRaceItem('JavaScript', [36.8, 36.5, 35.8, 35.2, 34.9, 34.5, 34.1]),
+      demandRaceItem('TypeScript', [8.9, 11.2, 13.8, 16.4, 21.8, 27.2, 31.6]),
+      demandRaceItem('Kotlin', [5.9, 6.6, 7.4, 8.1, 9.7, 11.3, 12.8]),
+    ],
+  },
+  backend_fw: {
+    years: ['2020', '2021', '2022', '2023', '2024', '2025', '2026'],
+    series: [
+      demandRaceItem('Spring', [60.0, 58.5, 56.8, 55.2, 52.4, 50.0, 48.1]),
+      demandRaceItem('Node.js', [18.4, 20.1, 22.6, 24.8, 27.3, 29.5, 31.3]),
+      demandRaceItem('.NET', [23.0, 22.1, 20.6, 19.0, 17.2, 15.4, 13.9]),
+      demandRaceItem('Django', [5.1, 5.4, 5.7, 6.0, 6.5, 6.9, 7.3]),
+      demandRaceItem('NestJS', [0.2, 0.4, 0.7, 1.2, 3.0, 4.9, 6.5]),
+    ],
+  },
+  frontend_fw: {
+    years: ['2020', '2021', '2022', '2023', '2024', '2025', '2026'],
+    series: [
+      demandRaceItem('React', [65.0, 67.8, 70.1, 72.4, 74.6, 76.1, 77.0]),
+      demandRaceItem('Vue', [45.0, 43.8, 41.6, 39.8, 37.2, 35.0, 33.5]),
+      demandRaceItem('Next.js', [3.2, 4.6, 6.8, 9.5, 14.8, 19.0, 22.6]),
+      demandRaceItem('Angular', [19.8, 18.7, 17.1, 15.6, 13.9, 12.3, 11.2]),
+      demandRaceItem('Svelte', [0.1, 0.1, 0.1, 0.2, 0.4, 0.6, 0.9]),
+    ],
+  },
+  database: {
+    years: ['2020', '2021', '2022', '2023', '2024', '2025', '2026'],
+    series: [
+      demandRaceItem('MySQL', [61.2, 60.4, 59.5, 58.6, 57.8, 57.1, 56.5]),
+      demandRaceItem('Oracle', [42.0, 40.1, 37.6, 35.0, 31.8, 28.9, 26.7]),
+      demandRaceItem('PostgreSQL', [5.2, 6.4, 7.8, 9.8, 14.2, 18.1, 22.0]),
+      demandRaceItem('Redis', [7.1, 8.5, 10.1, 12.0, 14.6, 16.8, 18.7]),
+      demandRaceItem('MariaDB', [21.0, 20.3, 19.4, 18.5, 17.4, 16.5, 15.8]),
+    ],
+  },
+}
+
+function limitYearlyPayload(payload: YearlyPayload, from = 2020, to = 2026): YearlyPayload {
+  const indexes = payload.years
+    .map((year, index) => ({ year: Number(year), index }))
+    .filter(({ year }) => year >= from && year <= to)
+
+  return {
+    years: indexes.map(({ year }) => String(year)),
+    series: payload.series.map((item) => {
+      const shares = indexes.map(({ index }) => item.shares[index])
+      return {
+        ...item,
+        shares,
+        delta: shares.length > 1 ? Number(((shares[shares.length - 1] ?? 0) - (shares[0] ?? 0)).toFixed(1)) : item.delta,
+      }
+    }),
+  }
+}
+
+function categoryYearlyPayload(payload: YearlyPayload, category: DemandRaceCategory): YearlyPayload {
+  const techs = new Set(DEMAND_RACE_CATEGORIES.find((item) => item.key === category)?.techs ?? [])
+  const filtered = limitYearlyPayload({ ...payload, series: payload.series.filter((item) => techs.has(item.canonical)) })
+  return filtered.years.length > 0 && filtered.series.length >= 2
+    ? filtered
+    : DEMAND_RACE_MOCK[category]
 }
 
 function pickRaceLines(payload: YearlyPayload, limit = 3): YearlySeriesItem[] {
@@ -1367,7 +1450,8 @@ function findCrossoverIndex(payload: YearlyPayload): number {
   return -1
 }
 
-export function DemandRaceChart({ pool }: { pool: PoolChoice }) {
+export function DemandRaceChart({ pool, right }: { pool: PoolChoice; right?: ReactNode }) {
+  const [category, setCategory] = useState<DemandRaceCategory>('programming_language')
   const [domestic, setDomestic] = useState<YearlyPayload | null>(null)
   const [global, setGlobalData] = useState<YearlyPayload | null>(null)
 
@@ -1387,11 +1471,14 @@ export function DemandRaceChart({ pool }: { pool: PoolChoice }) {
     return () => { cancelled = true }
   }, [pool])
 
-  const dom = domestic ?? YEARLY_MOCK
+  const dom = useMemo(() => categoryYearlyPayload(domestic ?? YEARLY_MOCK, category), [domestic, category])
   const domLines = useMemo(() => pickRaceLines(dom), [dom])
-  const globalLines = useMemo(() => (pool !== 'domestic' && global ? pickRaceLines(global) : []), [pool, global])
-  const crossoverIdx = useMemo(() => findCrossoverIndex(dom), [dom])
+  const globalLines = useMemo(() => (
+    pool !== 'domestic' && global ? pickRaceLines(categoryYearlyPayload(global, category)) : []
+  ), [pool, global, category])
+  const crossoverIdx = useMemo(() => category === 'programming_language' ? findCrossoverIndex(dom) : -1, [dom, category])
   const colors = ['#1f9d57', '#c8382d', '#5b78d1']
+  const activeCategory = DEMAND_RACE_CATEGORIES.find((item) => item.key === category)!
 
   const option = useMemo(() => ({
     animationDuration: 700, animationEasing: 'cubicOut',
@@ -1435,7 +1522,35 @@ export function DemandRaceChart({ pool }: { pool: PoolChoice }) {
   }), [dom, domLines, globalLines, crossoverIdx])
 
   return (
-    <ReactECharts option={option} style={{ height: 250 }} notMerge />
+    <>
+      <SectionHeader
+        title="연도별 수요 레이스"
+        hint={activeCategory.hint}
+        right={(
+          <div className="dmkt2__race-tools">
+            <div className="wow-seg dmkt2__race-filter" role="group" aria-label="기술 분류">
+              {DEMAND_RACE_CATEGORIES.map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  className={`wow-seg__btn${category === item.key ? ' on' : ''}`}
+                  aria-pressed={category === item.key}
+                  onClick={() => setCategory(item.key)}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+            {right}
+          </div>
+        )}
+      />
+      <p className="dmkt2__takeaway">
+        2020–2026 점유율% 순위 변동
+        {category === 'programming_language' && <> · <b className="dmkt2__takeaway-up">Python이 Java 추월</b></>}
+      </p>
+      <ReactECharts option={option} style={{ height: 250 }} notMerge />
+    </>
   )
 }
 
@@ -1883,6 +1998,9 @@ export function MarketChangeStrip() {
   const py = YEARLY_MOCK.series.find((s) => s.canonical === 'Python')
   const jv = YEARLY_MOCK.series.find((s) => s.canonical === 'Java')
   const overtaken = !!(py && jv && py.shares[py.shares.length - 1] > jv.shares[jv.shares.length - 1])
+  const languageShift = py && jv
+    ? `Python ${py.shares[py.shares.length - 1].toFixed(1)}% ${overtaken ? '>' : '<'} Java ${jv.shares[jv.shares.length - 1].toFixed(1)}%`
+    : 'Python 급부상 중'
   const risingFromZero = useMemo(() => (
     [...YEARLY_MOCK.series].filter((s) => s.shares[0] < 1 && s.delta > 0).sort((a, b) => b.delta - a.delta).slice(0, 3)
   ), [])
@@ -1900,11 +2018,11 @@ export function MarketChangeStrip() {
       <div className="mktstrip__cells">
         <div className="mktstrip__cell">
           <div className="mktstrip__lbl">언어 판도</div>
-          <div className="mktstrip__v2">{overtaken ? <><span className="mktstrip__up">↗</span> Python, Java 추월</> : 'Python 급부상 중'}</div>
+          <div className="mktstrip__v2"><span className="mktstrip__up">↗</span> {languageShift}</div>
         </div>
         <div className="mktstrip__cell">
           <div className="mktstrip__lbl">급부상 (무→상위)</div>
-          <div className="mktstrip__v2"><span className="mktstrip__up">↗</span> {risingFromZero.map((r) => r.canonical).join(' · ')}</div>
+          <div className="mktstrip__v2"><span className="mktstrip__up">↗</span> {risingFromZero.map((r) => `${r.canonical} +${r.delta.toFixed(1)}%p`).join(' · ')}</div>
         </div>
         <div className="mktstrip__cell">
           <div className="mktstrip__lbl">판도 선두</div>
