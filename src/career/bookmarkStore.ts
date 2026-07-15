@@ -5,6 +5,14 @@ import { useEffect, useState } from 'react'
 const STORAGE_KEY = 'techeer_bookmarks'
 const EVENT = 'bookmarks-change'
 
+export async function loadBookmarkDetails<T>(
+  postingIds: string[],
+  loadDetail: (postingId: string) => Promise<T>,
+): Promise<T[]> {
+  const results = await Promise.allSettled(postingIds.map(loadDetail))
+  return results.flatMap((result) => result.status === 'fulfilled' ? [result.value] : [])
+}
+
 export function getBookmarks(): string[] {
   const raw = localStorage.getItem(STORAGE_KEY)
   if (!raw) return []
