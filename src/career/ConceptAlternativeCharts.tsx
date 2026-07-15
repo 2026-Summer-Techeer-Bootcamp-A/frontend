@@ -40,6 +40,22 @@ const CONCEPT_COLORS = [
   '#6f9599',
 ]
 
+const TREEMAP_HOVER_ONLY_CONCEPTS = new Set([
+  '실시간·스트리밍',
+  '보안·컴플라이언스',
+  'MSA·분산',
+])
+
+const TREEMAP_CONCEPT_BACKGROUNDS: Record<string, string> = {
+  '대규모 트래픽': '#edf3fa',
+  '데이터 파이프라인': '#f6eef5',
+  '클라우드 네이티브': '#f1f5e9',
+  'DevOps·자동화': '#edf7f7',
+  '실시간·스트리밍': '#eef1fb',
+  '보안·컴플라이언스': '#fbf3e8',
+  'MSA·분산': '#eef2f7',
+}
+
 function toApiPool(pool: PoolChoice): ApiPool {
   return pool === 'global' ? 'global' : 'domestic'
 }
@@ -80,7 +96,39 @@ function useConceptAlternativeData(pool: PoolChoice): SankeyPayload | null {
 
 function ConceptTechTreemapWidget({ pool }: { pool: PoolChoice }) {
   const data = useConceptAlternativeData(pool)
-  const treemap = useMemo(() => data ? buildConceptTreemap(data) : [], [data])
+  const treemap = useMemo(() => data
+    ? buildConceptTreemap(data).map((concept) => {
+        const backgroundColor = TREEMAP_CONCEPT_BACKGROUNDS[concept.name] ?? '#f4f5f7'
+        const hoverOnly = TREEMAP_HOVER_ONLY_CONCEPTS.has(concept.name)
+
+        return {
+          ...concept,
+          itemStyle: {
+            borderColor: backgroundColor,
+            borderWidth: 7,
+            gapWidth: 3,
+          },
+          emphasis: {
+            itemStyle: {
+              borderColor: backgroundColor,
+              borderWidth: 7,
+            },
+            ...(hoverOnly ? {
+              upperLabel: {
+                show: true,
+                color: '#43454c',
+              },
+            } : {}),
+          },
+          ...(hoverOnly ? {
+            upperLabel: {
+              show: true,
+              color: 'rgba(67, 69, 76, 0)',
+            },
+          } : {}),
+        }
+      })
+    : [], [data])
 
   const treemapOption = useMemo(() => ({
     animationDuration: 700,
@@ -114,27 +162,39 @@ function ConceptTechTreemapWidget({ pool }: { pool: PoolChoice }) {
       },
       upperLabel: {
         show: true,
-        height: 26,
-        color: '#fff',
+        formatter: '{b}',
+        height: 22,
+        color: '#43454c',
         fontFamily: FONT,
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: 700,
+        align: 'left',
+        verticalAlign: 'middle',
+        padding: [0, 8],
+        overflow: 'truncate',
+        ellipsis: '…',
       },
       levels: [
         {
-          itemStyle: { borderColor: '#fff', borderWidth: 0, gapWidth: 4 },
+          itemStyle: { borderColor: '#fff', borderWidth: 0, gapWidth: 8 },
         },
         {
           color: CONCEPT_COLORS,
           colorMappingBy: 'index',
-          itemStyle: { borderColor: '#fff', borderWidth: 4, gapWidth: 2 },
+          itemStyle: { borderColor: '#fff', borderWidth: 3, gapWidth: 3 },
           upperLabel: {
             show: true,
-            height: 26,
-            color: '#fff',
+            formatter: '{b}',
+            height: 22,
+            color: '#43454c',
             fontFamily: FONT,
-            fontSize: 12,
+            fontSize: 11,
             fontWeight: 700,
+            align: 'left',
+            verticalAlign: 'middle',
+            padding: [0, 8],
+            overflow: 'truncate',
+            ellipsis: '…',
           },
         },
         {
@@ -142,7 +202,7 @@ function ConceptTechTreemapWidget({ pool }: { pool: PoolChoice }) {
           itemStyle: { borderColor: '#fff', borderWidth: 2, gapWidth: 1 },
         },
       ],
-      emphasis: { itemStyle: { borderColor: '#18181b', borderWidth: 2 } },
+      emphasis: { itemStyle: { borderColor: '#fff', borderWidth: 3 } },
     }],
   }), [treemap])
 
