@@ -1,16 +1,54 @@
-.dmkt2__concept-alt-item {
-  grid-column: 1 / span 2;
-  min-width: 0;
+.concept-chart-toggle {
+  display: inline-flex;
+  flex: 0 0 auto;
+  padding: 3px;
+  border: 1px solid #e2e4e9;
+  border-radius: 999px;
+  background: #f3f4f6;
 }
 
-@media (max-width: 1180px) {
-  .dmkt2__concept-alt-item {
-    grid-column: 1 / -1;
-  }
+.concept-chart-toggle__button {
+  min-width: 76px;
+  padding: 7px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #71747c;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.concept-chart-toggle__button:hover:not(.is-active) {
+  color: #27282d;
+}
+
+.concept-chart-toggle__button.is-active {
+  background: #fff;
+  color: #18181b;
+  box-shadow: 0 1px 4px rgb(24 24 27 / 12%);
+}
+
+.concept-chart-toggle__button:focus-visible {
+  outline: 2px solid #6b7c9c;
+  outline-offset: 2px;
+}
+
+.concept-chart-loading {
+  display: grid;
+  height: 500px;
+  place-items: center;
+  color: #8b8e96;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 @media (max-width: 720px) {
-  .dmkt2__concept-alt-item {
-    grid-column: 1 / -1;
+  .concept-chart-toggle__button {
+    min-width: 68px;
+    padding-inline: 11px;
   }
 }

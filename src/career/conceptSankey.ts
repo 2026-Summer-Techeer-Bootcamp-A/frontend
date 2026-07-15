@@ -10,12 +10,20 @@ export const CURATED_SANKEY_CONCEPTS = [
 
 export const SANKEY_CHART_LAYOUT = {
   height: 500,
-  nodeGap: 18,
+  nodeGap: 24,
+  labelFontSize: 14,
   top: 30,
   bottom: 30,
   left: '25%',
   right: '18%',
 } as const
+
+const SANKEY_CONCEPT_LOCAL_Y = [0.15, 0.26, 0.37, 0.48, 0.59, 0.70, 0.81] as const
+
+export function getConceptNodeLocalY(name: string): number | undefined {
+  const conceptIndex = CURATED_SANKEY_CONCEPTS.findIndex((concept) => concept === name)
+  return conceptIndex >= 0 ? SANKEY_CONCEPT_LOCAL_Y[conceptIndex] : undefined
+}
 
 export type SankeyNode = { name: string; kind: 'concept' | 'tech' }
 export type SankeyLink = { source: string; target: string; value: number }
@@ -53,6 +61,16 @@ export function curateConceptSankey(payload: SankeyPayload, fallback: SankeyPayl
   })
 
   return createPayload(links)
+}
+
+export function omitConceptFromSankey(payload: SankeyPayload, conceptName: string): SankeyPayload {
+  const links = payload.links.filter((link) => link.source !== conceptName)
+  const linkedTechNames = new Set(links.map((link) => link.target))
+  const nodes = payload.nodes.filter((node) => (
+    node.kind === 'concept' ? node.name !== conceptName : linkedTechNames.has(node.name)
+  ))
+
+  return { nodes, links }
 }
 
 function createPayload(links: SankeyLink[]): SankeyPayload {
