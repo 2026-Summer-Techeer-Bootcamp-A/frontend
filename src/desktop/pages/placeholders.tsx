@@ -920,9 +920,7 @@ export function DesktopMarket() {
             {!isWidgetHidden('market', 'yearly-trend') && (
               <div className="dmkt2__card-item" style={spanStyle(widgetSize('yearly-trend'))}>
                 <section className="dcard">
-                  <SectionHeader title="연도별 수요 레이스" hint="언어 판도" right={scopeBadge} />
-                  <p className="dmkt2__takeaway">점유율% 순위 변동 · <b className="dmkt2__takeaway-up">Python이 Java 추월</b></p>
-                  <DemandRaceChart pool={pool} />
+                  <DemandRaceChart pool={pool} right={scopeBadge} />
                 </section>
               </div>
             )}
