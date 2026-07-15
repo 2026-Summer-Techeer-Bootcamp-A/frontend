@@ -17,6 +17,7 @@ import { marketApi } from './api'
 import {
   buildConceptSankeyFallback,
   curateConceptSankey,
+  SANKEY_CHART_LAYOUT,
   type SankeyNode,
   type SankeyPayload,
 } from './conceptSankey'
@@ -1693,8 +1694,10 @@ const CONCEPT_SANKEY_FALLBACK = buildConceptSankeyFallback(CONCEPT_FOR_SANKEY)
 const SANKEY_CONCEPT_RGB: Array<[number, number, number]> = [
   [107, 124, 156], // 뮤트 슬레이트 블루
   [127, 156, 134], // 뮤트 세이지 그린
+  [133, 145, 173], // 뮤트 페리윙클
   [165, 138, 111], // 뮤트 웜 토프
   [154, 129, 153], // 뮤트 모브
+  [129, 151, 121], // 뮤트 올리브
   [111, 149, 153], // 뮤트 틸
 ]
 const SANKEY_TECH_COLOR = '#aab0bb' // 중립 회색(기술 노드)
@@ -1734,8 +1737,9 @@ export function ConceptTechSankeyWidget({ pool }: { pool: PoolChoice }) {
       },
     },
     series: [{
-      type: 'sankey', layout: 'none', layoutIterations: 0, nodeGap: 18, nodeWidth: 14,
-      left: '25%', right: '18%', top: 14, bottom: 14,
+      type: 'sankey', layout: 'none', layoutIterations: 0, nodeGap: SANKEY_CHART_LAYOUT.nodeGap, nodeWidth: 14,
+      left: SANKEY_CHART_LAYOUT.left, right: SANKEY_CHART_LAYOUT.right,
+      top: SANKEY_CHART_LAYOUT.top, bottom: SANKEY_CHART_LAYOUT.bottom,
       emphasis: { focus: 'adjacency' },
       data: data.nodes.map((n) => {
         const c = conceptColor.get(n.name)
@@ -1757,7 +1761,7 @@ export function ConceptTechSankeyWidget({ pool }: { pool: PoolChoice }) {
     }],
   }), [data, conceptColor])
 
-  return <ReactECharts option={option} style={{ height: 420 }} notMerge />
+  return <ReactECharts option={option} style={{ height: SANKEY_CHART_LAYOUT.height }} notMerge />
 }
 
 /* ────────────────────────────────────────────────────────────────
