@@ -80,15 +80,7 @@ function useConceptAlternativeData(pool: PoolChoice): SankeyPayload | null {
 
 function ConceptTechTreemapWidget({ pool }: { pool: PoolChoice }) {
   const data = useConceptAlternativeData(pool)
-  const treemap = useMemo(() => data
-    ? buildConceptTreemap(data).map((concept, index) => ({
-        ...concept,
-        itemStyle: {
-          color: CONCEPT_COLORS[index % CONCEPT_COLORS.length],
-          borderColor: CONCEPT_COLORS[index % CONCEPT_COLORS.length],
-        },
-      }))
-    : [], [data])
+  const treemap = useMemo(() => data ? buildConceptTreemap(data) : [], [data])
 
   const treemapOption = useMemo(() => ({
     animationDuration: 700,
