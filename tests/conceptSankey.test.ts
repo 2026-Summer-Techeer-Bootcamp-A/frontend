@@ -86,12 +86,24 @@ test('새 개념도 conceptReal 형식의 실측 폴백에 포함한다', () => 
 test('일곱 개념 Sankey 배치 값을 중앙 정렬용으로 고정한다', () => {
   assert.deepEqual(Reflect.get(conceptSankeyModule, 'SANKEY_CHART_LAYOUT'), {
     height: 500,
-    nodeGap: 18,
+    nodeGap: 24,
+    labelFontSize: 14,
     top: 30,
     bottom: 30,
     left: '25%',
     right: '18%',
   })
+})
+
+test('일곱 개념을 중앙 범위에 균등 배치하고 기술 위치는 고정하지 않는다', () => {
+  const getConceptNodeLocalY = Reflect.get(conceptSankeyModule, 'getConceptNodeLocalY')
+
+  assert.equal(typeof getConceptNodeLocalY, 'function')
+  assert.deepEqual(
+    CURATED_SANKEY_CONCEPTS.map((name) => getConceptNodeLocalY(name)),
+    [0.15, 0.26, 0.37, 0.48, 0.59, 0.70, 0.81],
+  )
+  assert.equal(getConceptNodeLocalY('Kafka'), undefined)
 })
 
 test('개념별 공동출현 값이 큰 기술 네 개만 남긴다', () => {

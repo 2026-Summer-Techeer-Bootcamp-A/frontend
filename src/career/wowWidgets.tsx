@@ -17,6 +17,7 @@ import { marketApi } from './api'
 import {
   buildConceptSankeyFallback,
   curateConceptSankey,
+  getConceptNodeLocalY,
   SANKEY_CHART_LAYOUT,
   type SankeyNode,
   type SankeyPayload,
@@ -1745,9 +1746,10 @@ export function ConceptTechSankeyWidget({ pool }: { pool: PoolChoice }) {
         const c = conceptColor.get(n.name)
         return {
           name: n.name,
+          localY: n.kind === 'concept' ? getConceptNodeLocalY(n.name) : undefined,
           itemStyle: { color: n.kind === 'concept' && c ? sankeyRgb(c) : SANKEY_TECH_COLOR, borderColor: '#fff' },
           label: {
-            fontFamily: FONT, fontSize: 12, fontWeight: 700, color: '#43454c',
+            fontFamily: FONT, fontSize: SANKEY_CHART_LAYOUT.labelFontSize, fontWeight: 700, color: '#43454c',
             position: n.kind === 'concept' ? 'left' : 'right',
           },
         }
