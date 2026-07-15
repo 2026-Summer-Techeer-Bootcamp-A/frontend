@@ -100,7 +100,10 @@ export default function DesktopOverview() {
   useDashboardConfig() // 위젯 표시/숨김·크기 변경 시 리렌더 트리거
   const { resumes, activeResume } = useResumesState()
   const { user } = useAuth()
-  const hasResume = localStorage.getItem('techeer_resumes') !== null && resumes.length > 0 && !!activeResume
+  // 이력서는 백엔드(resumeApi)에서 불러온다 — 예전 로컬 저장 시절의 잔재인
+  // localStorage('techeer_resumes') 체크를 남겨두면 그 키가 절대 안 써져 항상 false가
+  // 되어 이력서를 등록해도 대시보드가 미등록으로 취급하는 버그가 있었다.
+  const hasResume = resumes.length > 0 && !!activeResume
   const skills = activeResume?.skills ?? []
   const identity = useMemo(() => {
     const resumeId = Number(activeResume?.id)
