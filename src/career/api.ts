@@ -165,7 +165,7 @@ export const searchApi = {
 
 export const marketApi = {
   skillShare: (params: { pool?: ApiPool; position?: string; top_k?: number } = {}) => request<{ items: Array<{ canonical: string; category: string | null; posting_count: number; share: number }>; as_of: string; sample_size: number }>(withQuery('/stats/skill-share', params)),
-  newcomerGate: () => request<{ items: Array<{ canonical: string; postings: number; newcomer_postings: number; open_rate: number }>; as_of: string; sample_size: number }>('/stats/newcomer-gate'),
+  newcomerGate: () => request<{ items: Array<{ canonical: string; postings: number; newcomer_postings: number; open_rate: number }>; overall: { newcomer_postings: number; total_postings: number; newcomer_pct: number }; as_of: string; sample_size: number }>('/stats/newcomer-gate'),
   yearlyTrend: (pool: ApiPool = 'domestic') => request<{ years: number[]; series: Array<{ canonical: string; shares: number[]; delta: number }>; movers: { rising: Array<{ canonical: string; delta: number }>; falling: Array<{ canonical: string; delta: number }> }; as_of: string; sample_size: number }>(withQuery('/stats/skill-trend-yearly', { pool })),
   // 연도별 순위 이력(범프 차트). 점유율%는 오염돼 있어 순위만 사용한다. rank는 top_n 밖이면 null.
   skillRankHistory: (params: { category: 'language' | 'backend' | 'frontend' | 'db'; top_n?: number; year_from?: number; year_to?: number }) =>

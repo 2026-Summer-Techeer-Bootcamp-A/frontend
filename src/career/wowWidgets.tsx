@@ -1908,15 +1908,13 @@ function useCareerLevelDistribution(): { value: CareerLevelPayload; isLive: bool
   useEffect(() => {
     let cancelled = false
     marketApi.newcomerGate().then((r) => {
-      if (cancelled || !r.items.length) return
-      // 상위 기술별 공고는 서로 겹치므로 단순 합계가 아니라 공고 수 가중 평균을 쓴다.
-      const totalWeight = r.items.reduce((sum, item) => sum + item.postings, 0) || 1
-      const newcomerPct = Math.round(
-        r.items.reduce((sum, item) => sum + item.open_rate * item.postings, 0) / totalWeight * 10,
-      ) / 10
+      if (cancelled || !r.overall.total_postings) return
+      // 공고 단위(DISTINCT) 비율을 그대로 쓴다 — 예전 상위 15개 스킬 가중평균은 다중 스킬
+      // 공고를 중복 집계하고 표본을 상위 스킬로 편향시켜 N과 다른 모집단이 됐다(백엔드 overall로 교체).
+      const newcomerPct = r.overall.newcomer_pct
       setLive({
         newcomerPct, experiencedPct: Math.round((100 - newcomerPct) * 10) / 10,
-        sample_size: r.sample_size, as_of: r.as_of,
+        sample_size: r.overall.total_postings, as_of: r.as_of,
       })
     }).catch(() => undefined)
     return () => { cancelled = true }
