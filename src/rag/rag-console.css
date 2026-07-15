@@ -299,3 +299,52 @@
 .rc__viz-chart-wrap {
   width: 100%;
 }
+
+/* === RAG 파이프라인 실측값 (EngineTechnicalDetails) — Verbose 전용 === */
+.rc__engine-tech {
+  border: 1px solid #e2e5ec;
+  border-radius: 12px;
+  background: #fafbfc;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.rc__engine-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #43454c;
+}
+.rc__engine-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.rc__engine-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #7c7f88;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.rc__engine-grid {
+  display: grid;
+  grid-template-columns: minmax(96px, auto) 1fr;
+  gap: 4px 10px;
+  font-size: 12px;
+}
+.rc__engine-key {
+  color: #7c7f88;
+}
+.rc__engine-val {
+  color: #1c1d21;
+  font-family: 'JetBrains Mono', 'SFMono-Regular', ui-monospace, monospace;
+  overflow-wrap: anywhere;
+}
+.rc__engine-val.highlight {
+  color: #28539c;
+  font-weight: 600;
+}

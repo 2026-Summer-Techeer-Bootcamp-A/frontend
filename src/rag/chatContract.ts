@@ -37,6 +37,7 @@ export interface ToolResult {
   unit?: string
   nodes: Record<string, unknown>[]
   edges: Record<string, unknown>[]
+  debug?: Record<string, unknown> | null
 }
 
 export interface Citation {
@@ -64,6 +65,7 @@ export interface ChatResponse {
 export interface ChatRequestBody {
   question: string
   pool?: Pool
+  verbose?: boolean
 }
 
 // ============================================================
@@ -86,6 +88,7 @@ export interface StreamToolResult {
   unit?: string
   nodes?: Record<string, unknown>[]
   edges?: Record<string, unknown>[]
+  debug?: Record<string, unknown> | null
 }
 
 export type ChatStreamEvent =
@@ -106,5 +109,6 @@ export function normalizeStreamResult(r: StreamToolResult): ToolResult {
     unit: r.unit,
     nodes: r.nodes ?? [],
     edges: r.edges ?? [],
+    debug: r.debug ?? undefined,
   }
 }
