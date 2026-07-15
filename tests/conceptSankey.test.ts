@@ -1,0 +1,111 @@
+import assert from 'node:assert/strict'
+import test from 'node:test'
+
+import {
+  CURATED_SANKEY_CONCEPTS,
+  buildConceptSankeyFallback,
+  curateConceptSankey,
+  type SankeyPayload,
+} from '../src/career/conceptSankey.ts'
+
+const fallback: SankeyPayload = {
+  nodes: [
+    ...CURATED_SANKEY_CONCEPTS.map((name) => ({ name, kind: 'concept' as const })),
+    { name: 'AWS', kind: 'tech' },
+    { name: 'Kubernetes', kind: 'tech' },
+    { name: 'Java', kind: 'tech' },
+    { name: 'Spring', kind: 'tech' },
+    { name: 'Docker', kind: 'tech' },
+    { name: 'Python', kind: 'tech' },
+    { name: 'SQL', kind: 'tech' },
+    { name: 'Kafka', kind: 'tech' },
+    { name: 'Git', kind: 'tech' },
+  ],
+  links: [
+    { source: 'MSA·분산', target: 'AWS', value: 57 },
+    { source: '대규모 트래픽', target: 'Kubernetes', value: 32 },
+    { source: '보안·컴플라이언스', target: 'AWS', value: 38 },
+    { source: '보안·컴플라이언스', target: 'Python', value: 36 },
+    { source: '보안·컴플라이언스', target: 'Kubernetes', value: 25 },
+    { source: '보안·컴플라이언스', target: 'Docker', value: 25 },
+    { source: '데이터 파이프라인', target: 'SQL', value: 29 },
+    { source: 'DevOps·자동화', target: 'Git', value: 36 },
+  ],
+}
+
+test('승인된 다섯 개념을 지정 순서로 선택한다', () => {
+  const live: SankeyPayload = {
+    nodes: [
+      { name: 'AI·LLM', kind: 'concept' },
+      { name: 'MSA·분산', kind: 'concept' },
+      { name: 'AWS', kind: 'tech' },
+    ],
+    links: [
+      { source: 'AI·LLM', target: 'AWS', value: 100 },
+      { source: 'MSA·분산', target: 'AWS', value: 10 },
+    ],
+  }
+
+  const result = curateConceptSankey(live, fallback)
+
+  assert.deepEqual(
+    result.nodes.filter((node) => node.kind === 'concept').map((node) => node.name),
+    [...CURATED_SANKEY_CONCEPTS],
+  )
+  assert.equal(result.links.some((link) => link.source === 'AI·LLM'), false)
+})
+
+test('개념별 공동출현 값이 큰 기술 네 개만 남긴다', () => {
+  const live: SankeyPayload = {
+    nodes: [
+      { name: 'MSA·분산', kind: 'concept' },
+      ...['AWS', 'Kubernetes', 'Java', 'Spring', 'Docker'].map((name) => ({ name, kind: 'tech' as const })),
+    ],
+    links: [
+      { source: 'MSA·분산', target: 'Docker', value: 40 },
+      { source: 'MSA·분산', target: 'Spring', value: 43 },
+      { source: 'MSA·분산', target: 'Java', value: 48 },
+      { source: 'MSA·분산', target: 'Kubernetes', value: 49 },
+      { source: 'MSA·분산', target: 'AWS', value: 57 },
+    ],
+  }
+
+  const result = curateConceptSankey(live, fallback)
+  const msaTargets = result.links
+    .filter((link) => link.source === 'MSA·분산')
+    .map((link) => link.target)
+
+  assert.deepEqual(msaTargets, ['AWS', 'Kubernetes', 'Java', 'Spring'])
+})
+
+test('라이브 응답에서 빠진 개념은 실측 폴백으로 보충한다', () => {
+  const result = curateConceptSankey({ nodes: [], links: [] }, fallback)
+
+  assert.deepEqual(
+    result.links
+      .filter((link) => link.source === '보안·컴플라이언스')
+      .map((link) => link.target),
+    ['AWS', 'Python', 'Kubernetes', 'Docker'],
+  )
+})
+
+test('conceptReal 형식에서 고정 개념과 실측 n을 페이로드로 만든다', () => {
+  const result = buildConceptSankeyFallback([
+    {
+      label: '보안·컴플라이언스',
+      signature: [
+        { tech: 'AWS', n: 100 },
+        { tech: 'Python', n: 90 },
+      ],
+    },
+    {
+      label: 'AI·LLM',
+      signature: [{ tech: 'PyTorch', n: 200 }],
+    },
+  ])
+
+  assert.deepEqual(result.links, [
+    { source: '보안·컴플라이언스', target: 'AWS', value: 100 },
+    { source: '보안·컴플라이언스', target: 'Python', value: 90 },
+  ])
+})
