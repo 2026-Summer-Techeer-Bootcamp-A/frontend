@@ -167,6 +167,9 @@ export const marketApi = {
   skillShare: (params: { pool?: ApiPool; position?: string; top_k?: number } = {}) => request<{ items: Array<{ canonical: string; category: string | null; posting_count: number; share: number }>; as_of: string; sample_size: number }>(withQuery('/stats/skill-share', params)),
   newcomerGate: () => request<{ items: Array<{ canonical: string; postings: number; newcomer_postings: number; open_rate: number }>; as_of: string; sample_size: number }>('/stats/newcomer-gate'),
   yearlyTrend: (pool: ApiPool = 'domestic') => request<{ years: number[]; series: Array<{ canonical: string; shares: number[]; delta: number }>; movers: { rising: Array<{ canonical: string; delta: number }>; falling: Array<{ canonical: string; delta: number }> }; as_of: string; sample_size: number }>(withQuery('/stats/skill-trend-yearly', { pool })),
+  // 연도별 순위 이력(범프 차트). 점유율%는 오염돼 있어 순위만 사용한다. rank는 top_n 밖이면 null.
+  skillRankHistory: (params: { category: 'language' | 'backend' | 'frontend' | 'db'; top_n?: number; year_from?: number; year_to?: number }) =>
+    request<{ years: number[]; skills: Array<{ name: string; ranks: Array<number | null> }> }>(withQuery('/stats/skills/rank-history', params)),
   cooccurrence: (params: { pool?: ApiPool; skill?: string; top_k?: number } = {}) => request<{ nodes: Array<{ canonical: string; category: string | null; freq: number }>; links: Array<{ source: string; target: string; co_count: number; co_rate: number }>; as_of: string }>(withQuery('/stats/cooccurrence', params)),
   hotCompanies: (params: { pool?: ApiPool; days?: number; limit?: number } = {}) => request<{ items: Array<{ company: string; posting_count: number }>; as_of: string }>(withQuery('/stats/hot-companies', params)),
   regionDensity: (params: { pool?: ApiPool; limit?: number } = {}) => request<{ items: Array<{ region_district: string; posting_count: number }>; as_of: string }>(withQuery('/stats/region-density', params)),
