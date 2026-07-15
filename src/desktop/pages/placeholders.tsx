@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { MapPin, ArrowUpRight, FileText, Settings, Award, User, Sparkles } from 'lucide-react'
+import { MapPin, ArrowUpRight, FileText, Settings, Award, User, Sparkles, Plus, Trash2, CheckCircle2 } from 'lucide-react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import catData from '../../data/pearl/n.json'
@@ -1333,14 +1333,19 @@ export function DesktopMy() {
 
       <div className="dmy__body">
         <div className="dmy__main">
-          <section className="dcard">
+          <section className="dcard dmy__section-card">
             <SectionHeader title="내 이력서" hint={`${resumes.length}개`} right={
-              <button className="dpage__more" onClick={() => navigate('/resume/new')}>새 이력서 추가</button>
+              isAuthed && resumes.length > 0 ? (
+                <button className="dmy__resume-add-button" onClick={() => navigate('/resume/new')}>
+                  <Plus size={14} /> 새 이력서 추가
+                </button>
+              ) : (
+                <button className="dmy__empty-btn" onClick={() => navigate('/resume/new')}>이력서 등록하기</button>
+              )
             } />
-            {resumes.length === 0 ? (
+            {!isAuthed || resumes.length === 0 ? (
               <div className="dmy__empty">
                 <span>아직 등록한 이력서가 없어요. 이력서를 등록하면 맞춤 공고와 커버리지 분석을 받아볼 수 있어요.</span>
-                <button className="dmy__empty-btn" onClick={() => navigate('/resume/new')}>이력서 등록하기</button>
               </div>
             ) : (
               <div className="dmy__jobs">
@@ -1352,15 +1357,16 @@ export function DesktopMy() {
                       <span className="djobs__row-c">{r.position || '직무 미정'} · 보유 기술 {r.skills.length}개</span>
                     </span>
                     {r.isPrimary ? (
-                      <span className="dpage__more">기본</span>
+                      <span className="dmy__resume-primary-badge"><CheckCircle2 size={13} /> 기본</span>
                     ) : (
                       <button className="dpage__more" onClick={() => setPrimary(r.id)}>기본으로</button>
                     )}
                     <button
-                      className="dpage__more"
+                      className="dmy__resume-delete-button"
+                      aria-label={`${r.title} 삭제`}
                       onClick={() => { if (window.confirm(`'${r.title}'을(를) 삭제할까요?`)) deleteResume(r.id) }}
                     >
-                      삭제
+                      <Trash2 size={15} />
                     </button>
                   </div>
                 ))}
@@ -1368,19 +1374,20 @@ export function DesktopMy() {
             )}
           </section>
 
-          <section className="dcard">
+          <section className="dcard dmy__section-card">
             <SectionHeader
               title="보유 기술"
               hint={`${skills.length}개`}
-              right={activeResume && (
+              right={activeResume ? (
                 <button className="dmy__manage" onClick={() => setSkillModalOpen(true)}>기술 관리</button>
+              ) : (
+                <button className="dmy__empty-btn" onClick={() => navigate('/resume/new')}>이력서 등록하기</button>
               )}
             />
             <div className="dmy__skills">
               {!activeResume ? (
                 <div className="dmy__empty">
                   <span>이력서를 등록하면 보유 기술을 관리할 수 있어요.</span>
-                  <button className="dmy__empty-btn" onClick={() => navigate('/resume/new')}>이력서 등록하기</button>
                 </div>
               ) : (
                 <>
@@ -1393,7 +1400,7 @@ export function DesktopMy() {
             </div>
           </section>
 
-          <section className="dcard">
+          <section className="dcard dmy__section-card">
             <SectionHeader title="북마크한 공고" hint={`${bookmarkedPostings.length}건`} right={
               <button className="dpage__more" onClick={() => navigate('/jobs')}>전체 보기</button>
             } />
