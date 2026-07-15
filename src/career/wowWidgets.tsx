@@ -14,6 +14,12 @@ import { useWidgetData } from './useWidgetData'
 import CompanyLogo from './CompanyLogo'
 import { useBookmarks } from './bookmarkStore'
 import { marketApi } from './api'
+import {
+  buildConceptSankeyFallback,
+  curateConceptSankey,
+  type SankeyNode,
+  type SankeyPayload,
+} from './conceptSankey'
 import feedRaw from '../data/feedData.json'
 import y1Raw from '../data/pearl/y1.json'
 import matchRaw from '../data/matchData.json'
@@ -1679,29 +1685,7 @@ export function MarketSkillUnlockWidget() {
    신규 concept-tech 엔드포인트가 붙기 전까지는 이 실측 목이 사실상 라이브 수준의 정확도.
    ──────────────────────────────────────────────────────────────── */
 const CONCEPT_FOR_SANKEY = (conceptRaw as unknown as { concepts: ConceptItem[] }).concepts
-type SankeyNode = { name: string; kind: 'concept' | 'tech' }
-type SankeyLink = { source: string; target: string; value: number }
-type SankeyPayload = { nodes: SankeyNode[]; links: SankeyLink[] }
-
-function buildConceptSankeyMock(): SankeyPayload {
-  const top = [...CONCEPT_FOR_SANKEY].sort((a, b) => b.demand - a.demand).slice(0, 5)
-  const conceptNames = new Set<string>()
-  const techNames = new Set<string>()
-  const links: SankeyLink[] = []
-  top.forEach((c) => {
-    conceptNames.add(c.label)
-    c.signature.slice(0, 4).forEach((t) => {
-      techNames.add(t.tech)
-      links.push({ source: c.label, target: t.tech, value: Math.max(1, t.n) })
-    })
-  })
-  const nodes: SankeyNode[] = [
-    ...[...conceptNames].map((name) => ({ name, kind: 'concept' as const })),
-    ...[...techNames].map((name) => ({ name, kind: 'tech' as const })),
-  ]
-  return { nodes, links }
-}
-const CONCEPT_SANKEY_MOCK = buildConceptSankeyMock()
+const CONCEPT_SANKEY_FALLBACK = buildConceptSankeyFallback(CONCEPT_FOR_SANKEY)
 
 // 개념 노드 구분용 저채도 팔레트(모노톤 계열에 어울리는 뮤트 톤 — 원색/쨍한 색 금지).
 // 개념마다 하나씩 배정하고, 그 개념에서 나가는 링크는 같은 색을 낮은 opacity로 물려받아
@@ -1717,42 +1701,19 @@ const SANKEY_TECH_COLOR = '#aab0bb' // 중립 회색(기술 노드)
 const sankeyRgb = (c: [number, number, number]) => `rgb(${c[0]}, ${c[1]}, ${c[2]})`
 const sankeyRgba = (c: [number, number, number], a: number) => `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${a})`
 
-// P0-1 — 노드 과밀 완화: 라이브·목 데이터 어느 쪽이든 "상위 개념 5개 × 개념당 상위 기술 4개"로
-// 균일하게 슬라이스한다(목은 이미 이 기준으로 생성되어 사실상 no-op, 라이브는 방어적 캡).
-function sliceSankeyPayload(payload: SankeyPayload, topConcepts = 5, topTechsPerConcept = 4): SankeyPayload {
-  const concepts = payload.nodes.filter((n) => n.kind === 'concept')
-  const totals = new Map<string, number>()
-  payload.links.forEach((l) => totals.set(l.source, (totals.get(l.source) ?? 0) + l.value))
-  const keepConcepts = [...concepts]
-    .sort((a, b) => (totals.get(b.name) ?? 0) - (totals.get(a.name) ?? 0))
-    .slice(0, topConcepts)
-    .map((c) => c.name)
-  const keptLinks: SankeyLink[] = []
-  keepConcepts.forEach((name) => {
-    const top = payload.links.filter((l) => l.source === name).sort((a, b) => b.value - a.value).slice(0, topTechsPerConcept)
-    keptLinks.push(...top)
-  })
-  const techNames = new Set(keptLinks.map((l) => l.target))
-  const nodes: SankeyNode[] = [
-    ...keepConcepts.map((name) => ({ name, kind: 'concept' as const })),
-    ...[...techNames].map((name) => ({ name, kind: 'tech' as const })),
-  ]
-  return { nodes, links: keptLinks }
-}
-
 export function ConceptTechSankeyWidget({ pool }: { pool: PoolChoice }) {
   const [live, setLive] = useState<SankeyPayload | null>(null)
   useEffect(() => {
     let cancelled = false
-    marketApi.conceptTech({ pool: poolToApi(pool), top_concepts: 5, top_techs: 4 }).then((r) => {
+    marketApi.conceptTech({ pool: poolToApi(pool), top_concepts: 20, top_techs: 4 }).then((r) => {
       if (cancelled || !r.links.length) return
       const nodes: SankeyNode[] = r.nodes.map((n) => ({ name: n.name, kind: n.type === 'tech' ? 'tech' : 'concept' }))
       setLive({ nodes, links: r.links })
     }).catch(() => undefined)
     return () => { cancelled = true }
   }, [pool])
-  const raw = live ?? CONCEPT_SANKEY_MOCK
-  const data = useMemo(() => sliceSankeyPayload(raw), [raw])
+  const raw = live ?? CONCEPT_SANKEY_FALLBACK
+  const data = useMemo(() => curateConceptSankey(raw, CONCEPT_SANKEY_FALLBACK), [raw])
 
   // 개념 노드 순서대로 저채도 색을 배정 — 노드 색 + 링크 tint 색의 단일 출처.
   const conceptColor = useMemo(() => {
@@ -1773,8 +1734,8 @@ export function ConceptTechSankeyWidget({ pool }: { pool: PoolChoice }) {
       },
     },
     series: [{
-      type: 'sankey', layout: 'none', nodeGap: 18, nodeWidth: 14,
-      left: '15%', right: '18%', top: 14, bottom: 14,
+      type: 'sankey', layout: 'none', layoutIterations: 0, nodeGap: 18, nodeWidth: 14,
+      left: '25%', right: '18%', top: 14, bottom: 14,
       emphasis: { focus: 'adjacency' },
       data: data.nodes.map((n) => {
         const c = conceptColor.get(n.name)
