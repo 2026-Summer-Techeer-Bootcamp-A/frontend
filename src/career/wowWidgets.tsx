@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ReactECharts from 'echarts-for-react'
@@ -1540,10 +1540,25 @@ function bumpTip(data: RankHistory, name: string): string {
 function BumpChart({ data }: { data: RankHistory }) {
   const [hovered, setHovered] = useState<string | null>(null)
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null)
+  // 폭은 컨테이너에 맞춰 측정하고 높이는 고정한다. SVG를 aspect-lock(height:auto)으로 두면
+  // 넓은 카드에서 세로로 늘어나 아래 위젯을 침범한다 — 고정 높이 박스에 가두고 폭만 채운다.
+  const wrapRef = useRef<HTMLDivElement>(null)
+  const [width, setWidth] = useState(680)
+  useEffect(() => {
+    const el = wrapRef.current
+    if (!el) return
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect.width
+      if (w) setWidth(w)
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   const years = data.years
   const nY = years.length
-  const W = 720, H = 260, padL = 18, padR = 104, padT = 28, padB = 28
+  const H = 232
+  const W = Math.max(width, 320), padL = 18, padR = 104, padT = 26, padB = 26
   const plotW = W - padL - padR, plotH = H - padT - padB
   const allRanks = data.skills.flatMap((sk) => sk.ranks.filter((r): r is number => r != null))
   const maxRank = Math.max(1, ...allRanks)
@@ -1569,19 +1584,21 @@ function BumpChart({ data }: { data: RankHistory }) {
     })
     .filter((l) => l.pts.length > 0)
 
-  const overtakes = useMemo(() => computeOvertakes(data, xOf, yOf), [data]) // eslint-disable-line react-hooks/exhaustive-deps
+  const overtakes = useMemo(() => computeOvertakes(data, xOf, yOf), [data, W]) // eslint-disable-line react-hooks/exhaustive-deps
   const dim = (name: string) => hovered != null && hovered !== name
 
   return (
     <div
+      ref={wrapRef}
       className="dmkt2__bump"
-      style={{ position: 'relative', width: '100%' }}
+      style={{ position: 'relative', width: '100%', height: H }}
       onMouseLeave={() => { setHovered(null); setCursor(null) }}
     >
       <svg
         viewBox={`0 0 ${W} ${H}`}
-        width="100%"
-        style={{ display: 'block', height: 'auto' }}
+        width={W}
+        height={H}
+        style={{ display: 'block' }}
         role="img"
         aria-label={`연도별 순위 변화 범프 차트. ${data.skills.map((s) => s.name).join(', ')}`}
         onMouseMove={(e) => setCursor({ x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY })}
