@@ -79,7 +79,35 @@
   min-width: 0;
   font-size: 12.5px;
   color: var(--c-ink);
+  border: 0;
+  outline: 0;
+  background: transparent;
 }
+.djobs__search:focus-within,
+.djobs__skill-search:focus-within {
+  border-color: var(--c-ink, #0b0b0c);
+  box-shadow: 0 0 0 3px rgba(11, 11, 12, 0.08);
+}
+
+.djobs__pv-bookmark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--line, #e6e9ef);
+  border-radius: 8px;
+  color: var(--c-muted);
+  background: var(--c-card, #fff);
+  transition: color 0.14s ease, background 0.14s ease, border-color 0.14s ease;
+}
+.djobs__pv-bookmark:hover { color: var(--c-ink); background: var(--accent-50); }
+.djobs__pv-bookmark.on {
+  color: var(--c-accent);
+  border-color: var(--accent-200);
+  background: var(--accent-50);
+}
+.djobs__pv-bookmark.on svg { fill: currentColor; }
 .djobs__selected-summary,
 .djobs__filter-note,
 .djobs__filter-empty {

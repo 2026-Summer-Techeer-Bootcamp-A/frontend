@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import * as homeApiModule from './homeApi.ts'
 import type { PostingTimelineDto } from './homeApi.ts'
+import * as bookmarkStoreModule from './bookmarkStore.ts'
 
 const summarizePostingTimeline = (daily: PostingTimelineDto['daily'], days: number) => {
   assert.equal(typeof homeApiModule.summarizePostingTimeline, 'function')
@@ -128,4 +129,21 @@ test('merges skill counts and recalculates combined share before taking top k', 
     as_of: '2026-07-11',
     sample_size: 300,
   })
+})
+
+test('loads available bookmark details even when one posting request fails', async () => {
+  assert.equal(typeof bookmarkStoreModule.loadBookmarkDetails, 'function')
+
+  const result = await bookmarkStoreModule.loadBookmarkDetails!(
+    ['domestic-1', 'missing', 'global-2'],
+    async (id: string) => {
+      if (id === 'missing') throw new Error('not found')
+      return { id, title: `posting ${id}` }
+    },
+  )
+
+  assert.deepEqual(result, [
+    { id: 'domestic-1', title: 'posting domestic-1' },
+    { id: 'global-2', title: 'posting global-2' },
+  ])
 })
