@@ -1,4 +1,4 @@
-import { getAuthToken } from './authStore'
+import { getAuthToken } from './authStore.ts'
 
 const API_BASE = '/api/v1'
 
@@ -65,6 +65,87 @@ export type PostingTimelineDto = {
   as_of: string
 }
 
+export type PostingTimelineSummaryDay = PostingTimelineDto['daily'][number] & {
+  displayTotal: number
+  isOutlier: boolean
+}
+
+export type PostingTimelineSummary = {
+  recent: PostingTimelineSummaryDay[]
+  median: number
+  p95: number
+  outlierCount: number
+}
+
+export function summarizePostingTimeline(
+  daily: PostingTimelineDto['daily'],
+  recentDays = 7,
+): PostingTimelineSummary {
+  const positiveTotals = daily
+    .map((day) => day.total)
+    .filter((total) => total > 0)
+    .sort((a, b) => a - b)
+
+  const p95 = positiveTotals.length === 0
+    ? 0
+    : positiveTotals[Math.max(0, Math.ceil(positiveTotals.length * 0.95) - 1)]
+
+  const recent = daily.slice(-recentDays).map((day) => {
+    const isOutlier = p95 > 0 && day.total > p95 * 2
+    return {
+      ...day,
+      displayTotal: isOutlier ? p95 : day.total,
+      isOutlier,
+    }
+  })
+  const typicalTotals = recent
+    .filter((day) => !day.isOutlier && day.total > 0)
+    .map((day) => day.total)
+    .sort((a, b) => a - b)
+  const middle = Math.floor(typicalTotals.length / 2)
+  const median = typicalTotals.length === 0
+    ? 0
+    : typicalTotals.length % 2 === 1
+      ? typicalTotals[middle]
+      : Math.round((typicalTotals[middle - 1] + typicalTotals[middle]) / 2)
+
+  return {
+    recent,
+    median,
+    p95,
+    outlierCount: recent.filter((day) => day.isOutlier).length,
+  }
+}
+
+export function mergePostingTimelines(timelines: PostingTimelineDto[]): PostingTimelineDto {
+  const byDate = new Map<string, { total: number; matched: number; hasMatched: boolean }>()
+
+  for (const timeline of timelines) {
+    for (const day of timeline.daily) {
+      const current = byDate.get(day.date) ?? { total: 0, matched: 0, hasMatched: false }
+      current.total += day.total
+      if (typeof day.matched === 'number') {
+        current.matched += day.matched
+        current.hasMatched = true
+      }
+      byDate.set(day.date, current)
+    }
+  }
+
+  const daily = [...byDate.entries()]
+    .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+    .map(([date, day]) => ({
+      date,
+      total: day.total,
+      ...(day.hasMatched ? { matched: day.matched } : {}),
+    }))
+  const asOf = timelines.reduce((latest, timeline) => (
+    timeline.as_of > latest ? timeline.as_of : latest
+  ), '')
+
+  return { daily, as_of: asOf }
+}
+
 // 필드명은 backend app/schemas/insight.py의 SkillShareItem(canonical, category,
 // posting_count, share)을 그대로 따른다.
 export type SkillShareItemDto = {
@@ -78,6 +159,35 @@ export type SkillShareDto = {
   items: SkillShareItemDto[]
   as_of: string
   sample_size: number
+}
+
+export function mergeSkillShares(shares: SkillShareDto[], topK = 5): SkillShareDto {
+  const sampleSize = shares.reduce((sum, share) => sum + share.sample_size, 0)
+  const byCanonical = new Map<string, Omit<SkillShareItemDto, 'share'>>()
+
+  for (const share of shares) {
+    for (const item of share.items) {
+      const current = byCanonical.get(item.canonical)
+      byCanonical.set(item.canonical, {
+        canonical: item.canonical,
+        category: current?.category ?? item.category,
+        posting_count: (current?.posting_count ?? 0) + item.posting_count,
+      })
+    }
+  }
+
+  const items = [...byCanonical.values()]
+    .sort((a, b) => b.posting_count - a.posting_count || a.canonical.localeCompare(b.canonical))
+    .slice(0, topK)
+    .map((item) => ({
+      ...item,
+      share: sampleSize > 0 ? Number((item.posting_count / sampleSize).toFixed(4)) : 0,
+    }))
+  const asOf = shares.reduce((latest, share) => (
+    share.as_of > latest ? share.as_of : latest
+  ), '')
+
+  return { items, as_of: asOf, sample_size: sampleSize }
 }
 
 function query(path: string, params: Record<string, string | number | boolean | undefined>) {
