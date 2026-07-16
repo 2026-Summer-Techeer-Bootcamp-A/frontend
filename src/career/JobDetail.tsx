@@ -23,12 +23,12 @@ import {
   usePendingComparePosting,
   clearPendingComparePosting,
 } from '../rag/attachmentIntentStore'
+import { resolvePostingMapPin, type PostingMapPin } from './jobDetailMap'
 import './career.css'
 
-type MapPin = { id: string; lat: number; lng: number }
+type MapPin = PostingMapPin
 
-/** 공고 id로 marketData.map.pins에서 좌표를 찾는다. 백엔드 lat/lng가 아직 라이브로
- * 연결되지 않아(별도 태스크 진행 중) 지금은 mock 지도 데이터를 매핑해 쓴다.
+/** 라이브 좌표가 없는 공고를 위해 기존 marketData.map.pins에서 좌표를 찾는다.
  * 매칭되는 pin이 없으면 undefined — 호출부에서 지도 카드를 조용히 숨긴다. */
 function findPinCoord(id: string): MapPin | undefined {
   return (marketData.map.pins as MapPin[]).find((pp) => pp.id === id)
@@ -371,9 +371,9 @@ export default function JobDetail() {
   const matchPct = matchTotal ? Math.round((matchHeld / matchTotal) * 100) : 100
 
   const ci = p.companyInfo ?? { industry: '', homepage: '', established: '', location: '', tags: [] as string[] }
-  // 국외 공고는 지도 카드를 아예 렌더하지 않는다. id 매칭 pin이 없으면(백엔드 좌표 미연동
-  // 등) 에러 대신 조용히 숨긴다.
-  const pinCoord = p.pool === '국내' ? desktopPin ?? (desktopDetail?.lat != null && desktopDetail.lng != null ? { id: p.id, lat: desktopDetail.lat, lng: desktopDetail.lng } : findPinCoord(p.id)) : undefined
+  // 상세 응답 좌표를 우선 사용하고, 지도 API와 기존 mock pin 순서로 보완한다.
+  // 국내 좌표가 없거나 비정상이면 알려진 지역 중심 좌표로 지도를 복원한다.
+  const pinCoord = resolvePostingMapPin(p.id, p.region, desktopDetail, desktopPin, findPinCoord(p.id))
 
   // 어시스턴트 딥링크 트리거 — chat 백엔드는 posting_ids로 실제 DB의 숫자 공고 id를 요구한다.
   // 모바일 화면은 mock careerData.json(문자열 id, 원본 채용 URL)만 쓰고 라이브 API를 아예
@@ -442,7 +442,6 @@ export default function JobDetail() {
       )}
     </div>
   )
-
   const bookmarkBtn = (
     <Bookmark
       size={21}
