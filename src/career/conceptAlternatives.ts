@@ -4,7 +4,7 @@ export function resolveConceptAlternativeData(
   response: SankeyPayload | null | undefined,
   fallback: SankeyPayload,
 ): SankeyPayload | null {
-  if (response === undefined) return null
+  if (response === undefined) return fallback
   if (response === null) return fallback
   return response
 }
