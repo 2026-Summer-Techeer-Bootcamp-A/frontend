@@ -26,6 +26,8 @@ interface StepEntry {
   tool?: string
   label: string
   detail?: string
+  durationMs?: number | null
+  debug?: Record<string, unknown> | null
 }
 
 interface FinalPayload {
@@ -33,6 +35,8 @@ interface FinalPayload {
   citations: Citation[]
   confidence: Confidence
   degraded: boolean
+  degradedReasons: string[]
+  totalDurationMs?: number | null
 }
 
 interface Turn {
@@ -41,6 +45,8 @@ interface Turn {
   status: TurnStatus
   route?: Route
   plan?: Plan
+  planDurationMs?: number | null
+  planDebug?: Record<string, unknown> | null
   steps: StepEntry[]
   results: ToolResult[]
   final?: FinalPayload
@@ -69,13 +75,23 @@ export default function RagConsole() {
 
   const runTurn = (id: number, question: string, verbose: boolean) => {
     streamChat(question, undefined, verbose, {
-      onPlan: (e) => patchTurn(id, { route: e.route, plan: e.plan }),
-      onStep: (e) => patchTurn(id, (t) => ({ steps: [...t.steps, { kind: e.kind, tool: e.tool, label: e.label, detail: e.detail }] })),
+      onPlan: (e) => patchTurn(id, { route: e.route, plan: e.plan, planDurationMs: e.duration_ms, planDebug: e.debug }),
+      onStep: (e) =>
+        patchTurn(id, (t) => ({
+          steps: [...t.steps, { kind: e.kind, tool: e.tool, label: e.label, detail: e.detail, durationMs: e.duration_ms, debug: e.debug }],
+        })),
       onResult: (e) => patchTurn(id, (t) => ({ results: [...t.results, normalizeStreamResult(e.result)] })),
       onFinal: (e) =>
         patchTurn(id, {
           status: 'done',
-          final: { answer: e.answer, citations: e.citations, confidence: e.confidence, degraded: e.degraded },
+          final: {
+            answer: e.answer,
+            citations: e.citations,
+            confidence: e.confidence,
+            degraded: e.degraded,
+            degradedReasons: e.degraded_reasons,
+            totalDurationMs: e.total_duration_ms,
+          },
           error: undefined,
         }),
       onError: (message) => patchTurn(id, { status: 'error', error: message }),
@@ -201,18 +217,30 @@ function RcEmptyState({ isAuthed, nickname, busy, onPick }: RcEmptyStateProps) {
   )
 }
 
-// 기본 모드에서 보여줄 한 줄짜리 라이브 상태. 아직 도착한 게 없으면 "계획 중", plan은 왔는데
-// step이 아직 없으면 도구 조회 직전으로 보고, step이 있으면 가장 최근 step.kind를 그대로 반영한다.
+// 기본 모드에서 보여줄 진행 단계 목록. step.label이 없는 경우(방어적으로만 발생)를 대비한 kind별 대체 문구.
 const PHASE_LABEL: Record<StreamStepKind, string> = {
   tool: '도구 조회 중…',
   eval: '근거 검증 중…',
   synth: '답변 작성 중…',
 }
 
-function basicPhaseLabel(turn: Turn): string {
-  if (turn.steps.length > 0) return PHASE_LABEL[turn.steps[turn.steps.length - 1].kind] ?? '처리 중…'
-  if (turn.plan) return '도구 조회 중…'
-  return '계획 중…'
+// "모든 과정 보기"의 상세 디버그 로그(EngineFlowLog)와 달리, 기본 모드는 도착한 step을 그대로
+// 한 줄씩 쌓아 보여준다 — 오래 걸리는 질문일수록 지금 뭘 하고 있는지 텍스트로 계속 보여야 한다.
+// 가장 마지막 줄만 진행 중(펄스)으로, 그 앞줄들은 이미 끝난 단계로 옅게 표시한다.
+function LiveSteps({ turn }: { turn: Turn }) {
+  const rows = turn.steps.map((s) => s.label || PHASE_LABEL[s.kind] || '처리 중…')
+  if (rows.length === 0) rows.push(turn.plan ? '도구 조회 중…' : '계획 중…')
+
+  return (
+    <div className="rc__think" aria-live="polite">
+      {rows.map((label, i) => (
+        <div className={`rc__think-line${i === rows.length - 1 ? ' is-active' : ''}`} key={i}>
+          <span className="rc__think-dot" />
+          <span className="rc__think-text">{label}</span>
+        </div>
+      ))}
+    </div>
+  )
 }
 
 function TurnBlock({ turn, mode, onRetry }: { turn: Turn; mode: Mode; onRetry: () => void }) {
@@ -239,16 +267,26 @@ function TurnBlock({ turn, mode, onRetry }: { turn: Turn; mode: Mode; onRetry: (
         </div>
       )}
 
-      {mode === 'basic' && turn.status === 'loading' && !nothingYet && (
-        <div className="rc__livestatus" aria-live="polite">{basicPhaseLabel(turn)}</div>
-      )}
+      {mode === 'basic' && turn.status === 'loading' && !nothingYet && <LiveSteps turn={turn} />}
 
       {mode === 'basic' && turn.results.length > 0 && (
         <AssistantVisualizer results={turn.results} route={turn.route} />
       )}
 
       {mode === 'log' && (turn.plan || turn.steps.length > 0) && (
-        <EngineFlowLog question={turn.question} route={turn.route} plan={turn.plan} steps={turn.steps} results={turn.results} />
+        <EngineFlowLog
+          question={turn.question}
+          route={turn.route}
+          plan={turn.plan}
+          planDurationMs={turn.planDurationMs}
+          planDebug={turn.planDebug}
+          steps={turn.steps}
+          results={turn.results}
+          citations={turn.final?.citations}
+          confidence={turn.final?.confidence}
+          degradedReasons={turn.final?.degradedReasons}
+          totalDurationMs={turn.final?.totalDurationMs}
+        />
       )}
 
       {mode === 'log' && turn.results.length > 0 && (
