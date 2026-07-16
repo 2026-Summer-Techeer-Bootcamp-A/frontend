@@ -20,6 +20,22 @@
   overflow: hidden;
 }
 
+.wow-loading { display: flex; min-height: 180px; flex: 1; flex-direction: column; justify-content: center; gap: 11px; }
+.wow-loading__line,
+.wow-loading__block {
+  display: block;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #eef0f3 25%, #dde1e7 50%, #eef0f3 75%);
+  background-size: 220% 100%;
+  animation: wow-loading-shimmer 1.25s ease-in-out infinite;
+}
+.wow-loading__line { width: 82%; height: 12px; }
+.wow-loading__line--short { width: 40%; }
+.wow-loading__block { width: 100%; height: 92px; border-radius: 12px; }
+.wow-loading__text { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+@keyframes wow-loading-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+@media (prefers-reduced-motion: reduce) { .wow-loading__line, .wow-loading__block { animation: none; } }
+
 .wow-headline {
   font-size: 12.5px;
   line-height: 1.5;

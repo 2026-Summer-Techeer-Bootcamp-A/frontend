@@ -46,6 +46,17 @@ function poolToApi(pool: PoolChoice, fallback: ApiPool = 'domestic'): ApiPool {
   return pool === 'global' ? 'global' : pool === 'domestic' ? 'domestic' : fallback
 }
 
+function WidgetLoadingState({ label = '데이터를 불러오는 중이에요.' }: { label?: string }) {
+  return (
+    <div className="wow-loading" role="status" aria-live="polite">
+      <span className="wow-loading__line wow-loading__line--short" />
+      <span className="wow-loading__block" />
+      <span className="wow-loading__line" />
+      <span className="wow-loading__text">{label}</span>
+    </div>
+  )
+}
+
 /* ============================================================
    와우포인트 위젯 7종 — 대시보드/시장 그리드(.wcell) 컴팩트 카드.
    각 컴포넌트는 자체 데이터를 import해 완결적으로 동작한다.
@@ -156,11 +167,9 @@ export function LatestJobsTimeline({ size = '2x2' }: { size?: WidgetSize }) {
       <div className="dcard wow-card">
         <SectionHeader title="최신 공고 타임라인" hint="내 매칭 강조" />
         <div className="wow-body">
-          <div className="dov__empty">
-            {timeline.loading
-              ? '차트 데이터를 불러오는 중이에요.'
-              : '차트 데이터를 불러올 수 없어요. 잠시 후 다시 시도해 주세요.'}
-          </div>
+          {timeline.loading
+            ? <WidgetLoadingState label="차트 데이터를 불러오는 중이에요." />
+            : <div className="dov__empty" role="alert">차트 데이터를 불러올 수 없어요. 잠시 후 다시 시도해 주세요.</div>}
         </div>
       </div>
     )
@@ -329,6 +338,18 @@ export function LearningPathWidget({ size = '2x1' }: { size?: WidgetSize }) {
     mockData,
     roadmapRefreshKey,
   )
+  if (identity && roadmap.source !== 'live') {
+    return (
+      <div className="dcard wow-card" aria-busy={!roadmap.error}>
+        <SectionHeader title="학습 로드맵" hint="최적 순서" />
+        <div className="wow-body">
+          {roadmap.error
+            ? <div className="dov__empty" role="alert">학습 로드맵을 불러오지 못했어요.</div>
+            : <WidgetLoadingState label="학습 로드맵을 불러오는 중이에요." />}
+        </div>
+      </div>
+    )
+  }
   const D = roadmap.value.steps.length ? roadmap.value : mockData
   const stepCount = size === '2x2' ? D.steps.length : 3
   const steps = D.steps.slice(0, stepCount)
@@ -403,19 +424,45 @@ export function SkillUnlockWidget({
   const resumeId = Number(activeResume?.id)
   const token = getAuthToken()
   const [liveData, setLiveData] = useState<UnlockData | null>(null)
+  const [liveLoading, setLiveLoading] = useState(false)
+  const [liveError, setLiveError] = useState(false)
+  const hasIdentity = Number.isInteger(resumeId) && resumeId > 0 && !!token
 
   useEffect(() => {
     if (!Number.isInteger(resumeId) || resumeId <= 0 || !token) {
       setLiveData(null)
+      setLiveLoading(false)
+      setLiveError(false)
       return
     }
     let cancelled = false
     setLiveData(null)
+    setLiveLoading(true)
+    setLiveError(false)
     dashboardApi.unlock({ resumeId, token }, role === 'all' ? undefined : role)
-      .then((data) => { if (!cancelled && data.candidates.length) setLiveData(data) })
-      .catch(() => { if (!cancelled) setLiveData(null) })
+      .then((data) => { if (!cancelled) setLiveData(data) })
+      .catch(() => {
+        if (!cancelled) {
+          setLiveData(null)
+          setLiveError(true)
+        }
+      })
+      .finally(() => { if (!cancelled) setLiveLoading(false) })
     return () => { cancelled = true }
   }, [resumeId, role, token])
+
+  if (hasIdentity && !liveData) {
+    return (
+      <div className="dcard wow-card" aria-busy={liveLoading || !liveError}>
+        <SectionHeader title={title} hint={hint} />
+        <div className="wow-body">
+          {liveError
+            ? <div className="dov__empty" role="alert">한계 해금 데이터를 불러오지 못했어요.</div>
+            : <WidgetLoadingState label="한계 해금 데이터를 불러오는 중이에요." />}
+        </div>
+      </div>
+    )
+  }
 
   const roleData: UnlockRole = liveData ? {
     n: liveData.sample_size,
