@@ -341,22 +341,42 @@ export function LearningPathWidget({ size = '2x1' }: { size?: WidgetSize }) {
         <p className="wow-headline">
           이 순서로 배우면 기술 연결 공고가 <b>{D.start_matched.toLocaleString()}→{last.matched_after.toLocaleString()}</b>건
         </p>
-        <div className="wow-steps">
+        <div className="wow-workflow" role="list" aria-label="추천 학습 순서">
+          <div className="wow-workflow__node wow-workflow__node--start" role="listitem">
+            <span className="wow-workflow__port wow-workflow__port--out" aria-hidden="true" />
+            <span className="wow-workflow__start-icon" aria-hidden="true"><Check size={14} strokeWidth={3} /></span>
+            <span className="wow-workflow__copy">
+              <small>현재 이력서</small>
+              <b>{D.start_matched.toLocaleString()}건 도달</b>
+            </span>
+          </div>
           {steps.map((s) => (
-            <div key={s.step} className="wow-steps__row">
-              <span className="wow-steps__badge">{s.step}</span>
-              <div className="wow-steps__body">
-                <div className="wow-steps__t"><b>{s.canonical}</b><span className="wow-steps__cat">{s.category}</span></div>
-                <div className="wow-steps__track"><i style={{ width: `${(s.matched_after / D.total) * 100}%` }} /></div>
+            <div className="wow-workflow__branch" key={s.step}>
+              <div className="wow-workflow__edge" aria-hidden="true">
+                <span>+{s.delta.toLocaleString()}</span>
+                <i />
               </div>
-              <span className="wow-steps__delta">+{s.delta.toLocaleString()}건</span>
+              <div
+                className="wow-workflow__node"
+                role="listitem"
+                aria-label={`${s.step}단계 ${s.canonical}, ${s.matched_after.toLocaleString()}건 도달`}
+              >
+                <span className="wow-workflow__port wow-workflow__port--in" aria-hidden="true" />
+                <span className="wow-workflow__port wow-workflow__port--out" aria-hidden="true" />
+                <span className="wow-workflow__step" aria-hidden="true">{s.step}</span>
+                <span className="wow-workflow__copy">
+                  <small>{s.category}</small>
+                  <b>{s.canonical}</b>
+                  <em>{s.matched_after.toLocaleString()}건 도달</em>
+                </span>
+              </div>
             </div>
           ))}
         </div>
         {size === '2x2' && (
-          <div className="wow-progress">
-            <div className="wow-progress__track"><i style={{ width: `${(last.matched_after / D.total) * 100}%` }} /></div>
-            <span className="wow-progress__cap">{last.matched_after.toLocaleString()} / {D.total.toLocaleString()}건 도달</span>
+          <div className="wow-workflow__summary">
+            <span>워크플로우 완료 시</span>
+            <b>{last.matched_after.toLocaleString()} / {D.total.toLocaleString()}건 도달</b>
           </div>
         )}
       </div>
