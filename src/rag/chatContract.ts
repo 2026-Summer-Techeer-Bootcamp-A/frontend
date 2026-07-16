@@ -47,6 +47,11 @@ export interface ToolResultItem {
   id?: number
   company?: string
   pool?: string
+  // posting_list 전용(백엔드 PR #81) — resume_recommend(이력서 첨부)일 때만 matched/missing_skills가
+  // 채워진다. semantic_search(이력서 없음)는 region만 있고 skills 두 배열은 없거나 비어있을 수 있다.
+  region?: string
+  matched_skills?: string[]
+  missing_skills?: string[]
 }
 
 // 비교 3종의 전용 payload — items[]로는 표현 안 되는 구조라 kind별로 별도 필드를 둔다.
