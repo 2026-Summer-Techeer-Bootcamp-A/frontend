@@ -930,7 +930,7 @@ export function DesktopMarket() {
           <div className="dmkt2__sec-grid dmkt2__sec-grid--flow">
             {!isWidgetHidden('market', 'yearly-trend') && (
               <div className="dmkt2__card-item" style={spanStyle(widgetSize('yearly-trend'))}>
-                <section className="dcard">
+                <section className="dcard dcard--demand-race">
                   <DemandRaceChart pool={pool} right={scopeBadge} />
                 </section>
               </div>
