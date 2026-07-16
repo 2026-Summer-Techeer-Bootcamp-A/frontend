@@ -5,7 +5,19 @@
 export type Pool = 'domestic' | 'global'
 export type Route = 'sql' | 'vector' | 'graph' | 'mixed'
 export type StepKind = 'plan' | 'tool' | 'eval' | 'synth'
-export type ToolResultKind = 'list' | 'stat' | 'trend' | 'graph' | 'compare'
+export type ToolResultKind =
+  | 'list' | 'stat' | 'trend' | 'graph' | 'compare'
+  | 'resume_posting' | 'posting_posting' | 'resume_market' // 이력서·공고 비교 카드(다음 슬라이스에서 렌더)
+
+// 컴포저에 첨부되는 이력서·공고 한 건. resume은 대화당 최대 1개(백엔드가 resume_id 단수로만 받음),
+// posting은 여러 개 가능(posting_ids[]). id는 resume_id 또는 posting id 그 자체.
+export type AttachmentKind = 'resume' | 'posting'
+export interface ChatAttachment {
+  kind: AttachmentKind
+  id: number
+  title: string
+  subtitle?: string
+}
 
 /** 파이프라인 단계 하나. kind==='tool'일 때만 tool이 채워진다.
  *  debug는 kind==='synth'일 때만 채워진다(LLM 모델/temperature/토큰/재시도 실측값). */
@@ -32,6 +44,31 @@ export interface ToolResultItem {
   pct?: number
 }
 
+// 비교 3종의 전용 payload — items[]로는 표현 안 되는 구조라 kind별로 별도 필드를 둔다.
+// 실제 렌더(SkillDiff/PostingDiff/ResumeMarketCard)는 다음 슬라이스에서 붙는다 — 지금은 계약만 정의.
+export interface ResumePostingPayload {
+  resume_title: string
+  posting_title: string
+  coverage_pct: number
+  matched_skills: string[]
+  missing_skills: string[]
+  extra_skills: string[]
+}
+
+export interface PostingPostingPayload {
+  postingA: string
+  postingB: string
+  shared: string[]
+  onlyA: string[]
+  onlyB: string[]
+}
+
+export interface ResumeMarketPayload {
+  coverage_score: number
+  radar: { category: string; coverage: number }[]
+  gap_top5: { canonical: string; freq: number; category: string }[]
+}
+
 export interface ToolResult {
   kind: ToolResultKind
   label: string
@@ -42,6 +79,7 @@ export interface ToolResult {
   edges: Record<string, unknown>[]
   debug?: Record<string, unknown> | null
   facts?: string | null
+  compare?: ResumePostingPayload | PostingPostingPayload | ResumeMarketPayload // kind로 어떤 payload인지 판별
 }
 
 export interface Citation {
@@ -72,6 +110,7 @@ export interface ChatRequestBody {
   question: string
   pool?: Pool
   verbose?: boolean
+  attachments?: ChatAttachment[]
 }
 
 // ============================================================
@@ -96,6 +135,7 @@ export interface StreamToolResult {
   edges?: Record<string, unknown>[]
   debug?: Record<string, unknown> | null
   facts?: string | null
+  compare?: ResumePostingPayload | PostingPostingPayload | ResumeMarketPayload
 }
 
 export type ChatStreamEvent =
@@ -140,5 +180,6 @@ export function normalizeStreamResult(r: StreamToolResult): ToolResult {
     edges: r.edges ?? [],
     debug: r.debug ?? undefined,
     facts: r.facts ?? undefined,
+    compare: r.compare,
   }
 }

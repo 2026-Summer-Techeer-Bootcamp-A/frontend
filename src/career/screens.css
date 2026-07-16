@@ -897,6 +897,37 @@
 }
 .djd-bookmark:active { transform: scale(0.95); }
 
+/* 어시스턴트 딥링크 트리거("내 이력서와 비교" · 공고↔공고 비교 담기) — djd-bookmark와
+   같은 고스트 톤(카드 배경 + 라인 보더)의 보조 버튼. 새 시각 언어를 만들지 않는다. */
+.djd-assist-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.djd-assist-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  border: 1px solid var(--line, #e6e9ef);
+  border-radius: 12px;
+  background: var(--c-card);
+  color: var(--c-ink);
+  padding: 11px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: transform 0.12s ease, background 0.15s ease, border-color 0.12s ease;
+}
+.djd-assist-btn:hover:not(:disabled) { background: #f6f8fc; border-color: #d7dce6; }
+.djd-assist-btn:active:not(:disabled) { transform: scale(0.98); }
+.djd-assist-btn:disabled { cursor: default; }
+.djd-assist-btn--on {
+  background: #eef3fb;
+  border-color: #cfe0f7;
+  color: #28539c;
+}
+
 @media (max-width: 1279px) {
   .djd { grid-template-columns: 1fr; }
   .djd-side { position: static; top: auto; }
