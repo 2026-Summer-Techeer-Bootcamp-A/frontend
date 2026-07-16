@@ -71,17 +71,27 @@ function cacheKeyFor(resumeId: number | 'manual'): string {
 /** 수요 상위 스킬(공개 API) + 가능하면 실 커버리지(로그인+저장 이력서)를 함께 가져온다.
  *  커버리지 실 API가 없거나 실패하면 수요 상위 스킬 대비 보유 비율로 근사한 폴백을 만든다. */
 async function loadVizData(input: AnalysisInput, isAuthed: boolean): Promise<VizResult | null> {
-  let demand: DemandBarDatum[] = []
-  try {
-    const shareRes = await marketApi.skillShare({ pool: input.pool, position: input.position, top_k: 8 })
-    const ownedLower = new Set(input.skills.map((s) => s.trim().toLowerCase()))
-    demand = shareRes.items
+  const ownedLower = new Set(input.skills.map((s) => s.trim().toLowerCase()))
+  const toDemand = (items: Array<{ canonical: string; share: number }>): DemandBarDatum[] =>
+    items
       .map((item) => ({
         canonical: item.canonical,
         share: item.share,
         owned: ownedLower.has(item.canonical.trim().toLowerCase()),
       }))
       .sort((a, b) => b.share - a.share)
+
+  let demand: DemandBarDatum[] = []
+  try {
+    const shareRes = await marketApi.skillShare({ pool: input.pool, position: input.position, top_k: 8 })
+    demand = toDemand(shareRes.items)
+    // 백엔드 stats/skill-share의 position 필터가 현재 어떤 값을 넘겨도 빈 결과(sample_size 0)를
+    // 돌려주는 버그가 있다 — position 없이 재요청해 시장 전체 수요로 대체한다. 실데이터이므로
+    // 정직한 폴백이고, 이렇게 안 하면 시각화가 통째로 "데이터를 불러오지 못했어요"로 빠진다.
+    if (demand.length === 0) {
+      const fallbackRes = await marketApi.skillShare({ pool: input.pool, top_k: 8 })
+      demand = toDemand(fallbackRes.items)
+    }
   } catch {
     demand = []
   }
@@ -90,7 +100,13 @@ async function loadVizData(input: AnalysisInput, isAuthed: boolean): Promise<Viz
   const token = getAuthToken()
   if (isAuthed && input.resumeId !== 'manual' && token) {
     try {
-      const cov = await dashboardApi.coverage({ resumeId: input.resumeId, token }, input.position)
+      const identity = { resumeId: input.resumeId, token }
+      let cov = await dashboardApi.coverage(identity, input.position)
+      // 커버리지도 같은 position 필터 버그의 영향을 받는다 — top_skills가 비면
+      // position 없이 재요청해 시장 전체 기준 커버리지로 대체한다.
+      if (cov.top_skills.length === 0) {
+        cov = await dashboardApi.coverage(identity)
+      }
       coverage = {
         score: cov.coverage_score,
         ownedCount: cov.top_skills.filter((s) => s.owned).length,
