@@ -1540,16 +1540,16 @@ function bumpTip(data: RankHistory, name: string): string {
 function BumpChart({ data }: { data: RankHistory }) {
   const [hovered, setHovered] = useState<string | null>(null)
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null)
-  // 폭은 컨테이너에 맞춰 측정하고 높이는 고정한다. SVG를 aspect-lock(height:auto)으로 두면
-  // 넓은 카드에서 세로로 늘어나 아래 위젯을 침범한다 — 고정 높이 박스에 가두고 폭만 채운다.
+  // 폭·높이 둘 다 컨테이너(카드에서 헤더/문구를 뺀 나머지)에 맞춰 측정한다. 고정 높이로 두면
+  // 카드가 짧을 때 차트가 아래로 삐져나와 다음 위젯을 침범한다 — 남은 공간을 정확히 채워 가둔다.
   const wrapRef = useRef<HTMLDivElement>(null)
-  const [width, setWidth] = useState(680)
+  const [size, setSize] = useState({ w: 680, h: 200 })
   useEffect(() => {
     const el = wrapRef.current
     if (!el) return
     const ro = new ResizeObserver((entries) => {
-      const w = entries[0]?.contentRect.width
-      if (w) setWidth(w)
+      const rect = entries[0]?.contentRect
+      if (rect && rect.width && rect.height) setSize({ w: rect.width, h: rect.height })
     })
     ro.observe(el)
     return () => ro.disconnect()
@@ -1557,8 +1557,8 @@ function BumpChart({ data }: { data: RankHistory }) {
 
   const years = data.years
   const nY = years.length
-  const H = 232
-  const W = Math.max(width, 320), padL = 18, padR = 104, padT = 26, padB = 26
+  const W = Math.max(size.w, 320), H = Math.max(size.h, 120)
+  const padL = 18, padR = 100, padT = 16, padB = 20
   const plotW = W - padL - padR, plotH = H - padT - padB
   const allRanks = data.skills.flatMap((sk) => sk.ranks.filter((r): r is number => r != null))
   const maxRank = Math.max(1, ...allRanks)
@@ -1584,14 +1584,14 @@ function BumpChart({ data }: { data: RankHistory }) {
     })
     .filter((l) => l.pts.length > 0)
 
-  const overtakes = useMemo(() => computeOvertakes(data, xOf, yOf), [data, W]) // eslint-disable-line react-hooks/exhaustive-deps
+  const overtakes = useMemo(() => computeOvertakes(data, xOf, yOf), [data, W, H]) // eslint-disable-line react-hooks/exhaustive-deps
   const dim = (name: string) => hovered != null && hovered !== name
 
   return (
     <div
       ref={wrapRef}
       className="dmkt2__bump"
-      style={{ position: 'relative', width: '100%', height: H }}
+      style={{ position: 'relative', width: '100%', flex: 1, minHeight: 0 }}
       onMouseLeave={() => { setHovered(null); setCursor(null) }}
     >
       <svg
