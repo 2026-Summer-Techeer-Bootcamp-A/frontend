@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react'
 import type { ChangeEvent, KeyboardEvent } from 'react'
 import { FileText, RotateCcw, X } from 'lucide-react'
 import { getAuthToken, useAuth } from '../career/authStore'
-import { dashboardApi, marketApi } from '../career/api'
-import { getSavedResumeDetail, getSavedResumes, postResumeFeedback } from './resumeInsightApi'
-import type { Pool, ResumeFeedbackResponse, SavedResumeListItem } from './resumeInsightApi'
+import { dashboardApi, marketApi, resumeApi } from '../career/api'
+import type { ResumeListItemDto } from '../career/api'
+import { postResumeFeedback } from './resumeInsightApi'
+import type { Pool, ResumeFeedbackResponse } from './resumeInsightApi'
+import { loadInitialAssistantResume, toAssistantResumeInput } from './resumeSelection'
 import CoverageRing from './viz/CoverageRing'
 import DemandBars from './viz/DemandBars'
 import GapList from './viz/GapList'
@@ -61,17 +63,6 @@ const POSITIONS: { value: string; label: string }[] = [
   { value: 'devops', label: 'DevOps·인프라' },
   { value: 'data', label: '데이터' },
 ]
-
-// 저장된 이력서는 한국어 자유 직군 텍스트("백엔드 개발", "머신러닝·AI 엔지니어" 등)를 쓰고,
-// 이 화면은 백엔드 /resume/feedback이 인식하는 5개 영문 키만 받는다 — 키워드로 가장 가까운 값에 매핑한다.
-function mapSavedPosition(raw: string | null): string {
-  const p = (raw ?? '').toLowerCase()
-  if (p.includes('프론트')) return 'frontend'
-  if (p.includes('풀스택')) return 'fullstack'
-  if (p.includes('devops') || p.includes('인프라')) return 'devops'
-  if (p.includes('데이터') || p.includes('머신러닝') || p.includes('ai')) return 'data'
-  return 'backend'
-}
 
 function cacheKeyFor(resumeId: number | 'manual'): string {
   return resumeId === 'manual' ? 'manual' : String(resumeId)
@@ -135,7 +126,7 @@ export default function ResumeInsight() {
   const [errorMsg, setErrorMsg] = useState('')
 
   // 등록된 이력서 선택 — 직접 입력 대신 저장된 이력서에서 스킬셋을 불러올 수 있게 한다.
-  const [savedResumes, setSavedResumes] = useState<SavedResumeListItem[]>([])
+  const [savedResumes, setSavedResumes] = useState<ResumeListItemDto[]>([])
   const [selectedResumeId, setSelectedResumeId] = useState<number | 'manual'>('manual')
   const [resumeLoadError, setResumeLoadError] = useState('')
   const [loadingResume, setLoadingResume] = useState(false)
@@ -145,13 +136,6 @@ export default function ResumeInsight() {
   const [vizStatus, setVizStatus] = useState<VizStatus>('idle')
   const [viz, setViz] = useState<VizResult | null>(null)
   const [showSample, setShowSample] = useState(false)
-
-  useEffect(() => {
-    if (!isAuthed) return
-    getSavedResumes()
-      .then(setSavedResumes)
-      .catch(() => setSavedResumes([]))
-  }, [isAuthed])
 
   // 마운트 시 마지막 분석 결과를 로컬 캐시에서 복원한다 — 새로고침/재방문에도 최근 결과가 그대로 보이게.
   // 스키마가 깨져 있거나 파싱에 실패하면 조용히 무시하고 빈 상태로 시작한다.
@@ -245,26 +229,98 @@ export default function ResumeInsight() {
     })
   }
 
+  // 로그인 사용자는 마이페이지와 같은 규칙으로 기본 이력서를 우선 불러온다.
+  // 초기 진입에서는 저장 데이터와 시각화만 채우고, 비용이 드는 LLM 피드백은 사용자가 요청할 때 실행한다.
+  useEffect(() => {
+    if (!isAuthed) {
+      setSavedResumes([])
+      setSelectedResumeId('manual')
+      setSelectedMemo(null)
+      setResumeLoadError('')
+      setLoadingResume(false)
+      return
+    }
+
+    const token = getAuthToken()
+    if (!token) {
+      setResumeLoadError('로그인 정보를 확인하지 못했어요. 다시 로그인해주세요.')
+      return
+    }
+
+    let cancelled = false
+
+    const loadInitialResume = async () => {
+      setLoadingResume(true)
+      setResumeLoadError('')
+
+      try {
+        const { items, input } = await loadInitialAssistantResume({
+          list: () => resumeApi.list(token),
+          detail: (resumeId) => resumeApi.detail(resumeId, token),
+        })
+        if (cancelled) return
+
+        setSavedResumes(items)
+        if (!input) {
+          setSelectedResumeId('manual')
+          return
+        }
+        setSelectedResumeId(input.resumeId)
+        setPosition(input.position)
+        setPool(input.pool)
+        setSkills(input.skills)
+        setSelectedMemo(input.memo)
+        setResult(null)
+        setStatus('idle')
+        setErrorMsg('')
+        setShowSample(false)
+        setVizStatus('loading')
+
+        const initialViz = await loadVizData(input, true)
+        if (cancelled) return
+        setViz(initialViz)
+        setVizStatus(initialViz ? 'done' : 'error')
+      } catch (err: unknown) {
+        if (!cancelled) {
+          setResumeLoadError(err instanceof Error ? err.message : '저장된 이력서를 불러오지 못했어요.')
+        }
+      } finally {
+        if (!cancelled) setLoadingResume(false)
+      }
+    }
+
+    void loadInitialResume()
+
+    return () => {
+      cancelled = true
+    }
+  }, [isAuthed])
+
   const selectSavedResume = (value: string) => {
     if (value === 'manual') {
       setSelectedResumeId('manual')
       setSelectedMemo(null)
+      setResumeLoadError('')
+      return
+    }
+    const token = getAuthToken()
+    if (!token) {
+      setResumeLoadError('로그인 정보를 확인하지 못했어요. 다시 로그인해주세요.')
       return
     }
     const resumeId = Number(value)
     setSelectedResumeId(resumeId)
     setLoadingResume(true)
     setResumeLoadError('')
-    getSavedResumeDetail(resumeId)
+    resumeApi.detail(resumeId, token)
       .then((detail) => {
-        const mappedPosition = mapSavedPosition(detail.position)
-        const loadedSkills = detail.skills.map((s) => s.canonical)
-        setPosition(mappedPosition)
-        setPool(detail.pool)
-        setSkills(loadedSkills)
-        setSelectedMemo(detail.memo)
+        const input = toAssistantResumeInput(detail)
+        setPosition(input.position)
+        setPool(input.pool)
+        setSkills(input.skills)
+        setSelectedMemo(input.memo)
         // 저장 이력서를 불러오면 스킬셋 로드가 끝난 즉시 자동으로 분석까지 실행한다.
-        runAnalysis({ skills: loadedSkills, position: mappedPosition, pool: detail.pool, memo: detail.memo, resumeId })
+        runAnalysis(input)
       })
       .catch((err: unknown) => {
         setResumeLoadError(err instanceof Error ? err.message : '이력서를 불러오지 못했어요.')
@@ -318,6 +374,12 @@ export default function ResumeInsight() {
 
       <div className="rc__body">
         <div className="ri__form">
+          {isAuthed && savedResumes.length === 0 && loadingResume && (
+            <div className="ri__hint">저장된 이력서를 불러오는 중…</div>
+          )}
+          {isAuthed && savedResumes.length === 0 && resumeLoadError && (
+            <div className="ri__hint ri__hint--error">{resumeLoadError}</div>
+          )}
           {isAuthed && savedResumes.length > 0 && (
             <div className="ri__field">
               <label className="ri__label">등록된 이력서</label>
