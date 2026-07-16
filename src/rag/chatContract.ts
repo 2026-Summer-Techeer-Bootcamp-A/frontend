@@ -8,6 +8,7 @@ export type StepKind = 'plan' | 'tool' | 'eval' | 'synth'
 export type ToolResultKind =
   | 'list' | 'stat' | 'trend' | 'graph' | 'compare'
   | 'resume_posting' | 'posting_posting' | 'resume_market' // 이력서·공고 비교 카드(다음 슬라이스에서 렌더)
+  | 'posting_list' // 공고 카드 리스트(semantic_search·resume_recommend) — PostingResultCards 전담, 차트 금지(백엔드 PR #80)
 
 // 컴포저에 첨부되는 이력서·공고 한 건. resume은 대화당 최대 1개(백엔드가 resume_id 단수로만 받음),
 // posting은 여러 개 가능(posting_ids[]). id는 resume_id 또는 posting id 그 자체.
@@ -42,6 +43,10 @@ export interface ToolResultItem {
   name: string
   metric?: string
   pct?: number
+  // posting_list 전용(백엔드 PR #80) — 공고 원본 id·회사·풀. 다른 kind는 채우지 않는다.
+  id?: number
+  company?: string
+  pool?: string
 }
 
 // 비교 3종의 전용 payload — items[]로는 표현 안 되는 구조라 kind별로 별도 필드를 둔다.

@@ -12,6 +12,7 @@ import AttachmentPicker from './AttachmentPicker'
 import ProcessTimeline from './ProcessTimeline'
 import type { StepEntry } from './ProcessTimeline'
 import ComparisonCards, { ComparisonCard } from './ComparisonCards'
+import PostingResultCards, { PostingResultCard } from './PostingResultCards'
 import { useAttachments } from './useAttachments'
 import { consumeAttachmentIntent } from './attachmentIntentStore'
 import { routeLabel, intentLabel } from './chatLabels'
@@ -367,6 +368,7 @@ function TurnBlock({ turn, mode, onRetry }: { turn: Turn; mode: Mode; onRetry: (
       {mode === 'basic' && turn.results.length > 0 && (
         <>
           <ComparisonCards results={turn.results} />
+          <PostingResultCards results={turn.results} />
           <AssistantVisualizer results={turn.results} route={turn.route} />
         </>
       )}
@@ -496,6 +498,7 @@ function ToolResultCard({ result }: { result: ToolResult }) {
   if (result.kind === 'resume_posting' || result.kind === 'posting_posting' || result.kind === 'resume_market') {
     return <ComparisonCard result={result} />
   }
+  if (result.kind === 'posting_list') return <PostingResultCard result={result} />
   if (result.items.length > 0) return <RankedRows result={result} />
   if (result.kind === 'graph' && (result.nodes.length > 0 || result.edges.length > 0)) return <GraphSummary result={result} />
   if (result.value !== undefined && result.value !== null) return <StatBig result={result} />

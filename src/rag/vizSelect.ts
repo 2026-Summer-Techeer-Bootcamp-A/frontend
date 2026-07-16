@@ -59,6 +59,11 @@ export function selectChart(r: ToolResult): ChartSpec | null {
   // 0) 비교 3종은 여기서 절대 처리하지 않는다 (ComparisonCards 소유)
   if (COMPARE_KINDS.has(r.kind)) return null
 
+  // 0.5) 공고 카드 리스트(posting_list)도 여기서 처리하지 않는다 (PostingResultCards 소유).
+  // semantic_search·resume_recommend 결과를 items[]로 랭크드 바 차트로 그리면 회사명·postingId·
+  // 상세보기/북마크 액션이 전부 사라진다 — 반드시 카드로만 렌더해야 한다.
+  if (r.kind === 'posting_list') return null
+
   switch (r.kind) {
     // 1) 그래프 = 공동출현. 유일하게 그래프가 정당한 케이스.
     case 'graph': {
