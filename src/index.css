@@ -35,6 +35,15 @@ ul {
   list-style: none;
 }
 
+/* 네이티브 <select> 드롭다운 옵션 — 여러 select가 color/background를 테마 변수(--c-ink,
+   --c-card)로 지정하는데, 그 변수가 스코프에 없는 곳에서는 option이 밝은 색을 상속받아
+   흰 글자/흰 팝업으로 안 보인다. 옵션 팝업은 어느 화면에서든 밝은 배경이므로,
+   옵션 글자·배경을 전역으로 고정해 항상 읽히게 한다. */
+option {
+  color: #18181b;
+  background-color: #ffffff;
+}
+
 /* ---------- Stage: 배경 위에 폰 목업을 올리는 캔버스 ---------- */
 .stage {
   min-height: 100%;
