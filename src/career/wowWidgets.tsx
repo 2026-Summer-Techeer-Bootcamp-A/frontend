@@ -1308,7 +1308,7 @@ export function GroupShareCard({ group, pool }: { group: GroupKey; pool: PoolCho
     if (group === 'programming_language') return
     let cancelled = false
     marketApi.groupShare({ group, pool: 'domestic' }).then((r) => {
-      if (cancelled || !r.items.length) return
+      if (cancelled || r.items.length < 3) return
       setDomesticLive({
         key: group, label: mock.label, union: r.union_count, asOf: r.as_of, years: GROUP_SHARE_YEARS,
         items: r.items.map((it) => gsItem(it.canonical, [it.share, it.share, it.share, it.share])),
@@ -1322,7 +1322,7 @@ export function GroupShareCard({ group, pool }: { group: GroupKey; pool: PoolCho
     if (group === 'programming_language') { setGlobalLive(null); return }
     let cancelled = false
     marketApi.groupShare({ group, pool: 'global' }).then((r) => {
-      if (cancelled || !r.items.length) return
+      if (cancelled || r.items.length < 3) return
       setGlobalLive({
         key: group, label: mock.label, union: r.union_count, asOf: r.as_of, years: GROUP_SHARE_YEARS,
         items: r.items.map((it) => gsItem(it.canonical, [it.share, it.share, it.share, it.share])),
@@ -1504,34 +1504,38 @@ const RANK_MOCK: Record<RankCategory, RankHistory> = {
   },
 }
 
-type Overtake = { x: number; y: number; key: string }
+type Overtake = { x: number; y: number; strength: number }
 
-// 연속한 두 연도 사이 A·B 순위가 뒤바뀌는(선이 교차하는) 지점을 찾는다.
-function computeOvertakes(data: RankHistory, xOf: (i: number) => number, yOf: (r: number) => number): Overtake[] {
-  const out: Overtake[] = []
-  const seen = new Set<string>()
-  const s = data.skills
-  for (let a = 0; a < s.length; a += 1) {
-    for (let b = a + 1; b < s.length; b += 1) {
+function computeStrongestOvertake(
+  data: RankHistory,
+  xOf: (i: number) => number,
+  yOf: (rank: number) => number,
+): Overtake | null {
+  let strongest: Overtake | null = null
+  for (let a = 0; a < data.skills.length; a += 1) {
+    for (let b = a + 1; b < data.skills.length; b += 1) {
       for (let i = 0; i < data.years.length - 1; i += 1) {
-        const ai = s[a].ranks[i], aj = s[a].ranks[i + 1], bi = s[b].ranks[i], bj = s[b].ranks[i + 1]
+        const ai = data.skills[a].ranks[i]
+        const aj = data.skills[a].ranks[i + 1]
+        const bi = data.skills[b].ranks[i]
+        const bj = data.skills[b].ranks[i + 1]
         if (ai == null || aj == null || bi == null || bj == null) continue
-        const d0 = ai - bi, d1 = aj - bj
-        if (d0 === 0 || d1 === 0 || (d0 < 0) === (d1 < 0)) continue // 순서가 안 바뀜 → 교차 아님
+        const d0 = ai - bi
+        const d1 = aj - bj
+        if (d0 === 0 || d1 === 0 || (d0 < 0) === (d1 < 0)) continue
         const yA0 = yOf(ai), yA1 = yOf(aj), yB0 = yOf(bi), yB1 = yOf(bj)
-        const denom = (yA1 - yA0) - (yB1 - yB0)
-        const t = denom !== 0 ? Math.max(0, Math.min(1, (yB0 - yA0) / denom)) : 0.5
-        const x0 = xOf(i), x1 = xOf(i + 1)
-        const cx = x0 + t * (x1 - x0)
-        const cy = yA0 + t * (yA1 - yA0)
-        const key = `${Math.round(cx / 12)}:${Math.round(cy / 12)}`
-        if (seen.has(key)) continue
-        seen.add(key)
-        out.push({ x: cx, y: cy, key })
+        const denominator = (yA1 - yA0) - (yB1 - yB0)
+        const t = denominator === 0 ? 0.5 : Math.max(0, Math.min(1, (yB0 - yA0) / denominator))
+        const candidate: Overtake = {
+          x: xOf(i) + t * (xOf(i + 1) - xOf(i)),
+          y: yA0 + t * (yA1 - yA0),
+          strength: Math.abs(d0) + Math.abs(d1),
+        }
+        if (!strongest || candidate.strength > strongest.strength) strongest = candidate
       }
     }
   }
-  return out
+  return strongest
 }
 
 // 최신까지 순위가 가장 많이 오른 기술(테이크어웨이용). 없으면 null.
@@ -1603,7 +1607,7 @@ function BumpChart({ data }: { data: RankHistory }) {
     })
     .filter((l) => l.pts.length > 0)
 
-  const overtakes = useMemo(() => computeOvertakes(data, xOf, yOf), [data, W, H]) // eslint-disable-line react-hooks/exhaustive-deps
+  const overtake = useMemo(() => computeStrongestOvertake(data, xOf, yOf), [data, W, H]) // eslint-disable-line react-hooks/exhaustive-deps
   const dim = (name: string) => hovered != null && hovered !== name
 
   return (
@@ -1670,12 +1674,13 @@ function BumpChart({ data }: { data: RankHistory }) {
           )
         })}
 
-        {overtakes.map((o) => (
-          <g key={o.key} opacity={hovered ? 0.12 : 1} style={{ transition: 'opacity 200ms', pointerEvents: 'none' }}>
-            <rect x={o.x - 15} y={o.y - 21} width={30} height={15} rx={7.5} fill="#e7f3ec" stroke="#bfe0cd" />
-            <text x={o.x} y={o.y - 10.5} textAnchor="middle" fontFamily={FONT} fontSize={9} fontWeight={800} fill="#166534">추월</text>
+        {overtake && (
+          <g opacity={hovered ? 0.12 : 1} style={{ transition: 'opacity 200ms', pointerEvents: 'none' }}>
+            <rect x={overtake.x - 13} y={overtake.y - 17} width={26} height={13} rx={6.5} fill="#e7f3ec" stroke="#bfe0cd" />
+            <text x={overtake.x} y={overtake.y - 7.5} textAnchor="middle" fontFamily={FONT} fontSize={8} fontWeight={800} fill="#166534">추월</text>
           </g>
-        ))}
+        )}
+
       </svg>
 
       {hovered && cursor && (
@@ -1704,7 +1709,10 @@ export function DemandRaceChart({ right }: { pool: PoolChoice; right?: ReactNode
     let cancelled = false
     marketApi.skillRankHistory({ category }).then((r) => {
       if (cancelled) return
-      setData(r.skills.length > 0 ? r : null)
+      const complete = r.skills.length >= 5 && r.skills.every((skill) => (
+        skill.ranks.length === r.years.length && skill.ranks.every((rank) => rank != null)
+      ))
+      setData(complete ? r : null)
     }).catch(() => { if (!cancelled) setData(null) })
     return () => { cancelled = true }
   }, [category])
