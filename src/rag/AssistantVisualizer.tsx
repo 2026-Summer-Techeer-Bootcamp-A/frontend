@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import ReactECharts from 'echarts-for-react'
 import type { ToolResult } from './chatContract'
 import { Network, LayoutGrid } from 'lucide-react'
@@ -8,7 +9,7 @@ interface AssistantVisualizerProps {
 }
 
 type GraphNode = { id: string; root?: boolean }
-type GraphEdge = { source: string; target: string; strength: number }
+type GraphEdge = { source: string; target: string; strength: number; hop?: number }
 type ChartKind = 'network' | 'heatmap'
 
 const CHART_KIND_LABEL: Record<ChartKind, string> = {
@@ -27,13 +28,16 @@ function parseMetricNumber(metric?: string): number {
   return m ? Number(m[0]) : 0
 }
 
-// 그래프 데이터 형태를 보고 가장 읽기 쉬운 차트를 자동으로 고른다 — 사용자가 직접 고르게 하지 않는다.
+// 그래프 데이터 형태를 보고 기본으로 보여줄 차트를 고른다(사용자는 VizBox 탭으로 언제든 바꿀 수 있다).
 // 공동출현은 방향성 없는 대칭 관계라 Sankey(흐름 다이어그램)는 애초에 후보에서 뺐다. 이웃끼리도
 // 서로 얽힌 촘촘한 메시(2-hop 크로스엣지 존재)는 force 레이아웃이 실 뭉치처럼 엉키므로 모든 쌍의
 // 강도를 한눈에 보여주는 히트맵이 낫고, 중심-이웃 단순 스타 구조면 네트워크 그래프가 더 직관적이다.
-function pickChartKind(nodes: GraphNode[], edges: GraphEdge[]): ChartKind {
-  const isPureStar = edges.length < nodes.length
-  return isPureStar ? 'network' : 'heatmap'
+// 엣지 개수만으로는 판정할 수 없다 — graph_tool이 이웃 2개 이상이면 거의 항상 2-hop 크로스엣지를
+// 덧붙여 edges.length가 nodes.length를 넘기 때문에("엣지 < 노드"가 항상 거짓이 되어 늘 히트맵으로
+// 빠졌던 과거 버그) hop 필드로 직접 "이웃끼리도 연결됐는지"를 본다.
+function pickChartKind(edges: GraphEdge[]): ChartKind {
+  const hasCrossLinks = edges.some((e) => e.hop === 2)
+  return hasCrossLinks ? 'heatmap' : 'network'
 }
 
 function buildNetworkOption(nodes: GraphNode[], edges: GraphEdge[]) {
@@ -123,20 +127,33 @@ function buildHeatmapOption(nodes: GraphNode[], edges: GraphEdge[]) {
   }
 }
 
-function VizBox({ title, kind, nodes, edges, height }: { title: string; kind: ChartKind; nodes: GraphNode[]; edges: GraphEdge[]; height: number }) {
-  const Icon = CHART_KIND_ICON[kind]
+const CHART_KINDS: ChartKind[] = ['network', 'heatmap']
+
+// defaultKind는 최초 진입 시 보여줄 값일 뿐, 실제 선택은 탭으로 사용자가 직접 바꾼다.
+function VizBox({ title, defaultKind, nodes, edges, height }: { title: string; defaultKind: ChartKind; nodes: GraphNode[]; edges: GraphEdge[]; height: number }) {
+  const [kind, setKind] = useState<ChartKind>(defaultKind)
   const option = kind === 'heatmap' ? buildHeatmapOption(nodes, edges) : buildNetworkOption(nodes, edges)
 
   return (
     <div className="rc__viz-box">
       <div className="rc__viz-header">
         <span className="rc__viz-title">{title}</span>
-        <span className="rc__viz-typetag">
-          <Icon size={12} /> {CHART_KIND_LABEL[kind]}
-        </span>
+        <div className="rc__seg rc__viz-tabs" role="group" aria-label="시각화 종류 전환">
+          {CHART_KINDS.map((k) => {
+            const Icon = CHART_KIND_ICON[k]
+            return (
+              <button key={k} type="button" aria-pressed={kind === k} onClick={() => setKind(k)}>
+                <Icon size={12} /> {CHART_KIND_LABEL[k]}
+              </button>
+            )
+          })}
+        </div>
       </div>
       <div className="rc__viz-chart-wrap">
-        <ReactECharts option={option} style={{ height }} />
+        {/* 네트워크(graph)와 히트맵은 series 구조 자체가 달라 echarts가 이전 옵션을 그대로 merge하면
+            내부 dataIndex 매핑이 깨져 크래시가 난다(vendor-echarts getRawIndex 에러). kind별로 key를
+            달리 줘 탭 전환·도구 결과 스트리밍 갱신 양쪽 모두 항상 새 인스턴스로 깨끗하게 그린다. */}
+        <ReactECharts key={kind} option={option} notMerge style={{ height }} />
       </div>
     </div>
   )
@@ -151,16 +168,22 @@ export default function AssistantVisualizer({ results, route }: AssistantVisuali
 
   if (graphResult) {
     const nodes = graphResult.nodes as unknown as GraphNode[]
-    const edges = (graphResult.edges as any[]).map((e) => ({ source: e.source, target: e.target, strength: e.strength })) as GraphEdge[]
-    return <VizBox title={graphResult.label} kind={pickChartKind(nodes, edges)} nodes={nodes} edges={edges} height={260} />
+    const edges = (graphResult.edges as any[]).map((e) => ({
+      source: e.source,
+      target: e.target,
+      strength: e.strength,
+      hop: typeof e.hop === 'number' ? e.hop : undefined,
+    })) as GraphEdge[]
+    return <VizBox key="graph" title={graphResult.label} defaultKind={pickChartKind(edges)} nodes={nodes} edges={edges} height={260} />
   }
 
   if (vectorResult) {
-    // 유사도 결과는 항상 "검색어/이력서 1개 → 결과 N개"로 뻗어나가는 단순 스타 구조라 늘 네트워크가 맞는다.
+    // 유사도 결과는 항상 "검색어/이력서 1개 → 결과 N개"로 뻗어나가는 단순 스타 구조라 기본값은 네트워크가 맞지만,
+    // 이 역시 VizBox 탭으로 히트맵으로 바꿔 볼 수 있다.
     const centerNodeName = route === 'vector' ? '내 이력서' : '검색어'
     const nodes: GraphNode[] = [{ id: centerNodeName, root: true }, ...vectorResult.items.map((it) => ({ id: it.name }))]
     const edges: GraphEdge[] = vectorResult.items.map((it) => ({ source: centerNodeName, target: it.name, strength: it.pct ?? 50 }))
-    return <VizBox title={`${vectorResult.label} (유사도 분포)`} kind="network" nodes={nodes} edges={edges} height={260} />
+    return <VizBox key="vector" title={`${vectorResult.label} (유사도 분포)`} defaultKind="network" nodes={nodes} edges={edges} height={260} />
   }
 
   // fallback list charts (like top rankings)
@@ -195,12 +218,12 @@ export default function AssistantVisualizer({ results, route }: AssistantVisuali
     }
 
     return (
-      <div className="rc__viz-box">
+      <div className="rc__viz-box" key="list">
         <div className="rc__viz-header">
           <span className="rc__viz-title">{listResult.label}</span>
         </div>
         <div className="rc__viz-chart-wrap">
-          <ReactECharts option={option} style={{ height: 220 }} />
+          <ReactECharts key="list" option={option} notMerge style={{ height: 220 }} />
         </div>
       </div>
     )
