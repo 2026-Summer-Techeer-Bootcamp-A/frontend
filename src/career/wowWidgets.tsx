@@ -16,6 +16,7 @@ import CompanyLogo from './CompanyLogo'
 import { useBookmarks } from './bookmarkStore'
 import { useSettings } from './settingsStore'
 import { marketApi } from './api'
+import { summarizePostingTimeline } from './homeApi'
 import {
   buildConceptSankeyFallback,
   CURATED_SANKEY_CONCEPTS,
@@ -25,7 +26,6 @@ import {
   type SankeyNode,
   type SankeyPayload,
 } from './conceptSankey'
-import feedRaw from '../data/feedData.json'
 import y1Raw from '../data/pearl/y1.json'
 import matchRaw from '../data/matchData.json'
 import aRaw from '../data/pearl/a.json'
@@ -53,21 +53,10 @@ function poolToApi(pool: PoolChoice, fallback: ApiPool = 'domestic'): ApiPool {
    정보량을 조절(작으면 핵심만, 크면 상세+차트).
    ============================================================ */
 
-/** 일부 소스 JSON은 [헤더배열, ...데이터] 형태로 내려올 수 있어 방어적으로 벗겨낸다.
- * 첫 원소가 배열(헤더 행)이면 그 뒤부터, 아니면 원본 그대로 사용한다. */
-function stripHeaderRow<T>(rows: unknown[]): T[] {
-  return (Array.isArray(rows[0]) ? rows.slice(1) : rows) as T[]
-}
-
 /* ============================================================
-   위젯 1 — LatestJobsTimeline (대시보드) · feedData.json
+   위젯 1 — LatestJobsTimeline (대시보드) · live API only
    최신 공고 타임라인 + 내 매칭 강조
    ============================================================ */
-type DailyRow = { date: string; total: number; matched: number }
-type FeedMeta = { N: number; asOf: string; myskills: string[]; matchedN: number }
-const FEED = feedRaw as unknown as { _meta: FeedMeta; daily: unknown[]; recent: unknown[] }
-const FEED_DAILY = stripHeaderRow<DailyRow>(FEED.daily)
-
 export function LatestJobsTimeline({ size = '2x2' }: { size?: WidgetSize }) {
   const navigate = useNavigate()
   const { activeResume } = useResumesState()
@@ -81,14 +70,18 @@ export function LatestJobsTimeline({ size = '2x2' }: { size?: WidgetSize }) {
   const resumeId = Number(activeResume?.id)
   const token = getAuthToken()
   const identity = Number.isInteger(resumeId) && resumeId > 0 && token ? { resumeId, token } : null
-  const timelineRefreshKey = identity ? `${resumeId}:${skills.join('|')}` : 'preview'
+  const timelineRefreshKey = identity ? `${resumeId}:${skills.join('|')}` : 'public'
   const timeline = useWidgetData(
-    identity ? () => dashboardApi.timeline(identity) : null,
-    { daily: FEED_DAILY, as_of: FEED._meta.asOf },
+    identity
+      ? () => dashboardApi.timeline(identity)
+      : () => marketApi.postingTimeline({ pool: 'domestic', days: 36 }),
+    { daily: [], as_of: '' },
     timelineRefreshKey,
   )
   const daily = timeline.value.daily.map((item) => ({ ...item, matched: item.matched ?? 0 }))
-  const maxTotal = Math.max(...daily.map((d) => d.total), 1)
+  const timelineSummary = summarizePostingTimeline(daily, daily.length)
+  const displayDaily = timelineSummary.recent
+  const maxTotal = Math.max(...displayDaily.map((d) => d.displayTotal), 1)
   const listCount = size === '2x2' ? 14 : size === '2x1' ? 3 : 0
   const matchedTotal = daily.reduce((sum, item) => sum + item.matched, 0)
   const matchedCount = useCountUp(size === '1x1' ? matchedTotal : 0)
@@ -158,12 +151,26 @@ export function LatestJobsTimeline({ size = '2x2' }: { size?: WidgetSize }) {
       : activeTab === 'deadline' ? '7일 안에 마감되는 공고'
         : '북마크한 공고'
 
+  if (timeline.source !== 'live') {
+    return (
+      <div className="dcard wow-card">
+        <SectionHeader title="최신 공고 타임라인" hint="내 매칭 강조" />
+        <div className="wow-body">
+          <div className="dov__empty">
+            {timeline.loading
+              ? '차트 데이터를 불러오는 중이에요.'
+              : '차트 데이터를 불러올 수 없어요. 잠시 후 다시 시도해 주세요.'}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="dcard wow-card">
       <SectionHeader
         title="최신 공고 타임라인"
         hint="내 매칭 강조"
-        right={size !== '1x1' && timeline.source !== 'live' ? <PreviewBadge /> : undefined}
       />
       {size !== '1x1' && (
         <div
@@ -190,10 +197,14 @@ export function LatestJobsTimeline({ size = '2x2' }: { size?: WidgetSize }) {
               <span className="wow-mini__lbl">건 내게 맞았어요</span>
             </div>
             <div className="wow-timeline wow-timeline--mini">
-              {daily.map((d) => (
+              {displayDaily.map((d) => (
                 <div key={d.date} className="wow-timeline__col">
-                  <div className="wow-timeline__bar" style={{ height: `${(d.total / maxTotal) * 100}%` }}>
-                    <i style={{ height: `${d.total ? (d.matched / d.total) * 100 : 0}%` }} />
+                  <div
+                    className={`wow-timeline__bar${d.isOutlier ? ' is-outlier' : ''}`}
+                    style={{ height: `${(d.displayTotal / maxTotal) * 100}%` }}
+                    title={d.isOutlier ? `${d.date} · ${d.total.toLocaleString()}건 · 특이값 높이 보정` : undefined}
+                  >
+                    <i style={{ height: `${d.total ? ((d.matched ?? 0) / d.total) * 100 : 0}%` }} />
                   </div>
                 </div>
               ))}
@@ -209,15 +220,23 @@ export function LatestJobsTimeline({ size = '2x2' }: { size?: WidgetSize }) {
               <p className="wow-headline">이력서를 등록하면 내 기술과 매칭된 공고를 확인할 수 있어요</p>
             )}
             <div className="wow-timeline">
-              {daily.map((d, i) => (
+              {displayDaily.map((d, i) => (
                 <div key={d.date} className="wow-timeline__col" title={`${d.date} · 전체 ${d.total} · 매칭 ${d.matched}`}>
-                  <div className="wow-timeline__bar" style={{ height: `${(d.total / maxTotal) * 100}%` }}>
-                    <i style={{ height: `${d.total ? (d.matched / d.total) * 100 : 0}%` }} />
+                  <div
+                    className={`wow-timeline__bar${d.isOutlier ? ' is-outlier' : ''}`}
+                    style={{ height: `${(d.displayTotal / maxTotal) * 100}%` }}
+                  >
+                    <i style={{ height: `${d.total ? ((d.matched ?? 0) / d.total) * 100 : 0}%` }} />
                   </div>
                   <span className="wow-timeline__lbl">{i % 7 === 0 ? d.date.slice(5) : ''}</span>
                 </div>
               ))}
             </div>
+            {timelineSummary.outlierCount > 0 && (
+              <p className="wow-timeline__outlier-note">
+                특이값 {timelineSummary.outlierCount}일은 실제 건수를 유지하고 차트 높이만 보정했어요
+              </p>
+            )}
             {listCount > 0 && (
               <>
                 <p className="wow-joblist__label">{listLabel} · {apiPostings.length}건</p>
