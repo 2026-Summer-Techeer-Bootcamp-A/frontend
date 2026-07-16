@@ -235,3 +235,19 @@
 .dov__gap-chip span { font-size: 10.5px; font-weight: 800; color: var(--accent-700); background: var(--accent-50); border-radius: 6px; padding: 1px 6px; }
 
 .dov__empty { font-size: 13px; color: var(--c-muted); padding: 8px 2px; }
+
+/* 지원 추천 공고도 우측 최신 공고 목록처럼 행마다 여백과 구분선을 둔다. */
+.dov__matched-jobs { margin-top: 10px; }
+.dov__matched-jobs .scr-bars { gap: 0; }
+.dov__matched-jobs .scr-bar {
+  padding: 12px 8px;
+  border-top: 1px solid var(--line);
+  border-radius: 12px;
+  transition: background 0.12s ease;
+}
+.dov__matched-jobs .scr-bar:first-child { border-top: 0; }
+.dov__matched-jobs .scr-bar.clickable:hover { background: var(--accent-50, #f5f5f6); }
+.dov__matched-jobs .scr-bar.clickable:focus-visible {
+  outline: 2px solid var(--accent-300, #a1a1aa);
+  outline-offset: -2px;
+}
