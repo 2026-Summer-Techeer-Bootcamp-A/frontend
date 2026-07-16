@@ -44,6 +44,17 @@ function InfoTip({ text }: { text: string }) {
   )
 }
 
+function DashboardSkeleton({ label = '데이터를 불러오는 중이에요.' }: { label?: string }) {
+  return (
+    <div className="dov__skeleton" role="status" aria-live="polite">
+      <span className="dov__skeleton-line dov__skeleton-line--short" />
+      <span className="dov__skeleton-block" />
+      <span className="dov__skeleton-line" />
+      <span className="dov__sr-only">{label}</span>
+    </div>
+  )
+}
+
 function LiveIndustryRadar({ data }: { data: PivotData }) {
   const targets = data.targets.slice(0, 6)
   const best = targets[0]
@@ -109,7 +120,7 @@ function LiveCoverageHistogram({ data }: { data: DistributionData }) {
 export default function DesktopOverview() {
   const navigate = useNavigate()
   useDashboardConfig() // 위젯 표시/숨김·크기 변경 시 리렌더 트리거
-  const { resumes, activeResume } = useResumesState()
+  const { resumes, activeResume, loading: resumesLoading } = useResumesState()
   const { user } = useAuth()
   // 이력서는 백엔드(resumeApi)에서 불러온다 — 예전 로컬 저장 시절의 잔재인
   // localStorage('techeer_resumes') 체크를 남겨두면 그 키가 절대 안 써져 항상 false가
@@ -167,17 +178,20 @@ export default function DesktopOverview() {
   const pivotData = useWidgetData<PivotData | null>(identity ? () => dashboardApi.pivot(identity) : null, null, dashboardRefreshKey)
   const [matchedJobs, setMatchedJobs] = useState<PostingCard[]>([])
   const [matchedJobsLoading, setMatchedJobsLoading] = useState(false)
+  const [matchedJobsError, setMatchedJobsError] = useState(false)
 
   useEffect(() => {
     if (!identity) {
       setMatchedJobs([])
       setMatchedJobsLoading(false)
+      setMatchedJobsError(false)
       return
     }
 
     let cancelled = false
     setMatchedJobs([])
     setMatchedJobsLoading(true)
+    setMatchedJobsError(false)
     jobsApi.list({
       pool: 'domestic',
       sort: 'match',
@@ -190,7 +204,10 @@ export default function DesktopOverview() {
         if (!cancelled) setMatchedJobs(result.items)
       })
       .catch(() => {
-        if (!cancelled) setMatchedJobs([])
+        if (!cancelled) {
+          setMatchedJobs([])
+          setMatchedJobsError(true)
+        }
       })
       .finally(() => {
         if (!cancelled) setMatchedJobsLoading(false)
@@ -215,6 +232,10 @@ export default function DesktopOverview() {
   const shownApplicable = countData.value.total
   const shownTotal = distributionData.value?.total ?? domestic.length
   const shownApplicablePct = shownTotal ? Math.round((shownApplicable / shownTotal) * 100) : 0
+  const resumePending = !!token && resumesLoading
+  const heroDataPending = hasResume && [coverageData, countData, distributionData]
+    .some((widget) => widget.source !== 'live' && !widget.error)
+  const heroDataError = hasResume && [coverageData, countData, distributionData].some((widget) => !!widget.error)
   const scoreData = {
     value: { coverage: shownCoverage, applicable: shownApplicable, domesticTotal: shownTotal },
     source: coverageData.source,
@@ -239,7 +260,11 @@ export default function DesktopOverview() {
   const briefSize = wsize('brief')
   const briefLines: ReactNode[] = [
     <li key="dl"><b>{deadlineSoonCount}건</b>이 곧 마감돼요</li>,
-    hasResume && <li key="app">지원 가능 공고 <b>{shownApplicable.toLocaleString()}건</b> · 커버리지 <b>{shownCoverage}%</b></li>,
+    hasResume && (heroDataPending
+      ? <li key="app-loading" className="dov__brief-loading">맞춤 지표를 불러오는 중이에요.</li>
+      : heroDataError
+        ? <li key="app-error">맞춤 지표를 불러오지 못했어요.</li>
+        : <li key="app">지원 가능 공고 <b>{shownApplicable.toLocaleString()}건</b> · 커버리지 <b>{shownCoverage}%</b></li>),
     hasResume && topGap[0] && <li key="gap">가장 자주 요구되는 미보유 기술: <b>{topGap[0][0]}</b></li>,
   ].filter(Boolean) as ReactNode[]
   const briefVisible = briefSize === '1x1' ? briefLines.slice(0, 2) : briefLines
@@ -283,7 +308,11 @@ export default function DesktopOverview() {
             >
               {heroScoreVisible && (
                 <div className="dov__hero-left">
-                  {hasResume ? (
+                  {resumePending || heroDataPending ? (
+                    <DashboardSkeleton label="커리어 점수를 불러오는 중이에요." />
+                  ) : hasResume && heroDataError ? (
+                    <div className="dov__hero-load-error" role="alert">커리어 점수를 불러오지 못했어요.<br />잠시 후 다시 시도해 주세요.</div>
+                  ) : hasResume ? (
                     <>
                       <div className="dov__hero-top">
                         <span className="dov__hero-eyebrow">내 커리어 점수</span>
@@ -324,7 +353,13 @@ export default function DesktopOverview() {
                           <InfoTip text="마감되지 않았고 보유 기술 매칭률 50% 이상인 공고예요. 경력 연차나 필수/우대 조건은 아직 반영되지 않았어요." />
                         )}
                       </span>
-                      <span className="dov__hero-stat-num">{tile.value}{tile.unit && <span>{tile.unit}</span>}</span>
+                      {tile.id === 'hero-applicable' && (resumePending || heroDataPending) ? (
+                        <span className="dov__hero-stat-skeleton" role="status"><span className="dov__sr-only">지원 가능 공고를 불러오는 중이에요.</span></span>
+                      ) : tile.id === 'hero-applicable' && heroDataError ? (
+                        <span className="dov__hero-stat-error">불러오기 실패</span>
+                      ) : (
+                        <span className="dov__hero-stat-num">{tile.value}{tile.unit && <span>{tile.unit}</span>}</span>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -342,9 +377,15 @@ export default function DesktopOverview() {
                     <section className="dcard">
                       <SectionHeader title="업종 적합도" right={!hasResume && <PreviewBadge />} />
                       <div className="dov__aside-chart">
-                        {pivotData.source === 'live' && pivotData.value
-                          ? <LiveIndustryRadar data={pivotData.value} />
-                          : <IndustryFitRadar skills={skills} />}
+                        {hasResume && pivotData.source !== 'live' && !pivotData.error ? (
+                          <DashboardSkeleton label="업종 적합도를 불러오는 중이에요." />
+                        ) : hasResume && pivotData.error ? (
+                          <div className="dov__empty" role="alert">업종 적합도를 불러오지 못했어요.</div>
+                        ) : pivotData.source === 'live' && pivotData.value ? (
+                          <LiveIndustryRadar data={pivotData.value} />
+                        ) : (
+                          <IndustryFitRadar skills={skills} />
+                        )}
                       </div>
                     </section>
                   </div>
@@ -353,7 +394,11 @@ export default function DesktopOverview() {
                   <div className="dov__card-item">
                     <section className="dcard">
                       <SectionHeader title="커버리지 분포" hint="내 백분위" right={!hasResume && <PreviewBadge />} />
-                      {distributionData.source === 'live' && distributionData.value ? (
+                      {hasResume && distributionData.source !== 'live' && !distributionData.error ? (
+                        <DashboardSkeleton label="커버리지 분포를 불러오는 중이에요." />
+                      ) : hasResume && distributionData.error ? (
+                        <div className="dov__empty" role="alert">커버리지 분포를 불러오지 못했어요.</div>
+                      ) : distributionData.source === 'live' && distributionData.value ? (
                         <LiveCoverageHistogram data={distributionData.value} />
                       ) : (
                         <CoverageHistogram
@@ -370,7 +415,11 @@ export default function DesktopOverview() {
                   <div className="dov__card-item">
                     <section className="dcard" aria-busy={matchedJobsLoading}>
                       <SectionHeader title="지금 지원할 만한 공고" hint="내 기술 50%+ · 국내" />
-                      {matchedJobs.length > 0 && (
+                      {matchedJobsLoading ? (
+                        <DashboardSkeleton label="지원할 만한 공고를 불러오는 중이에요." />
+                      ) : matchedJobsError ? (
+                        <div className="dov__empty" role="alert">공고를 불러오지 못했어요.</div>
+                      ) : matchedJobs.length > 0 ? (
                         <div className="dov__matched-jobs">
                           <HBars
                             items={matchedJobChart}
@@ -378,7 +427,7 @@ export default function DesktopOverview() {
                             onClick={(index) => navigate(`/job/${matchedJobs[index].id}`)}
                           />
                         </div>
-                      )}
+                      ) : <div className="dov__empty">조건에 맞는 공고가 없어요.</div>}
                     </section>
                   </div>
                 )}
