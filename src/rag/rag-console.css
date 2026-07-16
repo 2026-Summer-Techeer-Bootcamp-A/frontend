@@ -21,9 +21,18 @@
 }
 @keyframes rc-pulse { 0%,100% { opacity: 0.25; } 50% { opacity: 1; } }
 
-/* 질문 */
-.rc__q { align-self: flex-start; font-size: 14px; font-weight: 600; color: #1c1d21;
+/* 질문 — 첨부가 있으면 칩 트레이 + 텍스트를 세로로 쌓고(스펙 1.3 sending 상태), 없으면 텍스트만 */
+.rc__q { align-self: flex-start; display: flex; flex-direction: column; gap: 8px; max-width: 100%;
   background: #eef3fb; border-radius: 13px 13px 13px 4px; padding: 9px 13px; }
+.rc__q-text { font-size: 14px; font-weight: 600; color: #1c1d21; overflow-wrap: anywhere; word-break: break-word; }
+.rc__q-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.rc__q-chip { display: inline-flex; align-items: center; gap: 5px; background: #fff; border: 1px solid #e2e5ec;
+  border-radius: 8px; padding: 3px 8px; font-size: 11px; font-weight: 600; color: #1c1d21; }
+/* 스크린리더 전용(칩의 종류 접두 "이력서:"/"공고:") — 시각적으로는 숨기되 접근성 트리에는 남긴다 */
+.rc__sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
 
 /* 생각 — 떠오르는 사고 문장 */
 @keyframes rc-rise { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
@@ -79,19 +88,114 @@
 .rc__dots i { width: 6px; height: 6px; border-radius: 999px; background: #e2e5ec; }
 .rc__dots i.on { background: #0b0b0c; }
 
-/* 컴포저 — flex column의 마지막 형제로 항상 하단 고정, 스크롤에 밀려나지 않는다 */
+/* 컴포저 — flex column의 마지막 형제로 항상 하단 고정, 스크롤에 밀려나지 않는다.
+   Claude/Gemini류: 칩 트레이(첨부 있을 때만) + 멀티라인 textarea + 액션바(첨부·전송/Stop)를
+   하나의 카드형 컨테이너(.rc__composerbox)로 감싼다. */
 .rc__composer { flex: none; margin-top: 16px; }
-.rc__input { display: flex; gap: 8px; }
-.rc__input input { flex: 1; border: 1px solid #e2e5ec; border-radius: 999px; padding: 9px 14px;
-  font-size: 13px; color: #43454c; background: #f6f8fc; }
+.rc__composerbox {
+  position: relative;
+  border: 1px solid #e2e5ec; border-radius: 16px; background: #fff; padding: 8px;
+  box-shadow: 0 1px 2px rgba(20,30,60,0.05), 0 1px 1px rgba(20,30,60,0.04);
+}
+
+/* 첨부 칩 트레이 — 칩이 있을 때만 렌더(높이 0 → auto), decelerate로 슬라이드다운(스펙 1.7) */
+.rc__atray { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;
+  animation: rc-traydown 0.2s cubic-bezier(0,0,0.2,1) both; }
+@keyframes rc-traydown { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+
+/* 첨부 칩(카드형) — 스펙 1.6 토큰: bg #fff, border #e2e5ec, radius 12, shadow e1 */
+.rc__achip {
+  display: flex; align-items: center; gap: 9px; background: #fff; border: 1px solid #e2e5ec;
+  border-radius: 12px; padding: 7px 9px 7px 8px; box-shadow: 0 1px 2px rgba(20,30,60,0.05), 0 1px 1px rgba(20,30,60,0.04);
+  max-width: 230px;
+}
+.rc__achip-ic { width: 26px; height: 26px; border-radius: 8px; background: #eef3fb; color: #0b0b0c;
+  display: grid; place-items: center; flex: none; }
+.rc__achip-t { min-width: 0; display: flex; flex-direction: column; }
+.rc__achip-title { font-size: 12.5px; font-weight: 700; color: #1c1d21; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rc__achip-sub { font-size: 10.5px; color: #7c7f88; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rc__achip-x { width: 18px; height: 18px; border: none; background: transparent; color: #7c7f88; border-radius: 999px;
+  cursor: pointer; display: grid; place-items: center; flex: none; }
+.rc__achip-x:hover { background: #dde8f9; color: #21447c; }
+.rc__achip-x:active { transform: scale(0.9); }
+.rc__achip-x:focus-visible { outline: 2px solid #28539c; outline-offset: 1px; }
+
+/* 멀티라인 텍스트에어리어 — Enter=전송/Shift+Enter=줄바꿈은 JS가 처리, 여긴 순수 시각 스타일만 */
+.rc__ta {
+  display: block; width: 100%; border: none; outline: none; resize: none;
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; font-size: 13.5px; color: #1c1d21;
+  background: transparent; padding: 6px 8px; min-height: 44px; max-height: 160px; overflow-y: auto;
+}
+.rc__ta::placeholder { color: #a2a6b0; }
+.rc__ta:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* 액션바 — 좌: 첨부(고스트 텍스트버튼) / 우: 전송(원형 잉크) ↔ Stop(스왑) */
+.rc__actions { display: flex; align-items: center; justify-content: space-between; padding: 2px 4px 2px 2px; }
+.rc__attach-btn {
+  display: inline-flex; align-items: center; gap: 6px; border: none; background: transparent;
+  color: #7c7f88; font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+  padding: 6px 8px; border-radius: 9px; transition: color 0.15s ease, background 0.15s ease;
+}
+.rc__attach-btn:hover { color: #1c1d21; background: #f6f8fc; }
+.rc__attach-btn:active { transform: scale(0.97); }
+.rc__attach-btn[aria-expanded="true"] { color: #1c1d21; background: #eef3fb; }
+.rc__attach-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.rc__attach-btn:focus-visible { outline: 2px solid #28539c; outline-offset: 1px; }
+
 .rc__send { width: 38px; height: 38px; border-radius: 999px; background: #0b0b0c; color: #fff; border: none;
   display: grid; place-items: center; cursor: pointer; flex: none; }
+.rc__send:active { transform: scale(0.97); }
+.rc__send:focus-visible { outline: 2px solid #28539c; outline-offset: 1px; }
+.rc__send--stop { background: #fff; border: 1px solid #e2e5ec; color: #1c1d21; }
 .rc__chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .rc__chip { display: inline-flex; align-items: center; gap: 2px; font-size: 12px; color: #5b5e66;
   background: #f6f8fc; border: 1px solid #e2e5ec; border-radius: 999px; padding: 5px 10px; cursor: pointer; }
 .rc__chip.active { color: #0b0b0c; border-color: #bcd0f0; background: #eef3fb; }
 .rc__chip .chev { opacity: 0.4; }
 .rc__chip:disabled, .rc__send:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* === 첨부 피커 — 데스크톱은 컴포저 좌하단에서 위로 뜨는 팝오버, 모바일(≤480px)은 하단 시트로
+   승격(아래 미디어쿼리). 스펙 1.6 토큰: bg #fff, border #e2e5ec, radius 16(lg), shadow e3. === */
+.rc__picker {
+  position: absolute; left: 0; bottom: calc(100% + 10px); width: 320px; max-width: 360px; max-height: 360px;
+  overflow-y: auto; border: 1px solid #e2e5ec; border-radius: 16px; background: #fff;
+  box-shadow: 0 8px 24px rgba(20,30,60,0.08), 0 2px 6px rgba(20,30,60,0.05);
+  padding: 8px; z-index: 40;
+  animation: rc-pickerpop 0.3s cubic-bezier(0.175,0.885,0.32,1.275) both;
+}
+@keyframes rc-pickerpop { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; } }
+.rc__picker-sec { font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #a2a6b0; padding: 8px 10px 4px; }
+.rc__picker-row {
+  display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px; cursor: pointer;
+  border: none; background: transparent; width: 100%; text-align: left; font-family: inherit;
+}
+.rc__picker-row:hover { background: #f6f8fc; }
+.rc__picker-row.is-sel { background: #eef3fb; }
+.rc__picker-row:focus-visible { outline: 2px solid #28539c; outline-offset: -2px; }
+.rc__picker-check {
+  width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid #e2e5ec; flex: none;
+  display: grid; place-items: center; background: #fff; color: #fff;
+}
+.rc__picker-row.is-sel .rc__picker-check { background: #0b0b0c; border-color: #0b0b0c; }
+.rc__picker-ic { width: 26px; height: 26px; border-radius: 8px; background: #eef1f6; color: #7c7f88;
+  display: grid; place-items: center; flex: none; }
+.rc__picker-rt { font-size: 13px; font-weight: 600; color: #1c1d21; }
+.rc__picker-rs { font-size: 11px; color: #7c7f88; }
+.rc__picker-loading, .rc__picker-error { padding: 14px 10px; font-size: 12px; color: #7c7f88; text-align: center; }
+
+/* 저장 이력서 0개(또는 비로그인) — 리스트 대신 CTA(스펙 1.5) */
+.rc__picker-empty { text-align: center; padding: 14px 10px; }
+.rc__picker-empty-ic { width: 40px; height: 40px; border-radius: 12px; background: #eef3fb; color: #0b0b0c;
+  display: grid; place-items: center; margin: 0 auto 10px; }
+.rc__picker-empty-title { font-size: 13px; font-weight: 700; color: #1c1d21; }
+.rc__picker-empty-sub { font-size: 11.5px; color: #7c7f88; margin: 5px 0 12px; }
+.rc__picker-cta {
+  display: inline-flex; align-items: center; gap: 6px; justify-content: center; width: 100%;
+  background: #0b0b0c; color: #fff; border: none; border-radius: 10px; padding: 9px 14px;
+  font-family: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer;
+}
+.rc__picker-cta:active { transform: scale(0.98); }
+.rc__picker-cta:focus-visible { outline: 2px solid #28539c; outline-offset: 1px; }
 
 /* === 실 API 연동 — 툴바(대화 라벨 + 기본/Verbose 세그먼트) === */
 .rc__toolbar { display: flex; align-items: center; justify-content: space-between; margin: 2px 0 12px; }
@@ -234,6 +338,22 @@
   .rc__suggest { grid-template-columns: 1fr; }
 }
 
+/* 모바일(≤480px, 스펙 1.8의 390 기준을 포함) — 칩 트레이는 폭을 넘지 않게 가로 스크롤,
+   첨부 피커는 팝오버 대신 화면 하단 고정 바텀시트로 승격(spring 슬라이드업, radius.xl 상단만). */
+@media (max-width: 480px) {
+  .rc__atray { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px; }
+  .rc__achip { flex: none; }
+
+  .rc__picker {
+    position: fixed; left: 0; right: 0; bottom: 0; top: auto; width: 100%; max-width: none;
+    max-height: 70vh; border-radius: 22px 22px 0 0; border-bottom: none;
+    box-shadow: 0 -8px 24px rgba(20,30,60,0.12);
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    animation: rc-sheetup 0.3s cubic-bezier(0.175,0.885,0.32,1.275) both;
+  }
+  @keyframes rc-sheetup { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+}
+
 /* === 도구 결과 시각화 박스 (AssistantVisualizer) — network/heatmap/bar 공용 크롬 ===
    결과 카드(.rc__tr)와 별개로, 기본 화면에서 결과 배열 전체를 보고 가장 적합한 차트를
    기본값으로 골라 보여주는 블록이다. 관계형 데이터(graph/유사도)는 네트워크 그래프와
@@ -266,6 +386,92 @@
 }
 .rc__viz-chart-wrap {
   width: 100%;
+}
+
+/* === 분석 과정 타임라인(ProcessTimeline) — 접히는 스테퍼(스펙 2.4). rc__think 톤을 확장한다.
+   진행 중엔 자동 펼침, 완료 500ms 후 자동 접힘(요약 헤더만), 수동 토글은 항상 존중. === */
+.rc__timeline { display: flex; flex-direction: column; }
+.rc__timeline-head {
+  display: flex; align-items: center; gap: 7px; width: 100%;
+  background: transparent; border: none; padding: 4px 2px; cursor: pointer; font-family: inherit; text-align: left;
+}
+.rc__timeline-head:focus-visible { outline: 2px solid #28539c; outline-offset: 1px; border-radius: 4px; }
+.rc__timeline-head-icon { display: inline-flex; color: #0b0b0c; flex: none; }
+.rc__timeline-head-icon--error { color: #c8382d; }
+.rc__timeline-head-icon--loading { color: #5b5e66; }
+.rc__timeline-spin { animation: rc-spin 0.9s linear infinite; }
+@keyframes rc-spin { to { transform: rotate(360deg); } }
+.rc__timeline-head-label {
+  flex: 1; min-width: 0; font-size: 10.5px; font-weight: 700; letter-spacing: 0.02em; color: #5b5e66;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rc__timeline-toggle { display: inline-flex; align-items: center; gap: 3px; font-size: 10.5px; font-weight: 600; color: #a2a6b0; flex: none; }
+
+.rc__timeline-body { position: relative; display: flex; flex-direction: column; padding-left: 15px; margin-top: 2px; }
+.rc__timeline-row {
+  position: relative; display: grid; grid-template-columns: 1fr auto; column-gap: 8px; align-items: baseline;
+  padding: 4px 0; font-size: 12.5px; animation: rc-rise .3s cubic-bezier(0,0,0.2,1) both;
+}
+/* 세로 커넥터 — 각 행의 다음 행까지 이어지는 1px 선분. 도트는 ::after로 그 위에 얹는다. */
+.rc__timeline-row:not(:last-child)::before {
+  content: ''; position: absolute; left: -12px; top: 13px; bottom: -5px; width: 1px; background: #e2e5ec;
+}
+.rc__timeline-row::after {
+  content: ''; position: absolute; left: -15px; top: 6px; width: 6px; height: 6px; border-radius: 999px; background: #cdd2db;
+}
+.rc__timeline-row--done::after { background: #0b0b0c; }
+.rc__timeline-row--active::after { background: #0b0b0c; animation: rc-pulse 1.1s ease-in-out infinite; }
+.rc__timeline-row--error::after { background: #c8382d; }
+.rc__timeline-label { color: #1c1d21; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rc__timeline-row--pending .rc__timeline-label { color: #a2a6b0; font-weight: 500; }
+.rc__timeline-row--active .rc__timeline-label { color: #1c1d21; }
+.rc__timeline-meta {
+  color: #7c7f88; font-size: 11px; text-align: right; white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; max-width: 42%; font-variant-numeric: tabular-nums;
+}
+.rc__timeline-row--active .rc__timeline-meta { color: #5b5e66; }
+.rc__timeline-row--error .rc__timeline-label { color: #8f2a22; }
+
+/* === 비교 카드(ComparisonCards) — 이력서↔공고 / 공고↔공고 / 이력서↔시장 3종(스펙 3·4장).
+   기존 rc__viz-box/rc__viz-header/rc__viz-title 크롬을 그대로 재사용해 새 시각 언어를 만들지 않는다. */
+.rv__comparecards { display: flex; flex-direction: column; gap: 12px; animation: rc-fade .4s ease both; }
+.rv__comparecard { display: flex; flex-direction: column; gap: 12px; }
+
+/* 3.a 이력서 ↔ 공고 — 좌: 커버리지 링, 우: 매칭/부족 2열 diff */
+.rv__rp-body { display: flex; gap: 16px; align-items: flex-start; }
+.rv__rp-body > .rv__ring { flex: none; }
+.rv__skilldiff { flex: 1; min-width: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+/* 3.a/3.b 공용 — 매칭/부족/고유 칩 열. a11y: 각 열은 <h4> 헤딩 + <ul> 목록(스펙 3.f). */
+.rv__diffcol { min-width: 0; }
+.rv__diffcol-h { font-size: 11px; font-weight: 700; color: #5b5e66; margin: 0 0 8px; }
+.rv__diffchips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.rv__diffchip { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 600; border-radius: 999px; padding: 4px 10px; }
+/* 매칭 = 잉크 채움, 부족/고유 = 고스트 링 — 색만으로 구분하지 않고 ✓/＋ 아이콘을 병기한다(스펙 3.e). */
+.rv__diffchip--matched { color: #fff; background: #0b0b0c; }
+.rv__diffchip--missing { color: #5b5e66; background: #fff; border: 1.5px solid #a1a1aa; }
+.rv__diffextra { grid-column: 1 / -1; font-size: 11px; color: #a2a6b0; margin-top: 2px; }
+
+/* 3.b 공고 ↔ 공고 3열(A만/공통/B만) — 공통 열이 시각적 중심이라 한 톤 더 진한 틴트를 준다. */
+.rv__postingdiff { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+.rv__pdchip--shared { background: #eef3fb; color: #1c1d21; font-weight: 700; border-color: #dde8f9; }
+.rv__pd-summary { font-size: 11px; color: #7c7f88; margin-top: 4px; font-variant-numeric: tabular-nums; }
+
+/* 3.c 이력서 ↔ 시장 — 상단: 레이더 + 소형 커버리지 링, 하단: GapList */
+.rv__marketcard-top { display: flex; align-items: center; gap: 16px; }
+.rv__marketcard-radar { flex: 1; min-width: 0; }
+.rv__marketcard-score { flex: none; }
+.rv__marketcard-gaps { margin-top: 4px; }
+.rv__marketcard-gaps .rv__diffcol-h { margin-bottom: 8px; }
+
+/* 모바일(390, 스펙 3.f) — 3.a 링 위·diff 아래로 스택, 3.b 3열 → 세로 스택(공통 먼저) */
+@media (max-width: 480px) {
+  .rv__rp-body { flex-direction: column; }
+  .rv__postingdiff { grid-template-columns: 1fr; }
+  .rv__postingdiff > :nth-child(1) { order: 2; }
+  .rv__postingdiff > :nth-child(2) { order: 1; }
+  .rv__postingdiff > :nth-child(3) { order: 3; }
+  .rv__marketcard-top { flex-direction: column; align-items: flex-start; }
 }
 
 /* === 요청 처리 로그 (EngineFlowLog) — "모든 과정 보기" 전용, 개발자용 ===

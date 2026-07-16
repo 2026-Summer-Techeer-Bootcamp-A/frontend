@@ -1,12 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
-import type { ChangeEvent, FormEvent } from 'react'
-import { ChevronRight, Compass, RotateCcw, Send } from 'lucide-react'
+import type { FormEvent, KeyboardEvent } from 'react'
+import { ChevronRight, Compass, Paperclip, RotateCcw, Send, Square } from 'lucide-react'
 import { SCENARIOS } from './demoScenarios'
 import { streamChat } from './chatStream'
 import { normalizeStreamResult } from './chatContract'
-import type { Citation, Confidence, Plan, Route, ToolResult, StreamStepKind } from './chatContract'
+import type { ChatAttachment, Citation, Confidence, Plan, Route, ToolResult } from './chatContract'
 import AssistantVisualizer from './AssistantVisualizer'
 import EngineFlowLog from './EngineFlowLog'
+import AttachmentChip from './AttachmentChip'
+import AttachmentPicker from './AttachmentPicker'
+import ProcessTimeline from './ProcessTimeline'
+import type { StepEntry } from './ProcessTimeline'
+import ComparisonCards, { ComparisonCard } from './ComparisonCards'
+import { useAttachments } from './useAttachments'
+import { consumeAttachmentIntent } from './attachmentIntentStore'
 import { routeLabel, intentLabel } from './chatLabels'
 import { useAuth } from '../career/authStore'
 import './rag-console.css'
@@ -21,15 +28,6 @@ import './rag-console.css'
 type Mode = 'basic' | 'log'
 type TurnStatus = 'loading' | 'done' | 'error'
 
-interface StepEntry {
-  kind: StreamStepKind
-  tool?: string
-  label: string
-  detail?: string
-  durationMs?: number | null
-  debug?: Record<string, unknown> | null
-}
-
 interface FinalPayload {
   answer: string
   citations: Citation[]
@@ -43,6 +41,7 @@ interface Turn {
   id: number
   question: string
   status: TurnStatus
+  attachments: ChatAttachment[]
   route?: Route
   plan?: Plan
   planDurationMs?: number | null
@@ -59,11 +58,32 @@ export default function RagConsole() {
   const [turns, setTurns] = useState<Turn[]>([])
   const [mode, setMode] = useState<Mode>('basic')
   const [input, setInput] = useState('')
+  const [pickerOpen, setPickerOpen] = useState(false)
   const bodyRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const attachBtnRef = useRef<HTMLButtonElement>(null)
+  // 턴별 스트림 중단용. 동시에 busy(로딩 중)한 턴은 하나뿐이지만(제출은 busy일 때 막힘),
+  // retry로 재사용되는 turn.id 기준으로 계속 갱신되는 맵을 둔다.
+  const controllersRef = useRef<Map<number, AbortController>>(new Map())
   // 빈 상태 그리팅을 로그인 여부에 따라 개인화하는 데만 쓴다.
   const { user, isAuthed } = useAuth()
+  const { attachments, add: addAttachment, remove: removeAttachment, clear: clearAttachments, defaultQuestion } = useAttachments()
+
+  // 외부 화면(공고 상세의 "내 이력서와 비교" 등)이 딥링크로 넘긴 첨부 의도를 마운트 시 1회
+  // 소비한다. consumeAttachmentIntent()는 첫 호출 이후 계속 null을 돌려주므로(스토어가 즉시
+  // 비움) 이 이펙트가 StrictMode에서 두 번 실행되거나 이 컴포넌트가 나중에 다시 마운트돼도
+  // 중복 주입되지 않는다. intent가 없는 평소 마운트(빈 배열/입력)는 이 블록이 아무것도
+  // 하지 않아 기존 흐름을 건드리지 않는다.
+  useEffect(() => {
+    const intent = consumeAttachmentIntent()
+    if (!intent) return
+    intent.attachments.forEach(addAttachment)
+    if (intent.seedQuestion) setInput(intent.seedQuestion)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const busy = turns.some((t) => t.status === 'loading')
+  const canSend = !busy && (input.trim().length > 0 || attachments.length > 0)
 
   useEffect(() => {
     bodyRef.current?.scrollTo({ top: bodyRef.current.scrollHeight, behavior: 'smooth' })
@@ -73,51 +93,91 @@ export default function RagConsole() {
     setTurns((prev) => prev.map((t) => (t.id === id ? { ...t, ...(typeof patch === 'function' ? patch(t) : patch) } : t)))
   }
 
-  const runTurn = (id: number, question: string, verbose: boolean) => {
-    streamChat(question, undefined, verbose, {
-      onPlan: (e) => patchTurn(id, { route: e.route, plan: e.plan, planDurationMs: e.duration_ms, planDebug: e.debug }),
-      onStep: (e) =>
-        patchTurn(id, (t) => ({
-          steps: [...t.steps, { kind: e.kind, tool: e.tool, label: e.label, detail: e.detail, durationMs: e.duration_ms, debug: e.debug }],
-        })),
-      onResult: (e) => patchTurn(id, (t) => ({ results: [...t.results, normalizeStreamResult(e.result)] })),
-      onFinal: (e) =>
-        patchTurn(id, {
-          status: 'done',
-          final: {
-            answer: e.answer,
-            citations: e.citations,
-            confidence: e.confidence,
-            degraded: e.degraded,
-            degradedReasons: e.degraded_reasons,
-            totalDurationMs: e.total_duration_ms,
-          },
-          error: undefined,
-        }),
-      onError: (message) => patchTurn(id, { status: 'error', error: message }),
-    }).then(() => {
+  const runTurn = (id: number, question: string, verbose: boolean, turnAttachments: ChatAttachment[]) => {
+    const controller = new AbortController()
+    controllersRef.current.set(id, controller)
+    streamChat(
+      question,
+      { verbose, attachments: turnAttachments.length > 0 ? turnAttachments : undefined, signal: controller.signal },
+      {
+        onPlan: (e) => patchTurn(id, { route: e.route, plan: e.plan, planDurationMs: e.duration_ms, planDebug: e.debug }),
+        onStep: (e) =>
+          patchTurn(id, (t) => ({
+            steps: [...t.steps, { kind: e.kind, tool: e.tool, label: e.label, detail: e.detail, durationMs: e.duration_ms, debug: e.debug }],
+          })),
+        onResult: (e) => patchTurn(id, (t) => ({ results: [...t.results, normalizeStreamResult(e.result)] })),
+        onFinal: (e) =>
+          patchTurn(id, {
+            status: 'done',
+            final: {
+              answer: e.answer,
+              citations: e.citations,
+              confidence: e.confidence,
+              degraded: e.degraded,
+              degradedReasons: e.degraded_reasons,
+              totalDurationMs: e.total_duration_ms,
+            },
+            error: undefined,
+          }),
+        onError: (message) => patchTurn(id, { status: 'error', error: message }),
+      },
+    ).then(() => {
       // final도 error도 없이 스트림이 그냥 끝난 경우(연결이 조용히 끊긴 케이스) 대비.
       patchTurn(id, (t) => (t.status === 'loading' ? { status: 'error', error: '스트림이 예기치 않게 끊겼어요.' } : {}))
+      controllersRef.current.delete(id)
     })
   }
 
-  const submit = (question: string) => {
+  const submit = (question: string, turnAttachments: ChatAttachment[] = []) => {
     const q = question.trim()
     if (!q || busy) return
     const id = nextTurnId++
-    setTurns((prev) => [...prev, { id, question: q, status: 'loading', steps: [], results: [] }])
-    runTurn(id, q, mode === 'log')
+    setTurns((prev) => [...prev, { id, question: q, status: 'loading', steps: [], results: [], attachments: turnAttachments }])
+    runTurn(id, q, mode === 'log', turnAttachments)
   }
 
   const retry = (turn: Turn) => {
     patchTurn(turn.id, { status: 'loading', error: undefined, route: undefined, plan: undefined, steps: [], results: [], final: undefined })
-    runTurn(turn.id, turn.question, mode === 'log')
+    runTurn(turn.id, turn.question, mode === 'log', turn.attachments)
+  }
+
+  const stop = () => {
+    const loadingTurn = turns.find((t) => t.status === 'loading')
+    if (!loadingTurn) return
+    controllersRef.current.get(loadingTurn.id)?.abort()
+  }
+
+  const resetComposer = () => {
+    setInput('')
+    clearAttachments()
+    setPickerOpen(false)
+    if (textareaRef.current) textareaRef.current.style.height = ''
   }
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
-    submit(input)
-    setInput('')
+    const question = input.trim() || defaultQuestion || ''
+    if (!question || busy) return
+    submit(question, attachments)
+    resetComposer()
+  }
+
+  // Enter=전송, Shift+Enter=줄바꿈(멀티라인 textarea라 명시적으로 처리해야 한다).
+  const handleTextareaKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      const question = input.trim() || defaultQuestion || ''
+      if (!question || busy) return
+      submit(question, attachments)
+      resetComposer()
+    }
+  }
+
+  const handleTextareaInput = () => {
+    const el = textareaRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`
   }
 
   const status = busy ? '답변 작성 중' : turns.length ? '대기 중' : '질문을 기다리는 중'
@@ -150,16 +210,59 @@ export default function RagConsole() {
       </div>
 
       <form className="rc__composer" onSubmit={handleSubmit}>
-        <div className="rc__input">
-          <input
+        <div className="rc__composerbox">
+          {attachments.length > 0 && (
+            <div className="rc__atray">
+              {attachments.map((a) => (
+                <AttachmentChip key={`${a.kind}-${a.id}`} attachment={a} onRemove={() => removeAttachment(a.kind, a.id)} />
+              ))}
+            </div>
+          )}
+          <textarea
+            ref={textareaRef}
+            className="rc__ta"
             value={input}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
+            onChange={(e) => setInput(e.target.value)}
+            onInput={handleTextareaInput}
+            onKeyDown={handleTextareaKeyDown}
             placeholder="채용 시장에 대해 무엇이든 물어보세요"
+            aria-label="질문 입력"
             disabled={busy}
+            rows={1}
           />
-          <button className="rc__send" type="submit" disabled={busy || !input.trim()} aria-label="질문 보내기">
-            <Send size={16} />
-          </button>
+          <div className="rc__actions">
+            <button
+              ref={attachBtnRef}
+              type="button"
+              className="rc__attach-btn"
+              onClick={() => setPickerOpen((v) => !v)}
+              disabled={busy}
+              aria-haspopup="dialog"
+              aria-expanded={pickerOpen}
+            >
+              <Paperclip size={15} /> 첨부
+            </button>
+            {busy ? (
+              <button type="button" className="rc__send rc__send--stop" onClick={stop} aria-label="답변 생성 중단">
+                <Square size={14} />
+              </button>
+            ) : (
+              <button className="rc__send" type="submit" disabled={!canSend} aria-label="질문 보내기">
+                <Send size={16} />
+              </button>
+            )}
+          </div>
+
+          {pickerOpen && (
+            <AttachmentPicker
+              attachments={attachments}
+              onAdd={addAttachment}
+              onRemove={removeAttachment}
+              onClose={() => setPickerOpen(false)}
+              isAuthed={isAuthed}
+              triggerRef={attachBtnRef}
+            />
+          )}
         </div>
         {/* 빈 상태에서는 rc__hero의 추천 카드가 같은 역할을 하므로, 대화가 시작된 뒤에만 하단 칩을 보여준다. */}
         {turns.length > 0 && (
@@ -217,38 +320,21 @@ function RcEmptyState({ isAuthed, nickname, busy, onPick }: RcEmptyStateProps) {
   )
 }
 
-// 기본 모드에서 보여줄 진행 단계 목록. step.label이 없는 경우(방어적으로만 발생)를 대비한 kind별 대체 문구.
-const PHASE_LABEL: Record<StreamStepKind, string> = {
-  tool: '도구 조회 중…',
-  eval: '근거 검증 중…',
-  synth: '답변 작성 중…',
-}
-
-// "모든 과정 보기"의 상세 디버그 로그(EngineFlowLog)와 달리, 기본 모드는 도착한 step을 그대로
-// 한 줄씩 쌓아 보여준다 — 오래 걸리는 질문일수록 지금 뭘 하고 있는지 텍스트로 계속 보여야 한다.
-// 가장 마지막 줄만 진행 중(펄스)으로, 그 앞줄들은 이미 끝난 단계로 옅게 표시한다.
-function LiveSteps({ turn }: { turn: Turn }) {
-  const rows = turn.steps.map((s) => s.label || PHASE_LABEL[s.kind] || '처리 중…')
-  if (rows.length === 0) rows.push(turn.plan ? '도구 조회 중…' : '계획 중…')
-
-  return (
-    <div className="rc__think" aria-live="polite">
-      {rows.map((label, i) => (
-        <div className={`rc__think-line${i === rows.length - 1 ? ' is-active' : ''}`} key={i}>
-          <span className="rc__think-dot" />
-          <span className="rc__think-text">{label}</span>
-        </div>
-      ))}
-    </div>
-  )
-}
-
 function TurnBlock({ turn, mode, onRetry }: { turn: Turn; mode: Mode; onRetry: () => void }) {
   const nothingYet = !turn.plan && turn.steps.length === 0 && turn.status === 'loading'
 
   return (
     <div className="rc__turn">
-      <div className="rc__q">{turn.question}</div>
+      <div className="rc__q">
+        {turn.attachments.length > 0 && (
+          <div className="rc__q-chips">
+            {turn.attachments.map((a) => (
+              <AttachmentChip key={`${a.kind}-${a.id}`} attachment={a} compact />
+            ))}
+          </div>
+        )}
+        <div className="rc__q-text">{turn.question}</div>
+      </div>
 
       {/* plan 프레임 도착 즉시(진행 중이든 완료든) 라우트·의도를 바로 보여준다 */}
       {turn.plan && turn.route && (
@@ -267,10 +353,22 @@ function TurnBlock({ turn, mode, onRetry }: { turn: Turn; mode: Mode; onRetry: (
         </div>
       )}
 
-      {mode === 'basic' && turn.status === 'loading' && !nothingYet && <LiveSteps turn={turn} />}
+      {mode === 'basic' && !nothingYet && (turn.plan || turn.steps.length > 0) && (
+        <ProcessTimeline
+          route={turn.route}
+          plan={turn.plan}
+          planDurationMs={turn.planDurationMs}
+          steps={turn.steps}
+          status={turn.status}
+          totalDurationMs={turn.final?.totalDurationMs}
+        />
+      )}
 
       {mode === 'basic' && turn.results.length > 0 && (
-        <AssistantVisualizer results={turn.results} route={turn.route} />
+        <>
+          <ComparisonCards results={turn.results} />
+          <AssistantVisualizer results={turn.results} route={turn.route} />
+        </>
       )}
 
       {mode === 'log' && (turn.plan || turn.steps.length > 0) && (
@@ -395,6 +493,9 @@ function FinalBlock({ final, mode }: { final: FinalPayload; mode: Mode }) {
 // tool_results는 kind가 다양해도 실제로 채워진 필드(items/value/nodes)를 기준으로 렌더링한다.
 // list·trend·compare 모두 items[] 랭크드 로우로, stat은 큰 숫자로, graph는 노드·엣지 요약으로 대체한다.
 function ToolResultCard({ result }: { result: ToolResult }) {
+  if (result.kind === 'resume_posting' || result.kind === 'posting_posting' || result.kind === 'resume_market') {
+    return <ComparisonCard result={result} />
+  }
   if (result.items.length > 0) return <RankedRows result={result} />
   if (result.kind === 'graph' && (result.nodes.length > 0 || result.edges.length > 0)) return <GraphSummary result={result} />
   if (result.value !== undefined && result.value !== null) return <StatBig result={result} />

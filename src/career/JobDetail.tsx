@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ChevronLeft, Bookmark, MapPin, Briefcase, Calendar } from 'lucide-react'
+import { ChevronLeft, Bookmark, MapPin, Briefcase, Calendar, Sparkles, GitCompareArrows } from 'lucide-react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import PhoneFrame from '../components/PhoneFrame'
@@ -16,6 +16,13 @@ import { recordView } from './viewHistoryStore'
 import { jobsApi, type PostingCard } from './api'
 import { getAuthToken } from './authStore'
 import { addMapTileLayer } from './mapTiles'
+import type { ChatAttachment } from '../rag/chatContract'
+import {
+  setAttachmentIntent,
+  setPendingComparePosting,
+  usePendingComparePosting,
+  clearPendingComparePosting,
+} from '../rag/attachmentIntentStore'
 import './career.css'
 
 type MapPin = { id: string; lat: number; lng: number }
@@ -201,6 +208,10 @@ export default function JobDetail() {
   // 북마크 상태 자체는 bookmarkStore가 정본(localStorage) — 여기서는 구독만 걸어
   // 다른 탭/컴포넌트에서 토글돼도 리렌더되도록 한다(반환값은 쓰지 않는다).
   useBookmarks()
+  // 공고↔공고 비교 2단계 담기 흐름의 현재 상태(다른 공고 상세에서 "비교할 공고 담기"를
+  // 눌러둔 게 있는지) — 있으면 이 공고 쪽 버튼이 "이 공고와 비교"로 바뀐다.
+  const pendingCompare = usePendingComparePosting()
+  const [justStashed, setJustStashed] = useState(false)
   const { activeResume } = useResumesState()
   const activeSkills = activeResume ? activeResume.skills : []
   const [desktopDetail, setDesktopDetail] = useState<Awaited<ReturnType<typeof jobsApi.detail>> | null>(null)
@@ -363,6 +374,75 @@ export default function JobDetail() {
   // 국외 공고는 지도 카드를 아예 렌더하지 않는다. id 매칭 pin이 없으면(백엔드 좌표 미연동
   // 등) 에러 대신 조용히 숨긴다.
   const pinCoord = p.pool === '국내' ? desktopPin ?? (desktopDetail?.lat != null && desktopDetail.lng != null ? { id: p.id, lat: desktopDetail.lat, lng: desktopDetail.lng } : findPinCoord(p.id)) : undefined
+
+  // 어시스턴트 딥링크 트리거 — chat 백엔드는 posting_ids로 실제 DB의 숫자 공고 id를 요구한다.
+  // 모바일 화면은 mock careerData.json(문자열 id, 원본 채용 URL)만 쓰고 라이브 API를 아예
+  // 호출하지 않아 숫자 id가 없다 — desktopDetail(실 API 응답)이 있을 때만 트리거를 노출한다.
+  const realPosting = desktopDetail ? { id: desktopDetail.id, title: desktopDetail.title, company: desktopDetail.company } : null
+  const resumeAttachment: ChatAttachment | undefined = activeResume
+    ? { kind: 'resume', id: Number(activeResume.id), title: activeResume.title, subtitle: activeResume.position || undefined }
+    : undefined
+
+  const compareWithResume = () => {
+    if (!realPosting) return
+    const postingAttachment: ChatAttachment = {
+      kind: 'posting',
+      id: realPosting.id,
+      title: realPosting.title,
+      subtitle: realPosting.company ?? undefined,
+    }
+    setAttachmentIntent({
+      attachments: resumeAttachment ? [resumeAttachment, postingAttachment] : [postingAttachment],
+      seedQuestion: '이 이력서로 이 공고에 지원하면 뭐가 부족할까?',
+    })
+    navigate('/assistant')
+  }
+
+  const isThisPostingStashed = !!realPosting && pendingCompare?.id === realPosting.id
+
+  const stashForCompare = () => {
+    if (!realPosting) return
+    setPendingComparePosting({ id: realPosting.id, title: realPosting.title })
+    setJustStashed(true)
+    window.setTimeout(() => setJustStashed(false), 2200)
+  }
+
+  const compareWithStashed = () => {
+    if (!realPosting || !pendingCompare || pendingCompare.id === realPosting.id) return
+    setAttachmentIntent({
+      attachments: [
+        { kind: 'posting', id: pendingCompare.id, title: pendingCompare.title },
+        { kind: 'posting', id: realPosting.id, title: realPosting.title, subtitle: realPosting.company ?? undefined },
+      ],
+      seedQuestion: '두 공고의 요구 기술을 비교해줘',
+    })
+    clearPendingComparePosting()
+    navigate('/assistant')
+  }
+
+  const assistantTriggerBlock = realPosting && (
+    <div className="djd-assist-row">
+      <button type="button" className="djd-assist-btn" onClick={compareWithResume}>
+        <Sparkles size={15} /> 내 이력서와 비교
+      </button>
+      {pendingCompare && !isThisPostingStashed ? (
+        <button type="button" className="djd-assist-btn" onClick={compareWithStashed}>
+          <GitCompareArrows size={15} /> "{pendingCompare.title}"와 비교
+        </button>
+      ) : (
+        <button
+          type="button"
+          className={`djd-assist-btn${isThisPostingStashed ? ' djd-assist-btn--on' : ''}`}
+          onClick={stashForCompare}
+          disabled={isThisPostingStashed}
+        >
+          <GitCompareArrows size={15} />
+          {isThisPostingStashed ? (justStashed ? '담았어요 · 다른 공고에서 비교해보세요' : '비교 대기 중') : '비교할 공고 담기'}
+        </button>
+      )}
+    </div>
+  )
+
   const bookmarkBtn = (
     <Bookmark
       size={21}
@@ -555,6 +635,7 @@ export default function JobDetail() {
                 <Bookmark size={18} style={{ color: bookmarked ? 'var(--c-accent)' : 'var(--c-muted)', fill: bookmarked ? 'var(--c-accent)' : 'none' }} />
               </button>
             </div>
+            {assistantTriggerBlock}
           </aside>
           <aside className="djd-reco">
             {hasLocationKey && (
