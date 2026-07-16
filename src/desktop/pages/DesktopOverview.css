@@ -106,6 +106,45 @@
 .dov__hero-stat-num { margin-top: auto; padding-top: 12px; font-size: 32px; font-weight: 800; letter-spacing: -1px; line-height: 1; font-variant-numeric: tabular-nums; }
 .dov__hero-stat-num span { font-size: 13px; font-weight: 700; color: #71717a; margin-left: 2px; }
 
+/* 공용 Tooltip 컴포넌트가 없어 네이티브 hover 패널로 구현한 정보 아이콘. dov__hero-stat-label,
+   kit-hist__headline 등 라벨/문구 옆에 인라인으로 붙여 쓴다. */
+.dov__info-tip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: -2px;
+  margin-left: 4px;
+  color: #a1a1aa;
+  cursor: help;
+}
+.dov__info-tip:hover,
+.dov__info-tip:focus-visible { color: #71717a; outline: none; }
+.dov__info-tip-panel {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 240px;
+  background: #27272a;
+  color: #fafafa;
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.45;
+  letter-spacing: 0;
+  text-transform: none;
+  padding: 8px 10px;
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.12s ease;
+  z-index: 20;
+  pointer-events: none;
+}
+.dov__info-tip:hover .dov__info-tip-panel,
+.dov__info-tip:focus-visible .dov__info-tip-panel { opacity: 1; visibility: visible; }
+
 /* Zone 2~2b — 라벨 섹션. 섹션 사이 36px, 섹션 내부 카드 18px, 카드 자체는 좀 더 낙낙하게. */
 .dov__sec { margin-bottom: 36px; }
 .dov__sec:last-child { margin-bottom: 0; }

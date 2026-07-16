@@ -149,12 +149,19 @@ export default function ResumeSubmit() {
     setParseError('')
     try {
       const result = await resumeApi.parse(file, getAuthToken())
-      setSkills((s) => [...new Set([...s, ...result.skills.map((sk) => sk.canonical)])])
+      // 사전(in_dict)에 없는 파싱 결과(예: "GPA", "PROJECT" 같은 노이즈 토큰)를 그대로 스킬 칩으로
+      // 넣으면 skill_id 매칭이 끊겨 "내 스킬 시장 모멘텀" 위젯이 항상 비게 된다. 사전에 등록된
+      // 스킬만 골라서 합친다.
+      const dictSkills = result.skills.filter((sk) => sk.in_dict === true).map((sk) => sk.canonical)
+      setSkills((s) => [...new Set([...s, ...dictSkills])])
       setCerts((c) => [...new Set([...c, ...result.certs.map((ct) => ct.name)])])
       if (result.position && POSITIONS.includes(result.position)) setPosition(result.position)
       if (result.career_min !== null) setCareerMin(String(result.career_min))
       if (result.career_max !== null) setCareerMax(String(result.career_max))
       if (!existing) setTitle((t) => (t === '내 이력서' ? file.name.replace(/\.pdf$/i, '') : t))
+      if (dictSkills.length === 0) {
+        setParseError('이력서에서 인식 가능한 기술을 찾지 못했어요')
+      }
       setMode('form')
     } catch (e) {
       setParseError(e instanceof Error ? e.message : 'PDF를 처리하지 못했어요')
