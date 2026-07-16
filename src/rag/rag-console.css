@@ -481,6 +481,51 @@
   .rv__marketcard-top { flex-direction: column; align-items: flex-start; }
 }
 
+/* === 공고 카드 리스트(PostingResultCards) — semantic_search·resume_recommend(posting_list, 백엔드
+   PR #80)를 랭크드 바 대신 실제 "공고 카드"로 렌더한다. .rc__viz-box/.rc__viz-header/.rc__viz-title
+   크롬과 .rc__mc-row 미니바(적합도)를 그대로 재사용해 새 시각 언어를 만들지 않는다. */
+.rv__postingcards { display: flex; flex-direction: column; gap: 12px; animation: rc-fade .4s ease both; }
+.rv__postinglist { display: flex; flex-direction: column; gap: 8px; }
+.rv__postingitem {
+  display: flex; align-items: center; gap: 12px; justify-content: space-between;
+  padding: 10px 12px; border: 1px solid #e2e5ec; border-radius: 10px; background: #fff;
+}
+.rv__postingitem-main { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.rv__postingitem-title {
+  font-size: 13.5px; font-weight: 700; color: #1c1d21; line-height: 1.35;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rv__postingitem-sub { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.rv__postingitem-co { font-size: 11.5px; color: #5b5e66; font-weight: 600; }
+.rv__postingitem-fit { max-width: 220px; margin-top: 2px; }
+.rv__postingitem-actions { display: flex; align-items: center; gap: 6px; flex: none; }
+.rv__postingitem-detail {
+  display: inline-flex; align-items: center; gap: 2px; font-size: 12px; font-weight: 700;
+  color: #28539c; background: #eef3fb; border: 1px solid #dde8f9; border-radius: 999px;
+  padding: 6px 10px; text-decoration: none; white-space: nowrap;
+}
+.rv__postingitem-detail:hover { background: #dde8f9; }
+.rv__postingitem-detail:active { transform: scale(0.97); }
+.rv__postingitem-detail--disabled { color: #a2a6b0; background: #f6f8fc; border-color: #e2e5ec; }
+.rv__postingitem-bm {
+  display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600;
+  color: #5b5e66; background: #fff; border: 1px solid #e2e5ec; border-radius: 999px;
+  padding: 6px 10px; cursor: pointer; white-space: nowrap; font-family: inherit;
+}
+.rv__postingitem-bm:hover { background: #f6f8fc; }
+.rv__postingitem-bm:active { transform: scale(0.97); }
+.rv__postingitem-bm[aria-pressed="true"] { color: #fff; background: #0b0b0c; border-color: #0b0b0c; }
+.rv__postingitem-bm:disabled { opacity: 0.45; cursor: not-allowed; }
+.rv__postingitem-detail:focus-visible, .rv__postingitem-bm:focus-visible { outline: 2px solid #28539c; outline-offset: 1px; }
+
+/* 모바일(390) — 카드 내부를 세로 스택으로, 액션 버튼은 폭 채움 */
+@media (max-width: 480px) {
+  .rv__postingitem { flex-direction: column; align-items: stretch; }
+  .rv__postingitem-fit { max-width: none; }
+  .rv__postingitem-actions { justify-content: stretch; }
+  .rv__postingitem-detail, .rv__postingitem-bm { flex: 1; justify-content: center; }
+}
+
 /* === 요청 처리 로그 (EngineFlowLog) — "모든 과정 보기" 전용, 개발자용 ===
    사용자 입력 → 라우팅 → 도구 호출(실제 모델·DB) → 평가 → 종합을 시간 순으로 나열한다. */
 .rc__flowlog {
