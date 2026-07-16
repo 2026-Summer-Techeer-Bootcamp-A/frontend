@@ -5,6 +5,8 @@ import { SCENARIOS } from './demoScenarios'
 import { streamChat } from './chatStream'
 import { normalizeStreamResult } from './chatContract'
 import type { Citation, Confidence, Plan, Route, ToolResult, StreamStepKind } from './chatContract'
+import AssistantVisualizer from './AssistantVisualizer'
+import EngineTechnicalDetails from './EngineTechnicalDetails'
 import { useAuth } from '../career/authStore'
 import './rag-console.css'
 
@@ -14,7 +16,7 @@ import './rag-console.css'
 // 기본 모드: 답변 + 인용 + 신뢰도 + 진행 중엔 한 줄짜리 라이브 상태. Verbose: 단계·도구 결과까지 실시간 노출.
 // 데모 시나리오는 가짜 답변을 재생하지 않는다 — 칩은 실제 질문을 보내는 시드일 뿐이다.
 
-type Mode = 'basic' | 'verbose'
+type Mode = 'basic' | 'full' | 'verbose'
 type TurnStatus = 'loading' | 'done' | 'error'
 
 interface StepEntry {
@@ -63,8 +65,8 @@ export default function RagConsole() {
     setTurns((prev) => prev.map((t) => (t.id === id ? { ...t, ...(typeof patch === 'function' ? patch(t) : patch) } : t)))
   }
 
-  const runTurn = (id: number, question: string) => {
-    streamChat(question, undefined, {
+  const runTurn = (id: number, question: string, verbose: boolean) => {
+    streamChat(question, undefined, verbose, {
       onPlan: (e) => patchTurn(id, { route: e.route, plan: e.plan }),
       onStep: (e) => patchTurn(id, (t) => ({ steps: [...t.steps, { kind: e.kind, tool: e.tool, label: e.label, detail: e.detail }] })),
       onResult: (e) => patchTurn(id, (t) => ({ results: [...t.results, normalizeStreamResult(e.result)] })),
@@ -86,12 +88,12 @@ export default function RagConsole() {
     if (!q || busy) return
     const id = nextTurnId++
     setTurns((prev) => [...prev, { id, question: q, status: 'loading', steps: [], results: [] }])
-    runTurn(id, q)
+    runTurn(id, q, mode === 'verbose')
   }
 
   const retry = (turn: Turn) => {
     patchTurn(turn.id, { status: 'loading', error: undefined, route: undefined, plan: undefined, steps: [], results: [], final: undefined })
-    runTurn(turn.id, turn.question)
+    runTurn(turn.id, turn.question, mode === 'verbose')
   }
 
   const handleSubmit = (e: FormEvent) => {
@@ -115,8 +117,9 @@ export default function RagConsole() {
       <div className="rc__toolbar">
         <span className="rc__toolbar-label">대화</span>
         <div className="rc__seg" role="group" aria-label="답변 과정 표시 수준">
-          <button type="button" aria-pressed={mode === 'basic'} onClick={() => setMode('basic')}>기본 과정 보기</button>
-          <button type="button" aria-pressed={mode === 'verbose'} onClick={() => setMode('verbose')}>모든 과정 보기 · Verbose</button>
+          <button type="button" aria-pressed={mode === 'basic'} onClick={() => setMode('basic')}>기본</button>
+          <button type="button" aria-pressed={mode === 'full'} onClick={() => setMode('full')}>모든 과정 보기</button>
+          <button type="button" aria-pressed={mode === 'verbose'} onClick={() => setMode('verbose')}>Verbose · 실측값</button>
         </div>
       </div>
 
@@ -239,7 +242,7 @@ function TurnBlock({ turn, mode, onRetry }: { turn: Turn; mode: Mode; onRetry: (
         <div className="rc__livestatus" aria-live="polite">{basicPhaseLabel(turn)}</div>
       )}
 
-      {mode === 'verbose' && turn.steps.length > 0 && (
+      {mode !== 'basic' && turn.steps.length > 0 && (
         <div className="rc__ev-group">
           <div className="rc__ev-k">답변을 만든 방식</div>
           <div className="rc__steps">
@@ -248,13 +251,21 @@ function TurnBlock({ turn, mode, onRetry }: { turn: Turn; mode: Mode; onRetry: (
         </div>
       )}
 
-      {mode === 'verbose' && turn.results.length > 0 && (
+      {mode !== 'basic' && turn.results.length > 0 && (
+        <AssistantVisualizer results={turn.results} route={turn.route} />
+      )}
+
+      {mode !== 'basic' && turn.results.length > 0 && (
         <div className="rc__ev-group">
           <div className="rc__ev-k">도구 결과</div>
           <div className="rc__tool-results">
             {turn.results.map((r, i) => <ToolResultCard key={i} result={r} />)}
           </div>
         </div>
+      )}
+
+      {mode === 'verbose' && (turn.plan || turn.results.some((r) => r.debug)) && (
+        <EngineTechnicalDetails route={turn.route} plan={turn.plan} results={turn.results} />
       )}
 
       {turn.status === 'error' && (

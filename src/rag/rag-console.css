@@ -247,3 +247,104 @@
   /* 좁은 화면에서는 추천 카드를 1열로 접어 가독성을 유지한다(auto-fit으로도 대부분 커버되지만 명시적으로 고정) */
   .rc__suggest { grid-template-columns: 1fr; }
 }
+
+/* === 도구 결과 시각화 박스 (AssistantVisualizer) — network/sankey/bar 공용 크롬 ===
+   결과 카드(.rc__tr)와 별개로, "모든 과정 보기" 이상에서 결과 배열 전체를 보고 가장
+   적합한 차트 하나를 골라 보여주는 블록이다. */
+.rc__viz-box {
+  border: 1px solid #e2e5ec;
+  border-radius: 12px;
+  background: #fff;
+  padding: 12px;
+}
+.rc__viz-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.rc__viz-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #5b5e66;
+}
+.rc__viz-tabs {
+  display: inline-flex;
+  gap: 4px;
+}
+.rc__viz-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #7c7f88;
+  background: #f3f5f9;
+  border: 1px solid #e2e5ec;
+  border-radius: 999px;
+  padding: 4px 9px;
+  cursor: pointer;
+}
+.rc__viz-tab.active {
+  background: #0b0b0c;
+  color: #fff;
+  border-color: #0b0b0c;
+}
+.rc__viz-tab:focus-visible {
+  outline: 2px solid #28539c;
+  outline-offset: 1px;
+}
+.rc__viz-chart-wrap {
+  width: 100%;
+}
+
+/* === RAG 파이프라인 실측값 (EngineTechnicalDetails) — Verbose 전용 === */
+.rc__engine-tech {
+  border: 1px solid #e2e5ec;
+  border-radius: 12px;
+  background: #fafbfc;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.rc__engine-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #43454c;
+}
+.rc__engine-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.rc__engine-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #7c7f88;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.rc__engine-grid {
+  display: grid;
+  grid-template-columns: minmax(96px, auto) 1fr;
+  gap: 4px 10px;
+  font-size: 12px;
+}
+.rc__engine-key {
+  color: #7c7f88;
+}
+.rc__engine-val {
+  color: #1c1d21;
+  font-family: 'JetBrains Mono', 'SFMono-Regular', ui-monospace, monospace;
+  overflow-wrap: anywhere;
+}
+.rc__engine-val.highlight {
+  color: #28539c;
+  font-weight: 600;
+}

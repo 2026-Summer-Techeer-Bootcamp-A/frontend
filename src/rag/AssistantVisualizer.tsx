@@ -19,7 +19,9 @@ export default function AssistantVisualizer({ results, route }: AssistantVisuali
   // Find graph or vector results
   const graphResult = results.find((r) => r.kind === 'graph')
   const vectorResult = results.find((r) => r.kind === 'list' && (r.label.includes('유사') || r.label.includes('유사도')))
-  const listResult = results.find((r) => r.kind === 'list' && !r.label.includes('유사') && !r.label.includes('유사도'))
+  const listResult = results.find(
+    (r) => (r.kind === 'list' || r.kind === 'compare') && !r.label.includes('유사') && !r.label.includes('유사도'),
+  )
 
   const [vizType, setVizType] = useState<'network' | 'sankey'>('network')
 

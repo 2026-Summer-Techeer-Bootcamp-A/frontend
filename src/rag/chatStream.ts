@@ -58,8 +58,13 @@ function dispatchFrame(rawFrame: string, handlers: StreamHandlers) {
 /** question을 스트리밍 엔드포인트로 보내고, 프레임이 도착하는 즉시 handlers로 하나씩 통지한다.
  *  청크는 \n\n으로 구분된 프레임 경계가 아무 데서나 잘려서 올 수 있으므로, 디코딩한 텍스트를
  *  buffer에 누적하고 \n\n을 찾을 때마다 그 앞부분만 잘라 처리 — 남은 조각은 항상 buffer에 남긴다. */
-export async function streamChat(question: string, pool: Pool | undefined, handlers: StreamHandlers): Promise<void> {
-  const body = { question, ...(pool ? { pool } : {}) }
+export async function streamChat(
+  question: string,
+  pool: Pool | undefined,
+  verbose: boolean,
+  handlers: StreamHandlers,
+): Promise<void> {
+  const body = { question, ...(pool ? { pool } : {}), ...(verbose ? { verbose: true } : {}) }
 
   let response: Response
   try {

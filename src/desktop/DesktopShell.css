@@ -211,6 +211,13 @@
   overflow: hidden;
 }
 
+/* 어시스턴트 워크스페이스(.aw)의 height:100% 체인이 페이지 전환 래퍼(kit-trans, kit.tsx)를
+   지나며 끊기지 않게 여기서만 높이를 강제한다. kit-trans는 다른 라우트에서도 재사용되므로
+   :has(.aw)로 스코프해 다른 페이지 전환 애니메이션(kit-trans--push/--tab 등)에는 영향 없다. */
+.dshell__content:has(.aw) > .kit-trans {
+  height: 100%;
+}
+
 /* ---------- 모바일 유래 화면의 데스크톱 보정 ----------
    셸 안에 그대로 얹힌 모바일 화면(.dsub 하위)이 넓은 화면을 조금 더 쓰게 한다.
    .dshell 스코프라 모바일 렌더에는 영향이 없다. */
