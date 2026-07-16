@@ -13,15 +13,17 @@ test('시장 흐름 그리드는 다른 시장 그리드와 같은 108px 행 밀
   )
 })
 
-test('연도별 레이스 차트는 원래 2×2 카드 안에 들어가는 128px 높이를 사용한다', () => {
-  assert.match(widgets, /function BumpChart[\s\S]*?const H = 128\b/)
+test('연도별 레이스 차트는 카드의 남은 공간을 측정하고 최소 120px 높이를 사용한다', () => {
+  assert.match(widgets, /const \[size, setSize\] = useState\(\{ w: 680, h: 200 \}\)/)
+  assert.match(widgets, /const W = Math\.max\(size\.w, 320\), H = Math\.max\(size\.h, 120\)/)
 })
 
 test('연도별 레이스 카드의 글씨와 그래프를 위로 당기는 전용 간격을 사용한다', () => {
   assert.match(market, /className="dcard dcard--demand-race"/)
   assert.match(css, /\.dcard--demand-race \.kit-sec\s*\{[^}]*margin:\s*0 2px 6px;/s)
   assert.match(css, /\.dcard--demand-race \.dmkt2__takeaway\s*\{[^}]*margin:\s*2px 0 0;/s)
-  assert.match(widgets, /const W = Math\.max\(width, 320\), padL = 18, padR = 104, padT = 20, padB = 26/)
+  assert.match(widgets, /const padL = 18, padR = 100, padT = 16, padB = 20/)
+  assert.match(widgets, /style=\{\{ position: 'relative', width: '100%', flex: 1, minHeight: 0 \}\}/)
 })
 
 test('연도별 레이스에는 가장 큰 교차의 추월 배지 하나만 표시한다', () => {

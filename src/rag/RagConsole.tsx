@@ -6,17 +6,19 @@ import { streamChat } from './chatStream'
 import { normalizeStreamResult } from './chatContract'
 import type { Citation, Confidence, Plan, Route, ToolResult, StreamStepKind } from './chatContract'
 import AssistantVisualizer from './AssistantVisualizer'
-import EngineTechnicalDetails from './EngineTechnicalDetails'
+import EngineFlowLog from './EngineFlowLog'
+import { routeLabel, intentLabel } from './chatLabels'
 import { useAuth } from '../career/authStore'
 import './rag-console.css'
 
 // 실 백엔드(POST /api/v1/chat/stream) 라이브 스트리밍 콘솔.
 // plan → step(tool/eval/synth) → result → final 프레임이 도착하는 즉시 상태에 반영해서,
 // 전체 응답이 끝나야 뭔가 보이는 게 아니라 파이프라인이 실제로 진행되는 걸 그대로 보여준다.
-// 기본 모드: 답변 + 인용 + 신뢰도 + 진행 중엔 한 줄짜리 라이브 상태. Verbose: 단계·도구 결과까지 실시간 노출.
+// 기본 모드: 답변 + 인용 + 신뢰도 + 자동 선택된 차트. 모든 과정 보기: 사용자 입력이 라우팅·도구
+// 호출(어떤 모델·DB를 건드렸는지)·평가·종합으로 흘러가는 과정을 로그로 그대로 노출(개발자용).
 // 데모 시나리오는 가짜 답변을 재생하지 않는다 — 칩은 실제 질문을 보내는 시드일 뿐이다.
 
-type Mode = 'basic' | 'full' | 'verbose'
+type Mode = 'basic' | 'log'
 type TurnStatus = 'loading' | 'done' | 'error'
 
 interface StepEntry {
@@ -88,12 +90,12 @@ export default function RagConsole() {
     if (!q || busy) return
     const id = nextTurnId++
     setTurns((prev) => [...prev, { id, question: q, status: 'loading', steps: [], results: [] }])
-    runTurn(id, q, mode === 'verbose')
+    runTurn(id, q, mode === 'log')
   }
 
   const retry = (turn: Turn) => {
     patchTurn(turn.id, { status: 'loading', error: undefined, route: undefined, plan: undefined, steps: [], results: [], final: undefined })
-    runTurn(turn.id, turn.question, mode === 'verbose')
+    runTurn(turn.id, turn.question, mode === 'log')
   }
 
   const handleSubmit = (e: FormEvent) => {
@@ -118,8 +120,7 @@ export default function RagConsole() {
         <span className="rc__toolbar-label">대화</span>
         <div className="rc__seg" role="group" aria-label="답변 과정 표시 수준">
           <button type="button" aria-pressed={mode === 'basic'} onClick={() => setMode('basic')}>기본</button>
-          <button type="button" aria-pressed={mode === 'full'} onClick={() => setMode('full')}>모든 과정 보기</button>
-          <button type="button" aria-pressed={mode === 'verbose'} onClick={() => setMode('verbose')}>Verbose · 실측값</button>
+          <button type="button" aria-pressed={mode === 'log'} onClick={() => setMode('log')}>모든 과정 보기</button>
         </div>
       </div>
 
@@ -224,8 +225,8 @@ function TurnBlock({ turn, mode, onRetry }: { turn: Turn; mode: Mode; onRetry: (
       {/* plan 프레임 도착 즉시(진행 중이든 완료든) 라우트·의도를 바로 보여준다 */}
       {turn.plan && turn.route && (
         <div className="rc__meta">
-          <span className={`rc__route rc__route--${turn.route}`}>{turn.route}</span>
-          <span className="rc__badge rc__badge--intent">{turn.plan.intent}</span>
+          <span className={`rc__route rc__route--${turn.route}`}>{routeLabel(turn.route)}</span>
+          <span className="rc__badge rc__badge--intent">{intentLabel(turn.plan.intent)}</span>
           {turn.final?.degraded && <span className="rc__degraded">근거가 얕아 규칙 기반으로 보완됐어요</span>}
         </div>
       )}
@@ -242,30 +243,21 @@ function TurnBlock({ turn, mode, onRetry }: { turn: Turn; mode: Mode; onRetry: (
         <div className="rc__livestatus" aria-live="polite">{basicPhaseLabel(turn)}</div>
       )}
 
-      {mode !== 'basic' && turn.steps.length > 0 && (
-        <div className="rc__ev-group">
-          <div className="rc__ev-k">답변을 만든 방식</div>
-          <div className="rc__steps">
-            {turn.steps.map((s, i) => <StepRow key={i} step={s} />)}
-          </div>
-        </div>
-      )}
-
-      {mode !== 'basic' && turn.results.length > 0 && (
+      {mode === 'basic' && turn.results.length > 0 && (
         <AssistantVisualizer results={turn.results} route={turn.route} />
       )}
 
-      {mode !== 'basic' && turn.results.length > 0 && (
+      {mode === 'log' && (turn.plan || turn.steps.length > 0) && (
+        <EngineFlowLog question={turn.question} route={turn.route} plan={turn.plan} steps={turn.steps} results={turn.results} />
+      )}
+
+      {mode === 'log' && turn.results.length > 0 && (
         <div className="rc__ev-group">
           <div className="rc__ev-k">도구 결과</div>
           <div className="rc__tool-results">
             {turn.results.map((r, i) => <ToolResultCard key={i} result={r} />)}
           </div>
         </div>
-      )}
-
-      {mode === 'verbose' && (turn.plan || turn.results.some((r) => r.debug)) && (
-        <EngineTechnicalDetails route={turn.route} plan={turn.plan} results={turn.results} />
       )}
 
       {turn.status === 'error' && (
@@ -358,23 +350,6 @@ function FinalBlock({ final, mode }: { final: FinalPayload; mode: Mode }) {
           <div className="rc__basic-hint">데이터 출처 · 답변 과정은 상단 <b>모든 과정 보기</b>에서 열려요.</div>
         )}
       </div>
-    </div>
-  )
-}
-
-const STEP_KIND_LABEL: Record<StreamStepKind, string> = {
-  tool: '도구 호출', eval: '평가', synth: '종합',
-}
-
-function StepRow({ step }: { step: StepEntry }) {
-  return (
-    <div className="rc__step">
-      <span className="rc__step-i" />
-      <span className="rc__step-t">
-        <b>{STEP_KIND_LABEL[step.kind] ?? step.kind}</b> {step.label}
-        {step.detail && <span className="rc__step-detail"> · {step.detail}</span>}
-        {step.tool && <span className="rc__step-tool">{step.tool}</span>}
-      </span>
     </div>
   )
 }
