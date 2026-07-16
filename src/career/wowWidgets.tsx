@@ -418,7 +418,21 @@ export function SkillUnlockWidget({
   if (!top) {
     return (
       <div className="dcard wow-card">
-        <SectionHeader title={title} right={!liveData ? <PreviewBadge /> : undefined} />
+        <SectionHeader
+          title={title}
+          right={
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+              {!liveData && <PreviewBadge />}
+              <div className="wow-seg">
+                {MATCH._meta.roles.map((r) => (
+                  <button key={r.key} type="button" className={`wow-seg__btn${role === r.key ? ' on' : ''}`} onClick={() => setRole(r.key)}>
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          }
+        />
         <div className="wow-body"><div className="dov__empty">추천할 기술 데이터가 없어요.</div></div>
         <AsOf asOf={liveData?.as_of ?? MATCH._meta.asOf} n={roleData.n} />
       </div>
