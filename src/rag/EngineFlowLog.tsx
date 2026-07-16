@@ -1,6 +1,6 @@
 import { Terminal } from 'lucide-react'
 import type { Citation, Confidence, Plan, Route, StreamStepKind, ToolResult } from './chatContract'
-import { routeLabel, intentLabel } from './chatLabels'
+import { routeLabel, intentLabel, msLabel } from './chatLabels'
 import { DEBUG_KEY_LABELS, formatDebugValue } from './engineDebugFormat'
 
 interface FlowStep {
@@ -37,11 +37,6 @@ const STEP_KIND_LOG_LABEL: Record<StreamStepKind, string> = {
 function findResultFor(step: FlowStep, results: ToolResult[]): ToolResult | null {
   if (step.kind !== 'tool') return null
   return results.find((r) => (r.debug || r.facts) && (r.label === step.label || step.label.includes(r.label) || r.label.includes(step.label))) ?? null
-}
-
-function msLabel(ms?: number | null): string | null {
-  if (ms === null || ms === undefined) return null
-  return ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${ms}ms`
 }
 
 // plan 라우팅 줄 · 도구 호출 스텝(tool_result.debug) · 답변 종합 스텝(LLM last_debug) 세 군데가

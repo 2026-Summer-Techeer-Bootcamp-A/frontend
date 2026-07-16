@@ -1,8 +1,8 @@
-// 데모 시나리오 — 생각(각 단계마다 실제 도구가 낸 "결과") → 쿼리 → 답변.
-// 모든 결과값(n건·유사도·묶음)은 SQL/벡터/그래프 도구의 출력에 해당한다(LLM이 지어낸 숫자가 아님).
-// 백엔드 /chat v2 계약(chatContract.ts)의 steps[].detail·route·citations·confidence에 1:1 대응한다.
-// route를 sql/vector/graph로 섞어, 정량은 SQL로 정확히, 풍성한 서술은 벡터·그래프 검색 근거로만 나오게 한다.
-
+// 데모 시나리오 — 프리셋 칩(하단 rc__chips·빈 상태 rc__suggest-card)의 시드 데이터.
+// RagConsole은 이 중 chip(칩 라벨)·userQ(실제로 보내는 질문)만 쓴다 — 클릭하면 userQ를 실 백엔드
+// /chat/stream으로 그대로 보내 진짜 응답을 받아온다(칩은 가짜 답변을 재생하지 않는다).
+// thinking/query/vizLabel/viz/answer/n은 DemoScenario 타입을 채우기 위한 예시성 참고 데이터로,
+// 지금 화면에는 렌더되지 않는다 — 실제 결과는 항상 라이브 스트림에서 온다.
 export type Route = 'sql' | 'vector' | 'graph'
 
 export type Viz =
@@ -28,133 +28,109 @@ export interface DemoScenario {
   n: number
 }
 
+// 아래 4개는 벡터 검색의 실제 강점을 보여주기 위해 검증된 프롬프트다(키워드 매칭이면
+// 놓칠 질의를 의미 기반 임베딩이 잡아내는 케이스). 각기 다른 강점을 하나씩 보여준다:
+// 의미적 바꿔말하기("예쁘게 만드는" → 프론트/UI 직무), 업무 서술→직군 매핑(MLOps),
+// 언어 간 검색(영문 질의 → 국내 한글 공고), 표기 변형 흡수(React Native ≈ RN·모바일 앱).
 export const SCENARIOS: DemoScenario[] = [
   {
-    id: 'trend',
-    chip: '채용 추이',
-    userQ: 'React 채용 추이 어때?',
-    route: 'sql',
-    thinking: [
-      { text: '질문 유형을 판정하는 중', result: '정량 → SQL' },
-      { text: 'React 공고를 최근 12주로 집계', result: '482건' },
-      { text: '주별 증감을 계산', result: '+8%' },
-    ],
-    query: 'count(posting) · tech=React · 최근 12주',
-    vizLabel: 'React 공고 · 주별 추이',
-    viz: {
-      kind: 'line',
-      points: [
-        { x: '4/21', y: 402 }, { x: '4/28', y: 411 }, { x: '5/5', y: 405 }, { x: '5/12', y: 423 },
-        { x: '5/19', y: 438 }, { x: '5/26', y: 430 }, { x: '6/2', y: 447 }, { x: '6/9', y: 452 },
-        { x: '6/16', y: 449 }, { x: '6/23', y: 461 }, { x: '6/30', y: 470 }, { x: '7/7', y: 482 },
-      ],
-    },
-    answer: [
-      { text: '최근 12주 React 공고는 482건으로 8% 늘었어요.', cite: 'posting_weekly · 482건' },
-      { text: '5월 중순 잠깐 정체했다가 6월부터 다시 오르는 흐름이고, 특히 최근 3주 증가폭이 뚜렷해요.', cite: '주별 추이 · 12주' },
-    ],
-    n: 482,
-  },
-  {
-    id: 'similar',
-    chip: '비슷한 공고',
-    userQ: '내 이력서랑 비슷한 공고 찾아줘',
+    id: 'vector-pretty-ui',
+    chip: '예쁜 화면 개발자',
+    userQ: '웹 화면 예쁘게 만드는 개발자 공고 추천해줘',
     route: 'vector',
     thinking: [
-      { text: '이력서를 임베딩해 의미가 가까운 공고를 탐색', result: '후보 218건' },
-      { text: '코사인 유사도 상위로 추리는 중', result: 'top 5' },
-      { text: '공고 원문에서 근거 문장을 추출', result: '유사도 0.86' },
+      { text: '질의를 임베딩해 의미가 가까운 공고를 탐색', result: '후보 173건' },
+      { text: '"예쁘게 만드는"을 UI/UX·디자인 시스템 직무로 의미 연결', result: '프론트엔드 클러스터' },
+      { text: '코사인 유사도 상위로 추리는 중', result: '유사도 0.81' },
     ],
-    query: 'vector · pgvector HNSW · resume→posting',
-    vizLabel: '이력서와 유사한 공고 top 5 (유사도)',
+    query: 'vector · pgvector HNSW · 자연어 질의→공고',
+    vizLabel: '의미 유사 공고 top 5 (유사도)',
     viz: {
       kind: 'bar',
       items: [
-        { name: '토스', value: 86 }, { name: '당근마켓', value: 81 }, { name: '우아한형제들', value: 74 },
-        { name: 'LINE', value: 71 }, { name: '쿠팡', value: 68 },
+        { name: '토스', value: 81 }, { name: '무신사', value: 77 }, { name: '오늘의집', value: 74 },
+        { name: '당근마켓', value: 70 }, { name: '카카오스타일', value: 66 },
       ],
     },
     answer: [
-      { text: '이력서와 가장 가까운 공고는 토스 백엔드예요(유사도 0.86).', cite: '유사 공고 top 5' },
-      { text: '직무명은 "서버 엔지니어"로 다르지만, 요구 스택(Kotlin·Spring·MSA)이 이력서와 크게 겹쳐서 키워드 매칭으론 놓쳤을 공고예요.', cite: '공고 원문 근거' },
-      { text: '상위 5곳 모두 대용량 트래픽 경험을 우대하니, 그 경험을 앞에 두면 반응이 좋을 거예요.', cite: 'top5 공통 키워드' },
+      { text: '"예쁘게 만드는"이라는 표현을 프론트엔드·UI 엔지니어링 직무로 의미 연결해 찾았어요.', cite: '벡터 검색 · 유사도 0.81' },
+      { text: '공고 원문에 "디자인 시스템", "픽셀 퍼펙트" 같은 표현이 있어 키워드로는 놓쳤을 공고예요.', cite: '공고 원문 근거' },
     ],
-    n: 218,
+    n: 173,
   },
   {
-    id: 'cooccurrence',
-    chip: '같이 배울 기술',
-    userQ: 'React 배우면 뭘 같이 알아야 해?',
-    route: 'graph',
+    id: 'vector-mlops',
+    chip: 'ML 배포 공고',
+    userQ: '머신러닝 모델을 실제 서비스에 배포하는 일 하는 공고 찾아줘',
+    route: 'vector',
     thinking: [
-      { text: 'React 노드에서 지식그래프 이웃을 순회', result: '이웃 12노드' },
-      { text: '동시요구 강도로 정렬', result: '상위 5' },
-      { text: '소속 커뮤니티를 확인', result: '프론트 클러스터' },
+      { text: '업무 서술문을 임베딩해 의미가 가까운 공고를 탐색', result: '후보 96건' },
+      { text: '"모델을 서비스에 배포"를 MLOps/ML 엔지니어 직군으로 매핑', result: 'MLOps 클러스터' },
+      { text: '코사인 유사도 상위로 추리는 중', result: '유사도 0.84' },
     ],
-    query: 'graph · local search · React 이웃',
-    vizLabel: 'React 동반 요구 기술 (동시출현 %)',
+    query: 'vector · pgvector HNSW · 업무서술→직군',
+    vizLabel: '의미 유사 공고 top 5 (유사도)',
     viz: {
-      kind: 'radar',
-      indicators: [
-        { name: 'TypeScript', max: 100 }, { name: 'Node.js', max: 100 }, { name: 'Next.js', max: 100 },
-        { name: 'Jest', max: 100 }, { name: 'GraphQL', max: 100 },
-      ],
-      values: [82, 55, 41, 33, 24],
-    },
-    answer: [
-      { text: 'React를 요구하는 공고의 82%가 TypeScript도 함께 원해요.', cite: '동시출현 · 5,766건' },
-      { text: 'Node.js·Next.js가 그 뒤를 이어서, 프론트만이 아니라 풀스택으로 묶이는 경향이 뚜렷해요.', cite: 'graph local search' },
-      { text: '이 다섯 기술이 모두 "프론트엔드" 커뮤니티에 속해, 한 방향으로 학습하면 매칭 커버리지가 빠르게 올라요.', cite: 'community/frontend' },
-    ],
-    n: 5766,
-  },
-  {
-    id: 'region',
-    chip: '지역 분포',
-    userQ: '공고는 주로 어디에 많아?',
-    route: 'sql',
-    thinking: [
-      { text: '공고 위치를 권역으로 묶는 중', result: '4개 권역' },
-      { text: '권역별 비중을 계산', result: '서울 68%' },
-    ],
-    query: 'group by region · geohash 집계',
-    vizLabel: '권역별 공고 분포',
-    viz: {
-      kind: 'donut',
+      kind: 'bar',
       items: [
-        { name: '판교·강남', value: 214 }, { name: '서울 기타', value: 320 },
-        { name: '경기', value: 140 }, { name: '지방', value: 86 },
+        { name: '네이버', value: 84 }, { name: '카카오브레인', value: 79 }, { name: '업스테이지', value: 76 },
+        { name: '뤼튼', value: 72 }, { name: '스캐터랩', value: 69 },
       ],
     },
     answer: [
-      { text: '서울 권역(판교·강남 포함)에 공고의 68%가 몰려 있어요.', cite: 'region_dist' },
-      { text: '그중 판교·강남 권역만 214건으로, 다른 권역보다 스타트업·핀테크 공고 비중이 특히 높아요.', cite: '국내 전체 대비' },
+      { text: '직무명에 "머신러닝"이 없어도 모델 서빙·추론 파이프라인을 다루는 MLOps 공고를 찾았어요.', cite: '벡터 검색 · 유사도 0.84' },
+      { text: '공고 원문의 "모델 서빙", "추론 최적화" 같은 표현이 질의와 의미적으로 가까워요.', cite: '공고 원문 근거' },
     ],
-    n: 760,
+    n: 96,
   },
   {
-    id: 'compare',
-    chip: '기술 비교',
-    userQ: 'React·Vue·Angular 비교해줘',
-    route: 'sql',
+    id: 'vector-cross-lingual',
+    chip: 'K8s 백엔드',
+    userQ: 'backend engineer with kubernetes experience',
+    route: 'vector',
     thinking: [
-      { text: '세 프레임워크 공고를 집계', result: '719건' },
-      { text: '작년 동기와 비교', result: 'yoy' },
+      { text: '영문 질의를 임베딩해 국내 공고 풀에서 의미가 가까운 공고를 탐색', result: '후보 152건' },
+      { text: '언어 경계를 넘어 "쿠버네티스 경험 우대" 한글 공고와 매칭', result: '교차언어 매칭' },
+      { text: '코사인 유사도 상위로 추리는 중', result: '유사도 0.79' },
     ],
-    query: 'tech_compare · yoy · React|Vue|Angular',
-    vizLabel: '프레임워크 공고 · 작년 vs 올해',
+    query: 'vector · pgvector HNSW · cross-lingual',
+    vizLabel: '의미 유사 공고 top 5 (유사도)',
     viz: {
-      kind: 'grouped',
-      categories: ['React', 'Vue', 'Angular'],
-      series: [
-        { name: '작년', values: [420, 180, 90] },
-        { name: '올해', values: [482, 166, 71] },
+      kind: 'bar',
+      items: [
+        { name: '쿠팡', value: 79 }, { name: '당근마켓', value: 75 }, { name: 'NHN클라우드', value: 71 },
+        { name: '왓챠', value: 68 }, { name: '뱅크샐러드', value: 64 },
       ],
     },
     answer: [
-      { text: 'React 공고가 482건으로 작년보다 15% 늘었어요.', cite: 'tech_compare · yoy' },
-      { text: '반면 Vue·Angular는 각각 8%·21% 줄어, 신규 수요가 React로 쏠리는 흐름이 분명해요.', cite: '2026-07-07 기준' },
+      { text: '영문 질의를 그대로 국내 한글 공고 풀에 매칭했어요 — 언어가 달라도 의미가 통해요.', cite: '벡터 검색 · 유사도 0.79' },
+      { text: '공고 원문은 한글("쿠버네티스", "컨테이너 오케스트레이션")이지만 벡터 공간에서 질의와 가까워요.', cite: '공고 원문 근거' },
     ],
-    n: 719,
+    n: 152,
+  },
+  {
+    id: 'vector-react-native',
+    chip: 'RN 모바일 앱',
+    userQ: 'React Native로 모바일 앱 만드는 공고 추천',
+    route: 'vector',
+    thinking: [
+      { text: '질의를 임베딩해 의미가 가까운 공고를 탐색', result: '후보 84건' },
+      { text: '"React Native"의 표기 변형(RN·크로스플랫폼 앱)을 함께 흡수', result: '표기 변형 매칭' },
+      { text: '코사인 유사도 상위로 추리는 중', result: '유사도 0.83' },
+    ],
+    query: 'vector · pgvector HNSW · 표기 변형 흡수',
+    vizLabel: '의미 유사 공고 top 5 (유사도)',
+    viz: {
+      kind: 'bar',
+      items: [
+        { name: '토스', value: 83 }, { name: '당근마켓', value: 78 }, { name: '무신사', value: 73 },
+        { name: '컬리', value: 70 }, { name: '야놀자', value: 65 },
+      ],
+    },
+    answer: [
+      { text: '"React Native"뿐 아니라 "RN", "크로스플랫폼 앱" 같은 표기 변형까지 흡수해 찾았어요.', cite: '벡터 검색 · 유사도 0.83' },
+      { text: '공고 원문에 정확히 "React Native"라고 안 써 있어도 의미가 가까우면 잡아내요.', cite: '공고 원문 근거' },
+    ],
+    n: 84,
   },
 ]

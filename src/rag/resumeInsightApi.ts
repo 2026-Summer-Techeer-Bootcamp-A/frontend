@@ -43,6 +43,23 @@ export interface ResumeFeedbackInput {
   memo?: string | null
 }
 
+export interface SavedResumeListItem {
+  resume_id: number
+  title: string
+  position: string | null
+}
+
+export interface SavedResumeDetail {
+  resume_id: number
+  title: string
+  skills: ParsedSkillInput[]
+  position: string
+  career_min: number
+  career_max: number
+  pool: Pool
+  memo: string | null
+}
+
 async function parseError(response: Response, fallback: string): Promise<never> {
   const data = await response.json().catch(() => null)
   throw new Error(typeof data?.detail === 'string' ? data.detail : fallback)
@@ -82,6 +99,24 @@ async function postFeedback(sessionId: string, position: string): Promise<Resume
   }
 
   return response.json() as Promise<ResumeFeedbackResponse>
+}
+
+/** 로그인한 사용자가 등록해둔 이력서 목록. 인증 없으면 백엔드가 401을 준다 — 호출측이 처리. */
+export async function getSavedResumes(): Promise<SavedResumeListItem[]> {
+  const response = await fetch(`${API_BASE}/resume`, { headers: authHeaders() })
+  if (!response.ok) {
+    return parseError(response, '저장된 이력서를 불러오지 못했어요.')
+  }
+  const data = (await response.json()) as { items: SavedResumeListItem[] }
+  return data.items
+}
+
+export async function getSavedResumeDetail(resumeId: number): Promise<SavedResumeDetail> {
+  const response = await fetch(`${API_BASE}/resume/${resumeId}`, { headers: authHeaders() })
+  if (!response.ok) {
+    return parseError(response, '이력서를 불러오지 못했어요.')
+  }
+  return response.json() as Promise<SavedResumeDetail>
 }
 
 /** confirm → feedback 2단계 호출을 한 번에 처리한다.
