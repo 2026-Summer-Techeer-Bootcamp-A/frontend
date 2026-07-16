@@ -166,11 +166,6 @@
   background: #fff; border: 1px solid #e2e5ec; border-radius: 8px; padding: 5px 10px; cursor: pointer; flex: none; }
 .rc__retry:active { transform: scale(0.97); }
 
-/* 라이브 상태 한 줄 — 기본 모드에서 진행 중인 턴에 붙는 진행 단계 라벨 */
-.rc__livestatus { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; color: #5b5e66; padding: 2px 0; }
-.rc__livestatus::before { content: ''; width: 5px; height: 5px; border-radius: 999px; background: #0b0b0c;
-  animation: rc-pulse 1.1s ease-in-out infinite; flex: none; }
-
 /* 답변 메타 — 라우트 배지 + degraded */
 .rc__meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .rc__route--mixed { color: #5b5e66; background: #eef1f6; }
@@ -240,9 +235,9 @@
 }
 
 /* === 도구 결과 시각화 박스 (AssistantVisualizer) — network/heatmap/bar 공용 크롬 ===
-   결과 카드(.rc__tr)와 별개로, 기본 화면에서 결과 배열 전체를 보고 가장 적합한 차트
-   하나를 자동으로 골라 보여주는 블록이다. 차트 종류는 사용자가 고르지 않으므로 탭이
-   아니라 어떤 차트가 선택됐는지 알려주는 정적 태그만 붙인다. */
+   결과 카드(.rc__tr)와 별개로, 기본 화면에서 결과 배열 전체를 보고 가장 적합한 차트를
+   기본값으로 골라 보여주는 블록이다. 관계형 데이터(graph/유사도)는 네트워크 그래프와
+   히트맵 둘 다 유효한 해석이라, .rc__seg 탭으로 사용자가 직접 전환할 수 있게 둔다. */
 .rc__viz-box {
   border: 1px solid #e2e5ec;
   border-radius: 12px;
@@ -262,17 +257,12 @@
   font-weight: 700;
   color: #5b5e66;
 }
-.rc__viz-typetag {
+/* 네트워크/히트맵 전환 탭 — 툴바의 .rc__seg 알약형을 그대로 재사용하되, 버튼 안에
+   아이콘까지 들어가므로 flex로 아이콘·라벨을 정렬한다. */
+.rc__viz-tabs button {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 11px;
-  font-weight: 600;
-  color: #7c7f88;
-  background: #f3f5f9;
-  border: 1px solid #e2e5ec;
-  border-radius: 999px;
-  padding: 4px 9px;
 }
 .rc__viz-chart-wrap {
   width: 100%;
@@ -334,6 +324,14 @@
   border: 1px solid #e2e5ec;
   border-radius: 5px;
   padding: 1px 6px;
+}
+.rc__flowlog-facts {
+  margin-top: 6px;
+  font-size: 11.5px;
+  font-style: italic;
+  color: #5b5e66;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 .rc__flowlog-debug {
   margin-top: 7px;

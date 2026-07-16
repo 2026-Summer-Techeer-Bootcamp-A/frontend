@@ -7,12 +7,15 @@ export type Route = 'sql' | 'vector' | 'graph' | 'mixed'
 export type StepKind = 'plan' | 'tool' | 'eval' | 'synth'
 export type ToolResultKind = 'list' | 'stat' | 'trend' | 'graph' | 'compare'
 
-/** 파이프라인 단계 하나. kind==='tool'일 때만 tool이 채워진다. */
+/** 파이프라인 단계 하나. kind==='tool'일 때만 tool이 채워진다.
+ *  debug는 kind==='synth'일 때만 채워진다(LLM 모델/temperature/토큰/재시도 실측값). */
 export interface ChatStep {
   kind: StepKind
   tool?: string
   label: string
   detail?: string
+  duration_ms?: number | null
+  debug?: Record<string, unknown> | null
 }
 
 export interface Plan {
@@ -38,6 +41,7 @@ export interface ToolResult {
   nodes: Record<string, unknown>[]
   edges: Record<string, unknown>[]
   debug?: Record<string, unknown> | null
+  facts?: string | null
 }
 
 export interface Citation {
@@ -60,6 +64,8 @@ export interface ChatResponse {
   citations: Citation[]
   confidence: Confidence
   degraded: boolean
+  degraded_reasons: string[]
+  total_duration_ms?: number | null
 }
 
 export interface ChatRequestBody {
@@ -89,13 +95,36 @@ export interface StreamToolResult {
   nodes?: Record<string, unknown>[]
   edges?: Record<string, unknown>[]
   debug?: Record<string, unknown> | null
+  facts?: string | null
 }
 
 export type ChatStreamEvent =
-  | { type: 'plan'; route: Route; plan: Plan }
-  | { type: 'step'; kind: StreamStepKind; tool?: string; label: string; detail?: string }
+  | {
+      type: 'plan'
+      route: Route
+      plan: Plan
+      duration_ms?: number | null
+      debug?: Record<string, unknown> | null
+    }
+  | {
+      type: 'step'
+      kind: StreamStepKind
+      tool?: string
+      label: string
+      detail?: string
+      duration_ms?: number | null
+      debug?: Record<string, unknown> | null
+    }
   | { type: 'result'; result: StreamToolResult }
-  | { type: 'final'; answer: string; citations: Citation[]; confidence: Confidence; degraded: boolean }
+  | {
+      type: 'final'
+      answer: string
+      citations: Citation[]
+      confidence: Confidence
+      degraded: boolean
+      degraded_reasons: string[]
+      total_duration_ms?: number | null
+    }
   | { type: 'error'; message: string }
 
 /** 정규화: StreamToolResult의 옵셔널 배열을 ToolResult 형태(빈 배열 기본값)로 채워
@@ -110,5 +139,6 @@ export function normalizeStreamResult(r: StreamToolResult): ToolResult {
     nodes: r.nodes ?? [],
     edges: r.edges ?? [],
     debug: r.debug ?? undefined,
+    facts: r.facts ?? undefined,
   }
 }
