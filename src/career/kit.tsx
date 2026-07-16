@@ -838,10 +838,10 @@ export function HeroStat({
 
 /* ---------- 14. stat 타일 (촘촘한 대시보드용 초소형 카드) ---------- */
 export function StatTile({
-  label, value, unit, delta, spark,
-}: { label: string; value: ReactNode; unit?: string; delta?: string; spark?: number[] }) {
-  return (
-    <div className="kit-statTile">
+  label, value, unit, delta, spark, onClick, ariaLabel,
+}: { label: string; value: ReactNode; unit?: string; delta?: string; spark?: number[]; onClick?: () => void; ariaLabel?: string }) {
+  const content = (
+    <>
       <div className="kit-statTile__top">
         <span className="kit-statTile__label">{label}</span>
         {spark && spark.length > 1
@@ -851,6 +851,20 @@ export function StatTile({
       <div className="kit-statTile__num">
         {value}{unit && <span>{unit}</span>}
       </div>
+    </>
+  )
+
+  if (onClick) {
+    return (
+      <button type="button" className="kit-statTile kit-statTile--interactive" onClick={onClick} aria-label={ariaLabel ?? `${label} 보기`}>
+        {content}
+      </button>
+    )
+  }
+
+  return (
+    <div className="kit-statTile">
+      {content}
     </div>
   )
 }

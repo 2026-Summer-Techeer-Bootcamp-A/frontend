@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { MapPin, ArrowUpRight, FileText, Settings, Award, User, Sparkles } from 'lucide-react'
+import { MapPin, ArrowUpRight, Bookmark, FileText, Settings, Award, User, Sparkles, Plus, Trash2, CheckCircle2, X } from 'lucide-react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import catData from '../../data/pearl/n.json'
@@ -15,16 +15,17 @@ import {
 import {
   HypeVsHireWidget, GithubChronicleWidget, GlobalDomesticGapWidget,
   GroupShareCard, DemandRaceChart, DemandGrowthScatter, CooccurrenceBarWidget,
-  CareerLevelDistributionWidget, MarketSkillUnlockWidget, ConceptTechSankeyWidget,
+  CareerLevelDistributionWidget, StackComboInsightWidget,
   GlobalDomesticLagWidget, MarketChangeStrip,
   type GroupKey, type PoolChoice,
 } from '../../career/wowWidgets'
+import ConceptAlternativeCharts from '../../career/ConceptAlternativeCharts'
 import CompanyLogo from '../../career/CompanyLogo'
 import { useResumesState, getDynamicPostings, calculateCoverage, resumeToUpsertPayload } from '../../career/state'
 import { getAuthToken, useAuth } from '../../career/authStore'
 import { useDashboardConfig, isWidgetHidden, getWidgetSize, type WidgetSize } from '../../career/dashboardConfig'
 import { MARKET_WIDGETS } from '../../career/widgetCatalog'
-import { useBookmarks } from '../../career/bookmarkStore'
+import { loadBookmarkDetails, toggleBookmark, useBookmarks } from '../../career/bookmarkStore'
 import { useRecentViews } from '../../career/viewHistoryStore'
 import { useSettings } from '../../career/settingsStore'
 import { SkillManagerModal } from '../SkillManagerModal'
@@ -187,6 +188,7 @@ function derivePosition(title: string, techs: string[]): PositionCat {
 export function DesktopJobs() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
+  const bookmarkIds = useBookmarks()
   const { activeResume } = useResumesState()
   const { settings } = useSettings()
   const skills = activeResume?.skills ?? []
@@ -367,6 +369,7 @@ export function DesktopJobs() {
   }, [list])
 
   const sel = list.find((p) => p.id === selId) ?? list[0]
+  const selectedBookmarked = sel ? bookmarkIds.includes(sel.id) : false
 
   useEffect(() => setPvTab('desc'), [sel?.id])
 
@@ -526,6 +529,15 @@ export function DesktopJobs() {
                 <CompanyLogo logo={sel.logo} name={sel.company} size={52} radius={14} />
                 <div className="djobs__pv-head-r">
                   <MiniScore pct={sel.matchPct} size={54} />
+                  <button
+                    type="button"
+                    className={`djobs__pv-bookmark${selectedBookmarked ? ' on' : ''}`}
+                    aria-label={selectedBookmarked ? '북마크 해제' : '북마크 추가'}
+                    aria-pressed={selectedBookmarked}
+                    onClick={() => toggleBookmark(sel.id)}
+                  >
+                    <Bookmark size={16} />
+                  </button>
                   <span
                     className="djobs__pv-full"
                     title="전체 화면에서 보기"
@@ -919,9 +931,7 @@ export function DesktopMarket() {
             {!isWidgetHidden('market', 'yearly-trend') && (
               <div className="dmkt2__card-item" style={spanStyle(widgetSize('yearly-trend'))}>
                 <section className="dcard">
-                  <SectionHeader title="연도별 수요 레이스" hint="언어 판도" right={scopeBadge} />
-                  <p className="dmkt2__takeaway">점유율% 순위 변동 · <b className="dmkt2__takeaway-up">Python이 Java 추월</b></p>
-                  <DemandRaceChart pool={pool} />
+                  <DemandRaceChart pool={pool} right={scopeBadge} />
                 </section>
               </div>
             )}
@@ -1018,7 +1028,7 @@ export function DesktopMarket() {
             )}
             {!isWidgetHidden('market', 'market-skill-unlock') && (
               <div className="dmkt2__card-item dmkt2__card-item--r2" style={spanStyle(widgetSize('market-skill-unlock'))}>
-                <MarketSkillUnlockWidget />
+                <StackComboInsightWidget pool={pool} />
               </div>
             )}
           </div>
@@ -1083,11 +1093,7 @@ export function DesktopMarket() {
             )}
             {!isWidgetHidden('market', 'concept-tech-sankey') && (
               <div className="dmkt2__card-item dmkt2__card-item--sankey dmkt2__card-item--r5" style={spanStyle(widgetSize('concept-tech-sankey'))}>
-                <section className="dcard">
-                  <SectionHeader title="개념 → 기술 Sankey" hint="posting_concept 실측" />
-                  <p className="dmkt2__takeaway">"이 개념을 하려면 어떤 기술" — 개념이 요구하는 스택 흐름.</p>
-                  <ConceptTechSankeyWidget pool={pool} />
-                </section>
+                <ConceptAlternativeCharts pool={pool} />
               </div>
             )}
           </div>
@@ -1270,21 +1276,107 @@ export function DesktopMy() {
   const initial = (user ? (user.nickname || user.email) : 'RV').slice(0, 2).toUpperCase()
 
   const [skillModalOpen, setSkillModalOpen] = useState(false)
+  const [postingListOpen, setPostingListOpen] = useState<'bookmarks' | 'recent' | null>(null)
 
   const postings = useMemo(() => getDynamicPostings(skills), [skills])
 
   const bookmarkIds = useBookmarks()
-  const bookmarkedPostings = useMemo(
-    () => bookmarkIds.map((id) => postings.find((p) => p.id === id)).filter((p): p is typeof postings[number] => !!p),
-    [bookmarkIds, postings],
-  )
-  const bookmarksVisible = bookmarkedPostings.slice(0, 5)
+  const bookmarkKey = bookmarkIds.join(',')
+  const [bookmarkedDetails, setBookmarkedDetails] = useState<Awaited<ReturnType<typeof jobsApi.detail>>[]>([])
 
-  const recentViewIds = useRecentViews(5)
-  const recentViewPostings = useMemo(
-    () => recentViewIds.map((id) => postings.find((p) => p.id === id)).filter((p): p is typeof postings[number] => !!p),
-    [recentViewIds, postings],
+  useEffect(() => {
+    let cancelled = false
+    if (bookmarkIds.length === 0) {
+      setBookmarkedDetails([])
+      return
+    }
+
+    loadBookmarkDetails(bookmarkIds, (id) => jobsApi.detail(id))
+      .then((details) => { if (!cancelled) setBookmarkedDetails(details) })
+
+    return () => { cancelled = true }
+    // bookmarkKey is the stable value used to refresh API-backed bookmarks.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookmarkKey])
+
+  const bookmarkedPostings = useMemo(
+    () => {
+      const detailsById = new Map(bookmarkedDetails.map((detail) => [String(detail.id), detail]))
+      return bookmarkIds.flatMap((id) => {
+        const mockPosting = postings.find((posting) => posting.id === id)
+        if (mockPosting) return [mockPosting]
+
+        const detail = detailsById.get(id)
+        if (!detail) return []
+        const held = detail.skills.filter((skill) => skills.includes(skill))
+        return [{
+          id,
+          title: detail.title,
+          company: detail.company ?? '회사명 미상',
+          logo: detail.logo_url ?? '',
+          matchPct: detail.skills.length
+            ? Math.round(((detail.matched_count ?? held.length) / detail.skills.length) * 100)
+            : 0,
+          careerMin: detail.career_min,
+          careerMax: detail.career_max,
+        }]
+      })
+    },
+    [bookmarkIds, bookmarkedDetails, postings, skills],
   )
+  const recentViewIds = useRecentViews(5)
+  const recentViewKey = recentViewIds.join(',')
+  const [recentViewDetails, setRecentViewDetails] = useState<Awaited<ReturnType<typeof jobsApi.detail>>[]>([])
+
+  useEffect(() => {
+    let cancelled = false
+    if (recentViewIds.length === 0) {
+      setRecentViewDetails([])
+      return
+    }
+
+    loadBookmarkDetails(recentViewIds, (id) => jobsApi.detail(id))
+      .then((details) => { if (!cancelled) setRecentViewDetails(details) })
+
+    return () => { cancelled = true }
+    // recentViewKey is the stable value used to refresh API-backed view history.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recentViewKey])
+
+  const recentViewPostings = useMemo(
+    () => {
+      const detailsById = new Map(recentViewDetails.map((detail) => [String(detail.id), detail]))
+      return recentViewIds.flatMap((id) => {
+        const mockPosting = postings.find((posting) => posting.id === id)
+        if (mockPosting) return [mockPosting]
+
+        const detail = detailsById.get(id)
+        if (!detail) return []
+        const held = detail.skills.filter((skill) => skills.includes(skill))
+        return [{
+          id,
+          title: detail.title,
+          company: detail.company ?? '회사명 미상',
+          logo: detail.logo_url ?? '',
+          matchPct: detail.skills.length
+            ? Math.round(((detail.matched_count ?? held.length) / detail.skills.length) * 100)
+            : 0,
+          careerMin: detail.career_min,
+          careerMax: detail.career_max,
+        }]
+      })
+    },
+    [recentViewIds, recentViewDetails, postings, skills],
+  )
+
+  useEffect(() => {
+    if (!postingListOpen) return
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setPostingListOpen(null)
+    }
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [postingListOpen])
 
   return (
     <div className="dpage dmy">
@@ -1304,7 +1396,7 @@ export function DesktopMy() {
                 <div className="dmy__hero-stats">
                   <span><b>{skills.length}</b> 보유 기술</span>
                   <span><b>{coverage}%</b> 커버리지</span>
-                  <span><b>{bookmarkedPostings.length}</b> 북마크</span>
+                  <span><b>{bookmarkIds.length}</b> 북마크</span>
                 </div>
               </>
             ) : (
@@ -1318,8 +1410,20 @@ export function DesktopMy() {
 
         <div className="dmy__top-side">
           <div className="dmy__stats">
-            <StatTile label="북마크" value={bookmarkedPostings.length} unit="건" />
-            <StatTile label="최근 본 공고" value={recentViewPostings.length} unit="건" />
+            <StatTile
+              label="북마크"
+              value={bookmarkIds.length}
+              unit="건"
+              onClick={() => setPostingListOpen('bookmarks')}
+              ariaLabel={`북마크한 공고 ${bookmarkIds.length}건 보기`}
+            />
+            <StatTile
+              label="최근 본 공고"
+              value={recentViewIds.length}
+              unit="건"
+              onClick={() => setPostingListOpen('recent')}
+              ariaLabel={`최근 본 공고 ${recentViewIds.length}건 보기`}
+            />
             <StatTile label="커버리지" value={coverage} unit="%" />
           </div>
 
@@ -1338,14 +1442,19 @@ export function DesktopMy() {
 
       <div className="dmy__body">
         <div className="dmy__main">
-          <section className="dcard">
+          <section className="dcard dmy__section-card">
             <SectionHeader title="내 이력서" hint={`${resumes.length}개`} right={
-              <button className="dpage__more" onClick={() => navigate('/resume/new')}>새 이력서 추가</button>
+              isAuthed && resumes.length > 0 ? (
+                <button className="dmy__resume-add-button" onClick={() => navigate('/resume/new')}>
+                  <Plus size={14} /> 새 이력서 추가
+                </button>
+              ) : (
+                <button className="dmy__empty-btn" onClick={() => navigate('/resume/new')}>이력서 등록하기</button>
+              )
             } />
-            {resumes.length === 0 ? (
+            {!isAuthed || resumes.length === 0 ? (
               <div className="dmy__empty">
                 <span>아직 등록한 이력서가 없어요. 이력서를 등록하면 맞춤 공고와 커버리지 분석을 받아볼 수 있어요.</span>
-                <button className="dmy__empty-btn" onClick={() => navigate('/resume/new')}>이력서 등록하기</button>
               </div>
             ) : (
               <div className="dmy__jobs">
@@ -1357,15 +1466,16 @@ export function DesktopMy() {
                       <span className="djobs__row-c">{r.position || '직무 미정'} · 보유 기술 {r.skills.length}개</span>
                     </span>
                     {r.isPrimary ? (
-                      <span className="dpage__more">기본</span>
+                      <span className="dmy__resume-primary-badge"><CheckCircle2 size={13} /> 기본</span>
                     ) : (
                       <button className="dpage__more" onClick={() => setPrimary(r.id)}>기본으로</button>
                     )}
                     <button
-                      className="dpage__more"
+                      className="dmy__resume-delete-button"
+                      aria-label={`${r.title} 삭제`}
                       onClick={() => { if (window.confirm(`'${r.title}'을(를) 삭제할까요?`)) deleteResume(r.id) }}
                     >
-                      삭제
+                      <Trash2 size={15} />
                     </button>
                   </div>
                 ))}
@@ -1373,19 +1483,20 @@ export function DesktopMy() {
             )}
           </section>
 
-          <section className="dcard">
+          <section className="dcard dmy__section-card">
             <SectionHeader
               title="보유 기술"
               hint={`${skills.length}개`}
-              right={activeResume && (
+              right={activeResume ? (
                 <button className="dmy__manage" onClick={() => setSkillModalOpen(true)}>기술 관리</button>
+              ) : (
+                <button className="dmy__empty-btn" onClick={() => navigate('/resume/new')}>이력서 등록하기</button>
               )}
             />
             <div className="dmy__skills">
               {!activeResume ? (
                 <div className="dmy__empty">
                   <span>이력서를 등록하면 보유 기술을 관리할 수 있어요.</span>
-                  <button className="dmy__empty-btn" onClick={() => navigate('/resume/new')}>이력서 등록하기</button>
                 </div>
               ) : (
                 <>
@@ -1398,58 +1509,9 @@ export function DesktopMy() {
             </div>
           </section>
 
-          <section className="dcard">
-            <SectionHeader title="북마크한 공고" hint={`${bookmarkedPostings.length}건`} right={
-              <button className="dpage__more" onClick={() => navigate('/jobs')}>전체 보기</button>
-            } />
-            {bookmarksVisible.length === 0 ? (
-              <div className="dmy__empty">
-                <span>아직 북마크한 공고가 없어요. 마음에 드는 공고를 담아두면 여기 모여요.</span>
-                <button className="dmy__empty-btn" onClick={() => navigate('/jobs')}>공고 둘러보기</button>
-              </div>
-            ) : (
-              <>
-                <div className="dmy__jobs">
-                  {bookmarksVisible.map((p) => (
-                    <JobCardCompact
-                      key={p.id}
-                      job={{ company: p.company, title: p.title, matchPct: p.matchPct, careerLabel: careerLabel(p.careerMin, p.careerMax) }}
-                      logo={<CompanyLogo logo={p.logo} name={p.company} size={40} radius={11} />}
-                      onOpen={() => navigate(`/job/${encodeURIComponent(p.id)}`)}
-                    />
-                  ))}
-                </div>
-                {bookmarkedPostings.length > bookmarksVisible.length && (
-                  <div className="dmy__more-txt">{bookmarkedPostings.length - bookmarksVisible.length}개 더</div>
-                )}
-              </>
-            )}
-          </section>
         </div>
 
         <aside className="dmy__aside">
-          <section className="dcard">
-            <SectionHeader title="최근 본 공고" />
-            {recentViewPostings.length === 0 ? (
-              <div className="dmy__empty">
-                <span>최근 본 공고가 아직 없어요.</span>
-                <button className="dmy__empty-btn" onClick={() => navigate('/jobs')}>공고 보러 가기</button>
-              </div>
-            ) : (
-              <div className="dmy__recent">
-                {recentViewPostings.map((p) => (
-                  <button key={p.id} className="djobs__row" onClick={() => navigate(`/job/${encodeURIComponent(p.id)}`)}>
-                    <CompanyLogo logo={p.logo} name={p.company} size={34} radius={9} />
-                    <span className="djobs__row-b">
-                      <span className="djobs__row-t">{p.title}</span>
-                      <span className="djobs__row-c">{p.company}</span>
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </section>
-
           <section className="dcard">
             <SectionHeader title="바로가기" />
             <div className="kit-menulist">
@@ -1461,6 +1523,49 @@ export function DesktopMy() {
           </section>
         </aside>
       </div>
+
+      {postingListOpen && (
+        <div className="dmy__posting-modal" role="presentation" onMouseDown={() => setPostingListOpen(null)}>
+          <section
+            className="dmy__posting-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="dmy-posting-dialog-title"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="dmy__posting-dialog-head">
+              <div>
+                <h2 id="dmy-posting-dialog-title">{postingListOpen === 'bookmarks' ? '북마크한 공고' : '최근 본 공고'}</h2>
+                <span>{postingListOpen === 'bookmarks' ? bookmarkIds.length : recentViewIds.length}건</span>
+              </div>
+              <button type="button" onClick={() => setPostingListOpen(null)} aria-label="닫기"><X size={18} /></button>
+            </div>
+
+            {(postingListOpen === 'bookmarks' ? bookmarkedPostings : recentViewPostings).length === 0 ? (
+              <div className="dmy__posting-dialog-empty">
+                <span>{postingListOpen === 'bookmarks' ? '아직 북마크한 공고가 없어요.' : '최근 본 공고가 아직 없어요.'}</span>
+                <button type="button" className="dmy__empty-btn" onClick={() => navigate('/jobs')}>공고 둘러보기</button>
+              </div>
+            ) : (
+              <div className="dmy__posting-dialog-list">
+                {(postingListOpen === 'bookmarks' ? bookmarkedPostings : recentViewPostings).map((posting) => (
+                  <JobCardCompact
+                    key={posting.id}
+                    job={{
+                      company: posting.company,
+                      title: posting.title,
+                      matchPct: posting.matchPct,
+                      careerLabel: careerLabel(posting.careerMin, posting.careerMax),
+                    }}
+                    logo={<CompanyLogo logo={posting.logo} name={posting.company} size={40} radius={11} />}
+                    onOpen={() => navigate(`/job/${encodeURIComponent(posting.id)}`)}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+      )}
 
       <SkillManagerModal
         open={skillModalOpen && !!activeResume}

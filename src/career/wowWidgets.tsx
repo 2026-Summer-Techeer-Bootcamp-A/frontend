@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ReactECharts from 'echarts-for-react'
@@ -18,7 +18,10 @@ import { useSettings } from './settingsStore'
 import { marketApi } from './api'
 import {
   buildConceptSankeyFallback,
+  CURATED_SANKEY_CONCEPTS,
   curateConceptSankey,
+  omitConceptFromSankey,
+  SANKEY_CHART_LAYOUT,
   type SankeyNode,
   type SankeyPayload,
 } from './conceptSankey'
@@ -1144,15 +1147,34 @@ const MKT = marketDataRaw as {
 }
 
 /* ────────────────────────────────────────────────────────────────
-   ① 판도 카드(프론트/백/DB) — group-share 목 데이터
-   현재 점유율(share)은 §1 실측치(그룹 union 기준 대략치) 그대로. 연도 추이(yearly)는
-   백엔드 group-share가 아직 없어 방향성만 맞춘 추정값 — 카드/모달에 "추정" 고지.
+   ① 판도 카드(프론트/백/DB) — 현재 점유율은 group-share,
+   모달의 연도 추이는 skill-trend-yearly 실측 데이터를 사용한다.
    ──────────────────────────────────────────────────────────────── */
 export type GroupKey = 'frontend_fw' | 'backend_fw' | 'database' | 'programming_language'
 type GroupShareItem = { tech: string; share: number; yearly: number[]; trend: 'up' | 'down' }
-type GroupShareGroup = { key: GroupKey; label: string; union: number; asOf: string; items: GroupShareItem[] }
+type GroupShareGroup = { key: GroupKey; label: string; union: number; asOf: string; years: string[]; items: GroupShareItem[] }
 
 const GROUP_SHARE_YEARS = ['2023', '2024', '2025', '2026']
+const GROUP_SHARE_TECHS: Record<GroupKey, string[]> = {
+  programming_language: ['Java', 'Python', 'JavaScript', 'TypeScript', 'Kotlin', 'Go', 'C#', 'PHP', 'Ruby'],
+  backend_fw: ['Spring', 'Node.js', '.NET', 'Django', 'NestJS', 'FastAPI', 'Flask', 'Express'],
+  frontend_fw: ['React', 'Vue', 'Next.js', 'Angular', 'Svelte'],
+  database: ['MySQL', 'Oracle', 'PostgreSQL', 'Redis', 'MariaDB', 'MongoDB'],
+}
+
+type YearlyTrendResponse = Awaited<ReturnType<typeof marketApi.yearlyTrend>>
+const yearlyTrendRequests = new Map<ApiPool, Promise<YearlyTrendResponse>>()
+
+function getYearlyTrend(pool: ApiPool): Promise<YearlyTrendResponse> {
+  const pending = yearlyTrendRequests.get(pool)
+  if (pending) return pending
+  const request = marketApi.yearlyTrend(pool).catch((error) => {
+    yearlyTrendRequests.delete(pool)
+    throw error
+  })
+  yearlyTrendRequests.set(pool, request)
+  return request
+}
 
 function gsItem(tech: string, yearly: number[]): GroupShareItem {
   return { tech, share: yearly[yearly.length - 1], yearly, trend: yearly[yearly.length - 1] >= yearly[0] ? 'up' : 'down' }
@@ -1160,7 +1182,7 @@ function gsItem(tech: string, yearly: number[]): GroupShareItem {
 
 const GROUP_SHARE_MOCK: Record<GroupKey, GroupShareGroup> = {
   frontend_fw: {
-    key: 'frontend_fw', label: '프론트 프레임워크', union: 8036, asOf: '2026-07-14',
+    key: 'frontend_fw', label: '프론트 프레임워크', union: 8036, asOf: '2026-07-14', years: GROUP_SHARE_YEARS,
     items: [
       gsItem('React', [72.4, 74.6, 76.1, 77.0]),
       gsItem('Vue', [39.8, 37.2, 35.0, 33.5]),
@@ -1170,7 +1192,7 @@ const GROUP_SHARE_MOCK: Record<GroupKey, GroupShareGroup> = {
     ],
   },
   backend_fw: {
-    key: 'backend_fw', label: '백엔드 프레임워크', union: 14250, asOf: '2026-07-14',
+    key: 'backend_fw', label: '백엔드 프레임워크', union: 14250, asOf: '2026-07-14', years: GROUP_SHARE_YEARS,
     items: [
       gsItem('Spring', [55.2, 52.4, 50.0, 48.1]),
       gsItem('Node.js', [24.8, 27.3, 29.5, 31.3]),
@@ -1180,7 +1202,7 @@ const GROUP_SHARE_MOCK: Record<GroupKey, GroupShareGroup> = {
     ],
   },
   database: {
-    key: 'database', label: '데이터베이스', union: 9684, asOf: '2026-07-14',
+    key: 'database', label: '데이터베이스', union: 9684, asOf: '2026-07-14', years: GROUP_SHARE_YEARS,
     items: [
       gsItem('MySQL', [58.6, 57.8, 57.1, 56.5]),
       gsItem('Oracle', [35.0, 31.8, 28.9, 26.7]),
@@ -1190,7 +1212,7 @@ const GROUP_SHARE_MOCK: Record<GroupKey, GroupShareGroup> = {
     ],
   },
   programming_language: {
-    key: 'programming_language', label: '프로그래밍 언어', union: 18420, asOf: '2026-07-14',
+    key: 'programming_language', label: '프로그래밍 언어', union: 18420, asOf: '2026-07-14', years: GROUP_SHARE_YEARS,
     items: [
       gsItem('Java', [45.8, 43.6, 41.4, 39.8]),
       gsItem('Python', [28.1, 31.5, 35.7, 38.9]),
@@ -1210,11 +1232,11 @@ function groupShareModalOption(group: GroupShareGroup) {
       ...tooltipStyle, trigger: 'item',
       formatter: (p: { seriesName: string }) => {
         const item = group.items.find((i) => i.tech === p.seriesName)!
-        return `<b>${item.tech}</b><br/>${GROUP_SHARE_YEARS.map((y, i) => `${y} <b>${item.yearly[i]}%</b>`).join('<br/>')}`
+        return `<b>${item.tech}</b><br/>${group.years.map((y, i) => `${y} <b>${item.yearly[i]}%</b>`).join('<br/>')}`
       },
     },
     xAxis: {
-      type: 'category', boundaryGap: false, data: GROUP_SHARE_YEARS,
+      type: 'category', boundaryGap: false, data: group.years,
       axisLine: { lineStyle: { color: '#e6e9ef' } }, axisTick: { show: false },
       axisLabel: { color: '#43454c', fontFamily: FONT, fontSize: 10.5, fontWeight: 700 },
     },
@@ -1232,6 +1254,24 @@ function groupShareModalOption(group: GroupShareGroup) {
   }
 }
 
+function groupShareFromYearly(group: GroupKey, label: string, response: YearlyTrendResponse): GroupShareGroup | null {
+  const techs = new Set(GROUP_SHARE_TECHS[group])
+  const items = response.series
+    .filter((item) => techs.has(item.canonical) && item.shares.length === response.years.length && item.shares.length > 0)
+    .map((item) => gsItem(item.canonical, item.shares))
+    .sort((a, b) => b.share - a.share)
+
+  if (!items.length || !response.years.length) return null
+  return {
+    key: group,
+    label,
+    union: response.sample_size,
+    asOf: response.as_of,
+    years: response.years.map(String),
+    items,
+  }
+}
+
 /** 판도 카드 — 1~3위 + 그룹내 점유% 요약. 클릭하면 전체 순위 + 증감 화살표 + 연도별
  * 점유율 추이(멀티라인) 모달을 연다(스펙 §4-2). 라이브 group-share가 아직 없어 domestic은
  * §1 실측 목, global은 (표본에 프레임워크 항목이 없어) 값을 지어내는 대신 "준비 중"으로
@@ -1242,6 +1282,8 @@ export function GroupShareCard({ group, pool }: { group: GroupKey; pool: PoolCho
   const [open, setOpen] = useState(false)
   const [domesticLive, setDomesticLive] = useState<GroupShareGroup | null>(null)
   const [globalLive, setGlobalLive] = useState<GroupShareGroup | null>(null)
+  const [yearlyLive, setYearlyLive] = useState<GroupShareGroup | null>(null)
+  const [yearlyLoading, setYearlyLoading] = useState(true)
 
   useEffect(() => {
     if (group === 'programming_language') return
@@ -1249,7 +1291,7 @@ export function GroupShareCard({ group, pool }: { group: GroupKey; pool: PoolCho
     marketApi.groupShare({ group, pool: 'domestic' }).then((r) => {
       if (cancelled || !r.items.length) return
       setDomesticLive({
-        key: group, label: mock.label, union: r.union_count, asOf: r.as_of,
+        key: group, label: mock.label, union: r.union_count, asOf: r.as_of, years: GROUP_SHARE_YEARS,
         items: r.items.map((it) => gsItem(it.canonical, [it.share, it.share, it.share, it.share])),
       })
     }).catch(() => undefined)
@@ -1263,10 +1305,26 @@ export function GroupShareCard({ group, pool }: { group: GroupKey; pool: PoolCho
     marketApi.groupShare({ group, pool: 'global' }).then((r) => {
       if (cancelled || !r.items.length) return
       setGlobalLive({
-        key: group, label: mock.label, union: r.union_count, asOf: r.as_of,
+        key: group, label: mock.label, union: r.union_count, asOf: r.as_of, years: GROUP_SHARE_YEARS,
         items: r.items.map((it) => gsItem(it.canonical, [it.share, it.share, it.share, it.share])),
       })
     }).catch(() => undefined)
+    return () => { cancelled = true }
+  }, [group, pool, mock.label])
+
+  useEffect(() => {
+    let cancelled = false
+    setYearlyLive(null)
+    setYearlyLoading(true)
+    const trendPool: ApiPool = pool === 'global' ? 'global' : 'domestic'
+    getYearlyTrend(trendPool)
+      .then((response) => {
+        if (!cancelled) setYearlyLive(groupShareFromYearly(group, mock.label, response))
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (!cancelled) setYearlyLoading(false)
+      })
     return () => { cancelled = true }
   }, [group, pool, mock.label])
 
@@ -1318,8 +1376,14 @@ export function GroupShareCard({ group, pool }: { group: GroupKey; pool: PoolCho
                 ))}
               </div>
               <div className="mktmodal__chart">
-                <div className="mktmodal__chart-t">기술별 연도 점유율 추이 {pool === 'global' && globalReady ? '' : '(추정)'}</div>
-                <ReactECharts option={groupShareModalOption(modalData)} style={{ height: 200 }} notMerge />
+                <div className="mktmodal__chart-t">기술별 연도 점유율 추이</div>
+                {yearlyLive ? (
+                  <ReactECharts option={groupShareModalOption(yearlyLive)} style={{ height: 200 }} notMerge />
+                ) : (
+                  <div style={{ height: 200, display: 'grid', placeItems: 'center', color: '#7c7f88', fontSize: 12 }}>
+                    {yearlyLoading ? '실제 데이터를 불러오는 중…' : '연도별 실제 데이터가 없습니다.'}
+                  </div>
+                )}
               </div>
             </div>
             <div className="mktmodal__foot">
@@ -1345,94 +1409,322 @@ const YEARLY_MOCK: YearlyPayload = {
   series: MKT.techYearly.series.map((r) => ({ canonical: r.tech, shares: r.shares, delta: r.delta })),
 }
 
-function pickRaceLines(payload: YearlyPayload, limit = 3): YearlySeriesItem[] {
-  const forced = ['Python', 'Java'].map((t) => payload.series.find((s) => s.canonical === t)).filter((s): s is YearlySeriesItem => !!s)
-  const rest = [...payload.series]
-    .filter((s) => !forced.includes(s))
-    .sort((a, b) => (b.shares[b.shares.length - 1] ?? 0) - (a.shares[a.shares.length - 1] ?? 0))
-  return [...forced, ...rest].slice(0, limit)
+/* ── 연도별 수요 레이스 — 범프 차트(순위 기반).
+   절대 점유율(%)은 소스별 수집 규모 차이로 오염돼 있어 표시하지 않고 연도별 순위만 쓴다.
+   백엔드 GET /stats/skills/rank-history(category별)에서 순위를 받아 그린다. */
+type RankCategory = 'language' | 'backend' | 'frontend' | 'db'
+type RankSeries = { name: string; ranks: Array<number | null> }
+type RankHistory = { years: number[]; skills: RankSeries[] }
+
+const RANK_TABS: Array<{ key: RankCategory; label: string; hint: string }> = [
+  { key: 'language', label: '언어', hint: '언어 판도' },
+  { key: 'backend', label: '백엔드', hint: '백엔드 판도' },
+  { key: 'frontend', label: '프론트엔드', hint: '프론트엔드 판도' },
+  { key: 'db', label: 'DB', hint: 'DB 판도' },
+]
+
+// 기술별 고정 색상 — 탭을 오가거나 데이터가 바뀌어도 같은 기술은 항상 같은 색을 유지한다.
+const SKILL_COLORS: Record<string, string> = {
+  Python: '#3d7dca', JavaScript: '#d99a17', Java: '#e0603a', TypeScript: '#4a3aa7', Go: '#4b9db8',
+  Kotlin: '#9a6bd6', 'C#': '#5b8a3a', PHP: '#7b7fb5', Ruby: '#c73f3f', 'C++': '#6f7d8c', Rust: '#b0703a',
+  Spring: '#5aa03a', 'Node.js': '#4c9a52', Django: '#2e6b4f', FastAPI: '#3aa08c', NestJS: '#d6335f',
+  Express: '#7a7f88', '.NET': '#6a4fc0', Flask: '#5a5f66', Laravel: '#e0603a',
+  React: '#3aa0c0', Vue: '#4caf7a', 'Next.js': '#3a3f47', Angular: '#d0403a', Svelte: '#e0603a',
+  MySQL: '#5b7d9e', PostgreSQL: '#3d6da8', Oracle: '#c0392b', Redis: '#c73f3f', MariaDB: '#8a6247',
+  MongoDB: '#4caf50', SQLite: '#5a8fb0',
+}
+const RANK_PALETTE = ['#3d7dca', '#e0603a', '#4b9db8', '#9a6bd6', '#5aa03a', '#d99a17', '#c73f3f', '#4a3aa7', '#3aa08c', '#7a7f88']
+function colorForSkill(name: string): string {
+  if (SKILL_COLORS[name]) return SKILL_COLORS[name]
+  let h = 0
+  for (let i = 0; i < name.length; i += 1) h = (h * 31 + name.charCodeAt(i)) >>> 0
+  return RANK_PALETTE[h % RANK_PALETTE.length]
 }
 
-/** Python이 Java를 추월하는 해(첫 역전 연도)를 찾는다 — 없으면 -1. */
-function findCrossoverIndex(payload: YearlyPayload): number {
-  const py = payload.series.find((s) => s.canonical === 'Python')
-  const jv = payload.series.find((s) => s.canonical === 'Java')
-  if (!py || !jv) return -1
-  for (let i = 1; i < payload.years.length; i += 1) {
-    if (jv.shares[i - 1] >= py.shares[i - 1] && py.shares[i] > jv.shares[i]) return i
-  }
-  return -1
-}
-
-export function DemandRaceChart({ pool }: { pool: PoolChoice }) {
-  const [domestic, setDomestic] = useState<YearlyPayload | null>(null)
-  const [global, setGlobalData] = useState<YearlyPayload | null>(null)
-
-  useEffect(() => {
-    let cancelled = false
-    marketApi.yearlyTrend('domestic').then((r) => {
-      if (!cancelled && r.series.length) setDomestic({ years: r.years.map(String), series: r.series })
-    }).catch(() => undefined)
-    return () => { cancelled = true }
-  }, [])
-  useEffect(() => {
-    if (pool === 'domestic') { setGlobalData(null); return }
-    let cancelled = false
-    marketApi.yearlyTrend('global').then((r) => {
-      if (!cancelled && r.series.length) setGlobalData({ years: r.years.map(String), series: r.series })
-    }).catch(() => undefined)
-    return () => { cancelled = true }
-  }, [pool])
-
-  const dom = domestic ?? YEARLY_MOCK
-  const domLines = useMemo(() => pickRaceLines(dom), [dom])
-  const globalLines = useMemo(() => (pool !== 'domestic' && global ? pickRaceLines(global) : []), [pool, global])
-  const crossoverIdx = useMemo(() => findCrossoverIndex(dom), [dom])
-  const colors = ['#1f9d57', '#c8382d', '#5b78d1']
-
-  const option = useMemo(() => ({
-    animationDuration: 700, animationEasing: 'cubicOut',
-    grid: { left: 8, right: 64, top: 20, bottom: 26, containLabel: true },
-    tooltip: {
-      ...tooltipStyle, trigger: 'axis',
-      formatter: (params: { seriesName: string; axisValue: string; value: number }[]) =>
-        `${params[0]?.axisValue}<br/>${params.map((p) => `${p.seriesName} <b>${p.value}%</b>`).join('<br/>')}`,
-    },
-    xAxis: {
-      type: 'category', boundaryGap: false, data: dom.years,
-      axisLine: { lineStyle: { color: '#e6e9ef' } }, axisTick: { show: false },
-      axisLabel: { color: '#43454c', fontFamily: FONT, fontSize: 11, fontWeight: 700 },
-    },
-    yAxis: {
-      type: 'value', axisLabel: { color: '#7c7f88', fontFamily: FONT, fontSize: 10, formatter: '{value}%' },
-      splitLine: { lineStyle: { color: '#eef1f6' } }, axisLine: { show: false },
-    },
-    series: [
-      ...domLines.map((s, i) => ({
-        name: s.canonical, type: 'line', data: s.shares, smooth: 0.15,
-        symbol: 'circle', symbolSize: 6,
-        lineStyle: { color: colors[i % colors.length], width: 2.8 },
-        itemStyle: { color: colors[i % colors.length], borderColor: '#fff', borderWidth: 1.2 },
-        endLabel: { show: true, formatter: s.canonical, color: colors[i % colors.length], fontFamily: FONT, fontSize: 10.5, fontWeight: 700, distance: 6 },
-        markPoint: (i < 2 && crossoverIdx > 0) ? {
-          silent: true, symbol: 'circle', symbolSize: 1,
-          data: [{ coord: [dom.years[crossoverIdx], s.shares[crossoverIdx]] }],
-          label: { show: i === 0, formatter: '추월', position: 'top', color: '#166534', fontFamily: FONT, fontSize: 10, fontWeight: 800 },
-        } : undefined,
-        z: 5,
-      })),
-      ...globalLines.map((s, i) => ({
-        name: `${s.canonical}(글로벌)`, type: 'line', data: s.shares, smooth: 0.15,
-        symbol: 'circle', symbolSize: 4,
-        lineStyle: { color: colors[i % colors.length], width: 1.4, type: 'dashed', opacity: 0.65 },
-        itemStyle: { color: colors[i % colors.length], borderColor: '#fff', borderWidth: 1, opacity: 0.65 },
-        z: 2,
-      })),
+// 백엔드 미배선/실패 시 폴백 목업(순위만). 언어 예시는 문서 예시(Python 3→1위)와 동일.
+const RANK_MOCK: Record<RankCategory, RankHistory> = {
+  language: {
+    years: [2022, 2023, 2024, 2025, 2026],
+    skills: [
+      { name: 'Python', ranks: [3, 3, 2, 2, 1] },
+      { name: 'JavaScript', ranks: [1, 1, 1, 1, 2] },
+      { name: 'Java', ranks: [2, 2, 3, 3, 3] },
+      { name: 'TypeScript', ranks: [5, 4, 4, 4, 4] },
+      { name: 'Go', ranks: [4, 5, 5, 5, 5] },
     ],
-  }), [dom, domLines, globalLines, crossoverIdx])
+  },
+  backend: {
+    years: [2022, 2023, 2024, 2025, 2026],
+    skills: [
+      { name: 'Spring', ranks: [1, 1, 1, 1, 1] },
+      { name: 'Node.js', ranks: [3, 3, 2, 2, 2] },
+      { name: '.NET', ranks: [2, 2, 3, 3, 4] },
+      { name: 'Django', ranks: [4, 4, 4, 4, 3] },
+      { name: 'NestJS', ranks: [5, 5, 5, 5, 5] },
+    ],
+  },
+  frontend: {
+    years: [2022, 2023, 2024, 2025, 2026],
+    skills: [
+      { name: 'React', ranks: [1, 1, 1, 1, 1] },
+      { name: 'Vue', ranks: [2, 2, 2, 3, 3] },
+      { name: 'Next.js', ranks: [4, 4, 3, 2, 2] },
+      { name: 'Angular', ranks: [3, 3, 4, 4, 4] },
+      { name: 'Svelte', ranks: [5, 5, 5, 5, 5] },
+    ],
+  },
+  db: {
+    years: [2022, 2023, 2024, 2025, 2026],
+    skills: [
+      { name: 'MySQL', ranks: [1, 1, 1, 1, 1] },
+      { name: 'Oracle', ranks: [2, 2, 3, 3, 4] },
+      { name: 'PostgreSQL', ranks: [4, 4, 2, 2, 2] },
+      { name: 'Redis', ranks: [3, 3, 4, 4, 3] },
+      { name: 'MariaDB', ranks: [5, 5, 5, 5, 5] },
+    ],
+  },
+}
+
+type Overtake = { x: number; y: number; key: string }
+
+// 연속한 두 연도 사이 A·B 순위가 뒤바뀌는(선이 교차하는) 지점을 찾는다.
+function computeOvertakes(data: RankHistory, xOf: (i: number) => number, yOf: (r: number) => number): Overtake[] {
+  const out: Overtake[] = []
+  const seen = new Set<string>()
+  const s = data.skills
+  for (let a = 0; a < s.length; a += 1) {
+    for (let b = a + 1; b < s.length; b += 1) {
+      for (let i = 0; i < data.years.length - 1; i += 1) {
+        const ai = s[a].ranks[i], aj = s[a].ranks[i + 1], bi = s[b].ranks[i], bj = s[b].ranks[i + 1]
+        if (ai == null || aj == null || bi == null || bj == null) continue
+        const d0 = ai - bi, d1 = aj - bj
+        if (d0 === 0 || d1 === 0 || (d0 < 0) === (d1 < 0)) continue // 순서가 안 바뀜 → 교차 아님
+        const yA0 = yOf(ai), yA1 = yOf(aj), yB0 = yOf(bi), yB1 = yOf(bj)
+        const denom = (yA1 - yA0) - (yB1 - yB0)
+        const t = denom !== 0 ? Math.max(0, Math.min(1, (yB0 - yA0) / denom)) : 0.5
+        const x0 = xOf(i), x1 = xOf(i + 1)
+        const cx = x0 + t * (x1 - x0)
+        const cy = yA0 + t * (yA1 - yA0)
+        const key = `${Math.round(cx / 12)}:${Math.round(cy / 12)}`
+        if (seen.has(key)) continue
+        seen.add(key)
+        out.push({ x: cx, y: cy, key })
+      }
+    }
+  }
+  return out
+}
+
+// 최신까지 순위가 가장 많이 오른 기술(테이크어웨이용). 없으면 null.
+function bestRiser(data: RankHistory): { name: string; from: number; to: number } | null {
+  let best: { name: string; from: number; to: number } | null = null
+  for (const sk of data.skills) {
+    const first = sk.ranks.find((r) => r != null)
+    const last = [...sk.ranks].reverse().find((r) => r != null)
+    if (first == null || last == null) continue
+    const imp = first - last
+    if (imp > 0 && (best == null || imp > best.from - best.to)) best = { name: sk.name, from: first, to: last }
+  }
+  return best
+}
+
+function bumpTip(data: RankHistory, name: string): string {
+  const sk = data.skills.find((x) => x.name === name)
+  if (!sk) return ''
+  return data.years
+    .map((yr, i) => (sk.ranks[i] != null ? `${yr}년 ${sk.ranks[i]}위` : null))
+    .filter(Boolean)
+    .join(' · ')
+}
+
+function BumpChart({ data }: { data: RankHistory }) {
+  const [hovered, setHovered] = useState<string | null>(null)
+  const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null)
+  // 폭은 컨테이너에 맞춰 측정하고 높이는 고정한다. SVG를 aspect-lock(height:auto)으로 두면
+  // 넓은 카드에서 세로로 늘어나 아래 위젯을 침범한다 — 고정 높이 박스에 가두고 폭만 채운다.
+  const wrapRef = useRef<HTMLDivElement>(null)
+  const [width, setWidth] = useState(680)
+  useEffect(() => {
+    const el = wrapRef.current
+    if (!el) return
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect.width
+      if (w) setWidth(w)
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
+  const years = data.years
+  const nY = years.length
+  const H = 232
+  const W = Math.max(width, 320), padL = 18, padR = 104, padT = 26, padB = 26
+  const plotW = W - padL - padR, plotH = H - padT - padB
+  const allRanks = data.skills.flatMap((sk) => sk.ranks.filter((r): r is number => r != null))
+  const maxRank = Math.max(1, ...allRanks)
+  const xOf = (i: number) => (nY <= 1 ? padL + plotW / 2 : padL + (i / (nY - 1)) * plotW)
+  const yOf = (rank: number) => (maxRank <= 1 ? padT + plotH / 2 : padT + ((rank - 1) / (maxRank - 1)) * plotH)
+
+  const lines = data.skills
+    .map((sk) => {
+      const pts = sk.ranks
+        .map((r, i) => (r == null ? null : { i, x: xOf(i), y: yOf(r) }))
+        .filter((p): p is { i: number; x: number; y: number } => p != null)
+      // null로 끊긴 구간은 별도 세그먼트로 나눠 선이 끊기게 한다.
+      const runs: Array<Array<{ x: number; y: number }>> = []
+      let run: Array<{ x: number; y: number }> = []
+      let prevI = -2
+      for (const p of pts) {
+        if (p.i === prevI + 1) run.push({ x: p.x, y: p.y })
+        else { if (run.length) runs.push(run); run = [{ x: p.x, y: p.y }] }
+        prevI = p.i
+      }
+      if (run.length) runs.push(run)
+      return { name: sk.name, color: colorForSkill(sk.name), pts, runs, last: pts[pts.length - 1] ?? null }
+    })
+    .filter((l) => l.pts.length > 0)
+
+  const overtakes = useMemo(() => computeOvertakes(data, xOf, yOf), [data, W]) // eslint-disable-line react-hooks/exhaustive-deps
+  const dim = (name: string) => hovered != null && hovered !== name
 
   return (
-    <ReactECharts option={option} style={{ height: 250 }} notMerge />
+    <div
+      ref={wrapRef}
+      className="dmkt2__bump"
+      style={{ position: 'relative', width: '100%', height: H }}
+      onMouseLeave={() => { setHovered(null); setCursor(null) }}
+    >
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        width={W}
+        height={H}
+        style={{ display: 'block' }}
+        role="img"
+        aria-label={`연도별 순위 변화 범프 차트. ${data.skills.map((s) => s.name).join(', ')}`}
+        onMouseMove={(e) => setCursor({ x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY })}
+      >
+        {Array.from({ length: maxRank }, (_, k) => k + 1).map((r) => (
+          <line key={`g${r}`} x1={padL} x2={padL + plotW} y1={yOf(r)} y2={yOf(r)} stroke="#eef1f6" strokeWidth={1} />
+        ))}
+        {Array.from({ length: maxRank }, (_, k) => k + 1).map((r) => (
+          <text key={`yl${r}`} x={padL - 5} y={yOf(r) + 3} textAnchor="end" fontFamily={FONT} fontSize={9} fill="#a1a1aa">{r}</text>
+        ))}
+        {years.map((yr, i) => (
+          <text key={`x${yr}`} x={xOf(i)} y={H - 9} textAnchor="middle" fontFamily={FONT} fontSize={11} fontWeight={700} fill="#43454c">{yr}</text>
+        ))}
+
+        {lines.map((l) => {
+          const stroke = dim(l.name) ? '#c2c6cc' : l.color
+          const active = hovered === l.name
+          return (
+            <g
+              key={l.name}
+              opacity={dim(l.name) ? 0.25 : 1}
+              style={{ transition: 'opacity 200ms', cursor: 'pointer' }}
+              onMouseEnter={() => setHovered(l.name)}
+              onMouseLeave={() => setHovered(null)}
+            >
+              {l.runs.map((run, ri) => (
+                <polyline key={`hit${ri}`} points={run.map((p) => `${p.x},${p.y}`).join(' ')} fill="none" stroke="transparent" strokeWidth={16} style={{ pointerEvents: 'stroke' }} />
+              ))}
+              {l.runs.map((run, ri) => (
+                <polyline
+                  key={ri}
+                  points={run.map((p) => `${p.x},${p.y}`).join(' ')}
+                  fill="none"
+                  stroke={stroke}
+                  strokeWidth={active ? 3.4 : 2.6}
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                  style={{ transition: 'stroke 200ms, stroke-width 200ms' }}
+                />
+              ))}
+              {l.pts.map((p) => (
+                <circle key={p.i} cx={p.x} cy={p.y} r={active ? 4.6 : 3.6} fill="#fff" stroke={stroke} strokeWidth={2} style={{ transition: 'stroke 200ms, r 200ms' }} />
+              ))}
+              {l.last && (
+                <text x={l.last.x + 9} y={l.last.y + 3.5} fontFamily={FONT} fontSize={11} fontWeight={700} fill={stroke} style={{ transition: 'fill 200ms', pointerEvents: 'none' }}>
+                  {l.name}
+                </text>
+              )}
+            </g>
+          )
+        })}
+
+        {overtakes.map((o) => (
+          <g key={o.key} opacity={hovered ? 0.12 : 1} style={{ transition: 'opacity 200ms', pointerEvents: 'none' }}>
+            <rect x={o.x - 15} y={o.y - 21} width={30} height={15} rx={7.5} fill="#e7f3ec" stroke="#bfe0cd" />
+            <text x={o.x} y={o.y - 10.5} textAnchor="middle" fontFamily={FONT} fontSize={9} fontWeight={800} fill="#166534">추월</text>
+          </g>
+        ))}
+      </svg>
+
+      {hovered && cursor && (
+        <div
+          className="dmkt2__bump-tip"
+          style={{
+            position: 'absolute', left: cursor.x + 14, top: cursor.y + 14, pointerEvents: 'none',
+            maxWidth: 240, background: '#101114', color: '#fff', borderRadius: 8, padding: '7px 10px',
+            fontSize: 11, fontWeight: 600, lineHeight: 1.5, boxShadow: '0 6px 20px rgba(0,0,0,0.22)', zIndex: 5,
+          }}
+        >
+          <b style={{ color: colorForSkill(hovered) }}>{hovered}</b>
+          <div style={{ color: 'rgba(255,255,255,0.82)' }}>{bumpTip(data, hovered)}</div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export function DemandRaceChart({ right }: { pool: PoolChoice; right?: ReactNode }) {
+  const [category, setCategory] = useState<RankCategory>('language')
+  const [data, setData] = useState<RankHistory | null>(null)
+
+  // 탭(category) 변경 시 rank-history를 다시 fetch한다. 실패/빈 결과는 목업으로 폴백.
+  useEffect(() => {
+    let cancelled = false
+    marketApi.skillRankHistory({ category }).then((r) => {
+      if (cancelled) return
+      setData(r.skills.length > 0 ? r : null)
+    }).catch(() => { if (!cancelled) setData(null) })
+    return () => { cancelled = true }
+  }, [category])
+
+  const active = RANK_TABS.find((t) => t.key === category)!
+  const view = data ?? RANK_MOCK[category]
+  const takeaway = useMemo(() => bestRiser(view), [view])
+  const lastYear = view.years[view.years.length - 1]
+
+  return (
+    <>
+      <SectionHeader
+        title="연도별 수요 레이스"
+        hint={active.hint}
+        right={(
+          <div className="dmkt2__race-tools">
+            <div className="wow-seg dmkt2__race-filter" role="group" aria-label="기술 분류">
+              {RANK_TABS.map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  className={`wow-seg__btn${category === item.key ? ' on' : ''}`}
+                  aria-pressed={category === item.key}
+                  onClick={() => setCategory(item.key)}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+            {right}
+          </div>
+        )}
+      />
+      <p className="dmkt2__takeaway">
+        {view.years[0]}-{lastYear} 순위 변동
+        {takeaway && <> · <b className="dmkt2__takeaway-up">{takeaway.name} {takeaway.from}위→{takeaway.to}위</b></>}
+      </p>
+      <BumpChart data={view} />
+    </>
   )
 }
 
@@ -1633,15 +1925,13 @@ function useCareerLevelDistribution(): { value: CareerLevelPayload; isLive: bool
   useEffect(() => {
     let cancelled = false
     marketApi.newcomerGate().then((r) => {
-      if (cancelled || !r.items.length) return
-      // 상위 기술별 공고는 서로 겹치므로 단순 합계가 아니라 공고 수 가중 평균을 쓴다.
-      const totalWeight = r.items.reduce((sum, item) => sum + item.postings, 0) || 1
-      const newcomerPct = Math.round(
-        r.items.reduce((sum, item) => sum + item.open_rate * item.postings, 0) / totalWeight * 10,
-      ) / 10
+      if (cancelled || !r.overall.total_postings) return
+      // 공고 단위(DISTINCT) 비율을 그대로 쓴다 — 예전 상위 15개 스킬 가중평균은 다중 스킬
+      // 공고를 중복 집계하고 표본을 상위 스킬로 편향시켜 N과 다른 모집단이 됐다(백엔드 overall로 교체).
+      const newcomerPct = r.overall.newcomer_pct
       setLive({
         newcomerPct, experiencedPct: Math.round((100 - newcomerPct) * 10) / 10,
-        sample_size: r.sample_size, as_of: r.as_of,
+        sample_size: r.overall.total_postings, as_of: r.as_of,
       })
     }).catch(() => undefined)
     return () => { cancelled = true }
@@ -1685,11 +1975,95 @@ export function MarketSkillUnlockWidget() {
 }
 
 /* ────────────────────────────────────────────────────────────────
+   ②-d 함께 요구되는 기술 (스택 조합 인사이트) — What-if("추가하면 +N건")를 대체.
+   GET /stats/cooccurrence의 조건부 비율(co_rate)로 "선택 기술과 함께 요구되는 Top5"를 보여주고,
+   POST /insights/stack의 LLM 한 줄(숫자는 DB 집계만 주입)을 얹는다. 절대 건수가 아니라 비율이라
+   수집 규모 오염에 강하고, What-if("다음에 뭘 배우나")와 역할이 분리된다.
+   ──────────────────────────────────────────────────────────────── */
+const STACK_DEFAULT_SKILLS = ['Python', 'JavaScript', 'Java', 'React', 'Spring', 'Node.js', 'SQL', 'AWS', 'Docker', 'TypeScript']
+
+type StackCombo = { skill: string; coRate: number }
+
+export function StackComboInsightWidget({ pool = 'domestic' }: { pool?: PoolChoice }) {
+  const { activeResume } = useResumesState()
+  const ownedSkills = useMemo(() => activeResume?.skills ?? [], [activeResume])
+  // 기준 기술 옵션 — 이력서 스택을 앞에 두고(자동 선택), 없으면 대표 기술로 폴백.
+  const options = useMemo(() => [...new Set([...ownedSkills, ...STACK_DEFAULT_SKILLS])].slice(0, 14), [ownedSkills])
+  const [base, setBase] = useState('')
+  useEffect(() => {
+    if (!base && options.length) setBase(options[0])
+  }, [options, base])
+
+  const [combos, setCombos] = useState<StackCombo[] | null>(null)
+
+  // 조건부 비율 막대 — 기존 co-occurrence 엔드포인트 재사용. 카드를 넘지 않게 상위 4개만.
+  useEffect(() => {
+    if (!base) return
+    let cancelled = false
+    setCombos(null)
+    marketApi.cooccurrence({ pool: poolToApi(pool), skill: base, top_k: 12 }).then((r) => {
+      if (cancelled) return
+      const items = r.links
+        .map((l) => ({ skill: l.source === base ? l.target : l.source, coRate: normalizeCooccurrenceRate(l.co_rate) }))
+        .filter((i) => i.skill !== base)
+        .sort((a, b) => b.coRate - a.coRate)
+        .slice(0, 4)
+      setCombos(items)
+    }).catch(() => { if (!cancelled) setCombos([]) })
+    return () => { cancelled = true }
+  }, [base, pool])
+
+  const items = combos ?? []
+  const maxRate = Math.max(...items.map((i) => i.coRate), 1)
+
+  return (
+    <div className="dcard wow-card">
+      <SectionHeader
+        title="함께 요구되는 기술"
+        hint="스택 조합 인사이트"
+        right={(
+          <select className="stackins__select" value={base} onChange={(e) => setBase(e.target.value)} aria-label="기준 기술 선택">
+            {options.map((o) => <option key={o} value={o}>{o}</option>)}
+          </select>
+        )}
+      />
+      <div className="wow-body">
+        {combos == null ? (
+          <div className="stackins__bars" aria-hidden>
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="stackins__row">
+                <span className="stackins__skel" style={{ width: 54 }} />
+                <span className="stackins__tr"><i style={{ width: `${60 - i * 14}%`, background: '#e6e9ef' }} /></span>
+                <span className="stackins__skel" style={{ width: 30 }} />
+              </div>
+            ))}
+          </div>
+        ) : items.length === 0 ? (
+          <div className="stackins__muted">{base} 공고와 함께 요구되는 기술 데이터가 아직 없어요.</div>
+        ) : (
+          <div className="stackins__bars">
+            {items.map((it) => (
+              <div key={it.skill} className="stackins__row">
+                <span className="stackins__k" title={it.skill}>{it.skill}</span>
+                <span className="stackins__tr"><i style={{ width: `${(it.coRate / maxRate) * 100}%` }} /></span>
+                <span className="stackins__v tnum">{it.coRate}%</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      <AsOf asOf={new Date().toISOString().slice(0, 10)} note={`${base} 공고 기준 · 조건부 비율(함께 요구된 비율)`} />
+    </div>
+  )
+}
+
+/* ────────────────────────────────────────────────────────────────
    ③-b 개념 → 기술 Sankey — conceptReal.json(posting_concept 실측, 19.6만행)을 그대로 재사용.
    신규 concept-tech 엔드포인트가 붙기 전까지는 이 실측 목이 사실상 라이브 수준의 정확도.
    ──────────────────────────────────────────────────────────────── */
 const CONCEPT_FOR_SANKEY = (conceptRaw as unknown as { concepts: ConceptItem[] }).concepts
 const CONCEPT_SANKEY_FALLBACK = buildConceptSankeyFallback(CONCEPT_FOR_SANKEY)
+const OMITTED_SANKEY_CONCEPT = '클라우드 네이티브'
 
 // 개념 노드 구분용 저채도 팔레트(모노톤 계열에 어울리는 뮤트 톤 — 원색/쨍한 색 금지).
 // 개념마다 하나씩 배정하고, 그 개념에서 나가는 링크는 같은 색을 낮은 opacity로 물려받아
@@ -1697,8 +2071,10 @@ const CONCEPT_SANKEY_FALLBACK = buildConceptSankeyFallback(CONCEPT_FOR_SANKEY)
 const SANKEY_CONCEPT_RGB: Array<[number, number, number]> = [
   [107, 124, 156], // 뮤트 슬레이트 블루
   [127, 156, 134], // 뮤트 세이지 그린
+  [133, 145, 173], // 뮤트 페리윙클
   [165, 138, 111], // 뮤트 웜 토프
   [154, 129, 153], // 뮤트 모브
+  [129, 151, 121], // 뮤트 올리브
   [111, 149, 153], // 뮤트 틸
 ]
 const SANKEY_TECH_COLOR = '#aab0bb' // 중립 회색(기술 노드)
@@ -1717,13 +2093,24 @@ export function ConceptTechSankeyWidget({ pool }: { pool: PoolChoice }) {
     return () => { cancelled = true }
   }, [pool])
   const raw = live ?? CONCEPT_SANKEY_FALLBACK
-  const data = useMemo(() => curateConceptSankey(raw, CONCEPT_SANKEY_FALLBACK), [raw])
+  const data = useMemo(
+    () => omitConceptFromSankey(
+      curateConceptSankey(raw, CONCEPT_SANKEY_FALLBACK),
+      OMITTED_SANKEY_CONCEPT,
+    ),
+    [raw],
+  )
+  const visibleConceptNames = useMemo(
+    () => data.nodes.filter((node) => node.kind === 'concept').map((node) => node.name),
+    [data],
+  )
 
   // 개념 노드 순서대로 저채도 색을 배정 — 노드 색 + 링크 tint 색의 단일 출처.
   const conceptColor = useMemo(() => {
     const map = new Map<string, [number, number, number]>()
-    data.nodes.filter((n) => n.kind === 'concept').forEach((n, i) => {
-      map.set(n.name, SANKEY_CONCEPT_RGB[i % SANKEY_CONCEPT_RGB.length])
+    data.nodes.filter((n) => n.kind === 'concept').forEach((n) => {
+      const colorIndex = CURATED_SANKEY_CONCEPTS.indexOf(n.name as typeof CURATED_SANKEY_CONCEPTS[number])
+      map.set(n.name, SANKEY_CONCEPT_RGB[Math.max(0, colorIndex) % SANKEY_CONCEPT_RGB.length])
     })
     return map
   }, [data])
@@ -1738,16 +2125,26 @@ export function ConceptTechSankeyWidget({ pool }: { pool: PoolChoice }) {
       },
     },
     series: [{
-      type: 'sankey', layout: 'none', layoutIterations: 0, nodeGap: 18, nodeWidth: 14,
-      left: '25%', right: '18%', top: 14, bottom: 14,
+      type: 'sankey', layout: 'none', layoutIterations: 0, nodeGap: SANKEY_CHART_LAYOUT.nodeGap, nodeWidth: 14,
+      left: SANKEY_CHART_LAYOUT.left, right: SANKEY_CHART_LAYOUT.right,
+      top: SANKEY_CHART_LAYOUT.top, bottom: SANKEY_CHART_LAYOUT.bottom,
       emphasis: { focus: 'adjacency' },
       data: data.nodes.map((n) => {
         const c = conceptColor.get(n.name)
+        const conceptIndex = visibleConceptNames.indexOf(n.name)
+        const conceptLocalY = conceptIndex >= 0
+          ? 0.18 + conceptIndex * (0.63 / Math.max(1, visibleConceptNames.length - 1))
+          : undefined
         return {
           name: n.name,
-          itemStyle: { color: n.kind === 'concept' && c ? sankeyRgb(c) : SANKEY_TECH_COLOR, borderColor: '#fff' },
+          localY: conceptLocalY,
+          itemStyle: {
+            color: n.kind === 'concept' && c ? sankeyRgb(c) : SANKEY_TECH_COLOR,
+            borderColor: n.kind === 'concept' && c ? sankeyRgb(c) : '#fff',
+            borderWidth: n.kind === 'concept' ? 2 : 1,
+          },
           label: {
-            fontFamily: FONT, fontSize: 12, fontWeight: 700, color: '#43454c',
+            fontFamily: FONT, fontSize: SANKEY_CHART_LAYOUT.labelFontSize, fontWeight: 700, color: '#43454c',
             position: n.kind === 'concept' ? 'left' : 'right',
           },
         }
@@ -1755,13 +2152,21 @@ export function ConceptTechSankeyWidget({ pool }: { pool: PoolChoice }) {
       // 링크는 출발 개념의 색을 낮은 opacity로 tint — 어느 흐름이 어느 개념에서 나왔는지 색으로 추적.
       links: data.links.map((l) => {
         const c = conceptColor.get(l.source)
-        return { ...l, lineStyle: { color: c ? sankeyRgba(c, 0.4) : 'rgba(170, 176, 187, 0.35)' } }
+        return {
+          ...l,
+          lineStyle: {
+            color: c ? sankeyRgb(c) : 'rgb(170, 176, 187)',
+            opacity: 0.56,
+            borderWidth: 1,
+            borderColor: c ? sankeyRgba(c, 0.42) : 'rgba(170, 176, 187, 0.42)',
+          },
+        }
       }),
       lineStyle: { curveness: 0.5 },
     }],
-  }), [data, conceptColor])
+  }), [data, conceptColor, visibleConceptNames])
 
-  return <ReactECharts option={option} style={{ height: 420 }} notMerge />
+  return <ReactECharts option={option} style={{ height: SANKEY_CHART_LAYOUT.height }} notMerge />
 }
 
 /* ────────────────────────────────────────────────────────────────
@@ -1848,6 +2253,9 @@ export function MarketChangeStrip() {
   const py = YEARLY_MOCK.series.find((s) => s.canonical === 'Python')
   const jv = YEARLY_MOCK.series.find((s) => s.canonical === 'Java')
   const overtaken = !!(py && jv && py.shares[py.shares.length - 1] > jv.shares[jv.shares.length - 1])
+  const languageShift = py && jv
+    ? `Python ${py.shares[py.shares.length - 1].toFixed(1)}% ${overtaken ? '>' : '<'} Java ${jv.shares[jv.shares.length - 1].toFixed(1)}%`
+    : 'Python 급부상 중'
   const risingFromZero = useMemo(() => (
     [...YEARLY_MOCK.series].filter((s) => s.shares[0] < 1 && s.delta > 0).sort((a, b) => b.delta - a.delta).slice(0, 3)
   ), [])
@@ -1865,11 +2273,11 @@ export function MarketChangeStrip() {
       <div className="mktstrip__cells">
         <div className="mktstrip__cell">
           <div className="mktstrip__lbl">언어 판도</div>
-          <div className="mktstrip__v2">{overtaken ? <><span className="mktstrip__up">↗</span> Python, Java 추월</> : 'Python 급부상 중'}</div>
+          <div className="mktstrip__v2"><span className="mktstrip__up">↗</span> {languageShift}</div>
         </div>
         <div className="mktstrip__cell">
           <div className="mktstrip__lbl">급부상 (무→상위)</div>
-          <div className="mktstrip__v2"><span className="mktstrip__up">↗</span> {risingFromZero.map((r) => r.canonical).join(' · ')}</div>
+          <div className="mktstrip__v2"><span className="mktstrip__up">↗</span> {risingFromZero.map((r) => `${r.canonical} +${r.delta.toFixed(1)}%p`).join(' · ')}</div>
         </div>
         <div className="mktstrip__cell">
           <div className="mktstrip__lbl">판도 선두</div>

@@ -306,17 +306,41 @@ export default function JobDetail() {
   if (!p) {
     if (isDesktop && detailLoading) {
       return (
-        <div className="stage stage--app">
-          <PhoneFrame app stage="purple" bare screenBg={t.screenBg} statusTheme={t.statusTheme} homeIndicator="none">
-            <div className="crd" style={themeVars(t)}>
-              <div className="crd-skeleton" aria-busy="true" aria-live="polite">
-                <span className="crd-skel crd-skel--lg" style={{ width: '60%' }} />
-                <span className="crd-skel" style={{ width: '85%' }} />
-                <span className="crd-skel" style={{ width: '40%' }} />
+        <div className="dsub djd-loading" aria-busy="true" aria-live="polite">
+          <div className="djd">
+            <div className="djd-main crd">
+              <div className="crd-skeleton">
+                <div className="djd-loading__head">
+                  <span className="crd-skel djd-loading__logo" />
+                  <span className="djd-loading__titles">
+                    <span className="crd-skel" />
+                    <span className="crd-skel crd-skel--lg" />
+                  </span>
+                </div>
+                <span className="crd-skel" style={{ width: '34%', marginTop: 24 }} />
                 <span className="crd-skel crd-skel--block" />
+                <span className="crd-skel crd-skel--block" style={{ height: 180 }} />
               </div>
             </div>
-          </PhoneFrame>
+            <aside className="djd-side">
+              <div className="djd-card djd-loading__side-card crd-skeleton">
+                <span className="crd-skel djd-loading__score" />
+                <span className="crd-skel" />
+                <span className="crd-skel" style={{ width: '72%' }} />
+              </div>
+              <div className="djd-card djd-loading__side-card crd-skeleton">
+                <span className="crd-skel" />
+                <span className="crd-skel" />
+                <span className="crd-skel" style={{ width: '58%' }} />
+              </div>
+            </aside>
+            <aside className="djd-reco">
+              <div className="djd-card djd-loading__reco crd-skeleton">
+                <span className="crd-skel crd-skel--lg" style={{ width: '52%' }} />
+                <span className="crd-skel crd-skel--block" style={{ height: 210 }} />
+              </div>
+            </aside>
+          </div>
         </div>
       )
     }
