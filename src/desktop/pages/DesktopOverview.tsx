@@ -1,7 +1,7 @@
 import { useMemo, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ReactECharts from 'echarts-for-react'
-import { Sparkles, FileText } from 'lucide-react'
+import { Sparkles, FileText, Info } from 'lucide-react'
 import {
   ActivityRings, useCountUp, SectionHeader, CoverageHistogram,
   PreviewBadge, WidgetSettingsMenu, type RingMetric,
@@ -32,6 +32,17 @@ function daysSince(dateStr: string, ref: string) {
   if (!dateStr) return null
   const d = Math.round((new Date(ref).getTime() - new Date(dateStr).getTime()) / 86400000)
   return d >= 0 ? d : null
+}
+
+/** 공용 Tooltip 컴포넌트가 없어 네이티브 hover 패널로 가볍게 구현한 정보 아이콘.
+ * title 속성도 함께 달아 스크린리더·기본 브라우저 툴팁으로도 내용이 전달되게 한다. */
+function InfoTip({ text }: { text: string }) {
+  return (
+    <span className="dov__info-tip" tabIndex={0} title={text}>
+      <Info size={13} />
+      <span className="dov__info-tip-panel">{text}</span>
+    </span>
+  )
 }
 
 function LiveIndustryRadar({ data }: { data: PivotData }) {
@@ -77,6 +88,7 @@ function LiveCoverageHistogram({ data }: { data: DistributionData }) {
     <div className="kit-hist">
       <div className="kit-hist__headline">
         국내 공고 {data.total.toLocaleString()}건 중 <b>{data.matched.toLocaleString()}건</b>이 기준을 넘어요
+        <InfoTip text={`기준 = 보유 기술 매칭률 ${data.threshold}% 이상`} />
         <div className="kit-hist__sample">내 백분위 {data.my_percentile}%</div>
       </div>
       <div className="kit-hist__chart">
@@ -248,7 +260,7 @@ export default function DesktopOverview() {
                       <div className="dov__hero-bottom">
                         <div className="dov__hero-num">{covNum}<span>%</span></div>
                         <div className="dov__hero-caption">
-                          국내 공고 <b>{scoreData.value.domesticTotal.toLocaleString()}건</b> 중 <b>{scoreData.value.applicable.toLocaleString()}건</b> 지원 가능
+                          국내 공고 <b>{scoreData.value.domesticTotal.toLocaleString()}건</b> · 지원 가능 <b>{scoreData.value.applicable.toLocaleString()}건</b>
                         </div>
                       </div>
                     </>
@@ -274,7 +286,12 @@ export default function DesktopOverview() {
                 <div className="dov__hero-right">
                   {kpiTiles.map((tile) => (
                     <div key={tile.id} className="dov__hero-stat">
-                      <span className="dov__hero-stat-label">{tile.label}</span>
+                      <span className="dov__hero-stat-label">
+                        {tile.label}
+                        {tile.id === 'hero-applicable' && (
+                          <InfoTip text="마감되지 않았고 보유 기술 매칭률 50% 이상인 공고예요. 경력 연차나 필수/우대 조건은 아직 반영되지 않았어요." />
+                        )}
+                      </span>
                       <span className="dov__hero-stat-num">{tile.value}{tile.unit && <span>{tile.unit}</span>}</span>
                     </div>
                   ))}
