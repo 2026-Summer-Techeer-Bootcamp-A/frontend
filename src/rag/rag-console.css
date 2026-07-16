@@ -409,7 +409,12 @@
 
 .rc__timeline-body { position: relative; display: flex; flex-direction: column; padding-left: 15px; margin-top: 2px; }
 .rc__timeline-row {
-  position: relative; display: grid; grid-template-columns: 1fr auto; column-gap: 8px; align-items: baseline;
+  /* minmax(0, ...)가 핵심 — 그냥 1fr/auto만 쓰면 grid item의 기본 min-width가 콘텐츠
+     전체 폭(min-content)이 되어(특히 white-space: nowrap 라벨은 줄어들 수조차 없다) 라벨이
+     공간을 다 차지해버리고, 오른쪽 meta 칸은 뒤에서 강제로 몇 글자만 겨우 보이게 짜부라진다.
+     min-width: 0으로 두 칸 모두 실제로 줄어들 수 있게 풀어줘야 ellipsis가 의미 있게 동작한다. */
+  position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 46%);
+  column-gap: 8px; align-items: baseline;
   padding: 4px 0; font-size: 12.5px; animation: rc-rise .3s cubic-bezier(0,0,0.2,1) both;
 }
 /* 세로 커넥터 — 각 행의 다음 행까지 이어지는 1px 선분. 도트는 ::after로 그 위에 얹는다. */
@@ -422,12 +427,14 @@
 .rc__timeline-row--done::after { background: #0b0b0c; }
 .rc__timeline-row--active::after { background: #0b0b0c; animation: rc-pulse 1.1s ease-in-out infinite; }
 .rc__timeline-row--error::after { background: #c8382d; }
-.rc__timeline-label { color: #1c1d21; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rc__timeline-label {
+  min-width: 0; color: #1c1d21; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 .rc__timeline-row--pending .rc__timeline-label { color: #a2a6b0; font-weight: 500; }
 .rc__timeline-row--active .rc__timeline-label { color: #1c1d21; }
 .rc__timeline-meta {
-  color: #7c7f88; font-size: 11px; text-align: right; white-space: nowrap; overflow: hidden;
-  text-overflow: ellipsis; max-width: 42%; font-variant-numeric: tabular-nums;
+  min-width: 0; color: #7c7f88; font-size: 11px; text-align: right; white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; font-variant-numeric: tabular-nums;
 }
 .rc__timeline-row--active .rc__timeline-meta { color: #5b5e66; }
 .rc__timeline-row--error .rc__timeline-label { color: #8f2a22; }

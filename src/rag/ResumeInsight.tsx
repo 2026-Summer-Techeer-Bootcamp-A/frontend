@@ -270,16 +270,11 @@ export default function ResumeInsight() {
         setPool(input.pool)
         setSkills(input.skills)
         setSelectedMemo(input.memo)
-        setResult(null)
-        setStatus('idle')
-        setErrorMsg('')
-        setShowSample(false)
-        setVizStatus('loading')
-
-        const initialViz = await loadVizData(input, true)
-        if (cancelled) return
-        setViz(initialViz)
-        setVizStatus(initialViz ? 'done' : 'error')
+        // 기본 이력서 자동 연동도 수동 선택(selectSavedResume)과 동일하게, 스킬셋 로드가
+        // 끝난 즉시 자동으로 분석까지 실행한다 — 예전에는 이 경로만 loadVizData를 직접 불러
+        // 시각화는 채워지되 status가 'idle'에 멈춰 있었고, 그 결과 헤더가 "입력을 기다리는
+        // 중"에 고정되는 버그가 있었다.
+        runAnalysis(input)
       } catch (err: unknown) {
         if (!cancelled) {
           setResumeLoadError(err instanceof Error ? err.message : '저장된 이력서를 불러오지 못했어요.')
@@ -354,6 +349,14 @@ export default function ResumeInsight() {
   // 실데이터가 있으면(로그인 없이도 skillShare는 공개 API라 뜰 수 있다) 그걸 쓰고,
   // 없으면(분석 전 idle이거나 실패) 항상 예시 데이터로 채운 뒤 블러 또는 뱃지로 구분한다.
   const hasLiveViz = vizStatus === 'done' && !!viz && (viz.demand.length > 0 || viz.coverage.totalCount > 0)
+  // 로그인 + 보유 기술이 있는 이력서라면 실데이터를 받을 자격이 있다 — 이 경우 아직 로딩 중이거나
+  // 실패했더라도 "로그인하고 이력서를 불러오면" CTA를 보여주면 안 된다(이미 했으니까). 블러 자체는
+  // 로딩 스켈레톤 대용으로 유지하되, 안내 문구만 상태별로 구분한다.
+  const vizEligible = isAuthed && skills.length > 0
+  // 'idle'은 분석이 막 시작되기 직전(같은 틱) 순간일 뿐이라 로딩 쪽으로 묶는다 —
+  // 그래야 'done'인데도 실제로는 빈 결과인 드문 경우만 "실패" 문구로 정확히 분리된다.
+  const vizPending = vizEligible && !hasLiveViz && (vizStatus === 'loading' || vizStatus === 'idle')
+  const vizFailed = vizEligible && !hasLiveViz && !vizPending
   const revealSample = !hasLiveViz && showSample
   const isBlurred = !hasLiveViz && !showSample
   const vizIsSample = !hasLiveViz
@@ -482,7 +485,24 @@ export default function ResumeInsight() {
                 <GapList items={gapData} sample={vizIsSample} />
               </div>
             </div>
-            {isBlurred && (
+            {isBlurred && vizPending && (
+              <div className="ri__viz-cta" aria-live="polite">
+                <div className="ri__viz-scrim">
+                  <p>내 데이터를 불러오는 중…</p>
+                </div>
+              </div>
+            )}
+            {isBlurred && vizFailed && (
+              <div className="ri__viz-cta">
+                <div className="ri__viz-scrim">
+                  <p>데이터를 불러오지 못했어요.</p>
+                  <button type="button" className="ri__viz-sample-btn" onClick={submit}>
+                    다시 시도
+                  </button>
+                </div>
+              </div>
+            )}
+            {isBlurred && !vizEligible && (
               <div className="ri__viz-cta">
                 <div className="ri__viz-scrim">
                   <p>로그인하고 이력서를 불러오면 내 데이터로 채워져요.</p>
