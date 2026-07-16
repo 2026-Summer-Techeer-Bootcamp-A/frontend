@@ -149,6 +149,8 @@
 .dmkt2__race-tools { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
 .dmkt2__race-filter { flex-wrap: nowrap; }
 .dmkt2__race-filter .wow-seg__btn { white-space: nowrap; }
+.dcard--demand-race .kit-sec { margin: 0 2px 6px; }
+.dcard--demand-race .dmkt2__takeaway { margin: 2px 0 0; }
 
 /* 상위 요구 기술 Top14 바 — 2x1(기본)에서는 상위 8개만, "더 보기"로 14개 전체 펼침 */
 .dmkt2__bars { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
