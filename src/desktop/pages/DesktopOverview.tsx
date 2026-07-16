@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ReactECharts from 'echarts-for-react'
 import { Sparkles, FileText, Info } from 'lucide-react'
@@ -12,14 +12,13 @@ import { LatestJobsTimeline, LearningPathWidget, SkillUnlockWidget } from '../..
 import { useResumesState, getDynamicPostings, calculateCoverage, ddayInfo } from '../../career/state'
 import { getAuthToken, useAuth } from '../../career/authStore'
 import {
-  dashboardApi, type DistributionData, type PivotData,
+  dashboardApi, jobsApi, type DistributionData, type PivotData, type PostingCard,
 } from '../../career/api'
 import { useWidgetData } from '../../career/useWidgetData'
 import { useDashboardConfig, isWidgetHidden, getWidgetSize } from '../../career/dashboardConfig'
 import { DASHBOARD_WIDGETS } from '../../career/widgetCatalog'
 import { useBookmarks } from '../../career/bookmarkStore'
 import data from '../../data/careerData.json'
-import marketData from '../../data/marketData.json'
 import './DesktopOverview.css'
 
 const asOf = data.meta.asOf
@@ -117,11 +116,11 @@ export default function DesktopOverview() {
   // 되어 이력서를 등록해도 대시보드가 미등록으로 취급하는 버그가 있었다.
   const hasResume = resumes.length > 0 && !!activeResume
   const skills = activeResume?.skills ?? []
+  const token = getAuthToken()
   const identity = useMemo(() => {
     const resumeId = Number(activeResume?.id)
-    const token = getAuthToken()
     return Number.isInteger(resumeId) && resumeId > 0 && token ? { resumeId, token } : null
-  }, [activeResume?.id])
+  }, [activeResume?.id, token, user?.id])
   const dashboardRefreshKey = identity ? `${identity.resumeId}:${skills.join('|')}` : 'preview'
 
   const postings = useMemo(() => getDynamicPostings(skills), [skills])
@@ -166,7 +165,52 @@ export default function DesktopOverview() {
     dashboardRefreshKey,
   )
   const pivotData = useWidgetData<PivotData | null>(identity ? () => dashboardApi.pivot(identity) : null, null, dashboardRefreshKey)
-  const shareData = useWidgetData(identity ? () => dashboardApi.skillShare() : null, { items: [] })
+  const [matchedJobs, setMatchedJobs] = useState<PostingCard[]>([])
+  const [matchedJobsLoading, setMatchedJobsLoading] = useState(false)
+
+  useEffect(() => {
+    if (!identity) {
+      setMatchedJobs([])
+      setMatchedJobsLoading(false)
+      return
+    }
+
+    let cancelled = false
+    setMatchedJobs([])
+    setMatchedJobsLoading(true)
+    jobsApi.list({
+      pool: 'domestic',
+      sort: 'match',
+      min_match: 50,
+      resume_id: identity.resumeId,
+      page: 1,
+      page_size: 3,
+    }, identity.token)
+      .then((result) => {
+        if (!cancelled) setMatchedJobs(result.items)
+      })
+      .catch(() => {
+        if (!cancelled) setMatchedJobs([])
+      })
+      .finally(() => {
+        if (!cancelled) setMatchedJobsLoading(false)
+      })
+
+    return () => { cancelled = true }
+  }, [identity, dashboardRefreshKey])
+
+  const matchedJobChart = useMemo(() => (matchedJobs ?? []).map((job) => {
+    const requiredCount = job.skills.length
+    const matchPct = requiredCount > 0
+      ? Math.round(((job.matched_count ?? 0) / requiredCount) * 100)
+      : 0
+    return {
+      label: `${job.company ?? '회사명 미상'} · ${job.title}`,
+      value: matchPct,
+      pct: matchPct,
+      owned: true,
+    }
+  }), [matchedJobs])
   const shownCoverage = Math.round(coverageData.value.coverage_score)
   const shownApplicable = countData.value.total
   const shownTotal = distributionData.value?.total ?? domestic.length
@@ -185,18 +229,6 @@ export default function DesktopOverview() {
   const applicableNum = useCountUp(shownApplicable)
 
   const bookmarkIds = useBookmarks()
-
-  const domesticShare = marketData.skillShare['국내'] as { items: { tech: string; count: number; share: number; owned: boolean }[] }
-  const skillMomentum = useMemo(() => {
-    const live = shareData.source === 'live'
-      ? shareData.value.items.map((item) => ({ tech: item.canonical, share: item.share * 100 }))
-      : null
-    return (live ?? domesticShare.items)
-      .filter((item) => skills.includes(item.tech))
-      .sort((a, b) => b.share - a.share)
-      .slice(0, 6)
-  }, [shareData.source, shareData.value, skills])
-  const maxMomentumShare = Math.max(...skillMomentum.map((i) => i.share), 1)
 
   // 위젯 리사이즈 헬퍼 — 시장 페이지(DesktopMarket)와 동일 패턴.
   const wsize = (id: string) => {
@@ -300,7 +332,7 @@ export default function DesktopOverview() {
             </div>
           )}
 
-          {/* Zone 2 — 내 시장 진단: 업종 적합도 · 커버리지 분포 · 내 스킬 시장 모멘텀 */}
+          {/* Zone 2 — 내 시장 진단: 업종 적합도 · 커버리지 분포 · 지금 지원할 만한 공고 */}
           {secMarketVisible && (
             <section className="dov__sec">
               <h2 className="dov__sec-title">내 시장 진단</h2>
@@ -336,17 +368,16 @@ export default function DesktopOverview() {
                 )}
                 {!isWidgetHidden('dashboard', 'skill-momentum') && (
                   <div className="dov__card-item">
-                    <section className="dcard">
-                      <SectionHeader title="내 스킬 시장 모멘텀" hint="국내 · 점유율" right={!hasResume && <PreviewBadge />} />
-                      {skills.length === 0 ? (
-                        <div className="dov__empty">이력서를 등록하면 내 스킬의 시장 모멘텀을 봐요.</div>
-                      ) : skillMomentum.length === 0 ? (
-                        <div className="dov__empty">시장 데이터에서 일치하는 보유 기술이 없어요.</div>
-                      ) : (
-                        <HBars
-                          items={skillMomentum.map((i) => ({ label: i.tech, value: i.share, pct: (i.share / maxMomentumShare) * 100, owned: true }))}
-                          unit="%"
-                        />
+                    <section className="dcard" aria-busy={matchedJobsLoading}>
+                      <SectionHeader title="지금 지원할 만한 공고" hint="내 기술 50%+ · 국내" />
+                      {matchedJobs.length > 0 && (
+                        <div className="dov__matched-jobs">
+                          <HBars
+                            items={matchedJobChart}
+                            unit="%"
+                            onClick={(index) => navigate(`/job/${matchedJobs[index].id}`)}
+                          />
+                        </div>
                       )}
                     </section>
                   </div>
