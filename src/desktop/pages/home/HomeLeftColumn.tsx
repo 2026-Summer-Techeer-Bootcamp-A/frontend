@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight } from 'lucide-react'
 import { useAuth } from '../../../career/authStore'
 import { useResumesState } from '../../../career/state'
 import { useBookmarks } from '../../../career/bookmarkStore'
@@ -90,19 +89,6 @@ export default function HomeLeftColumn({ pool = 'all' }: { pool?: 'all' | 'domes
           </div>
         </section>
       )}
-
-      <nav className="hfeed-links card">
-        <button type="button" className="hfeed-links__row" onClick={() => navigate('/jobs')}>
-          <span className="lb">북마크한 공고</span>
-          <span className="ct tnum">{bookmarks.length}</span>
-          <ChevronRight size={16} className="chev" />
-        </button>
-        <button type="button" className="hfeed-links__row" onClick={() => navigate('/jobs')}>
-          <span className="lb">최근 본 공고</span>
-          <span className="ct tnum">{recentViews.length}</span>
-          <ChevronRight size={16} className="chev" />
-        </button>
-      </nav>
 
       <HomeMarketPulse pool={pool} />
     </>

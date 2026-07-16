@@ -58,7 +58,15 @@
   display: flex; align-items: center; gap: 8px;
   border: 1px solid var(--line); border-radius: 11px; padding: 10px 12px; color: var(--c-muted);
 }
-.djobs__search input { flex: 1; min-width: 0; font-size: 13.5px; color: var(--c-ink); }
+.djobs__search input {
+  flex: 1;
+  min-width: 0;
+  font-size: 13.5px;
+  color: var(--c-ink);
+  border: 0;
+  outline: 0;
+  background: transparent;
+}
 .djobs__fld { display: flex; flex-direction: column; gap: 8px; }
 .djobs__fld-l { font-size: 12px; font-weight: 700; color: var(--c-muted); }
 .djobs__sorts { display: flex; gap: 6px; }
@@ -251,27 +259,58 @@
 .dmy__hero-edit:hover { background: rgba(255, 255, 255, 0.22); }
 .dmy__hero-edit:active { transform: scale(0.96); }
 
-/* 2컬럼 본문 */
+/* 2컬럼 본문 — 중복 공고 섹션을 덜어낸 뒤 바로가기가 우측 최상단에 정렬된다. */
 .dmy__body { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; align-items: start; }
 .dmy__main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .dmy__aside { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.dmy__section-card { display: flex; flex-direction: column; min-height: 132px; }
+.dmy__section-card > .kit-sec { align-items: center; }
 
 .dmy__resume { display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; margin-top: 12px; }
 .dmy__resume-ic { flex: none; width: 40px; height: 40px; border-radius: 11px; display: flex; align-items: center; justify-content: center; color: var(--accent-700); background: var(--accent-50); }
+.dmy__resume-add-button {
+  display: inline-flex; align-items: center; gap: 5px;
+  min-height: 32px; padding: 6px 11px;
+  border: 1px solid var(--line); border-radius: 999px;
+  background: var(--c-card); color: var(--c-ink);
+  box-shadow: var(--e1); font-size: 12.5px; font-weight: 700;
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+.dmy__resume-add-button:hover { background: var(--accent-50); }
+.dmy__resume-add-button:active { transform: scale(0.97); }
+.dmy__resume-primary-badge {
+  flex: none; display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 8px; border-radius: 999px;
+  background: var(--accent-50); color: var(--accent-700);
+  font-size: 10px; font-weight: 700; white-space: nowrap;
+}
+.dmy__resume-delete-button {
+  flex: none; width: 32px; height: 32px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--line); border-radius: 9px;
+  background: var(--c-card); color: var(--c-muted);
+}
+.dmy__resume-delete-button:hover { color: #b5342a; border-color: currentColor; }
 
 /* 빈 상태 공용 패턴 — 안내 문구 + 행동 유도 버튼을 한 줄에 배치한다.
    이력서/보유 기술/북마크/최근 본 공고 등 "비어 있지만 다음 행동이 명확한" 자리에서 재사용. */
-.dmy__empty { display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%; margin-top: 12px; }
+.dmy__empty {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px; width: 100%; min-height: 64px; margin-top: 12px;
+}
+.dmy__section-card > .dmy__empty { flex: 1; }
 .dmy__empty span { font-size: 13px; line-height: 1.5; color: var(--c-muted); }
 .dmy__empty-btn {
-  flex: none; font-size: 12.5px; font-weight: 700; color: #fff;
+  flex: none; align-self: center; display: inline-flex; align-items: center; justify-content: center;
+  min-height: 40px; font-size: 12.5px; line-height: 1; font-weight: 700; color: #fff;
   background: var(--c-accent); border-radius: 10px; padding: 9px 15px;
   transition: transform 0.12s ease, opacity 0.12s ease;
 }
 .dmy__empty-btn:hover { opacity: 0.9; }
 .dmy__empty-btn:active { transform: scale(0.96); opacity: 0.85; }
 
-.dmy__skills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.dmy__skills { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+.dmy__section-card > .dmy__skills { flex: 1; }
 .dmy__manage {
   font-size: 12.5px; font-weight: 700; color: var(--accent-700);
   background: var(--accent-50); border-radius: 999px; padding: 6px 12px;
@@ -318,6 +357,45 @@
 
 /* 최근 본 공고 — 컴팩트 리스트 */
 .dmy__recent { display: flex; flex-direction: column; margin-top: 10px; }
+
+/* 상단 공고 요약 카드를 눌렀을 때 여는 목록 */
+.dmy__posting-modal {
+  position: fixed; inset: 0; z-index: 1200;
+  display: grid; place-items: center; padding: 24px;
+  background: rgba(13, 13, 13, 0.42); backdrop-filter: blur(4px);
+}
+.dmy__posting-dialog {
+  width: min(680px, 100%); max-height: min(680px, calc(100dvh - 48px));
+  display: flex; flex-direction: column; overflow: hidden;
+  border: 1px solid var(--line); border-radius: 18px;
+  background: var(--c-card); box-shadow: 0 24px 70px rgba(13, 13, 13, 0.2);
+}
+.dmy__posting-dialog-head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+  padding: 20px 22px 16px; border-bottom: 1px solid var(--line);
+}
+.dmy__posting-dialog-head > div { display: flex; align-items: baseline; gap: 8px; }
+.dmy__posting-dialog-head h2 { font-size: 19px; font-weight: 800; letter-spacing: -0.4px; color: var(--c-ink); }
+.dmy__posting-dialog-head span { font-size: 12px; font-weight: 700; color: var(--c-muted); }
+.dmy__posting-dialog-head button {
+  flex: none; width: 34px; height: 34px; display: grid; place-items: center;
+  margin-top: -4px; border-radius: 10px; color: var(--c-muted);
+}
+.dmy__posting-dialog-head button:hover { background: var(--accent-50); color: var(--c-ink); }
+.dmy__posting-dialog-list {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px; padding: 18px 22px 22px; overflow-y: auto;
+}
+.dmy__posting-dialog-list > * { min-width: 0; }
+.dmy__posting-dialog-empty {
+  min-height: 180px; display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 18px; padding: 28px; color: var(--c-muted); font-size: 13px;
+}
+
+@media (max-width: 640px) {
+  .dmy__posting-modal { padding: 12px; }
+  .dmy__posting-dialog-list { grid-template-columns: 1fr; padding: 14px; }
+}
 
 /* 좁은 폭 대응 */
 @media (max-width: 1180px) {

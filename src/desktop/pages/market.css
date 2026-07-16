@@ -145,6 +145,11 @@
 .dmkt2__takeaway-up { color: #1f9d57; }
 .dmkt2__takeaway-amber { color: #d9822b; }
 
+/* 연도별 수요 레이스 카드 우상단 기술군 필터 */
+.dmkt2__race-tools { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.dmkt2__race-filter { flex-wrap: nowrap; }
+.dmkt2__race-filter .wow-seg__btn { white-space: nowrap; }
+
 /* 상위 요구 기술 Top14 바 — 2x1(기본)에서는 상위 8개만, "더 보기"로 14개 전체 펼침 */
 .dmkt2__bars { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
 .dmkt2__bar { display: flex; align-items: center; gap: 10px; padding: 4px 4px; border-radius: 9px; transition: background 0.13s ease; text-align: left; }
