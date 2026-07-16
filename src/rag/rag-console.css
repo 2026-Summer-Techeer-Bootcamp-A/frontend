@@ -183,18 +183,9 @@
   border: 1px solid #e2e5ec; border-radius: 8px; padding: 3px 9px; overflow-wrap: anywhere; }
 .rc__badge--intent { color: #1c1d21; font-weight: 700; }
 
-/* Verbose — 파이프라인 단계 */
-.rc__verbose { display: flex; flex-direction: column; gap: 12px; animation: rc-fade .3s ease both; }
+/* 도구 결과 그룹 라벨 — "도구 결과"(모든 과정 보기), 근거·신뢰도(FinalBlock)가 공유한다 */
 .rc__ev-group + .rc__ev-group { margin-top: 2px; }
 .rc__ev-k { font-size: 10.5px; color: #a2a6b0; font-weight: 700; letter-spacing: 0.02em; margin-bottom: 6px; }
-.rc__steps { display: flex; flex-direction: column; gap: 0; }
-@keyframes rc-step-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-.rc__step { display: grid; grid-template-columns: 14px 1fr; gap: 8px; font-size: 11.5px; color: #5b5e66; padding: 3px 0; position: relative; animation: rc-step-in 300ms cubic-bezier(0,0,0.2,1) both; }
-.rc__step-i { width: 6px; height: 6px; margin-top: 5px; border-radius: 999px; background: #bcd0f0; }
-.rc__step-t b { color: #1c1d21; font-weight: 600; }
-.rc__step-detail { color: #7c7f88; }
-.rc__step-tool { font-family: 'SF Mono', ui-monospace, monospace; font-size: 9.5px; color: #5b5e66;
-  background: #f6f8fc; border: 1px solid #e2e5ec; border-radius: 5px; padding: 1px 6px; margin-left: 6px; }
 
 /* Verbose — 도구 결과 카드 (list/trend/compare → 랭크드 로우, stat → 큰 숫자, graph → 요약) */
 .rc__tool-results { display: flex; flex-direction: column; gap: 10px; }
@@ -248,9 +239,10 @@
   .rc__suggest { grid-template-columns: 1fr; }
 }
 
-/* === 도구 결과 시각화 박스 (AssistantVisualizer) — network/sankey/bar 공용 크롬 ===
-   결과 카드(.rc__tr)와 별개로, "모든 과정 보기" 이상에서 결과 배열 전체를 보고 가장
-   적합한 차트 하나를 골라 보여주는 블록이다. */
+/* === 도구 결과 시각화 박스 (AssistantVisualizer) — network/heatmap/bar 공용 크롬 ===
+   결과 카드(.rc__tr)와 별개로, 기본 화면에서 결과 배열 전체를 보고 가장 적합한 차트
+   하나를 자동으로 골라 보여주는 블록이다. 차트 종류는 사용자가 고르지 않으므로 탭이
+   아니라 어떤 차트가 선택됐는지 알려주는 정적 태그만 붙인다. */
 .rc__viz-box {
   border: 1px solid #e2e5ec;
   border-radius: 12px;
@@ -270,11 +262,7 @@
   font-weight: 700;
   color: #5b5e66;
 }
-.rc__viz-tabs {
-  display: inline-flex;
-  gap: 4px;
-}
-.rc__viz-tab {
+.rc__viz-typetag {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -285,66 +273,90 @@
   border: 1px solid #e2e5ec;
   border-radius: 999px;
   padding: 4px 9px;
-  cursor: pointer;
-}
-.rc__viz-tab.active {
-  background: #0b0b0c;
-  color: #fff;
-  border-color: #0b0b0c;
-}
-.rc__viz-tab:focus-visible {
-  outline: 2px solid #28539c;
-  outline-offset: 1px;
 }
 .rc__viz-chart-wrap {
   width: 100%;
 }
 
-/* === RAG 파이프라인 실측값 (EngineTechnicalDetails) — Verbose 전용 === */
-.rc__engine-tech {
+/* === 요청 처리 로그 (EngineFlowLog) — "모든 과정 보기" 전용, 개발자용 ===
+   사용자 입력 → 라우팅 → 도구 호출(실제 모델·DB) → 평가 → 종합을 시간 순으로 나열한다. */
+.rc__flowlog {
   border: 1px solid #e2e5ec;
   border-radius: 12px;
   background: #fafbfc;
   padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 2px;
+  animation: rc-fade .3s ease both;
 }
-.rc__engine-title {
+.rc__flowlog-head {
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 11.5px;
   font-weight: 700;
   color: #43454c;
+  margin-bottom: 6px;
 }
-.rc__engine-section {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+.rc__flowlog-row {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 10px;
+  padding: 7px 0;
 }
-.rc__engine-section-title {
-  font-size: 11px;
+.rc__flowlog-row + .rc__flowlog-row {
+  border-top: 1px dashed #e2e5ec;
+}
+.rc__flowlog-tag {
+  font-size: 10px;
   font-weight: 700;
   color: #7c7f88;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
+  padding-top: 1px;
 }
-.rc__engine-grid {
-  display: grid;
-  grid-template-columns: minmax(96px, auto) 1fr;
-  gap: 4px 10px;
+.rc__flowlog-body {
   font-size: 12px;
-}
-.rc__engine-key {
-  color: #7c7f88;
-}
-.rc__engine-val {
   color: #1c1d21;
-  font-family: 'JetBrains Mono', 'SFMono-Regular', ui-monospace, monospace;
+  line-height: 1.55;
   overflow-wrap: anywhere;
 }
-.rc__engine-val.highlight {
+.rc__flowlog-sub {
+  color: #7c7f88;
+}
+.rc__flowlog-tool {
+  margin-left: 6px;
+  font-family: 'SF Mono', ui-monospace, monospace;
+  font-size: 9.5px;
+  color: #5b5e66;
+  background: #f6f8fc;
+  border: 1px solid #e2e5ec;
+  border-radius: 5px;
+  padding: 1px 6px;
+}
+.rc__flowlog-debug {
+  margin-top: 7px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 10px;
+  background: #fff;
+  border: 1px solid #e2e5ec;
+  border-radius: 8px;
+}
+.rc__flowlog-debug-row {
+  display: grid;
+  grid-template-columns: minmax(96px, auto) 1fr;
+  gap: 8px;
+  font-size: 11.5px;
+}
+.rc__flowlog-debug-k {
+  color: #7c7f88;
+}
+.rc__flowlog-debug-v {
   color: #28539c;
   font-weight: 600;
+  font-family: 'SF Mono', ui-monospace, monospace;
+  overflow-wrap: anywhere;
 }

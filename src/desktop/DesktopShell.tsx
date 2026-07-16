@@ -120,7 +120,7 @@ function sectionOf(pathname: string): Section {
 
 // 콘텐츠 배경을 셸 크롬과 같은 옅은 회색으로 두는 라우트 — 홈 피드처럼
 // 흰 카드가 배경 위에 떠 보이는 레이아웃을 마이·어시스턴트까지 확장한다.
-const grayBgRoutes = ['/home', '/resume', '/assistant']
+const grayBgRoutes = ['/', '/home', '/resume', '/assistant']
 
 export default function DesktopShell({ children }: { children: ReactNode }) {
   const location = useLocation()
