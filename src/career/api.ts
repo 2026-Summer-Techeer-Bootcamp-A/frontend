@@ -220,7 +220,17 @@ const path = (url: string, params: Params) => {
 }
 const personal = (id: Identity, position?: string) => ({ pool: 'domestic', resume_id: id.resumeId, position })
 
-export type CoverageData = { coverage_score: number; top_skills: Array<{ canonical: string; owned: boolean }> }
+export type CoverageData = {
+  coverage_score: number
+  score?: number
+  base_score?: number
+  core_missing_penalty?: number
+  formula_version?: string
+  top_skills: Array<{
+    canonical: string; owned: boolean; posting_count?: number; frequency?: number; weight?: number
+    tier?: 'core' | 'supporting'; score_contribution?: number; penalty_contribution?: number
+  }>
+}
 export type DistributionData = {
   histogram: Array<{ range_start: number; count: number }>; coverage_score: number; my_percentile: number
   matched: number; total: number; threshold: number; as_of: string
