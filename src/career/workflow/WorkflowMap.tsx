@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Maximize2, X } from 'lucide-react'
 import {
   ReactFlow, Background, Controls, Handle, Position, MarkerType,
   type Node, type Edge, type NodeProps,
@@ -21,7 +22,7 @@ import './workflowMap.css'
 // 항상 "함께 요구됨" 계열로 두고 "선수"/"prerequisite" 표현은 쓰지 않는다.
 
 type SkillClass = 'owned' | 'target' | 'bridge'
-type SkillNodeData = { label: string; cls: SkillClass; badge?: string; [key: string]: unknown }
+type SkillNodeData = { label: string; cls: SkillClass; badge?: string; category?: string; [key: string]: unknown }
 type SkillFlowNode = Node<SkillNodeData, 'skill'>
 
 const CLASS_LABEL: Record<SkillClass, string> = { owned: '보유', target: '목표', bridge: '경유' }
@@ -32,6 +33,7 @@ function SkillNode({ data }: NodeProps<SkillFlowNode>) {
       <Handle type="target" position={Position.Left} className="wfm-node__handle" />
       <span className="wfm-node__class">{CLASS_LABEL[data.cls]}</span>
       <span className="wfm-node__label" title={data.label}>{data.label}</span>
+      {data.category && <span className="wfm-node__category">{data.category}</span>}
       {data.badge && <span className="wfm-node__badge">{data.badge}</span>}
       <Handle type="source" position={Position.Right} className="wfm-node__handle" />
     </div>
@@ -40,12 +42,14 @@ function SkillNode({ data }: NodeProps<SkillFlowNode>) {
 
 const NODE_TYPES = { skill: SkillNode }
 const NODE_W = 156
-const NODE_H = 58
+const NODE_H = 72
 
+// 2b: 노드 4~5개짜리 짧은 체인도 데이터가 성긴 것처럼 보이지 않도록 랭크 간격을 살짝
+// 좁혔다. 노드 수가 늘어도 dagre가 자동으로 배치하므로 큰 그래프의 가독성은 유지된다.
 function layoutGraph(nodes: SkillFlowNode[], edges: Edge[]): SkillFlowNode[] {
   const g = new dagre.graphlib.Graph()
   g.setDefaultEdgeLabel(() => ({}))
-  g.setGraph({ rankdir: 'LR', nodesep: 18, ranksep: 58 })
+  g.setGraph({ rankdir: 'LR', nodesep: 18, ranksep: 50 })
   nodes.forEach((n) => g.setNode(n.id, { width: NODE_W, height: NODE_H }))
   edges.forEach((e) => g.setEdge(e.source, e.target))
   dagre.layout(g)
@@ -95,7 +99,7 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
 
   const roadmapKey = identity && postingIds.length ? `${resumeId}:${postingIds.slice().sort().join(',')}` : 'idle'
   const roadmap = useWidgetData<ScopedRoadmapData>(
-    identity && postingIds.length ? () => dashboardApi.roadmapScoped(identity, postingIds, 6) : null,
+    identity && postingIds.length ? () => dashboardApi.roadmapScoped(identity, postingIds, 10) : null,
     MOCK_ROADMAP,
     roadmapKey,
   )
@@ -135,7 +139,10 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
         const cls: SkillClass = targetSet.has(step.canonical) ? 'target' : 'bridge'
         ns.push({
           id, type: 'skill', position: { x: 0, y: 0 }, draggable: false,
-          data: { label: step.canonical, cls, badge: `+${step.delta.toLocaleString()}건` },
+          data: {
+            label: step.canonical, cls, category: step.category,
+            badge: `+${step.delta.toLocaleString()}건 · 누적 ${step.matched_after.toLocaleString()}건`,
+          },
         })
         if (i > 0) {
           const prevId = chainIds[i - 1]
@@ -182,56 +189,126 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
   const showEmpty = bookmarkIds.length < 2
   const isLoading = !showEmpty && (postingsLoading || (identity !== null && roadmap.loading))
 
-  return (
-    <div className="dcard wfm-card">
-      <SectionHeader
-        title="학습 워크플로우 맵"
-        hint="북마크 목표 기반 추천 순서"
-        right={!showEmpty && !identity ? <PreviewBadge /> : undefined}
-      />
-      {showEmpty ? (
-        <div className="wfm-empty">
-          <p className="wfm-empty__lead">북마크한 공고를 목표로 학습 경로를 그려드려요.</p>
-          <span className="wfm-empty__hint">공고를 2개 이상 북마크하면 워크플로우 맵이 나타나요.</span>
-          {ownedSkills.length > 0 && (
-            <div className="wfm-empty__owned">
-              <span className="wfm-empty__owned-label">지금 보유한 기술</span>
-              <div className="wfm-empty__chips">
-                {ownedSkills.slice(0, 12).map((s) => <span key={s} className="wfm-chip wfm-chip--owned">{s}</span>)}
-              </div>
-            </div>
-          )}
-        </div>
-      ) : isLoading ? (
-        <div className="wfm-loading" role="status" aria-live="polite">워크플로우 맵을 그리는 중이에요.</div>
-      ) : (
-        <>
-          <div className="wfm-canvas" style={{ height: size === '2x2' ? 360 : 260 }}>
-            <ReactFlow
-              nodes={nodes}
-              edges={edges}
-              nodeTypes={NODE_TYPES}
-              fitView
-              fitViewOptions={{ padding: 0.2 }}
-              nodesDraggable={false}
-              nodesConnectable={false}
-              elementsSelectable={false}
-              panOnScroll
-              zoomOnScroll={false}
-              proOptions={{ hideAttribution: true }}
-            >
-              <Background gap={18} size={1} color="#eceef3" />
-              <Controls showInteractive={false} />
-            </ReactFlow>
-          </div>
-          <div className="wfm-legend">
-            <span className="wfm-legend__item"><i className="wfm-dot wfm-dot--owned" />보유</span>
-            <span className="wfm-legend__item"><i className="wfm-dot wfm-dot--target" />목표</span>
-            <span className="wfm-legend__item"><i className="wfm-dot wfm-dot--bridge" />경유</span>
-          </div>
-          {roadmap.value.as_of && <AsOf asOf={roadmap.value.as_of} n={roadmap.value.total} />}
-        </>
-      )}
+  // 2a: 크게 보기 — 같은 nodes/edges를 더 큰 캔버스에 그리는 오버레이 모달. 그래프
+  // 자체는 다시 계산하지 않고 그대로 재사용하며, Escape·백드롭 클릭으로 닫는다.
+  const [expanded, setExpanded] = useState(false)
+  useEffect(() => {
+    if (!expanded) return
+    const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') setExpanded(false) }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [expanded])
+
+  const legend = (
+    <div className="wfm-legend">
+      <span className="wfm-legend__item"><i className="wfm-dot wfm-dot--owned" />보유</span>
+      <span className="wfm-legend__item"><i className="wfm-dot wfm-dot--target" />목표</span>
+      <span className="wfm-legend__item"><i className="wfm-dot wfm-dot--bridge" />경유</span>
     </div>
+  )
+  const canShowGraph = !showEmpty && !isLoading
+
+  return (
+    <>
+      <div className="dcard wfm-card">
+        <SectionHeader
+          title="학습 워크플로우 맵"
+          hint="북마크 목표 기반 추천 순서"
+          right={!showEmpty ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {!identity && <PreviewBadge />}
+              {canShowGraph && (
+                <button
+                  type="button"
+                  className="wfm-expand-btn"
+                  onClick={() => setExpanded(true)}
+                  aria-label="워크플로우 맵 크게 보기"
+                  title="크게 보기"
+                >
+                  <Maximize2 size={14} />
+                </button>
+              )}
+            </div>
+          ) : undefined}
+        />
+        {showEmpty ? (
+          <div className="wfm-empty">
+            <p className="wfm-empty__lead">북마크한 공고를 목표로 학습 경로를 그려드려요.</p>
+            <span className="wfm-empty__hint">공고를 2개 이상 북마크하면 워크플로우 맵이 나타나요.</span>
+            {ownedSkills.length > 0 && (
+              <div className="wfm-empty__owned">
+                <span className="wfm-empty__owned-label">지금 보유한 기술</span>
+                <div className="wfm-empty__chips">
+                  {ownedSkills.slice(0, 12).map((s) => <span key={s} className="wfm-chip wfm-chip--owned">{s}</span>)}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : isLoading ? (
+          <div className="wfm-loading" role="status" aria-live="polite">워크플로우 맵을 그리는 중이에요.</div>
+        ) : (
+          <>
+            <div className="wfm-canvas" style={{ height: size === '2x2' ? 420 : 260 }}>
+              <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                nodeTypes={NODE_TYPES}
+                fitView
+                fitViewOptions={{ padding: 0.2 }}
+                nodesDraggable={false}
+                nodesConnectable={false}
+                elementsSelectable={false}
+                panOnScroll
+                zoomOnScroll={false}
+                proOptions={{ hideAttribution: true }}
+              >
+                <Background gap={18} size={1} color="#eceef3" />
+                <Controls showInteractive={false} />
+              </ReactFlow>
+            </div>
+            {legend}
+            {roadmap.value.as_of && <AsOf asOf={roadmap.value.as_of} n={roadmap.value.total} />}
+          </>
+        )}
+      </div>
+
+      {expanded && canShowGraph && (
+        <div className="wfm-modal__backdrop" onClick={() => setExpanded(false)}>
+          <div
+            className="wfm-modal__card"
+            role="dialog"
+            aria-modal="true"
+            aria-label="학습 워크플로우 맵 크게 보기"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="wfm-modal__titlebar">
+              <span className="wfm-modal__title">학습 워크플로우 맵</span>
+              <button type="button" className="wfm-modal__close" onClick={() => setExpanded(false)} aria-label="닫기">
+                <X size={16} />
+              </button>
+            </div>
+            <div className="wfm-modal__canvas">
+              <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                nodeTypes={NODE_TYPES}
+                fitView
+                fitViewOptions={{ padding: 0.35 }}
+                nodesDraggable={false}
+                nodesConnectable={false}
+                elementsSelectable={false}
+                panOnScroll
+                zoomOnScroll
+                proOptions={{ hideAttribution: true }}
+              >
+                <Background gap={18} size={1} color="#eceef3" />
+                <Controls showInteractive={false} />
+              </ReactFlow>
+            </div>
+            {legend}
+          </div>
+        </div>
+      )}
+    </>
   )
 }
