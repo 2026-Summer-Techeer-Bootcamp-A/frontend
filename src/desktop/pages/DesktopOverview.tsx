@@ -15,6 +15,7 @@ import {
   dashboardApi, jobsApi, type DistributionData, type PivotData, type PostingCard,
 } from '../../career/api'
 import { useWidgetData } from '../../career/useWidgetData'
+import { selectDisplayedCoverage } from '../../career/coverageScore'
 import { useDashboardConfig, isWidgetHidden, getWidgetSize } from '../../career/dashboardConfig'
 import { DASHBOARD_WIDGETS } from '../../career/widgetCatalog'
 import { useBookmarks } from '../../career/bookmarkStore'
@@ -229,10 +230,9 @@ export default function DesktopOverview() {
     }
   }), [matchedJobs])
   const weightedScoreEnabled = import.meta.env.VITE_MATCH_SCORE_VERSION === 'weighted-v1'
-  const shownCoverage = Math.round(
-    weightedScoreEnabled && coverageData.value.score != null
-      ? coverageData.value.score
-      : coverageData.value.coverage_score,
+  const shownCoverage = selectDisplayedCoverage(
+    coverageData.value,
+    import.meta.env.VITE_MATCH_SCORE_VERSION,
   )
   const scoreExplanation = weightedScoreEnabled && coverageData.value.base_score != null
     ? `기본 ${coverageData.value.base_score.toFixed(1)}점 · 핵심 기술 누락 -${(coverageData.value.core_missing_penalty ?? 0).toFixed(1)}점`
