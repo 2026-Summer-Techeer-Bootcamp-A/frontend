@@ -169,6 +169,32 @@
 .dov__target-panel b { font-weight: 800; }
 .dov__target-panel--empty { color: var(--c-muted); }
 
+/* A-1 확장: 목표 기업 패널 — 매칭 점수 한 줄 + 표본 크기 + 상위 갭 기술 랭킹 칩.
+   스트립 아래 얇은 띠라 세로로 커지지 않게 칩 행으로만 확장한다. */
+.dov__target-rich { display: flex; flex-direction: column; gap: 8px; }
+.dov__target-headline { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+.dov__target-sample { font-size: 11.5px; font-weight: 500; color: var(--c-muted); }
+.dov__target-warning { font-size: 11px; font-weight: 700; color: #b45309; }
+.dov__target-gaplist { display: flex; flex-wrap: wrap; gap: 6px; }
+.dov__target-gapitem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid var(--line);
+}
+.dov__target-tier { flex: none; font-size: 9.5px; font-weight: 800; padding: 1px 6px; border-radius: 999px; }
+.dov__target-tier--core { background: var(--c-accent, #111); color: #fff; }
+.dov__target-tier--supporting { background: var(--accent-100, #e4e4e7); color: var(--c-muted); }
+.dov__target-gapname { color: var(--c-ink); }
+.dov__target-gapgain { color: #218a58; font-weight: 800; }
+.dov__target-gapunlock { color: var(--c-muted); font-weight: 500; }
+.dov__target-empty { font-size: 12.5px; color: var(--c-muted); }
+
 .dov__skeleton { display: flex; min-height: 190px; flex: 1; flex-direction: column; justify-content: center; gap: 12px; }
 .dov__skeleton-line,
 .dov__skeleton-block,
@@ -263,8 +289,8 @@
 .dov__sec-grid .dcard { min-height: 320px; padding: 22px; }
 .dov__sec-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .dov__sec-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-/* A-5: 워크플로우 맵 + 한계 해금을 세로로 쌓는 전체 폭 1열 그리드. 두 카드 높이가 서로
-   달라 1fr로 맞추면 낭비가 생기므로 행 높이는 auto로 각자 콘텐츠에 맞춘다. */
+/* A-5: 워크플로우 맵 전체 폭 1열 그리드. 행 높이는 auto로 콘텐츠에 맞춰 카드 아래
+   빈 공간이 남지 않게 한다(한계 해금 위젯 제거 후 워크플로우 맵 단독). */
 .dov__sec-grid--1 { grid-template-columns: 1fr; grid-auto-rows: auto; }
 
 @media (max-width: 1180px) {
