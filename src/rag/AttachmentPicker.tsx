@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Check, FileText } from 'lucide-react'
+import { Bookmark, Check, FileText } from 'lucide-react'
+import { jobsApi } from '../career/api'
+import { useBookmarks } from '../career/bookmarkStore'
 import { getSavedResumes } from './resumeInsightApi'
 import type { SavedResumeListItem } from './resumeInsightApi'
 import type { ChatAttachment } from './chatContract'
+import { loadBookmarkAttachments } from './bookmarkAttachments'
 
 // 첨부 피커 — 📎 버튼을 열면 뜨는 팝오버(데스크톱)/바텀시트(모바일 ≤480px, CSS 미디어쿼리로 승격).
 // "최근 본 공고" 섹션(스펙 1.1)은 이번 구현에서 뺐다 — recruitmentApi.ts에는 찜/최근 조회 공고를
@@ -22,7 +25,11 @@ type LoadState = 'loading' | 'error' | 'ready'
 
 export default function AttachmentPicker({ attachments, onAdd, onRemove, onClose, isAuthed, triggerRef }: AttachmentPickerProps) {
   const [resumes, setResumes] = useState<SavedResumeListItem[]>([])
-  const [state, setState] = useState<LoadState>(isAuthed ? 'loading' : 'ready')
+  const [resumeState, setResumeState] = useState<LoadState>(isAuthed ? 'loading' : 'ready')
+  const bookmarkIds = useBookmarks()
+  const bookmarkKey = bookmarkIds.join(',')
+  const [bookmarkedPostings, setBookmarkedPostings] = useState<ChatAttachment[]>([])
+  const [bookmarkState, setBookmarkState] = useState<LoadState>(bookmarkIds.length > 0 ? 'loading' : 'ready')
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -32,14 +39,39 @@ export default function AttachmentPicker({ attachments, onAdd, onRemove, onClose
       .then((items) => {
         if (cancelled) return
         setResumes(items)
-        setState('ready')
+        setResumeState('ready')
       })
       .catch(() => {
         if (cancelled) return
-        setState('error')
+        setResumeState('error')
       })
     return () => { cancelled = true }
   }, [isAuthed])
+
+  useEffect(() => {
+    if (bookmarkIds.length === 0) {
+      setBookmarkedPostings([])
+      setBookmarkState('ready')
+      return
+    }
+
+    let cancelled = false
+    setBookmarkState('loading')
+    loadBookmarkAttachments(bookmarkIds, (id) => jobsApi.detail(id))
+      .then((items) => {
+        if (cancelled) return
+        setBookmarkedPostings(items)
+        setBookmarkState('ready')
+      })
+      .catch(() => {
+        if (cancelled) return
+        setBookmarkedPostings([])
+        setBookmarkState('error')
+      })
+    return () => { cancelled = true }
+    // bookmarkKey is the stable value used to refresh API-backed bookmarks.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookmarkKey])
 
   // 열리면 첫 포커스 가능한 요소로, Esc로 닫기, Tab은 컨테이너 안에서만 순환(포커스 트랩).
   useEffect(() => {
@@ -88,16 +120,24 @@ export default function AttachmentPicker({ attachments, onAdd, onRemove, onClose
   }, [onClose, triggerRef])
 
   const isSelected = useCallback(
-    (resumeId: number) => attachments.some((a) => a.kind === 'resume' && a.id === resumeId),
+    (kind: ChatAttachment['kind'], id: number) => attachments.some((a) => a.kind === kind && a.id === id),
     [attachments],
   )
 
   const toggleResume = (resume: SavedResumeListItem) => {
-    if (isSelected(resume.resume_id)) {
+    if (isSelected('resume', resume.resume_id)) {
       onRemove('resume', resume.resume_id)
       return
     }
     onAdd({ kind: 'resume', id: resume.resume_id, title: resume.title, subtitle: resume.position ?? undefined })
+  }
+
+  const togglePosting = (posting: ChatAttachment) => {
+    if (isSelected('posting', posting.id)) {
+      onRemove('posting', posting.id)
+      return
+    }
+    onAdd(posting)
   }
 
   const goToResumeInsight = () => {
@@ -126,15 +166,15 @@ export default function AttachmentPicker({ attachments, onAdd, onRemove, onClose
         />
       )}
 
-      {isAuthed && state === 'loading' && (
+      {isAuthed && resumeState === 'loading' && (
         <div className="rc__picker-loading">이력서를 불러오는 중…</div>
       )}
 
-      {isAuthed && state === 'error' && (
+      {isAuthed && resumeState === 'error' && (
         <div className="rc__picker-error">저장된 이력서를 불러오지 못했어요.</div>
       )}
 
-      {isAuthed && state === 'ready' && resumes.length === 0 && (
+      {isAuthed && resumeState === 'ready' && resumes.length === 0 && (
         <EmptyCta
           title="아직 저장한 이력서가 없어요"
           sub="보유 기술을 등록하면 이 공고들과 바로 비교할 수 있어요."
@@ -143,11 +183,11 @@ export default function AttachmentPicker({ attachments, onAdd, onRemove, onClose
         />
       )}
 
-      {isAuthed && state === 'ready' && resumes.length > 0 && (
+      {isAuthed && resumeState === 'ready' && resumes.length > 0 && (
         <>
           <div className="rc__picker-sec">내 이력서</div>
           {resumes.map((r) => {
-            const selected = isSelected(r.resume_id)
+            const selected = isSelected('resume', r.resume_id)
             return (
               <button
                 key={r.resume_id}
@@ -168,6 +208,37 @@ export default function AttachmentPicker({ attachments, onAdd, onRemove, onClose
           })}
         </>
       )}
+
+      <div className="rc__picker-sec">북마크 공고</div>
+      {bookmarkState === 'loading' && (
+        <div className="rc__picker-loading">북마크 공고를 불러오는 중…</div>
+      )}
+      {bookmarkState === 'error' && (
+        <div className="rc__picker-error">북마크 공고를 불러오지 못했어요.</div>
+      )}
+      {bookmarkState === 'ready' && bookmarkedPostings.length === 0 && (
+        <div className="rc__picker-note">아직 북마크한 공고가 없어요.</div>
+      )}
+      {bookmarkState === 'ready' && bookmarkedPostings.map((posting) => {
+        const selected = isSelected('posting', posting.id)
+        return (
+          <button
+            key={posting.id}
+            type="button"
+            role="checkbox"
+            aria-checked={selected}
+            className={`rc__picker-row${selected ? ' is-sel' : ''}`}
+            onClick={() => togglePosting(posting)}
+          >
+            <span className="rc__picker-check" aria-hidden="true">{selected && <Check size={11} />}</span>
+            <span className="rc__picker-ic" aria-hidden="true"><Bookmark size={14} /></span>
+            <span>
+              <div className="rc__picker-rt">{posting.title}</div>
+              {posting.subtitle && <div className="rc__picker-rs">{posting.subtitle}</div>}
+            </span>
+          </button>
+        )
+      })}
     </div>
   )
 }

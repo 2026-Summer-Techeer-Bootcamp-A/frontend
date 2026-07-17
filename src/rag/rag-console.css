@@ -182,6 +182,7 @@
 .rc__picker-rt { font-size: 13px; font-weight: 600; color: #1c1d21; }
 .rc__picker-rs { font-size: 11px; color: #7c7f88; }
 .rc__picker-loading, .rc__picker-error { padding: 14px 10px; font-size: 12px; color: #7c7f88; text-align: center; }
+.rc__picker-note { padding: 10px; font-size: 12px; color: #7c7f88; }
 
 /* 저장 이력서 0개(또는 비로그인) — 리스트 대신 CTA(스펙 1.5) */
 .rc__picker-empty { text-align: center; padding: 14px 10px; }
