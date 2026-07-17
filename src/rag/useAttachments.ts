@@ -36,8 +36,15 @@ export function defaultQuestionFor(attachments: ChatAttachment[]): string | null
   const resumeCount = attachments.filter((a) => a.kind === 'resume').length
   const postingCount = attachments.filter((a) => a.kind === 'posting').length
 
+  if (resumeCount === 0 && postingCount === 0) return null
   if (resumeCount === 1 && postingCount === 0) return '내 이력서를 시장과 비교해줘'
   if (resumeCount === 1 && postingCount === 1) return '이 이력서로 이 공고에 지원하면 뭐가 부족할까?'
-  if (resumeCount === 0 && postingCount === 2) return '두 공고의 요구 기술을 비교해줘'
+  // 이력서 + 북마크 공고 여러 개 — 공고별 적합도와 부족 기술을 비교해 한 번에 정리하도록 요청한다.
+  if (resumeCount === 1 && postingCount >= 2)
+    return `내 이력서와 첨부한 공고 ${postingCount}개를 비교해서, 어떤 공고가 가장 잘 맞고 각 공고에 뭐가 부족한지 정리해줘`
+  if (resumeCount === 0 && postingCount === 1) return '이 공고는 어떤 기술을 요구하고, 시장에서 어떤 위치야?'
+  // 북마크 공고끼리 비교 — 공통 요구 기술과 공고별 차이를 정리하도록 요청한다.
+  if (resumeCount === 0 && postingCount >= 2)
+    return `첨부한 공고 ${postingCount}개의 요구 기술을 서로 비교해서 공통점과 차이를 정리해줘`
   return null
 }

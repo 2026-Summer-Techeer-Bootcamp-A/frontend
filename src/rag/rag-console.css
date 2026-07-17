@@ -482,6 +482,31 @@
   .rv__marketcard-top { flex-direction: column; align-items: flex-start; }
 }
 
+/* === 비교 요약(ComparisonSummary) — 여러 비교 결과를 한눈에 정리하는 상단 종합 카드.
+   개별 비교 카드(.rv__comparecard) 위에 얹혀, 카드를 훑기 전에 핵심(최적 공고·공통 부족·공통
+   요구)을 먼저 보여준다. rc__viz-box 크롬 + rc__minichart 바 + rv__diffchip 칩을 그대로 재사용한다. */
+.rc__cmpsum { display: flex; flex-direction: column; gap: 14px; animation: rc-fade .4s ease both; }
+.rc__cmpsum-sec { display: flex; flex-direction: column; gap: 10px; }
+.rc__cmpsum-sec + .rc__cmpsum-sec { border-top: 1px solid #eef1f6; padding-top: 12px; }
+.rc__cmpsum-lead { font-size: 12.5px; color: #1c1d21; line-height: 1.5; }
+.rc__cmpsum-lead b { font-weight: 700; }
+.rc__cmpsum-block { display: flex; flex-direction: column; gap: 8px; }
+.rc__cmpsum-k { font-size: 11px; font-weight: 700; color: #5b5e66; }
+.rc__cmpsum-count { font-size: 10px; font-weight: 700; color: #28539c; background: #eef1f6; border-radius: 999px; padding: 1px 6px; margin-left: 2px; }
+.rc__cmpsum-note { font-size: 11.5px; color: #7c7f88; line-height: 1.5; }
+
+/* 첨부만 있고 입력이 빈 상태에서 뜨는 "이대로 비교·정리하기" 자동 질문 힌트 — 알약형 버튼. */
+.rc__auto-hint {
+  display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
+  max-width: 100%; margin: 2px 0 4px; padding: 6px 11px;
+  font-size: 12px; font-weight: 600; color: #28539c; text-align: left; line-height: 1.35;
+  background: #eef3fb; border: 1px solid #dde8f9; border-radius: 999px; cursor: pointer;
+  transition: background .15s ease, border-color .15s ease;
+}
+.rc__auto-hint:hover { background: #e2ecfa; border-color: #c7d9f4; }
+.rc__auto-hint:focus-visible { outline: 2px solid #28539c; outline-offset: 1px; }
+.rc__auto-hint svg { flex: none; }
+
 /* === 공고 카드 리스트(PostingResultCards) — semantic_search·resume_recommend(posting_list, 백엔드
    PR #80)를 랭크드 바 대신 실제 "공고 카드"로 렌더한다. .rc__viz-box/.rc__viz-header/.rc__viz-title
    크롬과 .rc__mc-row 미니바(적합도)를 그대로 재사용해 새 시각 언어를 만들지 않는다. */
