@@ -427,6 +427,10 @@ export function SkillUnlockWidget({
   const [liveLoading, setLiveLoading] = useState(false)
   const [liveError, setLiveError] = useState(false)
   const hasIdentity = Number.isInteger(resumeId) && resumeId > 0 && !!token
+  // F-3: 탭(역할) 전환 시마다 재요청/스켈레톤 플래시가 나던 것을 role -> UnlockData
+  // 캐시로 막는다. 이미 불러온 탭은 즉시 보여주고, 처음 보는 탭만 새로 불러오되
+  // 그 동안은 null로 리셋하지 않고 직전 데이터를 계속 보여준다(stale-while-revalidate).
+  const unlockCacheRef = useRef<Map<string, UnlockData>>(new Map())
 
   useEffect(() => {
     if (!Number.isInteger(resumeId) || resumeId <= 0 || !token) {
@@ -435,17 +439,25 @@ export function SkillUnlockWidget({
       setLiveError(false)
       return
     }
+    const cacheKey = `${resumeId}:${role}`
+    const cached = unlockCacheRef.current.get(cacheKey)
+    if (cached) {
+      setLiveData(cached)
+      setLiveLoading(false)
+      setLiveError(false)
+      return
+    }
     let cancelled = false
-    setLiveData(null)
     setLiveLoading(true)
     setLiveError(false)
     dashboardApi.unlock({ resumeId, token }, role === 'all' ? undefined : role)
-      .then((data) => { if (!cancelled) setLiveData(data) })
+      .then((data) => {
+        if (cancelled) return
+        unlockCacheRef.current.set(cacheKey, data)
+        setLiveData(data)
+      })
       .catch(() => {
-        if (!cancelled) {
-          setLiveData(null)
-          setLiveError(true)
-        }
+        if (!cancelled) setLiveError(true)
       })
       .finally(() => { if (!cancelled) setLiveLoading(false) })
     return () => { cancelled = true }
@@ -584,6 +596,8 @@ type AData = { series: AItem[]; pearls: AItem[] }
 const A = aRaw as unknown as { as_of: string; sample_size: number; data: AData }
 
 export function HypeVsHireWidget({ size = '2x2' }: { size?: WidgetSize }) {
+  const { activeResume } = useResumesState()
+  const ownedSkills = useMemo(() => new Set(activeResume?.skills ?? []), [activeResume])
   const [live, setLive] = useState<AData | null>(null)
   const [selectedTech, setSelectedTech] = useState(A.data.pearls[0]?.tech ?? A.data.series[0]?.tech ?? '')
   useEffect(() => {
@@ -603,8 +617,16 @@ export function HypeVsHireWidget({ size = '2x2' }: { size?: WidgetSize }) {
     }).catch(() => undefined)
     return () => { cancelled = true }
   }, [])
-  const series = live?.series ?? A.data.series
-  const pearls = live?.pearls.length ? live.pearls : A.data.pearls
+  // D-1: 실측(live) 데이터에만 보유 여부를 덮어씌운다. 프리뷰(fallback) 데이터는 미리
+  // 만들어둔 예시 owned 값을 그대로 쓰던 기존 동작을 유지한다(로그아웃 시 현행 유지).
+  const series = useMemo(
+    () => live ? live.series.map((item) => ({ ...item, owned: ownedSkills.has(item.tech) })) : A.data.series,
+    [live, ownedSkills],
+  )
+  const pearls = useMemo(() => {
+    const livePearls = live?.pearls.length ? live.pearls.map((item) => ({ ...item, owned: ownedSkills.has(item.tech) })) : null
+    return livePearls ?? A.data.pearls
+  }, [live, ownedSkills])
   const selected = series.find((item) => item.tech === selectedTech) ?? pearls[0] ?? series[0]
 
   useEffect(() => {
@@ -981,6 +1003,8 @@ function ghRankSeries(line: GhLine): (number | null)[] {
 }
 
 export function GithubChronicleWidget({ size = '2x2' }: { size?: WidgetSize }) {
+  const { activeResume } = useResumesState()
+  const ownedSkills = useMemo(() => new Set(activeResume?.skills ?? []), [activeResume])
   const [live, setLive] = useState<GhData | null>(null)
   useEffect(() => {
     let cancelled = false
@@ -991,7 +1015,12 @@ export function GithubChronicleWidget({ size = '2x2' }: { size?: WidgetSize }) {
     return () => { cancelled = true }
   }, [])
   const ghData = live ?? GH.data
-  const topLines = live ? [...ghData.lines].sort((a, b) => (a.points[a.points.length - 1]?.rank ?? 99) - (b.points[b.points.length - 1]?.rank ?? 99)).slice(0, 8) : GH_TOP_LINES
+  // D-1: 실측(live) 라인에만 보유 여부를 덮어씌운다. 프리뷰(fallback)는 기존 예시 owned 값 유지.
+  const topLines = useMemo(() => {
+    if (!live) return GH_TOP_LINES
+    const linesWithOwned = live.lines.map((line) => ({ ...line, owned: ownedSkills.has(line.tech) }))
+    return [...linesWithOwned].sort((a, b) => (a.points[a.points.length - 1]?.rank ?? 99) - (b.points[b.points.length - 1]?.rank ?? 99)).slice(0, 8)
+  }, [live, ownedSkills])
   const firstEvent = ghData.events[0]
   const shownEvents = ghData.events.slice(0, size === '2x2' ? 6 : 3)
 
