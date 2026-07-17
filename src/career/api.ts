@@ -210,7 +210,7 @@ export const settingsApi = {
   },
 }
 
-type Identity = { resumeId: number; token: string }
+export type Identity = { resumeId: number; token: string }
 type Params = Record<string, string | number | undefined>
 const auth = (token: string) => ({ headers: { Authorization: `Bearer ${token}` } })
 const path = (url: string, params: Params) => {
@@ -248,6 +248,25 @@ export type UnlockData = {
 }
 export type TimelineData = { daily: Array<{ date: string; total: number; matched?: number }>; as_of: string }
 export type SkillShareData = { items: Array<{ canonical: string; share: number }> }
+export type WhatIfData = {
+  add: string; matched_before: number; matched_after: number; delta: number
+  as_of: string; sample_size: number; sample_warning?: boolean
+}
+export type GapSkillItem = {
+  canonical: string; posting_count: number; frequency: number; weight: number
+  tier: 'core' | 'supporting'; score_gain_if_owned: number; unlocked_posting_count: number; reason: string
+}
+export type GapData = {
+  gap_top5: Array<{ canonical: string; freq: number; category: string }>
+  radar: Array<{ category: string; coverage: number }>
+  as_of: string
+  sample_size: number
+  sample_warning?: boolean | null
+  current_score: number
+  items: GapSkillItem[]
+  formula_version: string
+  company?: string | null
+}
 
 export const dashboardApi = {
   coverage: (id: Identity, position?: string) =>
@@ -265,6 +284,12 @@ export const dashboardApi = {
   applicableCount: (id: Identity, position?: string) =>
     request<{ total: number }>(path('/postings', { ...personal(id, position), min_match: 50, page_size: 1 }), auth(id.token)),
   skillShare: () => request<SkillShareData>(path('/stats/skill-share', { pool: 'domestic', top_k: 100 })),
+  // B-1: 커버리지 what-if — 기술 하나를 더 배웠다고 가정했을 때 매칭 공고 수 변화.
+  whatIf: (id: Identity, add: string) =>
+    request<WhatIfData>(path('/match/what-if', { ...personal(id), add }), auth(id.token)),
+  // A-1: 목표 기업으로 모수를 좁힌 갭 분석.
+  gapByCompany: (id: Identity, company: string, position?: string) =>
+    request<GapData>(path('/match/gap', { ...personal(id, position), company }), auth(id.token)),
 }
 
 export type ParsedSkillDto = { canonical: string; category: string; in_dict: boolean }
