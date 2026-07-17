@@ -228,7 +228,15 @@ export default function DesktopOverview() {
       owned: true,
     }
   }), [matchedJobs])
-  const shownCoverage = Math.round(coverageData.value.coverage_score)
+  const weightedScoreEnabled = import.meta.env.VITE_MATCH_SCORE_VERSION === 'weighted-v1'
+  const shownCoverage = Math.round(
+    weightedScoreEnabled && coverageData.value.score != null
+      ? coverageData.value.score
+      : coverageData.value.coverage_score,
+  )
+  const scoreExplanation = weightedScoreEnabled && coverageData.value.base_score != null
+    ? `기본 ${coverageData.value.base_score.toFixed(1)}점 · 핵심 기술 누락 -${(coverageData.value.core_missing_penalty ?? 0).toFixed(1)}점`
+    : null
   const shownApplicable = countData.value.total
   const shownTotal = distributionData.value?.total ?? domestic.length
   const shownApplicablePct = shownTotal ? Math.round((shownApplicable / shownTotal) * 100) : 0
@@ -322,6 +330,7 @@ export default function DesktopOverview() {
                         <div className="dov__hero-num">{covNum}<span>%</span></div>
                         <div className="dov__hero-caption">
                           국내 공고 <b>{scoreData.value.domesticTotal.toLocaleString()}건</b> · 지원 가능 <b>{scoreData.value.applicable.toLocaleString()}건</b>
+                          {scoreExplanation && <><br /><span>{scoreExplanation}</span></>}
                         </div>
                       </div>
                     </>
