@@ -210,7 +210,7 @@ export const settingsApi = {
   },
 }
 
-type Identity = { resumeId: number; token: string }
+export type Identity = { resumeId: number; token: string }
 type Params = Record<string, string | number | undefined>
 const auth = (token: string) => ({ headers: { Authorization: `Bearer ${token}` } })
 const path = (url: string, params: Params) => {
@@ -242,12 +242,38 @@ export type RoadmapData = {
   start_matched: number; total: number; sample_size: number; as_of: string
   steps: Array<{ step: number; canonical: string; category: string; matched_after: number; delta: number }>
 }
+// A-5: 북마크 스코프 로드맵 — POST /match/roadmap/scoped 응답. GET /match/roadmap과 같은
+// 그리디 알고리즘을 공유하되 모수가 시장 전체가 아니라 넘긴 posting_ids로 좁혀진다.
+export type ScopedRoadmapStep = { step: number; canonical: string; category: string; matched_after: number; delta: number; freq?: number }
+export type ScopedRoadmapData = {
+  start_matched: number; total: number; as_of: string
+  steps: ScopedRoadmapStep[]
+}
 export type UnlockData = {
   funnel: { apply: number; near1: number; near2_3: number; far: number }; sample_size: number; as_of: string
   candidates: Array<{ canonical: string; req_count: number; marginal_apply: number }>
 }
 export type TimelineData = { daily: Array<{ date: string; total: number; matched?: number }>; as_of: string }
 export type SkillShareData = { items: Array<{ canonical: string; share: number }> }
+export type WhatIfData = {
+  add: string; matched_before: number; matched_after: number; delta: number
+  as_of: string; sample_size: number; sample_warning?: boolean
+}
+export type GapSkillItem = {
+  canonical: string; posting_count: number; frequency: number; weight: number
+  tier: 'core' | 'supporting'; score_gain_if_owned: number; unlocked_posting_count: number; reason: string
+}
+export type GapData = {
+  gap_top5: Array<{ canonical: string; freq: number; category: string }>
+  radar: Array<{ category: string; coverage: number }>
+  as_of: string
+  sample_size: number
+  sample_warning?: boolean | null
+  current_score: number
+  items: GapSkillItem[]
+  formula_version: string
+  company?: string | null
+}
 
 export const dashboardApi = {
   coverage: (id: Identity, position?: string) =>
@@ -258,6 +284,14 @@ export const dashboardApi = {
     request<PivotData>(path('/match/pivot-map', { ...personal(id), kind: 'industry', limit: 6 }), auth(id.token)),
   roadmap: (id: Identity, position?: string) =>
     request<RoadmapData>(path('/match/roadmap', { ...personal(id, position), steps: 5 }), auth(id.token)),
+  // A-5: 북마크 공고 id 목록만을 모수로 좁힌 로드맵. roadmap()과 달리 pool/position 대신
+  // posting_ids를 JSON 바디로 보낸다(POST).
+  roadmapScoped: (id: Identity, postingIds: number[], steps = 5) =>
+    request<ScopedRoadmapData>('/match/roadmap/scoped', {
+      method: 'POST',
+      body: JSON.stringify({ resume_id: id.resumeId, posting_ids: postingIds, steps }),
+      ...auth(id.token),
+    }),
   unlock: (id: Identity, position?: string) =>
     request<UnlockData>(path('/stats/skill-unlock', personal(id, position)), auth(id.token)),
   timeline: (id: Identity) =>
@@ -265,6 +299,12 @@ export const dashboardApi = {
   applicableCount: (id: Identity, position?: string) =>
     request<{ total: number }>(path('/postings', { ...personal(id, position), min_match: 50, page_size: 1 }), auth(id.token)),
   skillShare: () => request<SkillShareData>(path('/stats/skill-share', { pool: 'domestic', top_k: 100 })),
+  // B-1: 커버리지 what-if — 기술 하나를 더 배웠다고 가정했을 때 매칭 공고 수 변화.
+  whatIf: (id: Identity, add: string) =>
+    request<WhatIfData>(path('/match/what-if', { ...personal(id), add }), auth(id.token)),
+  // A-1: 목표 기업으로 모수를 좁힌 갭 분석.
+  gapByCompany: (id: Identity, company: string, position?: string) =>
+    request<GapData>(path('/match/gap', { ...personal(id, position), company }), auth(id.token)),
 }
 
 export type ParsedSkillDto = { canonical: string; category: string; in_dict: boolean }

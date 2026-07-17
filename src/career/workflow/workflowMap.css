@@ -1,0 +1,172 @@
+/* A-5: 학습 워크플로우 맵 — DesktopOverview Zone 2b 전용. 모노크롬 카드 안에서
+   보유(그린) · 목표(강조 다크) · 경유(뉴트럴 그레이) 3색만 쓴다. */
+
+.wfm-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.wfm-canvas {
+  width: 100%;
+  border: 1px solid var(--line, #e6e9ef);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fbfbfc;
+}
+
+/* React Flow 배경/컨트롤을 카드 톤에 맞춰 눌러준다 */
+.wfm-canvas .react-flow__attribution { display: none; }
+.wfm-canvas .react-flow__controls {
+  box-shadow: 0 2px 8px rgba(20, 30, 60, 0.08);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.wfm-canvas .react-flow__controls-button {
+  border-bottom: 1px solid var(--line, #e6e9ef);
+  background: #fff;
+}
+
+.wfm-node {
+  position: relative;
+  width: 148px;
+  padding: 8px 10px;
+  border-radius: 11px;
+  border: 1.4px solid transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11.5px;
+  line-height: 1.3;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(20, 30, 60, 0.06);
+}
+
+.wfm-node__class {
+  font-size: 9.5px;
+  font-weight: 750;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.wfm-node__label {
+  font-size: 12.5px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wfm-node__badge {
+  font-size: 9.5px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.wfm-node--owned {
+  border-color: #9dcfb4;
+  background: #f5fbf7;
+}
+.wfm-node--owned .wfm-node__class,
+.wfm-node--owned .wfm-node__badge { color: #1f9d57; }
+.wfm-node--owned .wfm-node__label { color: #14532d; }
+
+.wfm-node--target {
+  border-color: #18181b;
+  background: #18181b;
+}
+.wfm-node--target .wfm-node__class { color: #d4d4d8; }
+.wfm-node--target .wfm-node__label { color: #fff; }
+.wfm-node--target .wfm-node__badge { color: #9dcfb4; }
+
+.wfm-node--bridge {
+  border-color: #d8dade;
+  background: #f4f5f7;
+}
+.wfm-node--bridge .wfm-node__class,
+.wfm-node--bridge .wfm-node__badge { color: #7c7f88; }
+.wfm-node--bridge .wfm-node__label { color: #43454c; }
+
+.wfm-node__handle {
+  width: 6px !important;
+  height: 6px !important;
+  background: #9a9ca6 !important;
+  border: none !important;
+}
+
+.wfm-legend {
+  display: flex;
+  gap: 14px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.wfm-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  color: var(--c-muted, #7c7f88);
+  font-weight: 650;
+}
+.wfm-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.wfm-dot--owned { background: #1f9d57; }
+.wfm-dot--target { background: #18181b; }
+.wfm-dot--bridge { background: #d8dade; border: 1px solid #b9bcc4; }
+
+.wfm-loading {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  color: var(--c-muted, #7c7f88);
+  font-size: 12.5px;
+}
+
+.wfm-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  justify-content: center;
+  padding: 18px 4px;
+}
+.wfm-empty__lead {
+  font-size: 13.5px;
+  font-weight: 750;
+  color: var(--c-ink, #18181b);
+  margin: 0;
+}
+.wfm-empty__hint {
+  font-size: 11.5px;
+  color: var(--c-muted, #7c7f88);
+}
+.wfm-empty__owned {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.wfm-empty__owned-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--c-muted, #7c7f88);
+}
+.wfm-empty__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.wfm-chip {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 9px;
+  border-radius: 999px;
+}
+.wfm-chip--owned {
+  background: #f0fbf4;
+  color: #1f9d57;
+  border: 1px solid #9dcfb4;
+}

@@ -116,6 +116,59 @@
 .dov__hero-caption { margin-top: 14px; font-size: 14px; color: rgba(255, 255, 255, 0.68); line-height: 1.5; }
 .dov__hero-caption b { color: #fff; font-weight: 700; }
 
+/* A-3: 히어로 "다음 한 수" — 점수(컨텍스트) 아래 시각적으로 분리된 CTA. */
+.dov__hero-nextmove {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  margin-top: 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  padding: 10px 14px;
+  text-align: left;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.dov__hero-nextmove:hover:not(:disabled) { background: rgba(255, 255, 255, 0.14); border-color: rgba(255, 255, 255, 0.26); }
+.dov__hero-nextmove:disabled { cursor: default; opacity: 0.7; }
+.dov__hero-nextmove-label { flex: none; font-size: 11px; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase; color: rgba(255, 255, 255, 0.56); }
+.dov__hero-nextmove-text { font-size: 13.5px; font-weight: 600; color: #fff; text-align: right; }
+.dov__hero-nextmove-text b { margin-left: 4px; color: #7ee787; font-weight: 800; }
+.dov__hero-nextmove-text--empty { font-weight: 500; color: rgba(255, 255, 255, 0.56); }
+
+/* A-1: 목표 기업 앵커 입력 스트립 + 결과 패널 */
+.dov__target { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; }
+.dov__target-label { flex: none; font-size: 12.5px; font-weight: 700; color: var(--c-muted); }
+.dov__target-input {
+  flex: none;
+  width: 200px;
+  font-size: 13px;
+  padding: 7px 10px;
+  background: #fff;
+  color: var(--c-ink);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.dov__target-input:focus { outline: 2px solid var(--accent-300, #a1a1aa); outline-offset: -1px; }
+.dov__target-btn { flex: none; font-size: 12.5px; font-weight: 700; color: #fff; background: var(--c-accent, #111); border-radius: 10px; padding: 7px 14px; transition: opacity 0.15s ease; }
+.dov__target-btn:disabled { opacity: 0.4; }
+.dov__target-clear { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; color: var(--c-muted); transition: background 0.12s ease; }
+.dov__target-clear:hover { background: var(--accent-50); }
+.dov__target-panel {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--c-ink);
+  background: var(--accent-50);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 18px;
+}
+.dov__target-panel b { font-weight: 800; }
+.dov__target-panel--empty { color: var(--c-muted); }
+
 .dov__skeleton { display: flex; min-height: 190px; flex: 1; flex-direction: column; justify-content: center; gap: 12px; }
 .dov__skeleton-line,
 .dov__skeleton-block,
@@ -210,6 +263,9 @@
 .dov__sec-grid .dcard { min-height: 320px; padding: 22px; }
 .dov__sec-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .dov__sec-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* A-5: 워크플로우 맵 + 한계 해금을 세로로 쌓는 전체 폭 1열 그리드. 두 카드 높이가 서로
+   달라 1fr로 맞추면 낭비가 생기므로 행 높이는 auto로 각자 콘텐츠에 맞춘다. */
+.dov__sec-grid--1 { grid-template-columns: 1fr; grid-auto-rows: auto; }
 
 @media (max-width: 1180px) {
   .dov__hero-card { grid-template-columns: 1fr !important; }
