@@ -477,7 +477,7 @@ export function SkillUnlockWidget({
       newApplyPct: 0,
     })),
   } : (MATCH.byRole[role] ?? MATCH.byRole.all)
-  const candidates = useMemo(() => [...roleData.candidates].sort((a, b) => b.marginalApply - a.marginalApply).slice(0, 5), [roleData])
+  const candidates = [...roleData.candidates].sort((a, b) => b.marginalApply - a.marginalApply).slice(0, 5)
   const top = candidates[0]
   const maxMarginal = Math.max(...candidates.map((c) => c.marginalApply), 1)
   const funnelTotal = roleData.funnel.apply + roleData.funnel.near1 + roleData.funnel.near2_3 + roleData.funnel.far || 1
