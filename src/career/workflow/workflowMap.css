@@ -65,6 +65,15 @@
   white-space: nowrap;
 }
 
+.wfm-node__category {
+  font-size: 9px;
+  font-weight: 600;
+  opacity: 0.65;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .wfm-node--owned {
   border-color: #9dcfb4;
   background: #f5fbf7;
@@ -170,3 +179,70 @@
   color: #1f9d57;
   border: 1px solid #9dcfb4;
 }
+
+/* 2a: 크게 보기 버튼 + 전체화면 모달. SkillManagerModal의 중앙 다이얼로그 패턴(백드롭
+   블러 + Escape/백드롭 클릭 닫기)을 이 파일 안에서만 쓰는 축소판으로 재사용한다. */
+.wfm-expand-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  color: var(--c-muted, #71717a);
+  background: var(--accent-50, #f0f0f1);
+  transition: transform 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+.wfm-expand-btn:hover { background: var(--accent-100, #e4e4e7); color: var(--c-ink, #18181b); }
+
+.wfm-modal__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: wfm-backdrop-in 0.22s cubic-bezier(0, 0, 0.2, 1);
+}
+@keyframes wfm-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+
+.wfm-modal__card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  width: min(1280px, 94vw);
+  height: min(820px, 90vh);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: var(--e4, 0 20px 48px rgba(20, 30, 60, 0.14), 0 6px 16px rgba(20, 30, 60, 0.08));
+  animation: wfm-card-in 0.26s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes wfm-card-in { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+
+.wfm-modal__titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: none;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line, #e6e9ef);
+}
+.wfm-modal__title { font-size: 15px; font-weight: 700; color: var(--c-ink, #18181b); }
+.wfm-modal__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  color: var(--c-muted, #71717a);
+  background: var(--accent-50, #f0f0f1);
+  transition: transform 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+.wfm-modal__close:hover { background: var(--accent-100, #e4e4e7); color: var(--c-ink, #18181b); }
+.wfm-modal__canvas { flex: 1; min-height: 0; background: #fbfbfc; }
+.wfm-modal__canvas .react-flow__attribution { display: none; }
+.wfm-modal__card .wfm-legend { padding: 10px 18px 14px; margin-top: 0; }
