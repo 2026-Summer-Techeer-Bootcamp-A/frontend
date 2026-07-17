@@ -146,55 +146,108 @@ export function useHeroMode() {
   return { mode, setMode }
 }
 
+// G-F1: useResumesState()는 대시보드 한 화면에서 4곳 이상이 동시에 마운트된다.
+// 훅마다 독립적으로 list()/detail()을 부르면 마운트 수만큼 GET /resume + GET /resume/{id}가
+// 중복 발생해 페치 워터폴이 생긴다. 모듈 스코프에 캐시와 진행 중인 요청을 두고 모든
+// 구독자가 하나의 네트워크 왕복을 공유하도록 한다. refresh()는 캐시를 무효화해 실제로
+// 다시 받아오고, 결과가 도착하면 이벤트로 다른 구독자에게도 알린다.
+type ResumesCacheEntry = { token: string; resumes: Resume[] }
+let resumesCache: ResumesCacheEntry | null = null
+let resumesInFlight: { token: string; promise: Promise<Resume[]> } | null = null
+const RESUMES_CACHE_EVENT = 'resumes-cache-change'
+
+async function fetchResumesFromApi(token: string): Promise<Resume[]> {
+  const { items } = await resumeApi.list(token)
+  const primary = items.find((item) => item.is_primary) ?? items[0]
+  if (!primary) return []
+  const detail = await resumeApi.detail(primary.resume_id, token)
+  const active = detailToResume(detail)
+  return items.map((item) =>
+    item.resume_id === primary.resume_id
+      ? active
+      : {
+          id: String(item.resume_id),
+          title: item.title,
+          skills: [],
+          certs: [],
+          position: item.position ?? '',
+          careerMin: null,
+          careerMax: null,
+          coveragePct: 0,
+          isPrimary: item.is_primary,
+        },
+  )
+}
+
+function loadResumesShared(token: string, force: boolean): Promise<Resume[]> {
+  if (!force && resumesCache?.token === token) {
+    return Promise.resolve(resumesCache.resumes)
+  }
+  if (!force && resumesInFlight?.token === token) {
+    return resumesInFlight.promise
+  }
+  const promise = fetchResumesFromApi(token)
+    .then((resumes) => {
+      resumesCache = { token, resumes }
+      resumesInFlight = null
+      window.dispatchEvent(new Event(RESUMES_CACHE_EVENT))
+      return resumes
+    })
+    .catch((err) => {
+      resumesInFlight = null
+      throw err
+    })
+  resumesInFlight = { token, promise }
+  return promise
+}
+
+function invalidateResumesCache() {
+  resumesCache = null
+  resumesInFlight = null
+}
+
 export function useResumesState() {
   const [resumes, setResumes] = useState<Resume[]>([])
   const [loading, setLoading] = useState(true)
 
-  const refresh = useCallback(() => {
-    const token = getAuthToken()
+  const load = useCallback((token: string | null, force: boolean) => {
     if (!token) {
+      invalidateResumesCache()
       setResumes([])
       setLoading(false)
       return
     }
     setLoading(true)
-    resumeApi
-      .list(token)
-      .then(async ({ items }) => {
-        const primary = items.find((item) => item.is_primary) ?? items[0]
-        if (!primary) {
-          setResumes([])
-          return
-        }
-        const detail = await resumeApi.detail(primary.resume_id, token)
-        const active = detailToResume(detail)
-        setResumes(
-          items.map((item) =>
-            item.resume_id === primary.resume_id
-              ? active
-              : {
-                  id: String(item.resume_id),
-                  title: item.title,
-                  skills: [],
-                  certs: [],
-                  position: item.position ?? '',
-                  careerMin: null,
-                  careerMax: null,
-                  coveragePct: 0,
-                  isPrimary: item.is_primary,
-                },
-          ),
-        )
-      })
+    loadResumesShared(token, force)
+      .then((result) => setResumes(result))
       .catch(() => setResumes([]))
       .finally(() => setLoading(false))
   }, [])
 
+  const refresh = useCallback(() => {
+    const token = getAuthToken()
+    invalidateResumesCache()
+    load(token, true)
+  }, [load])
+
   useEffect(() => {
-    refresh()
-    window.addEventListener('auth-change', refresh)
-    return () => window.removeEventListener('auth-change', refresh)
-  }, [refresh])
+    load(getAuthToken(), false)
+
+    const handleAuthChange = () => refresh()
+    const handleCacheChange = () => {
+      const token = getAuthToken()
+      if (token && resumesCache?.token === token) {
+        setResumes(resumesCache.resumes)
+        setLoading(false)
+      }
+    }
+    window.addEventListener('auth-change', handleAuthChange)
+    window.addEventListener(RESUMES_CACHE_EVENT, handleCacheChange)
+    return () => {
+      window.removeEventListener('auth-change', handleAuthChange)
+      window.removeEventListener(RESUMES_CACHE_EVENT, handleCacheChange)
+    }
+  }, [load, refresh])
 
   const activeResume = resumes.find((r) => r.isPrimary) ?? resumes[0]
   const activeId = activeResume?.id ?? ''

@@ -788,6 +788,10 @@ export function DesktopMarket() {
   useDashboardConfig() // 위젯 표시/숨김 변경 시 리렌더 트리거
   const { activeResume } = useResumesState()
   const [resumeNetworkOnly, setResumeNetworkOnly] = useState(false)
+  // A-2: 시장 페이지 전역 "내 스킬 강조" 토글 — 이미 보유(owned) 오버레이 개념을 갖고 있던
+  // 위젯(기술 관계 네트워크 · Hype vs Hire · GitHub 스타 모멘텀)에만 이력서 기술을 넘겨
+  // 하이라이트를 켠다. 새로 오버레이 개념을 만들지 않고 기존 것을 한 곳에서 묶어 켜고 끈다.
+  const [highlightOwned, setHighlightOwned] = useState(false)
   // 국내/글로벌/전체 풀 셀렉터(v8 §4-1) — pool-지원 위젯의 marketApi 호출에 그대로 매핑.
   // 'all'은 점유율 합산 금지 — 병렬 조회 후 병렬 표기(마다 위젯 내부에서 처리).
   const [pool, setPool] = useState<PoolChoice>('domestic')
@@ -883,6 +887,15 @@ export function DesktopMarket() {
             />
             <span className="dmkt2__poolsel-n">국내 {Math.round(DOMESTIC_TOTAL / 1000)}K · 글로벌 {Math.round(GLOBAL_TOTAL / 1000)}K</span>
           </div>
+          <label className={`dmkt2__network-filter${!activeResume?.skills.length ? ' is-disabled' : ''}`}>
+            <input
+              type="checkbox"
+              checked={highlightOwned}
+              disabled={!activeResume?.skills.length}
+              onChange={(event) => setHighlightOwned(event.target.checked)}
+            />
+            <span>내 스킬 강조</span>
+          </label>
           {myCategory && (
             <div className="dmkt2__scopetabs">
               <SegmentedControl
@@ -1067,7 +1080,7 @@ export function DesktopMarket() {
                   <div className="dmkt2__netsplit">
                     <div className="dmkt2__netgraph">
                       <TechCoNetworkGraph
-                        skills={resumeNetworkOnly ? activeResume?.skills ?? NO_SKILLS : NO_SKILLS}
+                        skills={(highlightOwned || resumeNetworkOnly) ? activeResume?.skills ?? NO_SKILLS : NO_SKILLS}
                         resumeOnly={resumeNetworkOnly}
                       />
                     </div>
@@ -1117,7 +1130,7 @@ export function DesktopMarket() {
             )}
             {!isWidgetHidden('market', 'hype-vs-hire') && (
               <div className="dmkt2__card-item" style={spanStyle(widgetSize('hype-vs-hire'))}>
-                <HypeVsHireWidget size={widgetSize('hype-vs-hire')} />
+                <HypeVsHireWidget size={widgetSize('hype-vs-hire')} highlightOwned={highlightOwned} />
               </div>
             )}
             {!isWidgetHidden('market', 'global-domestic-gap') && (
@@ -1127,7 +1140,7 @@ export function DesktopMarket() {
             )}
             {!isWidgetHidden('market', 'github-chronicle') && (
               <div className="dmkt2__card-item" style={spanStyle(widgetSize('github-chronicle'))}>
-                <GithubChronicleWidget size={widgetSize('github-chronicle')} />
+                <GithubChronicleWidget size={widgetSize('github-chronicle')} highlightOwned={highlightOwned} />
               </div>
             )}
           </div>

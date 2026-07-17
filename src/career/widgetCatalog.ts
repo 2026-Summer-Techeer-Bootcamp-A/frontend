@@ -19,16 +19,14 @@ export const DASHBOARD_WIDGETS: WidgetCatalogItem[] = [
   { id: 'hero-score', label: '내 커리어 점수', shape: 'hero', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
   { id: 'hero-applicable', label: '지원 가능 공고', shape: 'hero', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
   { id: 'stat-recent', label: '신규 공고', shape: 'stat', allowedSizes: ['1x1'], defaultSize: '1x1' },
-  { id: 'top-jobs', label: '맞춤 공고 Top', shape: 'list', allowedSizes: ['2x1', '2x2'], defaultSize: '2x2' },
   { id: 'coverage-histogram', label: '커버리지 분포', shape: 'bars', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
   { id: 'brief', label: '오늘 브리핑', shape: 'list', allowedSizes: ['1x1', '1x2', '2x1'], defaultSize: '1x1' },
   { id: 'deadlines', label: '마감 임박', shape: 'list', allowedSizes: ['1x1', '1x2', '2x1', '2x2'], defaultSize: '2x1' },
   { id: 'industry-fit', label: '업종 적합도', shape: 'radar', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
   { id: 'bookmarks', label: '북마크한 공고', shape: 'list', allowedSizes: ['1x1', '1x2', '2x1', '2x2'], defaultSize: '2x1' },
-  { id: 'recent-views', label: '최근 본 공고', shape: 'list', allowedSizes: ['1x1', '1x2', '2x1'], defaultSize: '1x1' },
   { id: 'skill-momentum', label: '지금 지원할 만한 공고', shape: 'bars', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
   { id: 'latest-timeline', label: '최신 공고 타임라인', shape: 'line', allowedSizes: ['2x1', '2x2'], defaultSize: '2x2' },
-  { id: 'learning-path', label: '학습 로드맵', shape: 'bars', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
+  { id: 'workflow-map', label: '학습 워크플로우 맵', shape: 'network', allowedSizes: ['2x2'], defaultSize: '2x2' },
   { id: 'skill-unlock', label: '한계 해금', shape: 'bars', allowedSizes: ['1x1', '2x1', '2x2'], defaultSize: '2x1' },
 ]
 
@@ -48,13 +46,10 @@ export const MARKET_WIDGETS: WidgetCatalogItem[] = [
   { id: 'demand-growth-scatter', label: '수요 × 성장률', shape: 'scatter', allowedSizes: ['2x1', '2x2'], defaultSize: '2x2' },
   { id: 'cooccurrence-bar', label: '동반 요구 스킬', shape: 'bars', allowedSizes: ['2x1'], defaultSize: '2x1' },
   { id: 'career-level-dist', label: '경력 요구 수준 분포', shape: 'bars', allowedSizes: ['1x1'], defaultSize: '1x1' },
-  { id: 'market-skill-unlock', label: '기술 추가 시 지원 증가', shape: 'bars', allowedSizes: ['1x1'], defaultSize: '1x1' },
+  { id: 'market-skill-unlock', label: '스택 조합 인사이트', shape: 'bars', allowedSizes: ['1x1'], defaultSize: '1x1' },
   // ③ 기술 지형 · 관계
   { id: 'network', label: '기술 관계 네트워크', shape: 'network', allowedSizes: ['2x2'], defaultSize: '2x2' },
   { id: 'concept-tech-sankey', label: '개념 → 기술 Sankey', shape: 'network', allowedSizes: ['2x2'], defaultSize: '2x2' },
-  // ④ 지역 · 기업
-  { id: 'region-density', label: '지역별 공고 밀도', shape: 'bars', allowedSizes: ['2x1'], defaultSize: '2x1' },
-  { id: 'scatter', label: '수요 × 빈도', shape: 'scatter', allowedSizes: ['1x1', '2x1', '2x2'], defaultSize: '1x1' },
   // ⑤ 글로벌 · 해외 트렌드 (pool≠domestic 전용)
   { id: 'global-domestic-lag', label: '국내 시차 타임라인', shape: 'line', allowedSizes: ['2x2'], defaultSize: '2x2' },
   { id: 'hype-vs-hire', label: 'Hype vs Hire', shape: 'scatter', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
