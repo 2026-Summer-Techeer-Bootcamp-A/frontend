@@ -799,7 +799,19 @@ button.kit-wcard:active { opacity: 0.6; }
   transition: height 0.5s cubic-bezier(0.25, 0.1, 0.25, 1), background 0.3s;
 }
 .kit-hist__col i.on { background: var(--c-accent); }
-.kit-hist__thr { position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px dashed #9aa4b4; z-index: 2; }
+.kit-hist__thr {
+  position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px dashed #9aa4b4; z-index: 2;
+  transition: left 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+/* what-if 칩 클릭 시 "이 기술을 배우면 여기로 옮겨간다"를 보여주는 예측 마커.
+   현재 위치(검정 실선)에서 슬라이드해 들어오고, 계산 중엔 제자리에서 깜빡인다. */
+.kit-hist__thr--projected { border-left-color: #218a58; z-index: 3; }
+.kit-hist__thr--pulse { animation: kit-hist-pulse 1s ease-in-out infinite; }
+@keyframes kit-hist-pulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 0.95; } }
+@media (prefers-reduced-motion: reduce) {
+  .kit-hist__thr { transition: none; }
+  .kit-hist__thr--pulse { animation: none; }
+}
 .kit-hist__axis { display: flex; justify-content: space-between; font-size: 10px; color: var(--c-muted); margin-top: 5px; }
 .kit-hist__axis .thr { font-weight: 600; }
 .kit-hist__headline { font-size: 14px; color: var(--c-ink); line-height: 1.45; margin-bottom: 10px; }
