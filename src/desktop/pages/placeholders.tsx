@@ -21,8 +21,10 @@ import {
 } from '../../career/wowWidgets'
 import ConceptAlternativeCharts from '../../career/ConceptAlternativeCharts'
 import CompanyLogo from '../../career/CompanyLogo'
-import { useResumesState, getDynamicPostings, calculateCoverage, resumeToUpsertPayload } from '../../career/state'
+import { useResumesState, getDynamicPostings, resumeToUpsertPayload } from '../../career/state'
 import { getAuthToken, useAuth } from '../../career/authStore'
+import { useWidgetData } from '../../career/useWidgetData'
+import { selectDisplayedCoverage } from '../../career/coverageScore'
 import { useDashboardConfig, isWidgetHidden, getWidgetSize, type WidgetSize } from '../../career/dashboardConfig'
 import { MARKET_WIDGETS } from '../../career/widgetCatalog'
 import { loadBookmarkDetails, toggleBookmark, useBookmarks } from '../../career/bookmarkStore'
@@ -31,7 +33,7 @@ import { useSettings } from '../../career/settingsStore'
 import { SkillManagerModal } from '../SkillManagerModal'
 import { recruitmentApi } from '../../career/recruitmentApi'
 import JobsPagination, { parseJobPage, parseJobPageSize, type JobPageSize } from '../../career/JobsPagination'
-import { jobsApi, marketApi, type ApiPool } from '../../career/api'
+import { dashboardApi, jobsApi, marketApi, type ApiPool } from '../../career/api'
 import JobsFilterPanel, { type PositionFilterOption, type RegionFilterOption } from './JobsFilterPanel'
 import {
   mergeSkillOptions,
@@ -1260,14 +1262,30 @@ export function DesktopMy() {
   const { user, isAuthed } = useAuth()
   const { resumes, activeResume, updateResume, deleteResume, setPrimary } = useResumesState()
   const skills = activeResume?.skills ?? []
-  const coverage = activeResume?.coveragePct ?? calculateCoverage(skills, '국내')
-  // 미니 커버리지 스냅샷 상태 — 로그인 + 이력서 보유일 때만 실값을 보여준다.
-  const hasCoverageSnapshot = isAuthed && !!activeResume
+  const token = getAuthToken()
+  const resumeId = Number(activeResume?.id)
+  const coverageIdentity = Number.isInteger(resumeId) && resumeId > 0 && token
+    ? { resumeId, token }
+    : null
+  const coverageData = useWidgetData(
+    coverageIdentity ? () => dashboardApi.coverage(coverageIdentity) : null,
+    { coverage_score: 0, top_skills: [] },
+    coverageIdentity ? `${coverageIdentity.resumeId}:${skills.join('|')}` : 'my-no-resume',
+  )
+  const coverage = coverageData.source === 'live' && !coverageData.error
+    ? selectDisplayedCoverage(coverageData.value, import.meta.env.VITE_MATCH_SCORE_VERSION)
+    : null
+  // 미니 커버리지 스냅샷은 API 실값을 받은 뒤에만 보여준다. 정적 계산값으로 폴백하지 않는다.
+  const hasCoverageSnapshot = isAuthed && !!activeResume && coverage != null
   const coverageLabel = !isAuthed
     ? '로그인하면 커버리지를 볼 수 있어요'
     : !activeResume
       ? '이력서를 등록하면 커버리지가 보여요'
-      : '내 커버리지 스냅샷'
+      : coverageData.loading
+        ? '커버리지를 불러오는 중이에요'
+        : coverageData.error
+          ? '커버리지를 불러오지 못했어요'
+          : '내 커버리지 스냅샷'
   const coverageDesc = hasCoverageSnapshot
     ? `보유 기술 ${skills.length}개 기준`
     : '어시스턴트가 갭을 짚어드려요'
@@ -1395,7 +1413,7 @@ export function DesktopMy() {
                 <span className="dmy__hero-em">{email}</span>
                 <div className="dmy__hero-stats">
                   <span><b>{skills.length}</b> 보유 기술</span>
-                  <span><b>{coverage}%</b> 커버리지</span>
+                  <span><b>{coverage ?? '—'}{coverage != null && '%'}</b> 커버리지</span>
                   <span><b>{bookmarkIds.length}</b> 북마크</span>
                 </div>
               </>
@@ -1424,11 +1442,11 @@ export function DesktopMy() {
               onClick={() => setPostingListOpen('recent')}
               ariaLabel={`최근 본 공고 ${recentViewIds.length}건 보기`}
             />
-            <StatTile label="커버리지" value={coverage} unit="%" />
+            <StatTile label="커버리지" value={coverage ?? '—'} unit={coverage != null ? '%' : ''} />
           </div>
 
           <section className={`dmy__coverage dcard${hasCoverageSnapshot ? '' : ' dmy__coverage--dim'}`}>
-            <MiniCoverageRing pct={hasCoverageSnapshot ? coverage : 0} dim={!hasCoverageSnapshot} />
+            <MiniCoverageRing pct={coverage ?? 0} dim={!hasCoverageSnapshot} />
             <div className="dmy__coverage-body">
               <span className="dmy__coverage-label">{coverageLabel}</span>
               <span className="dmy__coverage-desc">{coverageDesc}</span>
