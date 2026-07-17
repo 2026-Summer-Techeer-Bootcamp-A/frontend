@@ -8,7 +8,7 @@ import {
 } from '../../career/kit'
 import { IndustryFitRadar } from '../../career/insights'
 import { HBars } from '../../career/charts'
-import { LatestJobsTimeline, SkillUnlockWidget } from '../../career/wowWidgets'
+import { LatestJobsTimeline } from '../../career/wowWidgets'
 import { WorkflowMap } from '../../career/workflow/WorkflowMap'
 import { useResumesState, getDynamicPostings, calculateCoverage, ddayInfo } from '../../career/state'
 import { getAuthToken, useAuth } from '../../career/authStore'
@@ -154,6 +154,14 @@ function LiveCoverageHistogram({
 
   const toggle = (tech: string) => setActive((cur) => (cur === tech ? null : tech))
   const max = Math.max(...data.histogram.map((bin) => bin.count), 1)
+  // 클릭한 기술을 배웠다고 가정했을 때의 매칭 위치. matched_after/total로 백분위를
+  // 근사해 문턱·현재 위치 마커와 같은 패턴으로 슬라이드시킨다. 계산 중이면 현재 위치에
+  // 머물며 살짝 깜빡이고, 요청이 실패하면 아예 그리지 않아 기존 폴백 동작을 지킨다.
+  const projectedPercent = whatIf && data.total > 0
+    ? Math.min(100, Math.max(0, (whatIf.matched_after / data.total) * 100))
+    : null
+  const beforeNum = useCountUp(whatIf?.matched_before ?? 0)
+  const afterNum = useCountUp(whatIf?.matched_after ?? 0)
   return (
     <div className="kit-hist">
       <div className="kit-hist__headline">
@@ -165,6 +173,12 @@ function LiveCoverageHistogram({
       <div className="kit-hist__chart">
         <div className="kit-hist__thr" style={{ left: `${data.threshold}%` }} />
         <div className="kit-hist__thr" style={{ left: `${data.coverage_score}%`, borderColor: '#0b0b0c' }} />
+        {active && !whatIfError && (
+          <div
+            className={`kit-hist__thr kit-hist__thr--projected${whatIfLoading ? ' kit-hist__thr--pulse' : ''}`}
+            style={{ left: `${projectedPercent ?? data.coverage_score}%` }}
+          />
+        )}
         {data.histogram.map((bin) => (
           <div key={bin.range_start} className="kit-hist__col">
             <i className={bin.range_start >= data.threshold ? 'on' : ''} style={{ height: `${(bin.count / max) * 100}%` }} />
@@ -176,7 +190,7 @@ function LiveCoverageHistogram({
         <>
           <div className="kit-hist__whatif-label">이 기술을 배우면?</div>
           <div className="kit-hist__whatif-chips" style={{ marginTop: 6 }}>
-            {gapSkills.slice(0, 8).map((g) => (
+            {gapSkills.slice(0, 16).map((g) => (
               <button
                 key={g.tech}
                 className={`kit-hist__whatif-chip${active === g.tech ? ' on' : ''}`}
@@ -194,7 +208,7 @@ function LiveCoverageHistogram({
                 : whatIfError
                   ? '계산에 실패했어요.'
                   : whatIf
-                    ? <>매칭 <b>{whatIf.matched_before.toLocaleString()} → {whatIf.matched_after.toLocaleString()}건</b> (+{whatIf.delta.toLocaleString()})</>
+                    ? <>매칭 <b>{beforeNum.toLocaleString()} → {afterNum.toLocaleString()}건</b> (+{whatIf.delta.toLocaleString()})</>
                     : null}
             </div>
           )}
@@ -254,6 +268,21 @@ export default function DesktopOverview() {
     { coverage_score: coverage, top_skills: [] },
     dashboardRefreshKey,
   )
+  // B-1 what-if 칩 풀 확장: topGap(공고 기준 최다 요구 미보유 기술)에 이미 불러온
+  // coverageData.top_skills의 미보유 기술을 더해 후보를 넓힌다. 추가 네트워크 요청 없이
+  // 기존 두 데이터만 합쳐 중복 없이 상위 16개까지 보여줄 수 있게 한다.
+  const richGapSkills = useMemo(() => {
+    const merged = new Map<string, number>()
+    topGap.forEach(([tech, count]) => merged.set(tech, count))
+    ;(coverageData.value.top_skills ?? []).forEach((s) => {
+      if (s.owned) return
+      if (!merged.has(s.canonical)) merged.set(s.canonical, s.posting_count ?? s.frequency ?? 0)
+    })
+    return [...merged.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 16)
+      .map(([tech, count]) => ({ tech, count }))
+  }, [topGap, coverageData.value])
   const countData = useWidgetData(
     identity ? () => dashboardApi.applicableCount(identity) : null,
     { total: applicable },
@@ -393,7 +422,6 @@ export default function DesktopOverview() {
     setTargetCompany('')
     setTargetInput('')
   }
-  const topGapItem = gapData?.items[0]
 
   // 위젯 리사이즈 헬퍼 — 시장 페이지(DesktopMarket)와 동일 패턴.
   const wsize = (id: string) => {
@@ -417,7 +445,7 @@ export default function DesktopOverview() {
   const secMarketVisible = !isWidgetHidden('dashboard', 'industry-fit')
     || !isWidgetHidden('dashboard', 'coverage-histogram')
     || !isWidgetHidden('dashboard', 'skill-momentum')
-  const secLearnVisible = !isWidgetHidden('dashboard', 'workflow-map') || !isWidgetHidden('dashboard', 'skill-unlock')
+  const secLearnVisible = !isWidgetHidden('dashboard', 'workflow-map')
 
   const heroScoreVisible = !isWidgetHidden('dashboard', 'hero-score')
   const kpiTiles = (
@@ -468,12 +496,32 @@ export default function DesktopOverview() {
             <span>목표 <b>{targetCompany}</b> 기준 갭을 계산하는 중이에요.</span>
           ) : gapError ? (
             <span role="alert">목표 {targetCompany} 데이터를 불러오지 못했어요.</span>
-          ) : gapData && topGapItem ? (
-            <span>
-              목표 <b>{targetCompany}</b>: 매칭 <b>{Math.round(gapData.current_score)}%</b> · <b>{topGapItem.canonical}</b> 배우면 <b>+{topGapItem.score_gain_if_owned}%</b>
-            </span>
           ) : gapData ? (
-            <span>목표 <b>{targetCompany}</b>: 매칭 <b>{Math.round(gapData.current_score)}%</b> · 핵심 기술을 이미 모두 보유하고 있어요.</span>
+            <div className="dov__target-rich">
+              <div className="dov__target-headline">
+                <span>목표 <b>{targetCompany}</b>: 매칭 <b>{Math.round(gapData.current_score)}%</b></span>
+                <span className="dov__target-sample">{targetCompany} 열린 공고 {gapData.sample_size.toLocaleString()}건 기준</span>
+                {gapData.sample_warning && <span className="dov__target-warning">표본이 적어 참고용이에요.</span>}
+              </div>
+              {gapData.items.length > 0 ? (
+                <div className="dov__target-gaplist">
+                  {gapData.items.slice(0, 5).map((item) => (
+                    <div key={item.canonical} className="dov__target-gapitem">
+                      <span className={`dov__target-tier dov__target-tier--${item.tier}`}>
+                        {item.tier === 'core' ? '핵심' : '우대'}
+                      </span>
+                      <span className="dov__target-gapname">{item.canonical}</span>
+                      <span className="dov__target-gapgain">+{item.score_gain_if_owned}%</span>
+                      {item.unlocked_posting_count > 0 && (
+                        <span className="dov__target-gapunlock">+{item.unlocked_posting_count}건 지원 가능</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <span className="dov__target-empty">핵심 기술을 이미 모두 보유하고 있어요.</span>
+              )}
+            </div>
           ) : null}
         </div>
       ) : (
@@ -594,7 +642,7 @@ export default function DesktopOverview() {
                         <LiveCoverageHistogram
                           data={distributionData.value}
                           identity={identity}
-                          gapSkills={topGap.map(([tech, count]) => ({ tech, count }))}
+                          gapSkills={richGapSkills}
                           refreshKey={dashboardRefreshKey}
                         />
                       ) : (
@@ -632,9 +680,9 @@ export default function DesktopOverview() {
             </section>
           )}
 
-          {/* Zone 2b — 무엇을 배울까: 학습 워크플로우 맵(전체 폭) · 한계 해금. 히어로
-              "다음 한 수" 클릭 시 스크롤 대상. 워크플로우 맵은 좌우로 넓게 그려야 DAG가
-              읽히므로 전체 폭을 쓰고, 한계 해금은 그 아래 별도 행에 둔다. */}
+          {/* Zone 2b — 무엇을 배울까: 학습 워크플로우 맵(전체 폭). 히어로 "다음 한 수"
+              클릭 시 스크롤 대상. 워크플로우 맵은 좌우로 넓게 그려야 DAG가 읽히므로
+              전체 폭을 쓴다. */}
           {secLearnVisible && (
             <section className="dov__sec" ref={learnSectionRef}>
               <h2 className="dov__sec-title">무엇을 배울까</h2>
@@ -642,11 +690,6 @@ export default function DesktopOverview() {
                 {!isWidgetHidden('dashboard', 'workflow-map') && (
                   <div className="dov__card-item">
                     <WorkflowMap size={wsize('workflow-map')} />
-                  </div>
-                )}
-                {!isWidgetHidden('dashboard', 'skill-unlock') && (
-                  <div className="dov__card-item">
-                    <SkillUnlockWidget size={wsize('skill-unlock')} />
                   </div>
                 )}
               </div>
