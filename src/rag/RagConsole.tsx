@@ -12,6 +12,7 @@ import AttachmentPicker from './AttachmentPicker'
 import ProcessTimeline from './ProcessTimeline'
 import type { StepEntry } from './ProcessTimeline'
 import ComparisonCards, { ComparisonCard } from './ComparisonCards'
+import ComparisonSummary from './ComparisonSummary'
 import PostingResultCards, { PostingResultCard } from './PostingResultCards'
 import { useAttachments } from './useAttachments'
 import { consumeAttachmentIntent } from './attachmentIntentStore'
@@ -219,6 +220,17 @@ export default function RagConsole() {
               ))}
             </div>
           )}
+          {/* 첨부만 있고 입력이 비어 있을 때 — 그냥 보내면 어떤 비교·정리를 요청할지 미리 보여주고,
+              한 번에 실행할 수 있게 한다(첨부 후 뭘 눌러야 할지 모르는 상태를 없앤다). */}
+          {attachments.length > 0 && input.trim().length === 0 && defaultQuestion && !busy && (
+            <button
+              type="button"
+              className="rc__auto-hint"
+              onClick={() => { submit(defaultQuestion, attachments); resetComposer() }}
+            >
+              <Send size={12} /> {defaultQuestion}
+            </button>
+          )}
           <textarea
             ref={textareaRef}
             className="rc__ta"
@@ -367,6 +379,7 @@ function TurnBlock({ turn, mode, onRetry }: { turn: Turn; mode: Mode; onRetry: (
 
       {mode === 'basic' && turn.results.length > 0 && (
         <>
+          <ComparisonSummary results={turn.results} />
           <ComparisonCards results={turn.results} />
           <PostingResultCards results={turn.results} />
           <AssistantVisualizer results={turn.results} route={turn.route} />
