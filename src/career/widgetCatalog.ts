@@ -26,7 +26,7 @@ export const DASHBOARD_WIDGETS: WidgetCatalogItem[] = [
   { id: 'bookmarks', label: '북마크한 공고', shape: 'list', allowedSizes: ['1x1', '1x2', '2x1', '2x2'], defaultSize: '2x1' },
   { id: 'skill-momentum', label: '지금 지원할 만한 공고', shape: 'bars', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
   { id: 'latest-timeline', label: '최신 공고 타임라인', shape: 'line', allowedSizes: ['2x1', '2x2'], defaultSize: '2x2' },
-  { id: 'learning-path', label: '학습 로드맵', shape: 'bars', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
+  { id: 'workflow-map', label: '학습 워크플로우 맵', shape: 'network', allowedSizes: ['2x2'], defaultSize: '2x2' },
   { id: 'skill-unlock', label: '한계 해금', shape: 'bars', allowedSizes: ['1x1', '2x1', '2x2'], defaultSize: '2x1' },
 ]
 

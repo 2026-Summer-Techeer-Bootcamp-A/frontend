@@ -595,9 +595,15 @@ type AItem = { tech: string; i_pct: number; d_pct: number; i_now: number; d_now:
 type AData = { series: AItem[]; pearls: AItem[] }
 const A = aRaw as unknown as { as_of: string; sample_size: number; data: AData }
 
-export function HypeVsHireWidget({ size = '2x2' }: { size?: WidgetSize }) {
+// A-2: highlightOwned=false면 보유 기술 오버레이를 끈다(DesktopMarket의 "내 스킬 강조"
+// 전역 토글용). 기본값 true는 이 위젯을 단독으로 쓰는 다른 자리에서 기존 항상-강조 동작을
+// 그대로 유지하기 위함이다.
+export function HypeVsHireWidget({ size = '2x2', highlightOwned = true }: { size?: WidgetSize; highlightOwned?: boolean }) {
   const { activeResume } = useResumesState()
-  const ownedSkills = useMemo(() => new Set(activeResume?.skills ?? []), [activeResume])
+  const ownedSkills = useMemo(
+    () => (highlightOwned ? new Set(activeResume?.skills ?? []) : new Set<string>()),
+    [activeResume, highlightOwned],
+  )
   const [live, setLive] = useState<AData | null>(null)
   const [selectedTech, setSelectedTech] = useState(A.data.pearls[0]?.tech ?? A.data.series[0]?.tech ?? '')
   useEffect(() => {
@@ -1002,9 +1008,15 @@ function ghRankSeries(line: GhLine): (number | null)[] {
   return GH.data.years.map((y) => byYear.get(y) ?? null)
 }
 
-export function GithubChronicleWidget({ size = '2x2' }: { size?: WidgetSize }) {
+// A-2: highlightOwned=false면 보유 기술 오버레이를 끈다(DesktopMarket의 "내 스킬 강조"
+// 전역 토글용). 기본값 true는 이 위젯을 단독으로 쓰는 다른 자리에서 기존 항상-강조 동작을
+// 그대로 유지하기 위함이다.
+export function GithubChronicleWidget({ size = '2x2', highlightOwned = true }: { size?: WidgetSize; highlightOwned?: boolean }) {
   const { activeResume } = useResumesState()
-  const ownedSkills = useMemo(() => new Set(activeResume?.skills ?? []), [activeResume])
+  const ownedSkills = useMemo(
+    () => (highlightOwned ? new Set(activeResume?.skills ?? []) : new Set<string>()),
+    [activeResume, highlightOwned],
+  )
   const [live, setLive] = useState<GhData | null>(null)
   useEffect(() => {
     let cancelled = false
