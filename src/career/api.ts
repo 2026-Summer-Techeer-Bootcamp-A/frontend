@@ -242,6 +242,13 @@ export type RoadmapData = {
   start_matched: number; total: number; sample_size: number; as_of: string
   steps: Array<{ step: number; canonical: string; category: string; matched_after: number; delta: number }>
 }
+// A-5: 북마크 스코프 로드맵 — POST /match/roadmap/scoped 응답. GET /match/roadmap과 같은
+// 그리디 알고리즘을 공유하되 모수가 시장 전체가 아니라 넘긴 posting_ids로 좁혀진다.
+export type ScopedRoadmapStep = { step: number; canonical: string; category: string; matched_after: number; delta: number; freq?: number }
+export type ScopedRoadmapData = {
+  start_matched: number; total: number; as_of: string
+  steps: ScopedRoadmapStep[]
+}
 export type UnlockData = {
   funnel: { apply: number; near1: number; near2_3: number; far: number }; sample_size: number; as_of: string
   candidates: Array<{ canonical: string; req_count: number; marginal_apply: number }>
@@ -277,6 +284,14 @@ export const dashboardApi = {
     request<PivotData>(path('/match/pivot-map', { ...personal(id), kind: 'industry', limit: 6 }), auth(id.token)),
   roadmap: (id: Identity, position?: string) =>
     request<RoadmapData>(path('/match/roadmap', { ...personal(id, position), steps: 5 }), auth(id.token)),
+  // A-5: 북마크 공고 id 목록만을 모수로 좁힌 로드맵. roadmap()과 달리 pool/position 대신
+  // posting_ids를 JSON 바디로 보낸다(POST).
+  roadmapScoped: (id: Identity, postingIds: number[], steps = 5) =>
+    request<ScopedRoadmapData>('/match/roadmap/scoped', {
+      method: 'POST',
+      body: JSON.stringify({ resume_id: id.resumeId, posting_ids: postingIds, steps }),
+      ...auth(id.token),
+    }),
   unlock: (id: Identity, position?: string) =>
     request<UnlockData>(path('/stats/skill-unlock', personal(id, position)), auth(id.token)),
   timeline: (id: Identity) =>

@@ -8,7 +8,8 @@ import {
 } from '../../career/kit'
 import { IndustryFitRadar } from '../../career/insights'
 import { HBars } from '../../career/charts'
-import { LatestJobsTimeline, LearningPathWidget, SkillUnlockWidget } from '../../career/wowWidgets'
+import { LatestJobsTimeline, SkillUnlockWidget } from '../../career/wowWidgets'
+import { WorkflowMap } from '../../career/workflow/WorkflowMap'
 import { useResumesState, getDynamicPostings, calculateCoverage, ddayInfo } from '../../career/state'
 import { getAuthToken, useAuth } from '../../career/authStore'
 import {
@@ -416,7 +417,7 @@ export default function DesktopOverview() {
   const secMarketVisible = !isWidgetHidden('dashboard', 'industry-fit')
     || !isWidgetHidden('dashboard', 'coverage-histogram')
     || !isWidgetHidden('dashboard', 'skill-momentum')
-  const secLearnVisible = !isWidgetHidden('dashboard', 'learning-path') || !isWidgetHidden('dashboard', 'skill-unlock')
+  const secLearnVisible = !isWidgetHidden('dashboard', 'workflow-map') || !isWidgetHidden('dashboard', 'skill-unlock')
 
   const heroScoreVisible = !isWidgetHidden('dashboard', 'hero-score')
   const kpiTiles = (
@@ -631,14 +632,16 @@ export default function DesktopOverview() {
             </section>
           )}
 
-          {/* Zone 2b — 무엇을 배울까: 학습 로드맵 · 한계 해금. 히어로 "다음 한 수" 클릭 시 스크롤 대상. */}
+          {/* Zone 2b — 무엇을 배울까: 학습 워크플로우 맵(전체 폭) · 한계 해금. 히어로
+              "다음 한 수" 클릭 시 스크롤 대상. 워크플로우 맵은 좌우로 넓게 그려야 DAG가
+              읽히므로 전체 폭을 쓰고, 한계 해금은 그 아래 별도 행에 둔다. */}
           {secLearnVisible && (
             <section className="dov__sec" ref={learnSectionRef}>
               <h2 className="dov__sec-title">무엇을 배울까</h2>
-              <div className="dov__sec-grid dov__sec-grid--2">
-                {!isWidgetHidden('dashboard', 'learning-path') && (
+              <div className="dov__sec-grid dov__sec-grid--1">
+                {!isWidgetHidden('dashboard', 'workflow-map') && (
                   <div className="dov__card-item">
-                    <LearningPathWidget size={wsize('learning-path')} />
+                    <WorkflowMap size={wsize('workflow-map')} />
                   </div>
                 )}
                 {!isWidgetHidden('dashboard', 'skill-unlock') && (
