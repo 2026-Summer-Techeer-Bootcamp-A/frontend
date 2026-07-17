@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ReactECharts from 'echarts-for-react'
-import { Sparkles, FileText, Info } from 'lucide-react'
+import { Sparkles, FileText, Info, X } from 'lucide-react'
 import {
-  ActivityRings, useCountUp, SectionHeader, CoverageHistogram,
+  ActivityRings, useCountUp, SectionHeader, CoverageHistogram, TechIcon,
   PreviewBadge, WidgetSettingsMenu, type RingMetric,
 } from '../../career/kit'
 import { IndustryFitRadar } from '../../career/insights'
@@ -12,13 +12,15 @@ import { LatestJobsTimeline, LearningPathWidget, SkillUnlockWidget } from '../..
 import { useResumesState, getDynamicPostings, calculateCoverage, ddayInfo } from '../../career/state'
 import { getAuthToken, useAuth } from '../../career/authStore'
 import {
-  dashboardApi, jobsApi, type DistributionData, type PivotData, type PostingCard,
+  dashboardApi, jobsApi,
+  type CoverageData, type DistributionData, type GapData, type Identity, type PivotData, type PostingCard, type WhatIfData,
 } from '../../career/api'
 import { useWidgetData } from '../../career/useWidgetData'
 import { selectDisplayedCoverage } from '../../career/coverageScore'
 import { useDashboardConfig, isWidgetHidden, getWidgetSize } from '../../career/dashboardConfig'
 import { DASHBOARD_WIDGETS } from '../../career/widgetCatalog'
 import { useBookmarks } from '../../career/bookmarkStore'
+import { useTargetCompany, setTargetCompany } from '../../career/targetContext'
 import data from '../../data/careerData.json'
 import './DesktopOverview.css'
 
@@ -32,6 +34,27 @@ function daysSince(dateStr: string, ref: string) {
   if (!dateStr) return null
   const d = Math.round((new Date(ref).getTime() - new Date(dateStr).getTime()) / 86400000)
   return d >= 0 ? d : null
+}
+
+/** A-3: 히어로 "다음 한 수" — 이미 불러온 coverageData.top_skills(가중치 · 핵심기술 누락 페널티)에서
+ * 가장 크게 점수를 올려줄 미보유 기술 하나를 고른다. weight·penalty_contribution 신호가 아직 없으면
+ * (초기 mock, 로딩 중) 페이지에서 이미 계산해둔 topGap(공고 기준 최다 요구 미보유 기술)으로 폴백해
+ * "+n건" 형태로 보여준다. 추가 네트워크 요청 없이 기존 두 데이터만 재사용한다. */
+type TopSkillItem = CoverageData['top_skills'][number]
+function pickNextMove(
+  topSkills: TopSkillItem[],
+  gapFallback: Array<[string, number]>,
+): { skill: string; label: string } | null {
+  const scored = topSkills
+    .filter((s) => !s.owned)
+    .map((s) => ({ skill: s.canonical, gain: Math.round((100 * (s.weight ?? 0) + (s.penalty_contribution ?? 0)) * 10) / 10 }))
+    .filter((s) => s.gain > 0)
+    .sort((a, b) => b.gain - a.gain)
+  if (scored.length > 0) return { skill: scored[0].skill, label: `+${scored[0].gain}%p` }
+
+  const top = gapFallback[0]
+  if (top) return { skill: top[0], label: `+${top[1]}건` }
+  return null
 }
 
 /** 공용 Tooltip 컴포넌트가 없어 네이티브 hover 패널로 가볍게 구현한 정보 아이콘.
@@ -93,13 +116,49 @@ function LiveIndustryRadar({ data }: { data: PivotData }) {
   )
 }
 
-function LiveCoverageHistogram({ data }: { data: DistributionData }) {
+/** B-1: 라이브 커버리지 히스토그램 + "이 기술을 배우면?" what-if 토글. 목 데이터용 CoverageHistogram과
+ * 달리 히스토그램 자체를 클라이언트에서 재계산하지 않고(막대는 서버가 준 분포 그대로 두고),
+ * GET /match/what-if를 호출해 그 기술을 추가했을 때 매칭 공고 수가 실제로 얼마나 느는지를
+ * 델타로 얹어 보여준다. 백엔드는 한 번에 기술 하나만 가정하므로 칩은 단일 선택 토글이다.
+ * 요청이 실패해도 정적 히스토그램은 그대로 남아 크래시 없이 폴백한다. */
+function LiveCoverageHistogram({
+  data, identity, gapSkills, refreshKey,
+}: { data: DistributionData; identity: Identity | null; gapSkills: Array<{ tech: string; count: number }>; refreshKey: string }) {
+  const [active, setActive] = useState<string | null>(null)
+  const [whatIf, setWhatIf] = useState<WhatIfData | null>(null)
+  const [whatIfLoading, setWhatIfLoading] = useState(false)
+  const [whatIfError, setWhatIfError] = useState(false)
+
+  useEffect(() => {
+    if (!active || !identity) {
+      setWhatIf(null)
+      setWhatIfLoading(false)
+      setWhatIfError(false)
+      return
+    }
+    let cancelled = false
+    setWhatIfLoading(true)
+    setWhatIfError(false)
+    dashboardApi.whatIf(identity, active)
+      .then((result) => { if (!cancelled) setWhatIf(result) })
+      .catch(() => {
+        if (!cancelled) {
+          setWhatIf(null)
+          setWhatIfError(true)
+        }
+      })
+      .finally(() => { if (!cancelled) setWhatIfLoading(false) })
+    return () => { cancelled = true }
+  }, [active, identity, refreshKey])
+
+  const toggle = (tech: string) => setActive((cur) => (cur === tech ? null : tech))
   const max = Math.max(...data.histogram.map((bin) => bin.count), 1)
   return (
     <div className="kit-hist">
       <div className="kit-hist__headline">
         국내 공고 {data.total.toLocaleString()}건 중 <b>{data.matched.toLocaleString()}건</b>이 기준을 넘어요
         <InfoTip text={`기준 = 보유 기술 매칭률 ${data.threshold}% 이상`} />
+        {whatIf && !whatIfError && <span className="kit-hist__delta">+{whatIf.delta.toLocaleString()}</span>}
         <div className="kit-hist__sample">내 백분위 {data.my_percentile}%</div>
       </div>
       <div className="kit-hist__chart">
@@ -112,6 +171,34 @@ function LiveCoverageHistogram({ data }: { data: DistributionData }) {
         ))}
       </div>
       <div className="kit-hist__axis"><span>0%</span><span className="thr">문턱 {data.threshold}%</span><span>100%</span></div>
+      {gapSkills.length > 0 && identity && (
+        <>
+          <div className="kit-hist__whatif-label">이 기술을 배우면?</div>
+          <div className="kit-hist__whatif-chips" style={{ marginTop: 6 }}>
+            {gapSkills.slice(0, 8).map((g) => (
+              <button
+                key={g.tech}
+                className={`kit-hist__whatif-chip${active === g.tech ? ' on' : ''}`}
+                onClick={() => toggle(g.tech)}
+              >
+                <TechIcon tech={g.tech} size={14} />
+                <span>{g.tech}</span>
+              </button>
+            ))}
+          </div>
+          {active && (
+            <div className="kit-hist__sample" role="status">
+              {whatIfLoading
+                ? '계산하는 중이에요.'
+                : whatIfError
+                  ? '계산에 실패했어요.'
+                  : whatIf
+                    ? <>매칭 <b>{whatIf.matched_before.toLocaleString()} → {whatIf.matched_after.toLocaleString()}건</b> (+{whatIf.delta.toLocaleString()})</>
+                    : null}
+            </div>
+          )}
+        </>
+      )}
     </div>
   )
 }
@@ -259,6 +346,54 @@ export default function DesktopOverview() {
 
   const bookmarkIds = useBookmarks()
 
+  // A-3: 히어로 "다음 한 수" — 이미 불러온 coverageData/topGap만 재사용해 추가 요청 없이 계산한다.
+  const nextMove = useMemo(
+    () => pickNextMove(coverageData.value.top_skills ?? [], topGap),
+    [coverageData.value, topGap],
+  )
+  const learnSectionRef = useRef<HTMLDivElement>(null)
+  const scrollToLearning = () => learnSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+
+  // A-1: 목표 기업 앵커 — localStorage 정본(targetContext)을 읽어 이 회사 기준 갭을 별도로 불러온다.
+  const targetCompany = useTargetCompany()
+  const [targetInput, setTargetInput] = useState(targetCompany)
+  useEffect(() => { setTargetInput(targetCompany) }, [targetCompany])
+
+  const [gapData, setGapData] = useState<GapData | null>(null)
+  const [gapLoading, setGapLoading] = useState(false)
+  const [gapError, setGapError] = useState(false)
+  useEffect(() => {
+    if (!identity || !targetCompany) {
+      setGapData(null)
+      setGapLoading(false)
+      setGapError(false)
+      return
+    }
+    let cancelled = false
+    setGapLoading(true)
+    setGapError(false)
+    dashboardApi.gapByCompany(identity, targetCompany)
+      .then((result) => { if (!cancelled) setGapData(result) })
+      .catch(() => {
+        if (!cancelled) {
+          setGapData(null)
+          setGapError(true)
+        }
+      })
+      .finally(() => { if (!cancelled) setGapLoading(false) })
+    return () => { cancelled = true }
+  }, [identity, targetCompany, dashboardRefreshKey])
+
+  const submitTargetCompany = (e: FormEvent) => {
+    e.preventDefault()
+    setTargetCompany(targetInput)
+  }
+  const clearTargetCompany = () => {
+    setTargetCompany('')
+    setTargetInput('')
+  }
+  const topGapItem = gapData?.items[0]
+
   // 위젯 리사이즈 헬퍼 — 시장 페이지(DesktopMarket)와 동일 패턴.
   const wsize = (id: string) => {
     const item = DASHBOARD_WIDGETS.find((w) => w.id === id)!
@@ -306,6 +441,44 @@ export default function DesktopOverview() {
         </div>
       </header>
 
+      {/* A-1: 목표 기업 앵커 — 자유 텍스트로 기업명을 입력하면 그 기업 열린 공고 기준 갭을 보여준다. */}
+      <form className="dov__target" onSubmit={submitTargetCompany}>
+        <label className="dov__target-label" htmlFor="dov-target-company">목표 기업</label>
+        <input
+          id="dov-target-company"
+          className="dov__target-input"
+          type="text"
+          value={targetInput}
+          onChange={(e) => setTargetInput(e.target.value)}
+          placeholder="예: 네이버"
+        />
+        <button type="submit" className="dov__target-btn" disabled={!targetInput.trim()}>적용</button>
+        {targetCompany && (
+          <button type="button" className="dov__target-clear" onClick={clearTargetCompany} aria-label="목표 기업 해제">
+            <X size={14} />
+          </button>
+        )}
+      </form>
+      {targetCompany ? (
+        <div className="dov__target-panel">
+          {!identity ? (
+            <span>로그인하고 이력서를 등록하면 <b>{targetCompany}</b> 기준 갭을 보여드려요.</span>
+          ) : gapLoading ? (
+            <span>목표 <b>{targetCompany}</b> 기준 갭을 계산하는 중이에요.</span>
+          ) : gapError ? (
+            <span role="alert">목표 {targetCompany} 데이터를 불러오지 못했어요.</span>
+          ) : gapData && topGapItem ? (
+            <span>
+              목표 <b>{targetCompany}</b>: 매칭 <b>{Math.round(gapData.current_score)}%</b> · <b>{topGapItem.canonical}</b> 배우면 <b>+{topGapItem.score_gain_if_owned}%</b>
+            </span>
+          ) : gapData ? (
+            <span>목표 <b>{targetCompany}</b>: 매칭 <b>{Math.round(gapData.current_score)}%</b> · 핵심 기술을 이미 모두 보유하고 있어요.</span>
+          ) : null}
+        </div>
+      ) : (
+        <div className="dov__target-panel dov__target-panel--empty">목표 기업을 정하면 그 회사 기준 갭을 보여드려요.</div>
+      )}
+
       <div className="dov__layout">
         <div className="dov__insights">
           {/* Zone 1 — 히어로존: 검정 카드 1개, 좌(커리어 점수) · 우(KPI 2x2) 2열. above-fold. */}
@@ -332,6 +505,15 @@ export default function DesktopOverview() {
                           국내 공고 <b>{scoreData.value.domesticTotal.toLocaleString()}건</b> · 지원 가능 <b>{scoreData.value.applicable.toLocaleString()}건</b>
                           {scoreExplanation && <><br /><span>{scoreExplanation}</span></>}
                         </div>
+                        {/* A-3: 점수는 컨텍스트, 이 줄은 CTA — 클릭하면 학습 섹션으로 스크롤한다. */}
+                        <button type="button" className="dov__hero-nextmove" onClick={scrollToLearning} disabled={!nextMove}>
+                          <span className="dov__hero-nextmove-label">가장 크게 올릴 한 수</span>
+                          {nextMove ? (
+                            <span className="dov__hero-nextmove-text">{nextMove.skill} <b>{nextMove.label}</b></span>
+                          ) : (
+                            <span className="dov__hero-nextmove-text dov__hero-nextmove-text--empty">아직 추천할 학습 포인트가 없어요.</span>
+                          )}
+                        </button>
                       </div>
                     </>
                   ) : (
@@ -408,7 +590,12 @@ export default function DesktopOverview() {
                       ) : hasResume && distributionData.error ? (
                         <div className="dov__empty" role="alert">커버리지 분포를 불러오지 못했어요.</div>
                       ) : distributionData.source === 'live' && distributionData.value ? (
-                        <LiveCoverageHistogram data={distributionData.value} />
+                        <LiveCoverageHistogram
+                          data={distributionData.value}
+                          identity={identity}
+                          gapSkills={topGap.map(([tech, count]) => ({ tech, count }))}
+                          refreshKey={dashboardRefreshKey}
+                        />
                       ) : (
                         <CoverageHistogram
                           postings={domestic.map((p) => ({ techs: p.techs, held: p.matchHeld, total: p.matchTotal }))}
@@ -444,9 +631,9 @@ export default function DesktopOverview() {
             </section>
           )}
 
-          {/* Zone 2b — 무엇을 배울까: 학습 로드맵 · 한계 해금 */}
+          {/* Zone 2b — 무엇을 배울까: 학습 로드맵 · 한계 해금. 히어로 "다음 한 수" 클릭 시 스크롤 대상. */}
           {secLearnVisible && (
-            <section className="dov__sec">
+            <section className="dov__sec" ref={learnSectionRef}>
               <h2 className="dov__sec-title">무엇을 배울까</h2>
               <div className="dov__sec-grid dov__sec-grid--2">
                 {!isWidgetHidden('dashboard', 'learning-path') && (
