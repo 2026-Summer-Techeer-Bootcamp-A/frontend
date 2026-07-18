@@ -18,6 +18,7 @@ import { useAttachments } from './useAttachments'
 import { consumeAttachmentIntent } from './attachmentIntentStore'
 import { routeLabel, intentLabel } from './chatLabels'
 import { useAuth } from '../career/authStore'
+import { readResumeSessionId } from './resumeSession'
 import './rag-console.css'
 
 // 실 백엔드(POST /api/v1/chat/stream) 라이브 스트리밍 콘솔.
@@ -60,15 +61,6 @@ let nextTurnId = 1
 // 적합도 LLM 판정(resume_posting_llm_compare)을 태운다. RagConsole 자체는 확인 세션을 만들지
 // 않고(그건 ResumeInsight 화면 몫), 이미 만들어진 세션이 있으면 sessionStorage에서 읽어 전달만
 // 한다 — 세션이 없으면 undefined를 그대로 넘겨 기존 태그 기반 비교로 강등된다(조용한 실패 아님).
-const RESUME_SESSION_STORAGE_KEY = 'rag:resumeSessionId'
-
-function readResumeSessionId(): string | undefined {
-  try {
-    return sessionStorage.getItem(RESUME_SESSION_STORAGE_KEY) ?? undefined
-  } catch {
-    return undefined
-  }
-}
 
 export default function RagConsole() {
   const [turns, setTurns] = useState<Turn[]>([])
