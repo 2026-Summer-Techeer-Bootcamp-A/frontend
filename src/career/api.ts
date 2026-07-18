@@ -147,8 +147,8 @@ export const jobsApi = {
   categories(pool?: ApiPool) {
     return request<{ categories: Array<{ name: string; is_tech: boolean }> }>(withQuery('/job-categories', { pool }))
   },
-  skills(q = '', limit = 20) {
-    return request<{ skills: Array<{ canonical: string; category: string; aliases: string[] }> }>(withQuery('/skills', { q, limit }))
+  skills(q = '', limit = 20, category?: string) {
+    return request<{ skills: Array<{ canonical: string; category: string; aliases: string[] }> }>(withQuery('/skills', { q, limit, category }))
   },
 }
 
