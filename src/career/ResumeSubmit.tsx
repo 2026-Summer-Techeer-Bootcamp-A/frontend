@@ -7,6 +7,7 @@ import { useResumesState, resumeToUpsertPayload, detailToResume } from './state'
 import { resumeApi } from './api'
 import type { ResumePreferencesDto } from './api'
 import { getAuthToken } from './authStore'
+import { confirmResumeSession } from '../rag/resumeInsightApi'
 import { useIsDesktop } from '../shared/useMediaQuery'
 import techs from '../data/techs.json'
 
@@ -153,8 +154,10 @@ export default function ResumeSubmit() {
       // 넣으면 skill_id 매칭이 끊겨 "내 스킬 시장 모멘텀" 위젯이 항상 비게 된다. 사전에 등록된
       // 스킬만 골라서 합친다.
       const dictSkills = result.skills.filter((sk) => sk.in_dict === true).map((sk) => sk.canonical)
-      setSkills((s) => [...new Set([...s, ...dictSkills])])
-      setCerts((c) => [...new Set([...c, ...result.certs.map((ct) => ct.name)])])
+      const mergedSkills = [...new Set([...skills, ...dictSkills])]
+      const mergedCerts = [...new Set([...certs, ...result.certs.map((ct) => ct.name)])]
+      setSkills(mergedSkills)
+      setCerts(mergedCerts)
       if (result.position && POSITIONS.includes(result.position)) setPosition(result.position)
       if (result.career_min !== null) setCareerMin(String(result.career_min))
       if (result.career_max !== null) setCareerMax(String(result.career_max))
@@ -162,6 +165,24 @@ export default function ResumeSubmit() {
       if (dictSkills.length === 0) {
         setParseError('이력서에서 인식 가능한 기술을 찾지 못했어요')
       }
+
+      // PDF 파싱 화면은 저장 이력서 폼을 채우는 게 주 목적이고, 세션 시딩은 부가 효과이므로
+      // 실패해도 폼 작성 흐름을 막지 않는다. resume_text가 있으면 구조화 필드만 합성한 텍스트보다
+      // 풍부한 원문을 confirm 세션에 실어, 이번 브라우저 세션 동안 커리어 적합도 LLM 비교가
+      // 더 정밀한 근거를 쓸 수 있게 한다.
+      if (result.resume_text) {
+        confirmResumeSession({
+          skills: mergedSkills.map((s) => ({ canonical: s, category: 'skill', in_dict: false })),
+          certs: mergedCerts,
+          position: result.position ?? position,
+          careerMin: result.career_min,
+          careerMax: result.career_max,
+          pool: pool === '국외' ? 'global' : 'domestic',
+          memo: memo.trim() || null,
+          resumeText: result.resume_text,
+        }).catch(() => {})
+      }
+
       setMode('form')
     } catch (e) {
       setParseError(e instanceof Error ? e.message : 'PDF를 처리하지 못했어요')

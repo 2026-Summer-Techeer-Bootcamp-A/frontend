@@ -18,10 +18,15 @@ import './resume-insight.css'
 // 실 백엔드(POST /api/v1/resume/confirm → POST /api/v1/resume/feedback) 연동 화면.
 // PDF 파싱은 쓰지 않는다 — 사용자가 보유 기술을 직접 입력해 confirm 세션에 넘기고,
 // 그 세션을 근거로 feedback이 이력서 피드백 + 예상 면접 질문을 만든다.
-// 여기에 더해 커버리지 링/수요 막대/미보유 갭 3종 시각화를 얹어, 저장 이력서를 불러오면
-// 스킬셋 로드 직후 자동으로 분석까지 실행한다(로그인/저장 이력서가 없으면 예시 데이터로 대체).
+// 여기에 더해 커버리지 링/수요 막대/미보유 갭 3종 시각화를 얹는다. 저장 이력서를 불러오면
+// 초기 진입에서는 스킬셋과 시각화만 자동으로 채우고, 비용이 드는 LLM 피드백은 사용자가
+// 분석 요청 버튼을 누르거나 드롭다운에서 저장 이력서를 다시 선택할 때만 실행한다
+// (로그인/저장 이력서가 없으면 예시 데이터로 대체).
 
-type Status = 'idle' | 'loading' | 'done' | 'error'
+// 'ready'는 저장 이력서에서 스킬·시각화까지는 채웠지만 LLM 피드백은 아직 요청 전인 상태다.
+// 이 상태를 'idle'로 두면 스킬이 이미 채워졌는데도 헤더가 "입력을 기다리는 중"으로 보여
+// 마치 아무 것도 안 된 것처럼 오해를 준다.
+type Status = 'idle' | 'ready' | 'loading' | 'done' | 'error'
 type VizStatus = 'idle' | 'loading' | 'done' | 'error'
 
 interface CoverageInfo {
@@ -39,6 +44,7 @@ interface VizResult {
 
 interface AnalysisInput {
   skills: string[]
+  certs: string[]
   position: string
   pool: Pool
   memo: string | null
@@ -49,6 +55,7 @@ interface CachedPayload {
   position: string
   pool: Pool
   skills: string[]
+  certs: string[]
   result: ResumeFeedbackResponse
   viz: VizResult | null
 }
@@ -136,6 +143,7 @@ export default function ResumeInsight() {
   const [position, setPosition] = useState('backend')
   const [pool, setPool] = useState<Pool>('domestic')
   const [skills, setSkills] = useState<string[]>([])
+  const [certs, setCerts] = useState<string[]>([])
   const [skillInput, setSkillInput] = useState('')
   const [status, setStatus] = useState<Status>('idle')
   const [result, setResult] = useState<ResumeFeedbackResponse | null>(null)
@@ -167,6 +175,7 @@ export default function ResumeInsight() {
       setPosition(parsed.position)
       setPool(parsed.pool === 'global' ? 'global' : 'domestic')
       setSkills(parsed.skills)
+      setCerts(Array.isArray(parsed.certs) ? parsed.certs : [])
       setResult(parsed.result)
       setStatus('done')
       if (parsed.viz) {
@@ -192,6 +201,7 @@ export default function ResumeInsight() {
         position: input.position,
         pool: input.pool,
         skills: input.skills,
+        certs: input.certs,
         result: feedbackRes,
         viz: vizRes,
       }
@@ -211,6 +221,7 @@ export default function ResumeInsight() {
 
     const feedbackPromise = postResumeFeedback({
       skills: input.skills.map((s) => ({ canonical: s, category: 'skill', in_dict: false })),
+      certs: input.certs,
       position: input.position,
       careerMin: null,
       careerMax: null,
@@ -285,12 +296,30 @@ export default function ResumeInsight() {
         setPosition(input.position)
         setPool(input.pool)
         setSkills(input.skills)
+        setCerts(input.certs)
         setSelectedMemo(input.memo)
-        // 기본 이력서 자동 연동도 수동 선택(selectSavedResume)과 동일하게, 스킬셋 로드가
-        // 끝난 즉시 자동으로 분석까지 실행한다 — 예전에는 이 경로만 loadVizData를 직접 불러
-        // 시각화는 채워지되 status가 'idle'에 멈춰 있었고, 그 결과 헤더가 "입력을 기다리는
-        // 중"에 고정되는 버그가 있었다.
-        runAnalysis(input)
+
+        // runAnalysis 전체(피드백+시각화)를 자동 호출하지 않는다 — 여기서는 시각화만
+        // runAnalysis와 동일한 방식으로 직접 채우고, 비용이 드는 postResumeFeedback 호출은
+        // 사용자가 분석 요청 버튼을 누르거나(submit) 저장 이력서를 다시 선택할 때만
+        // (selectSavedResume) 실행되도록 남겨둔다.
+        // 캐시 복원 이펙트가 이미 같은 이력서의 완료된 분석 결과를 채워놨다면(status 'done')
+        // 그 결과를 지우지 않는다 — 여기서 무조건 'ready'로 되돌리면 이미 확보한 피드백이
+        // 화면에서 사라지는 것처럼 보인다.
+        setStatus((prev) => (prev === 'done' ? prev : 'ready'))
+        setVizStatus('loading')
+        setShowSample(false)
+        loadVizData(input, isAuthed)
+          .then((v) => {
+            if (cancelled) return
+            setViz(v)
+            setVizStatus(v ? 'done' : 'error')
+          })
+          .catch(() => {
+            if (cancelled) return
+            setViz(null)
+            setVizStatus('error')
+          })
       } catch (err: unknown) {
         if (!cancelled) {
           setResumeLoadError(err instanceof Error ? err.message : '저장된 이력서를 불러오지 못했어요.')
@@ -329,6 +358,7 @@ export default function ResumeInsight() {
         setPosition(input.position)
         setPool(input.pool)
         setSkills(input.skills)
+        setCerts(input.certs)
         setSelectedMemo(input.memo)
         // 저장 이력서를 불러오면 스킬셋 로드가 끝난 즉시 자동으로 분석까지 실행한다.
         runAnalysis(input)
@@ -357,10 +387,16 @@ export default function ResumeInsight() {
 
   const submit = () => {
     if (skills.length === 0 || busy) return
-    runAnalysis({ skills, position, pool, memo: selectedMemo, resumeId: selectedResumeId })
+    runAnalysis({ skills, certs, position, pool, memo: selectedMemo, resumeId: selectedResumeId })
   }
 
-  const statusLabel = busy ? '분석 중' : result ? '분석 완료' : '입력을 기다리는 중'
+  const statusLabel = busy
+    ? '분석 중'
+    : result
+      ? '분석 완료'
+      : status === 'ready'
+        ? '분석 대기 중'
+        : '입력을 기다리는 중'
 
   // 실데이터가 있으면(로그인 없이도 skillShare는 공개 API라 뜰 수 있다) 그걸 쓰고,
   // 없으면(분석 전 idle이거나 실패) 항상 예시 데이터로 채운 뒤 블러 또는 뱃지로 구분한다.
@@ -532,6 +568,10 @@ export default function ResumeInsight() {
 
           {status === 'idle' && (
             <div className="rc__empty">보유 기술을 입력하고 분석 요청을 누르면 이력서 피드백과 예상 면접 질문을 받아볼 수 있어요.</div>
+          )}
+
+          {status === 'ready' && (
+            <div className="rc__empty">저장된 이력서에서 기술을 불러왔어요. 분석 요청을 누르면 이력서 피드백과 예상 면접 질문을 받아볼 수 있어요.</div>
           )}
 
           {status === 'loading' && (

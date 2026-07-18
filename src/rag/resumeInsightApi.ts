@@ -3,7 +3,8 @@ import { writeResumeSessionId } from './resumeSession'
 
 // chatApi.ts와 동일한 컨벤션: 상대 경로 API_BASE + fetch + FastAPI detail 파싱.
 // 백엔드 계약 원천: backend/app/schemas/resume.py (ResumeConfirmRequest/Response, ResumeFeedbackRequest/Response).
-// PDF 파싱은 의도적으로 쓰지 않는다 — 사용자가 스킬을 직접 입력해 confirm에 넘긴다.
+// 스킬은 사용자가 직접 입력하거나 저장 이력서에서 불러와 confirm에 넘기는 게 기본 경로이고,
+// PDF 업로드 화면(ResumeSubmit)은 추출된 resume_text를 confirmResumeSession으로 별도 시딩한다.
 const API_BASE = '/api/v1'
 
 export type Pool = 'global' | 'domestic'
@@ -14,8 +15,14 @@ export interface ParsedSkillInput {
   in_dict: boolean
 }
 
+export interface ParsedCertInput {
+  name: string
+  in_dict: boolean
+}
+
 export interface ResumeConfirmRequestBody {
   skills: ParsedSkillInput[]
+  certs?: ParsedCertInput[]
   position: string | null
   career_min: number | null
   career_max: number | null
@@ -39,11 +46,25 @@ export interface ResumeFeedbackResponse {
 
 export interface ResumeFeedbackInput {
   skills: ParsedSkillInput[]
+  certs?: string[]
   position: string
   careerMin: number | null
   careerMax: number | null
   pool: Pool
   memo?: string | null
+}
+
+// confirm 세션만 만들 때(예: PDF 업로드 폼 프리필) 쓰는 입력 — postResumeFeedback과 달리
+// 비용이 큰 /resume/feedback 호출까지는 하지 않는다.
+export interface ResumeConfirmInput {
+  skills: ParsedSkillInput[]
+  certs?: string[]
+  position: string | null
+  careerMin: number | null
+  careerMax: number | null
+  pool: Pool
+  memo?: string | null
+  resumeText?: string | null
 }
 
 export interface SavedResumeListItem {
@@ -135,27 +156,48 @@ function composeResumeText(input: ResumeFeedbackInput): string | null {
   if (input.skills.length > 0) {
     lines.push(`보유 기술: ${input.skills.map((s) => s.canonical).join(', ')}`)
   }
+  if (input.certs && input.certs.length > 0) {
+    lines.push(`보유 자격증: ${input.certs.join(', ')}`)
+  }
   if (input.memo?.trim()) lines.push(`경력 요약: ${input.memo.trim()}`)
   const text = lines.join('\n')
   return text.length > 0 ? text.slice(0, 20000) : null
 }
 
-/** confirm → feedback 2단계 호출을 한 번에 처리한다.
- *  confirm은 스킬셋을 서버 세션에 짧게 저장하고, feedback이 그 세션을 근거로 피드백·면접 질문을 생성한다. */
-export async function postResumeFeedback(input: ResumeFeedbackInput): Promise<ResumeFeedbackResponse> {
+/** confirm 세션만 만든다(피드백 호출 없이). PDF 업로드 폼 프리필처럼 세션 시딩만 필요하고
+ *  비용이 큰 /resume/feedback까지는 필요 없는 경로에서 쓴다. 성공하면 confirm 세션 id를
+ *  브리지에 실어 어시스턴트(RagConsole)가 커리어 적합도 LLM 비교를 태울 수 있게 한다.
+ *  세션은 한 시간 뒤 Redis에서 소멸한다. */
+export async function confirmResumeSession(input: ResumeConfirmInput): Promise<ResumeConfirmResponse> {
   const confirmed = await postResumeConfirm({
     skills: input.skills,
-    position: input.position || null,
+    certs: input.certs?.map((name) => ({ name, in_dict: false })),
+    position: input.position,
     career_min: input.careerMin,
     career_max: input.careerMax,
     pool: input.pool,
     memo: input.memo ?? null,
-    resume_text: composeResumeText(input),
+    resume_text: input.resumeText ?? null,
   })
 
-  // confirm 세션 id를 브리지에 실어 어시스턴트(RagConsole)가 커리어 적합도 LLM 비교를 태울 수
-  // 있게 한다. 세션은 한 시간 뒤 Redis에서 소멸한다.
   writeResumeSessionId(confirmed.session_id)
+
+  return confirmed
+}
+
+/** confirm → feedback 2단계 호출을 한 번에 처리한다.
+ *  confirm은 스킬셋을 서버 세션에 짧게 저장하고, feedback이 그 세션을 근거로 피드백·면접 질문을 생성한다. */
+export async function postResumeFeedback(input: ResumeFeedbackInput): Promise<ResumeFeedbackResponse> {
+  const confirmed = await confirmResumeSession({
+    skills: input.skills,
+    certs: input.certs,
+    position: input.position || null,
+    careerMin: input.careerMin,
+    careerMax: input.careerMax,
+    pool: input.pool,
+    memo: input.memo ?? null,
+    resumeText: composeResumeText(input),
+  })
 
   return postFeedback(confirmed.session_id, input.position)
 }
