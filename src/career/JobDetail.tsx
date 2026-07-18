@@ -23,6 +23,7 @@ import {
   usePendingComparePosting,
   clearPendingComparePosting,
 } from '../rag/attachmentIntentStore'
+import { confirmResumeSession, composeResumeText } from '../rag/resumeInsightApi'
 import { resolvePostingMapPin, type PostingMapPin } from './jobDetailMap'
 import './career.css'
 
@@ -383,13 +384,52 @@ export default function JobDetail() {
     ? { kind: 'resume', id: Number(activeResume.id), title: activeResume.title, subtitle: activeResume.position || undefined }
     : undefined
 
-  const compareWithResume = () => {
+  const compareWithResume = async () => {
     if (!realPosting) return
     const postingAttachment: ChatAttachment = {
       kind: 'posting',
       id: realPosting.id,
       title: realPosting.title,
       subtitle: realPosting.company ?? undefined,
+    }
+    // activeResume은 resume_id만 실어 나르는데, 이 값만으로는 백엔드가 보유 스킬 태그
+    // 비교(resume_posting_compare)로만 갈 수 있고 원문 인용 LLM 판정(resume_posting_llm_compare)은
+    // 못 탄다 — 그 경로는 resume_session_id(원문이 실린 confirm 세션)가 있어야 한다.
+    // 저장 이력서는 원문을 DB에 두지 않으므로 여기서 구조화 필드를 사람이 읽는 텍스트로
+    // 합성해 confirm 세션을 새로 시딩한다. 실패해도(비로그인 등) 조용히 넘어가 기존 태그
+    // 비교로 강등되게 둔다 — 이 버튼 자체가 막히면 안 되니 비교를 막는 실패는 아니다.
+    if (activeResume) {
+      try {
+        await confirmResumeSession({
+          skills: activeResume.skills.map((canonical) => ({
+            canonical,
+            category: activeResume.skillCategories[canonical] ?? 'unknown',
+            in_dict: true,
+          })),
+          certs: activeResume.certs,
+          position: activeResume.position || null,
+          careerMin: activeResume.careerMin,
+          careerMax: activeResume.careerMax,
+          pool: activeResume.pool === '국외' ? 'global' : 'domestic',
+          memo: activeResume.memo ?? null,
+          resumeText: composeResumeText({
+            skills: activeResume.skills.map((canonical) => ({
+              canonical,
+              category: activeResume.skillCategories[canonical] ?? 'unknown',
+              in_dict: true,
+            })),
+            certs: activeResume.certs,
+            position: activeResume.position,
+            careerMin: activeResume.careerMin,
+            careerMax: activeResume.careerMax,
+            pool: activeResume.pool === '국외' ? 'global' : 'domestic',
+            memo: activeResume.memo,
+          }),
+        })
+      } catch {
+        // 세션 시딩 실패 — resumeSessionId 없이 진행하면 RagConsole/파이프라인이 알아서
+        // 태그 기반 비교로 강등한다.
+      }
     }
     setAttachmentIntent({
       attachments: resumeAttachment ? [resumeAttachment, postingAttachment] : [postingAttachment],
