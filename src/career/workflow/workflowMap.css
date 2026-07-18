@@ -288,11 +288,16 @@
   font-weight: 800;
 }
 
-/* 보유 스킬 클러스터 — 그린 톤(기존 .wfm-node--owned/.wfm-chip--owned 토큰 재사용). */
+/* 보유 스킬 클러스터 — 그린 톤(기존 .wfm-node--owned/.wfm-chip--owned 토큰 재사용).
+   height:100% — 칩은 가로 wrap이라 텍스트 폭에 따라 내용 높이가 달라져 결정적 계산이
+   불가능하다. 그래서 래퍼(React Flow 노드) 쪽은 고정 선언 높이(COMPACT/MODAL_OWNED_H)를
+   유지하고, 이 안쪽 시각 박스가 그 래퍼를 항상 꽉 채우게 해서 handle 위치(top:35%/65%,
+   이 요소 기준 퍼센트)가 항상 래퍼 크기와 일치하게 한다. 칩이 넘치면 overflow:hidden으로
+   잘리지만 캡이 이미 개수를 제한해 대부분 안 넘친다. */
 .wfm-cluster-node--owned {
   border-color: #9dcfb4;
   background: #f5fbf7;
-  max-height: var(--wfm-owned-h, 150px);
+  height: 100%;
 }
 .wfm-cluster-node--owned .wfm-cluster-node__title { color: #14532d; }
 
@@ -327,11 +332,14 @@
 }
 
 /* 목표/경유 사다리 — 다크 톤(기존 .wfm-node--target 토큰 재사용). 개별 항목은 랭크
-   번호와 함께 세로로 쌓인다. */
+   번호와 함께 세로로 쌓인다. height:100% — 래퍼 높이는 이제 buildWorkflowGraph의
+   ladderHeight()가 항목 수 기반으로 결정적으로 계산해 내려주므로 내용과 거의 일치하지만,
+   그래도 이 안쪽 박스가 래퍼를 정확히 꽉 채워야 handle(top:35%/65%, 이 요소 기준 퍼센트)이
+   항상 보이는 테두리 위에 오고 엣지가 빈 공간을 가리키지 않는다. */
 .wfm-ladder-node {
   border-color: #18181b;
   background: #18181b;
-  max-height: var(--wfm-target-h, 320px);
+  height: 100%;
 }
 .wfm-ladder-node__title { color: #fff; }
 
@@ -385,6 +393,33 @@
 }
 .wfm-ladder-node__item--bridge .wfm-ladder-node__label { color: #d4d4d8; }
 .wfm-ladder-node__item--bridge .wfm-ladder-node__badge { color: #a1a1aa; }
+
+/* A: 공고 귀속 아바타 — 이 스킬을 요구하는 선택된 공고의 회사 이니셜 원형, 최대 2개 +
+   "+n". 행 높이를 키우지 않도록 인라인으로 작게(12px)만 붙인다. */
+.wfm-ladder-node__req {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 2px;
+}
+.wfm-ladder-node__req-avatar {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 7px;
+  font-weight: 800;
+  color: #fff;
+  text-transform: uppercase;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+.wfm-ladder-node__req-more {
+  font-size: 8px;
+  font-weight: 800;
+  color: #9dcfb4;
+}
 .wfm-ladder-node__item--more {
   font-size: 10px;
   font-weight: 700;
@@ -395,6 +430,24 @@
   padding: 0 10px 10px;
   font-size: 10.5px;
   color: #a1a1aa;
+}
+
+/* A: 밴드 헤더 라벨 — 보유/목표 밴드 위에 얹는 작고 옅은 대문자 라벨. wfm-legend__item과
+   같은 톤(연한 회색, 굵은 작은 글자)을 재사용해 캔버스 크롬처럼 자연스럽게 보이게 한다.
+   handle 없음, selectable:false(React Flow 노드 data에서 지정). */
+.wfm-band-label {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 2px;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--c-muted, #a1a1aa);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .wfm-legend {
