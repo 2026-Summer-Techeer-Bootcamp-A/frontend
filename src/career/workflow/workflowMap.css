@@ -8,6 +8,115 @@
   min-height: 0;
 }
 
+/* 안 B: 사이드 패널 레이아웃 — 왼쪽은 북마크 목표 선택, 오른쪽은 DAG 캔버스.
+   카드가 flex column(height:100%)이라 wfm-body가 남은 세로 공간을 다 쓰고,
+   왼쪽 패널은 그 안에서만 스크롤된다. */
+.wfm-body {
+  display: flex;
+  gap: 14px;
+  flex: 1;
+  min-height: 0;
+}
+
+.wfm-goal-panel {
+  flex: none;
+  width: 252px;
+  max-height: 420px;
+  overflow-y: auto;
+  border: 1px solid var(--line, #e6e9ef);
+  border-radius: 12px;
+  background: #fbfbfc;
+  padding: 6px;
+}
+
+.wfm-goal-loading {
+  padding: 16px 10px;
+  font-size: 12px;
+  color: var(--c-muted, #7c7f88);
+  text-align: center;
+}
+
+.wfm-goal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wfm-goal-item { list-style: none; }
+
+.wfm-goal-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.wfm-goal-row:hover { background: var(--accent-50, #f0f0f1); }
+
+.wfm-goal-checkbox {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  accent-color: #18181b;
+}
+
+.wfm-goal-avatar {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.wfm-goal-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.wfm-goal-company {
+  font-size: 11px;
+  font-weight: 750;
+  color: var(--c-ink, #18181b);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wfm-goal-title {
+  font-size: 10.5px;
+  color: var(--c-muted, #7c7f88);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wfm-goal-pct {
+  flex: none;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #1f9d57;
+  background: #f0fbf4;
+  border: 1px solid #9dcfb4;
+  border-radius: 999px;
+  padding: 2px 7px;
+}
+
+.wfm-graph-pane {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.wfm-empty--selection { padding: 18px 4px; }
+
 .wfm-canvas {
   width: 100%;
   border: 1px solid var(--line, #e6e9ef);

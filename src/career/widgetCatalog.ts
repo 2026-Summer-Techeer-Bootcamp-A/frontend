@@ -26,7 +26,7 @@ export const DASHBOARD_WIDGETS: WidgetCatalogItem[] = [
   { id: 'bookmarks', label: '북마크한 공고', shape: 'list', allowedSizes: ['1x1', '1x2', '2x1', '2x2'], defaultSize: '2x1' },
   { id: 'skill-momentum', label: '지금 지원할 만한 공고', shape: 'bars', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
   { id: 'latest-timeline', label: '최신 공고 타임라인', shape: 'line', allowedSizes: ['2x1', '2x2'], defaultSize: '2x2' },
-  { id: 'workflow-map', label: '학습 워크플로우 맵', shape: 'network', allowedSizes: ['2x2'], defaultSize: '2x2' },
+  { id: 'workflow-map', label: '목표 · 학습 워크플로우 맵', shape: 'network', allowedSizes: ['2x2'], defaultSize: '2x2' },
 ]
 
 // v8 재구성(2026-07-14) — 스트립(변화 브리핑)·풀 셀렉터는 구조 요소라 카탈로그 밖.
