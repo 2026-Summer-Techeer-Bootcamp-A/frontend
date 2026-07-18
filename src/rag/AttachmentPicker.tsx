@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Bookmark, Check, FileText } from 'lucide-react'
 import { jobsApi } from '../career/api'
 import { useBookmarks } from '../career/bookmarkStore'
-import { getSavedResumes } from './resumeInsightApi'
+import { getSavedResumes, getSavedResumeDetail, confirmResumeSession, composeResumeText } from './resumeInsightApi'
 import type { SavedResumeListItem } from './resumeInsightApi'
 import type { ChatAttachment } from './chatContract'
 import { loadBookmarkAttachments } from './bookmarkAttachments'
@@ -130,6 +130,34 @@ export default function AttachmentPicker({ attachments, onAdd, onRemove, onClose
       return
     }
     onAdd({ kind: 'resume', id: resume.resume_id, title: resume.title, subtitle: resume.position ?? undefined })
+    // resume 첨부 자체는 resume_id만 실어(태그 기반 비교용) 나르므로, 원문 인용 LLM 판정이
+    // 쓰는 resume_session_id는 여기서 별도로 시딩해야 한다 — 저장 이력서는 원문을 DB에 두지
+    // 않으니 구조화 필드를 텍스트로 합성해 confirm 세션을 새로 튼다. 칩 토글 자체를 막을 이유는
+    // 아니라 응답을 기다리지 않고 백그라운드로 흘려보내고, 실패하면 태그 비교로 조용히 강등된다.
+    getSavedResumeDetail(resume.resume_id)
+      .then((detail) =>
+        confirmResumeSession({
+          skills: detail.skills,
+          // SavedResumeDetail은 certs를 안 내려준다(저장 이력서 상세 조회 엔드포인트가 skills만
+          // 준다) — 자격증 없이도 판정은 되니 생략하고 넘어간다.
+          position: detail.position,
+          careerMin: detail.career_min,
+          careerMax: detail.career_max,
+          pool: detail.pool,
+          memo: detail.memo,
+          resumeText: composeResumeText({
+            skills: detail.skills,
+            position: detail.position,
+            careerMin: detail.career_min,
+            careerMax: detail.career_max,
+            pool: detail.pool,
+            memo: detail.memo,
+          }),
+        }),
+      )
+      .catch(() => {
+        // 세션 시딩 실패 — resumeSessionId 없이 진행하면 백엔드가 태그 기반 비교로 강등한다.
+      })
   }
 
   const togglePosting = (posting: ChatAttachment) => {

@@ -146,7 +146,9 @@ export async function getSavedResumeDetail(resumeId: number): Promise<SavedResum
 // 이력서 원문을 별도로 받지 않으므로(스킬 직접 입력 방식) 구조화 입력을 사람이 읽는 블록으로
 // 합성해 confirm 세션에 싣는다. LLM 판정이 이 텍스트에서 근거를 인용하고, 할루시네이션 가드가
 // 인용이 이 텍스트의 부분문자열인지 검증한다. 원문 PDF나 개인정보는 담지 않는다.
-function composeResumeText(input: ResumeFeedbackInput): string | null {
+// postResumeFeedback뿐 아니라 JobDetail의 "내 이력서와 비교" 버튼처럼 저장된 이력서를 세션에
+// 새로 시딩해야 하는 다른 호출부에서도 재사용하므로 export한다.
+export function composeResumeText(input: ResumeFeedbackInput): string | null {
   const lines: string[] = []
   if (input.position?.trim()) lines.push(`지원 직무: ${input.position.trim()}`)
   if (input.careerMin != null || input.careerMax != null) {
