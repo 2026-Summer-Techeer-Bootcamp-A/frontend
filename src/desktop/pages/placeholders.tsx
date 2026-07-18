@@ -267,11 +267,22 @@ export function DesktopJobs() {
 
   useEffect(() => {
     let cancelled = false
-    jobsApi.skills('', 500)
-      .then(({ skills: items }) => {
-        if (!cancelled) setBaseSkills(items.map((item) => item.canonical))
-      })
-      .catch(() => undefined)
+    // 백엔드 /skills는 limit<=100 제약이 있고 전체 스킬은 약 490개라 한 번에 못 가져온다.
+    // 카테고리별로 나눠 100개씩 병렬 요청해 합치면 사실상 전체 카탈로그를 커버한다.
+    const CATEGORIES = [
+      'backend', 'frontend', 'data_db', 'cloud_services', 'devops', 'ai_llm', 'language',
+      'mobile', 'testing', 'design', 'embedded', 'graphics_game', 'cad_eda', 'enterprise_saas',
+      'collab_pm', 'ambiguous',
+    ]
+    Promise.all([
+      jobsApi.skills('', 100).catch(() => ({ skills: [] })),
+      ...CATEGORIES.map((category) => jobsApi.skills('', 100, category).catch(() => ({ skills: [] }))),
+    ]).then((results) => {
+      if (cancelled) return
+      const names = new Set<string>()
+      results.forEach(({ skills: items }) => items.forEach((item) => names.add(item.canonical)))
+      setBaseSkills([...names])
+    })
     marketApi.regionDensity({ pool: 'domestic', limit: 100 })
       .then(({ items }) => {
         if (!cancelled) setRegionOptions(items.map((item) => ({ value: item.region_district, count: item.posting_count })))
