@@ -138,63 +138,6 @@
 .dov__hero-nextmove-text b { margin-left: 4px; color: #7ee787; font-weight: 800; }
 .dov__hero-nextmove-text--empty { font-weight: 500; color: rgba(255, 255, 255, 0.56); }
 
-/* A-1: 목표 기업 앵커 입력 스트립 + 결과 패널 */
-.dov__target { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; }
-.dov__target-label { flex: none; font-size: 12.5px; font-weight: 700; color: var(--c-muted); }
-.dov__target-input {
-  flex: none;
-  width: 200px;
-  font-size: 13px;
-  padding: 7px 10px;
-  background: #fff;
-  color: var(--c-ink);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-}
-.dov__target-input:focus { outline: 2px solid var(--accent-300, #a1a1aa); outline-offset: -1px; }
-.dov__target-btn { flex: none; font-size: 12.5px; font-weight: 700; color: #fff; background: var(--c-accent, #111); border-radius: 10px; padding: 7px 14px; transition: opacity 0.15s ease; }
-.dov__target-btn:disabled { opacity: 0.4; }
-.dov__target-clear { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; color: var(--c-muted); transition: background 0.12s ease; }
-.dov__target-clear:hover { background: var(--accent-50); }
-.dov__target-panel {
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--c-ink);
-  background: var(--accent-50);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 10px 14px;
-  margin-bottom: 18px;
-}
-.dov__target-panel b { font-weight: 800; }
-.dov__target-panel--empty { color: var(--c-muted); }
-
-/* A-1 확장: 목표 기업 패널 — 매칭 점수 한 줄 + 표본 크기 + 상위 갭 기술 랭킹 칩.
-   스트립 아래 얇은 띠라 세로로 커지지 않게 칩 행으로만 확장한다. */
-.dov__target-rich { display: flex; flex-direction: column; gap: 8px; }
-.dov__target-headline { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
-.dov__target-sample { font-size: 11.5px; font-weight: 500; color: var(--c-muted); }
-.dov__target-warning { font-size: 11px; font-weight: 700; color: #b45309; }
-.dov__target-gaplist { display: flex; flex-wrap: wrap; gap: 6px; }
-.dov__target-gapitem {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11.5px;
-  font-weight: 600;
-  padding: 4px 9px;
-  border-radius: 999px;
-  background: #fff;
-  border: 1px solid var(--line);
-}
-.dov__target-tier { flex: none; font-size: 9.5px; font-weight: 800; padding: 1px 6px; border-radius: 999px; }
-.dov__target-tier--core { background: var(--c-accent, #111); color: #fff; }
-.dov__target-tier--supporting { background: var(--accent-100, #e4e4e7); color: var(--c-muted); }
-.dov__target-gapname { color: var(--c-ink); }
-.dov__target-gapgain { color: #218a58; font-weight: 800; }
-.dov__target-gapunlock { color: var(--c-muted); font-weight: 500; }
-.dov__target-empty { font-size: 12.5px; color: var(--c-muted); }
-
 .dov__skeleton { display: flex; min-height: 190px; flex: 1; flex-direction: column; justify-content: center; gap: 12px; }
 .dov__skeleton-line,
 .dov__skeleton-block,
