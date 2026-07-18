@@ -28,11 +28,62 @@ export interface DemoScenario {
   n: number
 }
 
-// 아래 4개는 벡터 검색의 실제 강점을 보여주기 위해 검증된 프롬프트다(키워드 매칭이면
-// 놓칠 질의를 의미 기반 임베딩이 잡아내는 케이스). 각기 다른 강점을 하나씩 보여준다:
+// 총 6개, 그리드/칩에 노출되는 순서 그대로 배열돼 있다.
+// 앞의 2개는 구직자가 실제로 물어볼 법한 평범한 통계성 질문으로, SQL 집계 경로를 탄다
+// (백엔드 인기 기술, 신입 인기 자격증). 그리드 상단에서 "일상적으로 이렇게 물어봐도 된다"를 보여준다.
+// 뒤의 4개는 벡터 검색의 실제 강점을 보여주기 위해 검증된 프롬프트다(키워드 매칭이면
+// 놓칠 질의를 의미 기반 임베딩이 잡아내는 케이스). 그리드 하단에서 각기 다른 강점을 하나씩 보여준다:
 // 의미적 바꿔말하기("예쁘게 만드는" → 프론트/UI 직무), 업무 서술→직군 매핑(MLOps),
 // 언어 간 검색(영문 질의 → 국내 한글 공고), 표기 변형 흡수(React Native ≈ RN·모바일 앱).
 export const SCENARIOS: DemoScenario[] = [
+  {
+    id: 'sql-backend-top-skills',
+    chip: '백엔드 인기 기술',
+    userQ: '요즘 백엔드 공고에서 제일 많이 찾는 기술이 뭐야?',
+    route: 'sql',
+    thinking: [
+      { text: '백엔드 직군 공고를 필터링해 기술 태그를 집계', result: '공고 1,842건' },
+      { text: '태그별 등장 빈도로 정렬', result: '상위 5개 기술' },
+    ],
+    query: 'sql · posting_tech GROUP BY · 직군 필터',
+    vizLabel: '백엔드 공고 상위 기술 top 5',
+    viz: {
+      kind: 'bar',
+      items: [
+        { name: 'Python', value: 612 }, { name: 'Java', value: 548 }, { name: 'Spring', value: 471 },
+        { name: 'AWS', value: 429 }, { name: 'Docker', value: 356 },
+      ],
+    },
+    answer: [
+      { text: '최근 백엔드 공고에서 가장 많이 요구하는 기술은 Python이고 Java, Spring이 뒤를 이어요.', cite: '백엔드 직군 공고 1,842건 집계' },
+      { text: 'AWS와 Docker도 상위권이라 클라우드 배포 경험이 사실상 기본 요구로 자리잡았어요.', cite: '기술 태그 빈도 순위' },
+    ],
+    n: 1842,
+  },
+  {
+    id: 'sql-entry-certs',
+    chip: '신입 인기 자격증',
+    userQ: '신입 개발자 공고에서 많이 보는 자격증이 뭐야?',
+    route: 'sql',
+    thinking: [
+      { text: '신입 대상 공고를 필터링해 요구 자격증을 집계', result: '공고 612건' },
+      { text: '자격증별 등장 빈도로 정렬', result: '상위 5개' },
+    ],
+    query: 'sql · posting_cert GROUP BY · entry_level 필터',
+    vizLabel: '신입 공고 상위 자격증 top 5',
+    viz: {
+      kind: 'bar',
+      items: [
+        { name: '정보처리기사', value: 214 }, { name: 'AWS Certified', value: 87 }, { name: 'SQLD', value: 63 },
+        { name: '리눅스마스터', value: 41 }, { name: 'OCJP', value: 28 },
+      ],
+    },
+    answer: [
+      { text: '신입 공고에서는 정보처리기사가 압도적으로 많이 언급되고, AWS 인증과 SQLD가 뒤를 이어요.', cite: '신입 공고 612건 집계' },
+      { text: '클라우드와 데이터베이스 관련 자격증이 상위권인 걸 보면 실무 준비도를 함께 보는 경향이 있어요.', cite: '자격증 태그 빈도 순위' },
+    ],
+    n: 612,
+  },
   {
     id: 'vector-pretty-ui',
     chip: '예쁜 화면 개발자',
