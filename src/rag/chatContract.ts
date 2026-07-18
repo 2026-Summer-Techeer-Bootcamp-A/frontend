@@ -8,6 +8,7 @@ export type StepKind = 'plan' | 'tool' | 'eval' | 'synth'
 export type ToolResultKind =
   | 'list' | 'stat' | 'trend' | 'graph' | 'compare'
   | 'resume_posting' | 'posting_posting' | 'resume_market' // 이력서·공고 비교 카드(다음 슬라이스에서 렌더)
+  | 'resume_posting_llm' // 커리어 적합도 Split Diff: 이력서/공고 원문 LLM 판정(SplitDiff 전담)
   | 'posting_list' // 공고 카드 리스트(semantic_search·resume_recommend) — PostingResultCards 전담, 차트 금지(백엔드 PR #80)
 
 // 컴포저에 첨부되는 이력서·공고 한 건. resume은 대화당 최대 1개(백엔드가 resume_id 단수로만 받음),
@@ -79,6 +80,31 @@ export interface ResumeMarketPayload {
   gap_top5: { canonical: string; freq: number; category: string }[]
 }
 
+// 요구사항 한 줄(Split Diff 한 행) — 원천: backend/app/services/rag/tools/compare_tool.py
+// resume_posting_llm_compare가 조립하는 requirements[] 원소와 필드명을 그대로 맞춘다.
+export type RequirementVerdict = 'met' | 'partial' | 'gap'
+
+export interface ResumePostingLlmRequirement {
+  id: string
+  text: string
+  source_quote: string
+  verdict: RequirementVerdict
+  resume_quote: string
+  rationale: string
+  next_step: string
+}
+
+// 커리어 적합도 Split Diff payload(kind="resume_posting_llm"). resume_posting과 달리 태그
+// 교집합이 아니라 이력서/공고 원문을 LLM으로 대조한 요구사항별 판정을 싣는다.
+export interface ResumePostingLlmPayload {
+  posting_title: string
+  score: number
+  counts: { met: number; partial: number; gap: number }
+  summary: string
+  requirements: ResumePostingLlmRequirement[]
+  degraded: boolean
+}
+
 export interface ToolResult {
   kind: ToolResultKind
   label: string
@@ -89,7 +115,7 @@ export interface ToolResult {
   edges: Record<string, unknown>[]
   debug?: Record<string, unknown> | null
   facts?: string | null
-  compare?: ResumePostingPayload | PostingPostingPayload | ResumeMarketPayload // kind로 어떤 payload인지 판별
+  compare?: ResumePostingPayload | PostingPostingPayload | ResumeMarketPayload | ResumePostingLlmPayload // kind로 어떤 payload인지 판별
 }
 
 export interface Citation {
@@ -121,6 +147,9 @@ export interface ChatRequestBody {
   pool?: Pool
   verbose?: boolean
   attachments?: ChatAttachment[]
+  // 이력서 확인 세션 id(POST /resume/confirm 응답의 session_id). 있으면 백엔드가 세션에
+  // 실린 이력서 원문으로 커리어 적합도 LLM 판정(resume_posting_llm_compare)을 태운다.
+  resume_session_id?: string
 }
 
 // ============================================================
@@ -145,7 +174,7 @@ export interface StreamToolResult {
   edges?: Record<string, unknown>[]
   debug?: Record<string, unknown> | null
   facts?: string | null
-  compare?: ResumePostingPayload | PostingPostingPayload | ResumeMarketPayload
+  compare?: ResumePostingPayload | PostingPostingPayload | ResumeMarketPayload | ResumePostingLlmPayload
 }
 
 export type ChatStreamEvent =

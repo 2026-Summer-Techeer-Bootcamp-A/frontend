@@ -18,6 +18,7 @@ import { useAttachments } from './useAttachments'
 import { consumeAttachmentIntent } from './attachmentIntentStore'
 import { routeLabel, intentLabel } from './chatLabels'
 import { useAuth } from '../career/authStore'
+import { readResumeSessionId } from './resumeSession'
 import './rag-console.css'
 
 // 실 백엔드(POST /api/v1/chat/stream) 라이브 스트리밍 콘솔.
@@ -55,6 +56,11 @@ interface Turn {
 }
 
 let nextTurnId = 1
+
+// 이력서 확인 세션(POST /resume/confirm 응답 session_id)이 있으면 챗 요청에 실어 커리어
+// 적합도 LLM 판정(resume_posting_llm_compare)을 태운다. RagConsole 자체는 확인 세션을 만들지
+// 않고(그건 ResumeInsight 화면 몫), 이미 만들어진 세션이 있으면 sessionStorage에서 읽어 전달만
+// 한다 — 세션이 없으면 undefined를 그대로 넘겨 기존 태그 기반 비교로 강등된다(조용한 실패 아님).
 
 export default function RagConsole() {
   const [turns, setTurns] = useState<Turn[]>([])
@@ -100,7 +106,12 @@ export default function RagConsole() {
     controllersRef.current.set(id, controller)
     streamChat(
       question,
-      { verbose, attachments: turnAttachments.length > 0 ? turnAttachments : undefined, signal: controller.signal },
+      {
+        verbose,
+        attachments: turnAttachments.length > 0 ? turnAttachments : undefined,
+        signal: controller.signal,
+        resumeSessionId: readResumeSessionId(),
+      },
       {
         onPlan: (e) => patchTurn(id, { route: e.route, plan: e.plan, planDurationMs: e.duration_ms, planDebug: e.debug }),
         onStep: (e) =>
@@ -508,7 +519,12 @@ function FinalBlock({ final, mode }: { final: FinalPayload; mode: Mode }) {
 // tool_results는 kind가 다양해도 실제로 채워진 필드(items/value/nodes)를 기준으로 렌더링한다.
 // list·trend·compare 모두 items[] 랭크드 로우로, stat은 큰 숫자로, graph는 노드·엣지 요약으로 대체한다.
 function ToolResultCard({ result }: { result: ToolResult }) {
-  if (result.kind === 'resume_posting' || result.kind === 'posting_posting' || result.kind === 'resume_market') {
+  if (
+    result.kind === 'resume_posting' ||
+    result.kind === 'posting_posting' ||
+    result.kind === 'resume_market' ||
+    result.kind === 'resume_posting_llm'
+  ) {
     return <ComparisonCard result={result} />
   }
   if (result.kind === 'posting_list') return <PostingResultCard result={result} />
