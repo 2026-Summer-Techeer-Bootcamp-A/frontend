@@ -64,13 +64,13 @@ export function SplitDiff({ payload }: SplitDiffProps) {
           >
             <circle
               cx={radius} cy={radius} r={r} fill="none"
-              stroke="color-mix(in srgb, var(--c-gap, #e0453a) 15%, transparent)"
+              stroke="color-mix(in srgb, var(--c-gap, #e0453a) 12%, transparent)"
               strokeWidth={strokeWidth}
             />
             {metLen > 0 && (
               <circle
                 cx={radius} cy={radius} r={r} fill="none"
-                stroke="var(--c-met, #1a7f37)"
+                stroke="var(--c-met, #1f7a63)"
                 strokeWidth={strokeWidth}
                 strokeDasharray={`${metLen} ${circumference}`}
                 transform={`rotate(-90 ${radius} ${radius})`}
@@ -79,7 +79,7 @@ export function SplitDiff({ payload }: SplitDiffProps) {
             {partialLen > 0 && (
               <circle
                 cx={radius} cy={radius} r={r} fill="none"
-                stroke="var(--c-partial, #9a6700)"
+                stroke="var(--c-partial, #8a6d3b)"
                 strokeWidth={strokeWidth}
                 strokeDasharray={`${partialLen} ${circumference}`}
                 strokeDashoffset={-metLen}
@@ -97,13 +97,11 @@ export function SplitDiff({ payload }: SplitDiffProps) {
         <div className="rv__sd-score-meta">
           <div className="rv__sd-score-head">
             <span className="t">{total}개 요구 중 {counts.met}개 충족</span>
-            <span className="rv__sd-est">추정치 · 매칭 개수 아님</span>
           </div>
           <p className="rv__sd-formula">
             <span className="met">충족 {counts.met}</span> · <span className="par">부분 {counts.partial}</span> · <span className="gap">공백 {counts.gap}</span>
-            {' '}→ ({counts.met}×1 + {counts.partial}×0.5 + {counts.gap}×0) / {total || 1} = 가중 적합도(위 도넛)
           </p>
-          <p className="rv__sd-note">충족 1점, 부분 0.5점, 공백 0점으로 가중한 점수예요. 정확한 매칭 수가 아니라, LLM이 원문을 읽고 요구마다 매긴 판정이에요.</p>
+          <p className="rv__sd-note">LLM이 원문을 읽고 요구마다 매긴 가중 추정치예요. 정확한 매칭 개수는 아니에요.</p>
         </div>
       </div>
 
