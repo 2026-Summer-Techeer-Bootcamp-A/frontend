@@ -9,6 +9,13 @@ export type Resume = {
   id: string
   title: string
   skills: string[]
+  // E: 백엔드가 이미 스킬마다 category(language/backend/frontend/mobile/data_db/
+  // cloud_services/devops/ai_llm)를 내려주는데 skills: string[]로 뭉개고 있었다.
+  // WorkflowMap의 classifySkill이 pearl 사전에 없는 스킬(FastAPI 등)을 전부 "기타"로
+  // 잘못 분류하는 문제를 고치려면 이 category를 살려야 한다. 기존 skills: string[]를
+  // 쓰는 다른 위젯들을 건드리지 않기 위해 별도 필드로 얹는다. category가 'unknown'인
+  // 스킬은 맵에 넣지 않는다(모르는 값을 넣느니 없는 편이 폴백 로직을 덜 헷갈리게 한다).
+  skillCategories: Record<string, string>
   certs: string[]
   position: string
   careerMin: number | null
@@ -26,10 +33,15 @@ const poolFromApi = (pool: 'domestic' | 'global'): '국내' | '국외' =>
 
 export function detailToResume(detail: ResumeDetailDto): Resume {
   const skills = detail.skills.map((s) => s.canonical)
+  const skillCategories: Record<string, string> = {}
+  detail.skills.forEach((s) => {
+    if (s.category && s.category !== 'unknown') skillCategories[s.canonical] = s.category
+  })
   return {
     id: String(detail.resume_id),
     title: detail.title,
     skills,
+    skillCategories,
     certs: detail.certs.map((c) => c.name),
     position: detail.position,
     careerMin: detail.career_min,
@@ -169,6 +181,7 @@ async function fetchResumesFromApi(token: string): Promise<Resume[]> {
           id: String(item.resume_id),
           title: item.title,
           skills: [],
+          skillCategories: {},
           certs: [],
           position: item.position ?? '',
           careerMin: null,
