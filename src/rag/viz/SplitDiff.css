@@ -1,13 +1,16 @@
-/* 커리어 적합도 Split Diff(K7) — 시안 career-diff-B-refined.html을 컴포넌트로 옮긴 것.
-   색은 하드코딩하지 않고 기존 테마 캐스케이드 토큰(var(--c-*), themes.ts)에 fallback 리터럴을
-   붙이는 기존 컨벤션(resume-insight.css의 var(--c-muted, #7c7f88) 패턴)을 그대로 따른다.
-   met/partial 전용 토큰(--c-met/--c-partial)은 themes.ts 정본에 있고, gap은 이미 있는
-   --c-gap(코랄/레드)을 그대로 재사용한다.
+/* 커리어 적합도 Split Diff(K7) — 시안 career-diff-redesign-v2.html(01번 확장 스플릿 다이어그램,
+   확정)을 컴포넌트로 옮긴 것. 색은 하드코딩하지 않고 기존 테마 캐스케이드 토큰(var(--c-*),
+   themes.ts)에 fallback 리터럴을 붙이는 기존 컨벤션(resume-insight.css의
+   var(--c-muted, #7c7f88) 패턴)을 그대로 따른다. met/partial 전용 토큰(--c-met/--c-partial)은
+   themes.ts 정본에 있고, gap은 이미 있는 --c-gap(코랄/레드)을 그대로 재사용한다.
 
-   폰트는 두 스택으로 나눈다. 한글 프로즈는 산세리프(--sd-sans)로, 인덱스 칩·원문 인용 같은
-   코드성 요소만 모노(--sd-mono)로 남긴다. 모노 스택이 Pretendard로 끝나는 것은 의도적이다.
-   라틴/코드 글리프는 모노로 렌더되고, SF Mono에 없는 한글 글리프는 시스템 폰트가 아니라
-   Pretendard로 폴백된다. */
+   next-box(보완점 박스)에는 왼쪽 액센트 보더를 두지 않는다 — "AI가 흔히 쓰는 디자인처럼
+   보인다"는 피드백으로 시안에서 이미 제거된 디테일이라 컴포넌트에도 그대로 반영한다.
+
+   폰트는 두 스택으로 나눈다. 한글 프로즈는 산세리프(--sd-sans)로, 인덱스 칩·원문 인용·diff
+   마커 같은 코드성 요소만 모노(--sd-mono)로 남긴다. 모노 스택이 Pretendard로 끝나는 것은
+   의도적이다. 라틴/코드 글리프는 모노로 렌더되고, SF Mono에 없는 한글 글리프는 시스템 폰트가
+   아니라 Pretendard로 폴백된다. */
 
 .rv__splitdiff {
   --sd-sans: 'Pretendard', 'Poppins', sans-serif;
@@ -20,12 +23,47 @@
   background: var(--c-card, #ffffff);
 }
 
+/* ---------- pair bar: 기준 문서 → 판정 대상 문서 ---------- */
+.rv__sd-pairbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 13px 16px 0;
+}
+.rv__sd-paircip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--sd-sans);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  color: var(--c-ink, #1c1d21);
+  border: 1px solid var(--line, #e6e9ef);
+  background: var(--c-card, #fff);
+  border-radius: 999px;
+  padding: 5px 12px;
+}
+.rv__sd-paircip .role {
+  font-family: var(--sd-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-muted, #a2a6b0);
+}
+.rv__sd-paircip--base { border-color: color-mix(in srgb, var(--c-accent, #0b0b0c) 40%, var(--line, #e6e9ef)); }
+.rv__sd-pairarrow { color: var(--c-muted, #a2a6b0); font-size: 15px; }
+
 .rv__sd-summary {
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 10px;
   align-items: start;
   padding: 12px 16px 13px;
+  margin-top: 12px;
+  border-top: 1px solid var(--line, #e6e9ef);
   border-bottom: 1px solid var(--line, #e6e9ef);
   background: var(--c-chipbg, #f6f8fa);
 }
@@ -102,21 +140,22 @@
   color: var(--c-muted, #71717a);
   max-width: 52ch;
 }
-
-.rv__sd-postingchip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+.rv__sd-legend {
+  display: flex;
+  gap: 13px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  font-family: var(--sd-sans);
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: -0.2px;
-  color: var(--c-ink, #1c1d21);
-  background: var(--c-chipbg, #f0f0f1);
-  border-radius: 999px;
-  padding: 3px 10px;
-  margin: 10px 16px 0;
-  width: fit-content;
+  color: var(--c-muted, #71717a);
 }
+.rv__sd-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.rv__sd-legend i { width: 10px; height: 10px; border-radius: 3px; }
+.rv__sd-legend i.met { background: var(--c-met, #1f7a63); }
+.rv__sd-legend i.partial { background: var(--c-partial, #8a6d3b); }
+.rv__sd-legend i.gap { background: var(--c-gap, #e0453a); }
 
 .rv__sd-colhead {
   display: grid;
@@ -161,8 +200,25 @@
   flex: none;
 }
 .rv__sd-req-title { font-size: 14px; font-weight: 600; letter-spacing: -0.3px; color: var(--c-ink, #1c1d21); }
-.rv__sd-quote {
+
+/* diff 인용 블록: 좌측 mk(diff 마커) 열 + 인용 텍스트(자체 좌측 룰) */
+.rv__sd-dquote {
   margin: 6px 0 0;
+  display: grid;
+  grid-template-columns: 14px 1fr;
+  gap: 8px;
+  align-items: start;
+}
+.rv__sd-mk {
+  font-family: var(--sd-mono);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.6;
+  text-align: center;
+  color: var(--c-muted, #a2a6b0);
+}
+.rv__sd-quote {
+  margin: 0;
   font-family: var(--sd-mono);
   font-size: 12.5px;
   font-weight: 400;
@@ -180,10 +236,11 @@
 }
 .rv__sd-quote-text::before { content: '\201C'; }
 .rv__sd-quote-text::after { content: '\201D'; }
-.rv__sd-side--met .rv__sd-quote,
-.rv__sd-side--partial .rv__sd-quote { color: var(--c-ink, #1c1d21); }
-.rv__sd-side--met .rv__sd-quote { border-left-color: var(--c-met, #1f7a63); }
-.rv__sd-side--partial .rv__sd-quote { border-left-color: var(--c-partial, #8a6d3b); }
+.rv__sd-side--met .rv__sd-mk { color: var(--c-met, #1f7a63); }
+.rv__sd-side--met .rv__sd-quote { color: var(--c-ink, #1c1d21); border-left-color: var(--c-met, #1f7a63); }
+.rv__sd-side--partial .rv__sd-mk { color: var(--c-partial, #8a6d3b); }
+.rv__sd-side--partial .rv__sd-quote { color: var(--c-ink, #1c1d21); border-left-color: var(--c-partial, #8a6d3b); }
+.rv__sd-side--gap .rv__sd-mk { color: var(--c-gap, #e0453a); }
 .rv__sd-prov {
   display: block;
   font-family: var(--sd-sans);
@@ -194,8 +251,10 @@
   margin-top: 5px;
 }
 
-.rv__sd-ev-top { display: flex; align-items: center; gap: 8px; }
 .rv__sd-verdict {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-family: var(--sd-sans);
   font-size: 12px;
   font-weight: 700;
@@ -203,12 +262,13 @@
   padding: 2px 8px;
   border-radius: 999px;
 }
+.rv__sd-vm { font-family: var(--sd-mono); font-weight: 800; }
 .rv__sd-side--met .rv__sd-verdict { color: var(--c-met, #1f7a63); background: color-mix(in srgb, var(--c-met, #1f7a63) 14%, transparent); }
 .rv__sd-side--partial .rv__sd-verdict { color: var(--c-partial, #8a6d3b); background: color-mix(in srgb, var(--c-partial, #8a6d3b) 15%, transparent); }
 .rv__sd-side--gap .rv__sd-verdict { color: var(--c-gap, #e0453a); background: color-mix(in srgb, var(--c-gap, #e0453a) 12%, transparent); }
 
 .rv__sd-rationale {
-  margin: 6px 0 0;
+  margin: 8px 0 0;
   font-size: 12px;
   line-height: 1.55;
   color: var(--c-muted, #71717a);
@@ -238,29 +298,30 @@
   letter-spacing: -0.2px;
   color: var(--c-gap, #e0453a);
 }
+
+/* 보완점 박스 — 왼쪽 액센트 보더 없이 사방 동일한 얇은 보더만 쓴다(AI 클리셰 디자인 지적으로 제거됨). */
 .rv__sd-next {
-  margin: 8px 0 0;
-  display: flex;
-  gap: 8px;
-  align-items: flex-start;
+  margin: 11px 0 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 9px;
+  align-items: start;
   background: var(--c-card, #fff);
   border: 1px solid var(--line, #e6e9ef);
-  border-left: 3px solid var(--c-accent, #0b0b0c);
   border-radius: 10px;
-  padding: 8px 10px;
+  padding: 9px 11px;
 }
 .rv__sd-next .tag {
   font-family: var(--sd-sans);
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
   letter-spacing: -0.2px;
   color: var(--c-accent, #0b0b0c);
   background: var(--c-chipbg, #f0f0f1);
   border-radius: 6px;
-  padding: 2px 6px;
+  padding: 2px 7px;
   white-space: nowrap;
   margin-top: 1px;
-  flex: none;
 }
 .rv__sd-next .step { font-size: 12.5px; font-weight: 500; letter-spacing: -0.2px; line-height: 1.5; color: var(--c-ink, #1c1d21); }
 
@@ -295,25 +356,6 @@
   background: linear-gradient(90deg, var(--c-partial, #8a6d3b) 50%, var(--c-card, #fff) 50%);
 }
 .rv__sd-row--gap .rv__sd-node { border-color: var(--c-gap, #e0453a); background: var(--c-card, #fff); }
-
-.rv__sd-foot {
-  padding: 10px 16px;
-  border-top: 1px solid var(--line, #e6e9ef);
-  background: var(--c-chipbg, #f6f8fa);
-  font-family: var(--sd-sans);
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: -0.2px;
-  color: var(--c-muted, #a2a6b0);
-  display: flex;
-  gap: 13px;
-  flex-wrap: wrap;
-}
-.rv__sd-foot span { display: inline-flex; align-items: center; gap: 5px; }
-.rv__sd-foot i { width: 10px; height: 10px; border-radius: 50%; border: 2px solid; }
-.rv__sd-foot i.met { border-color: var(--c-met, #1f7a63); background: var(--c-met, #1f7a63); }
-.rv__sd-foot i.partial { border-color: var(--c-partial, #8a6d3b); background: linear-gradient(90deg, var(--c-partial, #8a6d3b) 50%, transparent 50%); }
-.rv__sd-foot i.gap { border-color: var(--c-gap, #e0453a); background: transparent; }
 
 @media (max-width: 620px) {
   .rv__sd-colhead { display: none; }

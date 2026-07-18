@@ -8,7 +8,9 @@ export type StepKind = 'plan' | 'tool' | 'eval' | 'synth'
 export type ToolResultKind =
   | 'list' | 'stat' | 'trend' | 'graph' | 'compare'
   | 'resume_posting' | 'posting_posting' | 'resume_market' // 이력서·공고 비교 카드(다음 슬라이스에서 렌더)
-  | 'resume_posting_llm' // 커리어 적합도 Split Diff: 이력서/공고 원문 LLM 판정(SplitDiff 전담)
+  | 'resume_posting_llm' // 커리어 적합도 Split Diff: 이력서 vs 공고 원문 LLM 판정(SplitDiff 전담)
+  | 'posting_posting_llm' // 커리어 적합도 Split Diff: 공고 vs 공고 원문 LLM 판정. resume_posting_llm과 같은
+                           // SplitDiffPayload 모양을 쓴다 — SplitDiff는 kind가 아니라 payload 필드로 렌더한다.
   | 'posting_list' // 공고 카드 리스트(semantic_search·resume_recommend) — PostingResultCards 전담, 차트 금지(백엔드 PR #80)
 
 // 컴포저에 첨부되는 이력서·공고 한 건. resume은 대화당 최대 1개(백엔드가 resume_id 단수로만 받음),
@@ -81,27 +83,35 @@ export interface ResumeMarketPayload {
 }
 
 // 요구사항 한 줄(Split Diff 한 행) — 원천: backend/app/services/rag/tools/compare_tool.py
-// resume_posting_llm_compare가 조립하는 requirements[] 원소와 필드명을 그대로 맞춘다.
+// resume_posting_llm_compare/posting_posting_llm_compare가 조립하는 requirements[] 원소와
+// 필드명을 그대로 맞춘다. quote는 이전 계약의 resume_quote를 일반화한 이름이다 — 판정 대상
+// 문서(이력서 또는 비교 공고) 쪽 근거 인용을 한쪽 필드명으로 통일해서 받는다.
+// 잠정 계약(백엔드 posting_posting_llm 작업과 나중에 필드명을 맞춰야 한다).
 export type RequirementVerdict = 'met' | 'partial' | 'gap'
 
-export interface ResumePostingLlmRequirement {
+export interface SplitDiffRequirement {
   id: string
   text: string
   source_quote: string
   verdict: RequirementVerdict
-  resume_quote: string
+  quote: string
   rationale: string
   next_step: string
 }
 
-// 커리어 적합도 Split Diff payload(kind="resume_posting_llm"). resume_posting과 달리 태그
-// 교집합이 아니라 이력서/공고 원문을 LLM으로 대조한 요구사항별 판정을 싣는다.
-export interface ResumePostingLlmPayload {
-  posting_title: string
+// 커리어 적합도 Split Diff payload — kind가 "resume_posting_llm"(이력서 vs 공고)이든
+// "posting_posting_llm"(공고 vs 공고)이든 같은 모양을 쓴다. base_*는 기준 문서, target_*는
+// 그 기준을 얼마나 채우는지 판정받는 대상 문서다. target_title은 이력서처럼 제목이 없는
+// 경우 빈 문자열일 수 있다 — 그때 UI는 " · title" 부분을 생략한다.
+export interface SplitDiffPayload {
+  base_role: string
+  base_title: string
+  target_role: string
+  target_title: string
   score: number
   counts: { met: number; partial: number; gap: number }
   summary: string
-  requirements: ResumePostingLlmRequirement[]
+  requirements: SplitDiffRequirement[]
   degraded: boolean
 }
 
@@ -115,7 +125,7 @@ export interface ToolResult {
   edges: Record<string, unknown>[]
   debug?: Record<string, unknown> | null
   facts?: string | null
-  compare?: ResumePostingPayload | PostingPostingPayload | ResumeMarketPayload | ResumePostingLlmPayload // kind로 어떤 payload인지 판별
+  compare?: ResumePostingPayload | PostingPostingPayload | ResumeMarketPayload | SplitDiffPayload // kind로 어떤 payload인지 판별
 }
 
 export interface Citation {
@@ -174,7 +184,7 @@ export interface StreamToolResult {
   edges?: Record<string, unknown>[]
   debug?: Record<string, unknown> | null
   facts?: string | null
-  compare?: ResumePostingPayload | PostingPostingPayload | ResumeMarketPayload | ResumePostingLlmPayload
+  compare?: ResumePostingPayload | PostingPostingPayload | ResumeMarketPayload | SplitDiffPayload
 }
 
 export type ChatStreamEvent =
