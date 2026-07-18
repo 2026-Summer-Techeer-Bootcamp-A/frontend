@@ -87,14 +87,18 @@ type RelationCandidate = SkillRelation & { rank: number }
 // 관계 엣지 후보 계산 — 순수 함수라 buildWorkflowGraph 밖에서 독립적으로 테스트·재사용
 // 가능하다. ownedSet에 from이 있고(이미 안다) targetSet에 to가 있어야(아직 안 배웠고
 // 이번에 목표로 잡힌) 후보가 된다. 같은 카테고리끼리는 스킵(카테고리 컨텍스트 엣지가
-// 이미 그 역할을 한다). 큐레이션을 통계보다 우선하고, 같은 (from카테고리,to카테고리)
-// 클러스터 쌍엔 최대 1개만, 전체는 최대 RELATION_EDGE_MAX개로 자른다.
+// 이미 그 역할을 한다). "언어를 알면 이 프레임워크로 이어진다"는 원래 취지를 지키기
+// 위해 to가 프레임워크 카테고리가 아니면(예: Prometheus, MongoDB 같은 기타 카테고리)
+// 버린다 — 통계 co-occurrence 보완 쪽에서 특히 이 필터가 중요하다. 큐레이션을 통계보다
+// 우선하고, 같은 (from카테고리,to카테고리) 클러스터 쌍엔 최대 1개만, 전체는 최대
+// RELATION_EDGE_MAX개로 자른다.
 function buildRelationEdges(ownedSet: Set<string>, targetSet: Set<string>): SkillRelation[] {
   const curatedKeys = new Set(CURATED_RELATIONS.map((r) => `${r.from}|${r.to}`))
   const candidates: RelationCandidate[] = []
 
   CURATED_RELATIONS.forEach((r) => {
     if (classifySkill(r.from) === classifySkill(r.to)) return
+    if (classifySkill(r.to) !== '프레임워크') return
     if (!ownedSet.has(r.from) || !targetSet.has(r.to)) return
     candidates.push({ ...r, rank: 2 })
   })
@@ -105,6 +109,7 @@ function buildRelationEdges(ownedSet: Set<string>, targetSet: Set<string>): Skil
     const groupB = classifySkill(e.b)
     if (groupA === groupB) return
     const [from, to] = SKILL_GROUPS.indexOf(groupA) < SKILL_GROUPS.indexOf(groupB) ? [e.a, e.b] : [e.b, e.a]
+    if (classifySkill(to) !== '프레임워크') return
     if (curatedKeys.has(`${from}|${to}`)) return
     if (!ownedSet.has(from) || !targetSet.has(to)) return
     candidates.push({ from, to, rank: e.strength })
@@ -205,7 +210,8 @@ function OwnedClusterNode({ data }: NodeProps<OwnedClusterFlowNode>) {
           )}
         </div>
       )}
-      <Handle type="source" position={Position.Right} className="wfm-node__handle" />
+      <Handle type="source" position={Position.Right} id="ctx" style={{ top: '35%' }} className="wfm-node__handle" />
+      <Handle type="source" position={Position.Right} id="rel" style={{ top: '65%' }} className="wfm-node__handle" />
     </div>
   )
 }
@@ -216,7 +222,8 @@ function OwnedClusterNode({ data }: NodeProps<OwnedClusterFlowNode>) {
 function TargetLadderNode({ data }: NodeProps<TargetLadderFlowNode>) {
   return (
     <div className="wfm-ladder-node">
-      <Handle type="target" position={Position.Left} className="wfm-node__handle" />
+      <Handle type="target" position={Position.Left} id="ctx" style={{ top: '35%' }} className="wfm-node__handle" />
+      <Handle type="target" position={Position.Left} id="rel" style={{ top: '65%' }} className="wfm-node__handle" />
       <div className="wfm-ladder-node__header">
         <span className="wfm-ladder-node__icon">{GROUP_INITIAL[data.group]}</span>
         <span className="wfm-ladder-node__title">{data.group}</span>
@@ -326,6 +333,13 @@ function buildWorkflowGraph(
   const edges: Edge[] = []
   let truncated = 0
 
+  // 관계 엣지가 가리킬 수 있는 후보를 "실제로 화면에 그려진 스킬"로만 좁히기 위한
+  // 누적 집합 — 캡 적용 전 원본 ownedSkills/targetSet을 그대로 buildRelationEdges에
+  // 넘기면 오버플로("+N개")로 접힌 스킬도 화살표 타깃이 될 수 있어서, 루프를 도는
+  // 동안 실제로 chips/items에 담긴 것만 여기 모은다.
+  const shownOwnedSkills = new Set<string>()
+  const shownTargetSkills = new Set<string>()
+
   // 레인은 항상 3개 고정(언어/프레임워크/기타), 양쪽(보유 클러스터 · 목표 사다리) 다
   // 항상 렌더링한다 — 그 카테고리가 비어 있어도 빈 상태 문구로 채운 노드를 그린다.
   SKILL_GROUPS.forEach((group, laneIndex) => {
@@ -377,24 +391,30 @@ function buildWorkflowGraph(
     if (targetFull.length > 0) {
       edges.push({
         id: `${ownedId}->${targetId}`, source: ownedId, target: targetId,
+        sourceHandle: 'ctx', targetHandle: 'ctx',
         animated: true, style: CONTEXT_EDGE_STYLE,
         markerEnd: { type: MarkerType.ArrowClosed, color: '#b9bcc4' },
       })
     }
+
+    ownedChips.forEach((s) => shownOwnedSkills.add(s))
+    targetItems.forEach((i) => shownTargetSkills.add(i.canonical))
   })
 
   // 관계(연관·순서) 엣지 — 카테고리 컨텍스트 엣지("함께 필요")와 별개로, 실제 기술 간
   // 방향 있는 관계(예: Java -> Spring)를 클러스터 단위로 얹는다. 칩 단위 Handle은 쓰지
   // 않는다(오늘 겹침 버그의 원인이 DOM 측정 재도입이었으므로 스코프를 클러스터로 고정).
   // 같은 카테고리 쌍에 컨텍스트 엣지가 이미 있어도 상관없다 — 별개 엣지로 둘 다 그려지고
-  // 스타일(색·굵기·라벨·애니메이션 여부)로 시각적으로 구분된다.
-  const ownedSet = new Set(ownedSkills)
-  const relations = buildRelationEdges(ownedSet, targetSet)
+  // 스타일(색·굵기·라벨·애니메이션 여부)로 시각적으로 구분된다. 후보는 shownOwnedSkills/
+  // shownTargetSkills(캡 적용 후 실제로 렌더된 것)에서만 뽑는다 — 원본 ownedSkills/
+  // targetSet을 넘기면 오버플로 뒤에 숨은 스킬을 화살표가 가리킬 수 있다.
+  const relations = buildRelationEdges(shownOwnedSkills, shownTargetSkills)
   relations.forEach(({ from, to }) => {
     const source = `owned-group-${classifySkill(from)}`
     const target = `target-group-${classifySkill(to)}`
     edges.push({
       id: `relation-${from}->${to}`, source, target,
+      sourceHandle: 'rel', targetHandle: 'rel',
       label: `${from} → ${to}`,
       animated: false,
       style: RELATION_EDGE_STYLE,
