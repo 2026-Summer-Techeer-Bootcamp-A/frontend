@@ -260,23 +260,33 @@ function buildWorkflowGraph(
 
     let ownedPos: { x: number; y: number }
     let targetPos: { x: number; y: number }
+    let nodeW: number, ownedH: number, targetH: number
     if (caps.mode === 'compact') {
       const x = laneIndex * (COMPACT_NODE_W + COMPACT_LANE_GAP_X)
       ownedPos = { x, y: 0 }
       targetPos = { x, y: COMPACT_OWNED_H + COMPACT_BAND_GAP_Y }
+      nodeW = COMPACT_NODE_W; ownedH = COMPACT_OWNED_H; targetH = COMPACT_TARGET_H
     } else {
       const rowStep = Math.max(MODAL_OWNED_H, MODAL_TARGET_H) + MODAL_ROW_GAP_Y
       const y = laneIndex * rowStep
       ownedPos = { x: 0, y }
       targetPos = { x: MODAL_NODE_W + MODAL_COLUMN_GAP_X, y }
+      nodeW = MODAL_NODE_W; ownedH = MODAL_OWNED_H; targetH = MODAL_TARGET_H
     }
 
+    // React Flow는 width/height를 안 주면 렌더된 DOM 콘텐츠 크기를 그대로 노드
+    // 바운딩박스로 쓴다(칩 텍스트 길이에 따라 제각각). 그러면 좌표 산수(레인
+    // 간격)가 실제 렌더 크기와 안 맞아 옆 노드와 겹치거나 캔버스 밖으로 잘려
+    // 나간다. width/height를 명시해 CSS 고정 크기와 React Flow 내부 레이아웃
+    // 계산(겹침 판정 · fitView 바운딩박스)이 항상 일치하게 한다.
     nodes.push({
       id: ownedId, type: 'ownedCluster', position: ownedPos, draggable: false,
+      width: nodeW, height: ownedH,
       data: { group, chips: ownedChips, overflow: ownedOverflow },
     })
     nodes.push({
       id: targetId, type: 'targetLadder', position: targetPos, draggable: false,
+      width: nodeW, height: targetH,
       data: { group, items: targetItems, overflow: targetOverflow },
     })
 
