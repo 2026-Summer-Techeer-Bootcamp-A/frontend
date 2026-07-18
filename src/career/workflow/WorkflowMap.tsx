@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
-import { Award, ListChecks, Maximize2, Sparkles, X } from 'lucide-react'
+import { Award, List, ListChecks, Maximize2, Sparkles, Workflow, X } from 'lucide-react'
 import {
   ReactFlow, Background, Controls, MiniMap, Handle, Position, MarkerType,
   type Node, type Edge, type NodeProps,
@@ -18,7 +18,12 @@ import { dashboardApi, jobsApi, type Identity, type PostingCard, type PostingDet
 import { useWidgetData } from '../useWidgetData'
 import type { WidgetSize } from '../dashboardConfig'
 import dreamCompanies from '../../data/dreamCompanies.json'
-import catData from '../../data/pearl/n.json'
+import {
+  CAT_EDGES, SKILL_GROUPS, CURATED_RELATIONS, classifySkill, avatarColor,
+  matchPctFor, yearBadgeFor, requiredByFor, minPairwiseJaccard, getSteppingStones, steppingStoneLabel,
+  type SkillGroupName, type SkillRelation,
+} from './workflowShared'
+import { WorkflowList } from './WorkflowList'
 import './workflowMap.css'
 
 // 데모용: 클릭 한 번으로 유명 기업 공고를 북마크 + 목표 선택까지 채워 넣어 워크플로우
@@ -33,81 +38,9 @@ const RECOMMEND_CHUNK_SIZE = 4
 // 캡(COMPACT/MODAL_TARGET_CAP)으로 개수를 이미 제한하므로, 그룹으로 나누기 전 단계의
 // 전역 상한은 따로 두지 않고 카테고리별 캡에게 전부 맡긴다.
 
-// 기술 스택 카테고리 분류 — placeholders.tsx(검색 페이지 필터)와 동일하게 pearl/n.json
-// (기술 코-네트워크 그래프 데이터)의 {tech, category} 노드를 재사용한다. 새 API·새 정적
-// 데이터 없이 이미 번들에 있는 값만 읽는다. 실제 category 값은 language/backend/frontend/
-// mobile/data_db/cloud_services/devops/ai_llm 8종이며, 워크플로우 맵에서는 이걸 언어 ·
-// 프레임워크 · 기타 3버킷으로 더 단순화해서 보유/목표 스킬을 각각 묶는다.
-type CatGraphEdge = { a: string; b: string; strength: number }
-const CAT_GRAPH = (catData as {
-  data: { nodes: { tech: string; category: string }[]; edges: CatGraphEdge[] }
-}).data
-const TECH_CATEGORY_NODES = CAT_GRAPH.nodes
-const CAT_EDGES = CAT_GRAPH.edges
-const TECH_CATEGORY: Record<string, string> = Object.fromEntries(TECH_CATEGORY_NODES.map((n) => [n.tech, n.category]))
-
-type SkillGroupName = '언어' | '프레임워크' | '기타'
-const SKILL_GROUPS: SkillGroupName[] = ['언어', '프레임워크', '기타']
-
-// E: pearl/n.json엔 55개 노드만 있어서, 실무에서 흔하지만 그 사전에 없는 스킬(FastAPI,
-// Flask, Tailwind 등)이 전부 '기타'로 폴백되는 문제가 있었다. 보정 테이블로 최소한만
-// 채운다. pearl에 이미 있는 스킬(Elasticsearch 등)은 중복으로 넣지 않는다.
-const SUPPLEMENT_CATEGORY: Record<string, string> = {
-  FastAPI: 'backend',
-  Flask: 'backend',
-  NestJS: 'backend',
-  Laravel: 'backend',
-  Svelte: 'frontend',
-  Tailwind: 'frontend',
-  jQuery: 'frontend',
-  Flutter: 'mobile',
-  Swift: 'language',
-  Go: 'language',
-  Rust: 'language',
-  ClickHouse: 'data_db',
-  MariaDB: 'data_db',
-  Oracle: 'data_db',
-}
-
-function groupForCategory(cat: string | undefined): SkillGroupName {
-  if (cat === 'language') return '언어'
-  if (cat === 'backend' || cat === 'frontend' || cat === 'mobile') return '프레임워크'
-  return '기타'
-}
-
-// 우선순위: (1) 백엔드가 이미 내려준 category(이력서 스킬의 ParsedSkillDto.category,
-// 라이브 로드맵 스텝의 ScopedRoadmapStep.category) — 있고 'unknown'이 아니면 최우선으로
-// 신뢰한다. (2) pearl/n.json 사전. (3) 위 보정 테이블. (4) 그래도 없으면 '기타'.
-function classifySkill(name: string, backendCategory?: string): SkillGroupName {
-  if (backendCategory && backendCategory !== 'unknown') return groupForCategory(backendCategory)
-  const cat = TECH_CATEGORY[name] ?? SUPPLEMENT_CATEGORY[name]
-  return groupForCategory(cat)
-}
-
-// 관계(연관·순서) 큐레이션 — "네트워크 그래프처럼 순서를 보여달라"는 피드백에 대응해
-// 같은 카테고리 안의 밋밋한 그룹핑 엣지 말고, 실제 기술 간 방향 있는 관계(아는 언어 ->
-// 그 언어로 배우면 좋은 프레임워크)를 소수만 큐레이션한다. Java -> Spring은 자연스럽지만
-// Spring -> Java는 안 그린다. 통계 co-occurrence(strength)는 상관관계라 방향을 안 주므로,
-// 이 표에 없는 쌍만 카테고리 순서(SKILL_GROUPS 인덱스 낮은 쪽 -> 높은 쪽)로 방향을
-// 강제해 보완한다(아래 buildRelationEdges).
-type SkillRelation = { from: string; to: string }
-const CURATED_RELATIONS: SkillRelation[] = [
-  { from: 'Java', to: 'Spring' },
-  { from: 'Kotlin', to: 'Spring' },
-  { from: 'Kotlin', to: 'Android' },
-  { from: 'Python', to: 'Django' },
-  { from: 'JavaScript', to: 'Node.js' },
-  { from: 'JavaScript', to: 'Express' },
-  { from: 'JavaScript', to: 'React' },
-  { from: 'JavaScript', to: 'Vue' },
-  { from: 'JavaScript', to: 'React Native' },
-  { from: 'TypeScript', to: 'Next.js' },
-  { from: 'TypeScript', to: 'Angular' },
-  { from: 'TypeScript', to: 'React' },
-  { from: 'TypeScript', to: 'React Native' },
-  { from: 'C#', to: '.NET' },
-  { from: 'Ruby', to: 'Rails' },
-]
+// 기술 스택 카테고리 분류·관계 큐레이션·발판 계산·아바타 색·매치율 같은 순수 헬퍼는
+// workflowShared.ts로 옮겼다(flow 뷰와 새 list 뷰가 둘 다 쓴다). 이 파일엔 flow
+// 캔버스(React Flow 그래프 빌더·노드 컴포넌트·좌표 상수)만 남는다.
 const RELATION_STAT_MIN_STRENGTH = 0.3
 const RELATION_EDGE_MAX = 4
 
@@ -166,21 +99,6 @@ const COMPACT_TARGET_CAP = 5
 const MODAL_OWNED_CAP = 10
 const MODAL_TARGET_CAP = 10
 
-function yearBadgeFor(postDate: string | null): string | null {
-  if (!postDate) return null
-  const postYear = new Date(postDate).getFullYear()
-  const currentYear = new Date().getFullYear()
-  if (postYear === currentYear) return '올해'
-  if (postYear === currentYear - 1) return '작년'
-  return `${postYear}년`
-}
-
-function matchPctFor(skills: string[], matchedCount: number | null | undefined, ownedSet: Set<string>): number {
-  if (!skills.length) return 0
-  const heldCount = skills.filter((s) => ownedSet.has(s)).length
-  return Math.round(((matchedCount ?? heldCount) / skills.length) * 100)
-}
-
 // A-5: 목표 · 학습 워크플로우 맵 — 예전엔 북마크한 공고 전부(암묵적 목표)를 그대로
 // 썼지만, 이제는 목표 선택 패널에서 북마크 중 "목표로 삼을 것"을 직접 골라야 한다(안 B,
 // 컴팩트 카드에서는 캔버스 위에 뜨는 플로팅 패널). 선택된 공고들의 요구 기술과 이력서
@@ -200,10 +118,11 @@ type SkillClass = 'owned' | 'target' | 'bridge'
 // A: requiredBy는 이 스킬을 요구하는 "선택된" 공고들의 회사 목록(랭크 행 끝 아바타
 // 귀속용, 최대 2개 + "+n"). count는 폴백 모드(라이브 로드맵 없음)에서만 채워지는
 // 공고 요구 개수 — B: 같은 카테고리 안 모든 항목의 count가 동률이면 랭크 번호를
-// 숨기는 판정(hideRank)에 쓴다.
+// 숨기는 판정(hideRank)에 쓴다. C: steppingStones는 getSteppingStones()로 계산한
+// "이 스킬과 이어지는 보유 스킬"(최대 2개, 사다리 행엔 1개만 표시).
 type TargetLadderItem = {
   canonical: string; cls: SkillClass; badge: string; category?: string
-  requiredBy: { company: string }[]; count?: number
+  requiredBy: { company: string }[]; count?: number; steppingStones: string[]
 }
 
 type OwnedClusterData = {
@@ -275,32 +194,42 @@ function TargetLadderNode({ data }: NodeProps<TargetLadderFlowNode>) {
         <div className="wfm-ladder-node__empty">이 카테고리엔 선택한 목표가 없어요</div>
       ) : (
         <ol className="wfm-ladder-node__list">
-          {data.items.map((item, i) => (
-            <li key={item.canonical} className={`wfm-ladder-node__item wfm-ladder-node__item--${item.cls}`}>
-              {!data.hideRank && <span className="wfm-ladder-node__rank">{i + 1}</span>}
-              <span className="wfm-ladder-node__label" title={item.canonical}>{item.canonical}</span>
-              {item.badge && <span className="wfm-ladder-node__badge">{item.badge}</span>}
-              {item.requiredBy.length > 0 && (
-                <span
-                  className="wfm-ladder-node__req"
-                  title={item.requiredBy.map((r) => r.company).join(', ')}
-                >
-                  {item.requiredBy.slice(0, 2).map((r) => (
+          {data.items.map((item, i) => {
+            // C: 발판 칩 — 사다리 행은 좁아서 최대 1개만("← Python"). 라벨 아래 둘째
+            // 줄로 그린다(윗 줄에 욱여넣으면 스킬명/배지/아바타가 다 잘린다). 이 둘째
+            // 줄의 유무가 ladderHeight()의 steppingCount 계산과 반드시 일치해야
+            // handle이 허공에 뜨지 않는다.
+            const stepping = steppingStoneLabel(item.steppingStones, 1)
+            return (
+              <li key={item.canonical} className={`wfm-ladder-node__item wfm-ladder-node__item--${item.cls}`}>
+                <div className="wfm-ladder-node__row">
+                  {!data.hideRank && <span className="wfm-ladder-node__rank">{i + 1}</span>}
+                  <span className="wfm-ladder-node__label" title={item.canonical}>{item.canonical}</span>
+                  {item.badge && <span className="wfm-ladder-node__badge">{item.badge}</span>}
+                  {item.requiredBy.length > 0 && (
                     <span
-                      key={r.company}
-                      className="wfm-ladder-node__req-avatar"
-                      style={{ background: avatarColor(r.company) }}
+                      className="wfm-ladder-node__req"
+                      title={item.requiredBy.map((r) => r.company).join(', ')}
                     >
-                      {r.company.slice(0, 1)}
+                      {item.requiredBy.slice(0, 2).map((r) => (
+                        <span
+                          key={r.company}
+                          className="wfm-ladder-node__req-avatar"
+                          style={{ background: avatarColor(r.company) }}
+                        >
+                          {r.company.slice(0, 1)}
+                        </span>
+                      ))}
+                      {item.requiredBy.length > 2 && (
+                        <span className="wfm-ladder-node__req-more">+{item.requiredBy.length - 2}</span>
+                      )}
                     </span>
-                  ))}
-                  {item.requiredBy.length > 2 && (
-                    <span className="wfm-ladder-node__req-more">+{item.requiredBy.length - 2}</span>
                   )}
-                </span>
-              )}
-            </li>
-          ))}
+                </div>
+                {stepping && <div className="wfm-ladder-node__stepping" title={stepping}>{stepping}</div>}
+              </li>
+            )
+          })}
           {data.overflow > 0 && (
             <li className="wfm-ladder-node__item wfm-ladder-node__item--more">+{data.overflow}개</li>
           )}
@@ -353,6 +282,10 @@ const RELATION_EDGE_LABEL_BG = { fill: '#fff', fillOpacity: 0.92 }
 
 const MOCK_ROADMAP: ScopedRoadmapData = { start_matched: 0, total: 0, as_of: '', steps: [] }
 
+// 2단계: flow/list 뷰 선택 저장 키 — dashboardConfig.ts의 STORAGE_KEY_DASHBOARD_CONFIG와
+// 같은 techeer_ 프리픽스 네이밍을 따른다.
+const VIEW_STORAGE_KEY = 'techeer_workflow_view'
+
 type GraphCaps = { ownedCap: number; targetCap: number; mode: 'compact' | 'modal' }
 
 // 그래프 빌더 — dagre 대신 순수 함수로 nodes/edges/truncatedCount를 계산한다. 컴팩트
@@ -369,27 +302,21 @@ type GraphCaps = { ownedCap: number; targetCap: number; mode: 'compact' | 'modal
 // CSS 실측(헤더 padding 7+아이콘/타이틀 15px+padding 7, 리스트 행 15px+gap 4px, 리스트
 // 하단 padding 9px)에 여유를 둔 값이라, 선언 height가 항상 실제 렌더 높이 이상이 되게
 // 한다(살짝 여유 있는 건 괜찮지만 모자라면 handle이 다시 밖으로 뜬다).
+// C: 발판(stepping stone) 칩 추가 — 사다리 행 하나가 "랭크+스킬명+배지+요구 아바타"
+// 한 줄에 발판 칩까지 욱여넣기엔 컴팩트 카드 폭(208px)이 너무 좁아 텍스트가 다 잘린다.
+// 그래서 발판이 있는 항목은 스킬명 아래 작은 둘째 줄("← Python")을 추가로 그린다.
+// LADDER_ROW_H는 그대로 두고(랭크·라벨 한 줄 높이), 항목별로 발판 유무에 따라
+// LADDER_STEPPING_ROW_H를 더할지 결정한다 — 여전히 DOM 측정 없는 순수 함수라 "선언
+// 높이 = 시각 높이" 불변식이 깨지지 않는다(항목 수뿐 아니라 발판 보유 개수도 입력으로
+// 받을 뿐, 둘 다 데이터에서 결정적으로 나온다).
 const LADDER_HEADER_H = 30
 const LADDER_ROW_H = 20
+const LADDER_STEPPING_ROW_H = 13
 const LADDER_PADDING = 14
 
-function ladderHeight(itemCount: number, hasOverflow: boolean): number {
-  return LADDER_HEADER_H + Math.max(1, itemCount) * LADDER_ROW_H + (hasOverflow ? LADDER_ROW_H : 0) + LADDER_PADDING
-}
-
-// A: 이 스킬을 요구하는 "선택된" 공고들의 회사명 목록 — 랭크 행 끝 아바타 귀속용.
-// 같은 회사에서 온 여러 선택 공고가 있어도 아바타는 회사당 1개만(중복 제거).
-function requiredByFor(canonical: string, selectedPostings: PostingDetail[]): { company: string }[] {
-  const seen = new Set<string>()
-  const result: { company: string }[] = []
-  selectedPostings.forEach((p) => {
-    if (!p.skills.includes(canonical)) return
-    const company = p.company ?? '회사명 미상'
-    if (seen.has(company)) return
-    seen.add(company)
-    result.push({ company })
-  })
-  return result
+function ladderHeight(itemCount: number, hasOverflow: boolean, steppingCount: number): number {
+  return LADDER_HEADER_H + Math.max(1, itemCount) * LADDER_ROW_H + steppingCount * LADDER_STEPPING_ROW_H
+    + (hasOverflow ? LADDER_ROW_H : 0) + LADDER_PADDING
 }
 
 function buildWorkflowGraph(
@@ -414,6 +341,9 @@ function buildWorkflowGraph(
 
   const ownedByGroup: Record<SkillGroupName, string[]> = { 언어: [], 프레임워크: [], 기타: [] }
   ownedSkills.forEach((skill) => ownedByGroup[classifySkill(skill, ownedSkillCategories[skill])].push(skill))
+  // C: 발판 칩 계산용 — buildWorkflowGraph는 ownedSkills 배열만 받으므로 여기서 한 번만
+  // Set으로 만들어 getSteppingStones에 넘긴다.
+  const ownedSet = new Set(ownedSkills)
 
   // 목표/경유 스킬도 같은 3버킷으로 묶되, 버킷 내부 순서는 원래의 학습 우선순위(라이브
   // 로드맵이면 payoff/delta 내림차순, 대체 순서면 공고 요구 빈도 내림차순)를 그대로
@@ -427,6 +357,7 @@ function buildWorkflowGraph(
       category: step.category,
       group: classifySkill(step.canonical, step.category),
       requiredBy: requiredByFor(step.canonical, selectedPostings),
+      steppingStones: getSteppingStones(step.canonical, ownedSet),
     }))
     : fallbackOrder.map((item) => ({
       canonical: item.canonical, cls: 'target' as SkillClass,
@@ -434,6 +365,7 @@ function buildWorkflowGraph(
       group: classifySkill(item.canonical),
       count: item.count,
       requiredBy: requiredByFor(item.canonical, selectedPostings),
+      steppingStones: getSteppingStones(item.canonical, ownedSet),
     }))
 
   const targetByGroup: Record<SkillGroupName, TargetItem[]> = { 언어: [], 프레임워크: [], 기타: [] }
@@ -484,8 +416,10 @@ function buildWorkflowGraph(
     if (targetFull.length > 0 && !hideRank) rankVisibleSomewhere = true
 
     // B: 항목 수 기반 결정적 계산 — 캡이 이미 개수를 제한하니(targetItems.length) 순수
-    // 함수로 실제 렌더 높이와 항상 일치하는(정확히는 그 이상인) 높이를 얻는다.
-    const targetH = ladderHeight(targetItems.length, targetOverflow > 0)
+    // 함수로 실제 렌더 높이와 항상 일치하는(정확히는 그 이상인) 높이를 얻는다. C: 발판
+    // 칩이 있는 항목 수(steppingCount)도 같은 이유로 순수하게 계산해 더한다.
+    const steppingCount = targetItems.filter((it) => steppingStoneLabel(it.steppingStones, 1) !== null).length
+    const targetH = ladderHeight(targetItems.length, targetOverflow > 0, steppingCount)
 
     let ownedPos: { x: number; y: number }
     let targetPos: { x: number; y: number }
@@ -598,14 +532,6 @@ function buildWorkflowGraph(
   return { nodes, edges, truncatedCount: truncated }
 }
 
-// 목표 후보 아바타 색 — 회사명 해시로 고정 배정해 리렌더돼도 색이 흔들리지 않게 한다.
-const AVATAR_PALETTE = ['#18181b', '#1f9d57', '#3b82f6', '#b45309', '#8b5cf6', '#0891b2']
-function avatarColor(seed: string): string {
-  let hash = 0
-  for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0
-  return AVATAR_PALETTE[hash % AVATAR_PALETTE.length]
-}
-
 export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
   const { activeResume } = useResumesState()
   const ownedSkills = useMemo(() => activeResume?.skills ?? [], [activeResume])
@@ -715,6 +641,33 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
   // 아직 목표를 하나도 안 골랐으면(showNoSelection) 처음부터 열어서 "여기서 고르면
   // 된다"는 게 바로 보이게 한다 — 이 초기값은 마운트 시점 값만 쓰고, 그 뒤엔 토글 버튼으로만 바뀐다.
   const [goalPanelOpen, setGoalPanelOpen] = useState(showNoSelection)
+
+  // 2단계: flow/list 보기 전환 — dashboardConfig.ts와 같은 패턴(localStorage가 정본)을
+  // 이 위젯 안에서 useState+localStorage로 간단히 구현한다(별도 스토어 모듈은 과하다).
+  // 마운트 시 1회만 저장된 값을 읽고, 그 뒤엔 토글 버튼으로만 바뀐다.
+  const [view, setViewState] = useState<'flow' | 'list'>(() => {
+    try {
+      return localStorage.getItem(VIEW_STORAGE_KEY) === 'list' ? 'list' : 'flow'
+    } catch {
+      return 'flow'
+    }
+  })
+  const setView = (next: 'flow' | 'list') => {
+    setViewState(next)
+    try {
+      localStorage.setItem(VIEW_STORAGE_KEY, next)
+    } catch {
+      // localStorage 접근 불가(프라이빗 모드 등)해도 뷰 전환 자체는 계속 동작해야 한다.
+    }
+  }
+
+  // D: 선택된 공고가 2개 이상이고 서로 이질적이면(요구 스킬 집합 쌍별 Jaccard 유사도의
+  // 최솟값 < 0.2) flow 캔버스 위에 "리스트 보기로 나눠 보라"는 안내 배너를 띄운다.
+  // 배너는 캔버스 밖(위) HTML이라 React Flow 좌표·그래프 빌더엔 영향이 없다.
+  const heterogeneousGoals = useMemo(() => {
+    if (selectedPostings.length < 2) return false
+    return minPairwiseJaccard(selectedPostings.map((p) => new Set(p.skills))) < 0.2
+  }, [selectedPostings])
 
   // 데모용 추천 공고 가져오기 — 검증된 기업명으로 최대 12개 회사를 4개씩 묶어 조회해
   // 후보를 최대 8개 모은다. 예전엔 모으자마자 전부 자동으로 북마크했는데, 어떤 공고가
@@ -903,6 +856,30 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
           right={(
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               {!showNoBookmarks && !identity && <PreviewBadge />}
+              {!showNoBookmarks && (
+                <div className="wfm-view-toggle" role="group" aria-label="보기 방식 전환">
+                  <button
+                    type="button"
+                    className={`wfm-view-toggle__btn${view === 'flow' ? ' is-active' : ''}`}
+                    onClick={() => setView('flow')}
+                    aria-label="다이어그램 보기"
+                    aria-pressed={view === 'flow'}
+                    title="다이어그램 보기"
+                  >
+                    <Workflow size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    className={`wfm-view-toggle__btn${view === 'list' ? ' is-active' : ''}`}
+                    onClick={() => setView('list')}
+                    aria-label="리스트 보기"
+                    aria-pressed={view === 'list'}
+                    title="리스트 보기"
+                  >
+                    <List size={13} />
+                  </button>
+                </div>
+              )}
               <div className="wfm-recommend-wrap">
                 <button
                   type="button"
@@ -982,8 +959,33 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
                 </div>
               ) : isLoading ? (
                 <div className="wfm-loading" role="status" aria-live="polite">워크플로우 맵을 그리는 중이에요.</div>
+              ) : view === 'list' ? (
+                // D: 리스트 뷰 — 보유 밴드 · 공통 코어 · 공고별 트랙을 WorkflowList가
+                // 그린다. 라이브 로드맵은 안 쓰므로 roadmap.loading을 기다리지 않아도
+                // 되지만, 위 isLoading 게이트를 flow 뷰와 공유해 굳이 분기하지 않았다
+                // (실무상 로드맵 응답이 빨라 체감 지연이 거의 없다).
+                <div className="wfm-list-pane" style={{ maxHeight: size === '2x2' ? 500 : 260 }}>
+                  <WorkflowList
+                    ownedSkills={ownedSkills}
+                    ownedSkillCategories={ownedSkillCategories}
+                    selectedPostings={selectedPostings}
+                  />
+                  {certLane}
+                </div>
               ) : (
                 <>
+                  {heterogeneousGoals && (
+                    <div className="wfm-heterogeneous-banner">
+                      <span>선택한 공고들의 분야가 달라요.</span>
+                      <button
+                        type="button"
+                        className="wfm-heterogeneous-banner__btn"
+                        onClick={() => setView('list')}
+                      >
+                        리스트 보기에서 공고별로 나눠 볼 수 있어요
+                      </button>
+                    </div>
+                  )}
                   <div
                     className="wfm-canvas"
                     style={{
@@ -1036,35 +1038,51 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
                 <X size={16} />
               </button>
             </div>
-            <div
-              className="wfm-modal__canvas"
-              style={{
-                '--wfm-node-w': `${MODAL_NODE_W}px`,
-                '--wfm-owned-h': `${MODAL_OWNED_H}px`,
-                '--wfm-target-h': `${MODAL_TARGET_H}px`,
-              } as CSSProperties}
-            >
-              <ReactFlow
-                nodes={expandedNodes}
-                edges={expandedEdges}
-                nodeTypes={NODE_TYPES}
-                fitView
-                fitViewOptions={{ padding: 0.35 }}
-                nodesDraggable={false}
-                nodesConnectable={false}
-                elementsSelectable={false}
-                panOnScroll
-                zoomOnScroll
-                proOptions={{ hideAttribution: true }}
-              >
-                <Background gap={18} size={1} color="#eceef3" />
-                <Controls showInteractive={false} />
-                <MiniMap pannable zoomable className="wfm-minimap" />
-              </ReactFlow>
-            </div>
-            {legend}
-            {expandedTruncationNote}
-            {certLane}
+            {view === 'list' ? (
+              // 2단계: "크게 보기" 모달도 현재 모드를 따른다 — list 모드면 모달도
+              // 리스트를 더 넓은 영역에 그린다(WorkflowList 자체는 캡 없이 전부
+              // 보여주므로 컴팩트 카드보다 스크롤 여유만 커지면 충분하다).
+              <div className="wfm-modal__list">
+                <WorkflowList
+                  ownedSkills={ownedSkills}
+                  ownedSkillCategories={ownedSkillCategories}
+                  selectedPostings={selectedPostings}
+                />
+                {certLane}
+              </div>
+            ) : (
+              <>
+                <div
+                  className="wfm-modal__canvas"
+                  style={{
+                    '--wfm-node-w': `${MODAL_NODE_W}px`,
+                    '--wfm-owned-h': `${MODAL_OWNED_H}px`,
+                    '--wfm-target-h': `${MODAL_TARGET_H}px`,
+                  } as CSSProperties}
+                >
+                  <ReactFlow
+                    nodes={expandedNodes}
+                    edges={expandedEdges}
+                    nodeTypes={NODE_TYPES}
+                    fitView
+                    fitViewOptions={{ padding: 0.35 }}
+                    nodesDraggable={false}
+                    nodesConnectable={false}
+                    elementsSelectable={false}
+                    panOnScroll
+                    zoomOnScroll
+                    proOptions={{ hideAttribution: true }}
+                  >
+                    <Background gap={18} size={1} color="#eceef3" />
+                    <Controls showInteractive={false} />
+                    <MiniMap pannable zoomable className="wfm-minimap" />
+                  </ReactFlow>
+                </div>
+                {legend}
+                {expandedTruncationNote}
+                {certLane}
+              </>
+            )}
           </div>
         </div>
       )}
