@@ -52,6 +52,7 @@ test('저장 이력서 상세를 어시스턴트 입력으로 변환한다', () 
   assert.deepEqual(input, {
     resumeId: 1,
     skills: ['Java', 'Spring'],
+    certs: [],
     position: 'backend',
     pool: 'domestic',
     memo: null,

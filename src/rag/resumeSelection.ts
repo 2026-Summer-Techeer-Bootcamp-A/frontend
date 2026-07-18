@@ -3,6 +3,7 @@ import type { ApiPool, ResumeDetailDto, ResumeListItemDto } from '../career/api'
 export interface AssistantResumeInput {
   resumeId: number
   skills: string[]
+  certs: string[]
   position: string
   pool: ApiPool
   memo: string | null
@@ -36,6 +37,7 @@ export function toAssistantResumeInput(detail: ResumeDetailDto): AssistantResume
   return {
     resumeId: detail.resume_id,
     skills: detail.skills.map((skill) => skill.canonical),
+    certs: detail.certs.map((cert) => cert.name),
     position: mapSavedPosition(detail.position),
     pool: detail.pool,
     memo: detail.memo,

@@ -319,6 +319,9 @@ export type ResumeParseResult = {
   position: string | null
   career_min: number | null
   career_max: number | null
+  // 추출된 PDF 원문(최대 20000자). 확인 세션 payload에 실어 커리어 적합도 LLM 판정이
+  // 근거로 인용할 수 있게 한다. Postgres에는 저장하지 않는다.
+  resume_text: string | null
 }
 export type ResumePreferencesDto = {
   level?: 'intern' | 'junior' | 'mid' | 'senior' | 'lead' | 'director'
