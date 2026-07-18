@@ -669,6 +669,11 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
     return minPairwiseJaccard(selectedPostings.map((p) => new Set(p.skills))) < 0.2
   }, [selectedPostings])
 
+  // D: 이질성 배너가 실제로 렌더되는 조건(아래 flow 뷰 분기와 동일해야 한다). 배너가
+  // 뜰 때만 캔버스 좌상단에 고정된 목표 선택 토글/드로어를 배너 높이만큼 아래로 밀어
+  // 배너 텍스트를 가리지 않게 한다.
+  const bannerVisible = !showNoSelection && !isLoading && view !== 'list' && heterogeneousGoals
+
   // 데모용 추천 공고 가져오기 — 검증된 기업명으로 최대 12개 회사를 4개씩 묶어 조회해
   // 후보를 최대 8개 모은다. 예전엔 모으자마자 전부 자동으로 북마크했는데, 어떤 공고가
   // 담기는지 미리 보고 골라 담고 싶다는 요청으로 모달에 나열하고 개별 추가 버튼으로
@@ -927,7 +932,7 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
             <div className="wfm-graph-pane">
               <button
                 type="button"
-                className="wfm-goal-toggle"
+                className={`wfm-goal-toggle${bannerVisible ? ' wfm-goal-toggle--shifted' : ''}`}
                 onClick={() => setGoalPanelOpen((open) => !open)}
                 aria-expanded={goalPanelOpen}
                 aria-label="목표 선택 패널 토글"
@@ -937,7 +942,7 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
                 목표 선택
               </button>
               {goalPanelOpen && (
-                <div className="wfm-goal-drawer">
+                <div className={`wfm-goal-drawer${bannerVisible ? ' wfm-goal-drawer--shifted' : ''}`}>
                   <div className="wfm-goal-drawer__head">
                     <span className="wfm-goal-drawer__title">목표로 삼을 공고</span>
                     <button
