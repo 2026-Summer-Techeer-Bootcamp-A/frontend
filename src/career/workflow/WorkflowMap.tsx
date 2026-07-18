@@ -48,11 +48,40 @@ const TECH_CATEGORY: Record<string, string> = Object.fromEntries(TECH_CATEGORY_N
 
 type SkillGroupName = '언어' | '프레임워크' | '기타'
 const SKILL_GROUPS: SkillGroupName[] = ['언어', '프레임워크', '기타']
-function classifySkill(name: string): SkillGroupName {
-  const cat = TECH_CATEGORY[name]
+
+// E: pearl/n.json엔 55개 노드만 있어서, 실무에서 흔하지만 그 사전에 없는 스킬(FastAPI,
+// Flask, Tailwind 등)이 전부 '기타'로 폴백되는 문제가 있었다. 보정 테이블로 최소한만
+// 채운다. pearl에 이미 있는 스킬(Elasticsearch 등)은 중복으로 넣지 않는다.
+const SUPPLEMENT_CATEGORY: Record<string, string> = {
+  FastAPI: 'backend',
+  Flask: 'backend',
+  NestJS: 'backend',
+  Laravel: 'backend',
+  Svelte: 'frontend',
+  Tailwind: 'frontend',
+  jQuery: 'frontend',
+  Flutter: 'mobile',
+  Swift: 'language',
+  Go: 'language',
+  Rust: 'language',
+  ClickHouse: 'data_db',
+  MariaDB: 'data_db',
+  Oracle: 'data_db',
+}
+
+function groupForCategory(cat: string | undefined): SkillGroupName {
   if (cat === 'language') return '언어'
   if (cat === 'backend' || cat === 'frontend' || cat === 'mobile') return '프레임워크'
   return '기타'
+}
+
+// 우선순위: (1) 백엔드가 이미 내려준 category(이력서 스킬의 ParsedSkillDto.category,
+// 라이브 로드맵 스텝의 ScopedRoadmapStep.category) — 있고 'unknown'이 아니면 최우선으로
+// 신뢰한다. (2) pearl/n.json 사전. (3) 위 보정 테이블. (4) 그래도 없으면 '기타'.
+function classifySkill(name: string, backendCategory?: string): SkillGroupName {
+  if (backendCategory && backendCategory !== 'unknown') return groupForCategory(backendCategory)
+  const cat = TECH_CATEGORY[name] ?? SUPPLEMENT_CATEGORY[name]
+  return groupForCategory(cat)
 }
 
 // 관계(연관·순서) 큐레이션 — "네트워크 그래프처럼 순서를 보여달라"는 피드백에 대응해
@@ -168,7 +197,14 @@ function matchPctFor(skills: string[], matchedCount: number | null | undefined, 
 // 라벨 없이 옅은 색 + 흐름 애니메이션으로만 "함께 필요하다"는 느낌을 준다.
 
 type SkillClass = 'owned' | 'target' | 'bridge'
-type TargetLadderItem = { canonical: string; cls: SkillClass; badge: string; category?: string }
+// A: requiredBy는 이 스킬을 요구하는 "선택된" 공고들의 회사 목록(랭크 행 끝 아바타
+// 귀속용, 최대 2개 + "+n"). count는 폴백 모드(라이브 로드맵 없음)에서만 채워지는
+// 공고 요구 개수 — B: 같은 카테고리 안 모든 항목의 count가 동률이면 랭크 번호를
+// 숨기는 판정(hideRank)에 쓴다.
+type TargetLadderItem = {
+  canonical: string; cls: SkillClass; badge: string; category?: string
+  requiredBy: { company: string }[]; count?: number
+}
 
 type OwnedClusterData = {
   group: SkillGroupName
@@ -180,11 +216,18 @@ type TargetLadderData = {
   group: SkillGroupName
   items: TargetLadderItem[]
   overflow: number
+  // B: 가짜 순서 제거 — 폴백 모드에서 이 카테고리 전 항목의 count가 동률이면 true.
+  // true면 랭크 번호(①②…)를 렌더링하지 않는다(리스트 자체는 그대로 둔다).
+  hideRank: boolean
   [key: string]: unknown
 }
 type OwnedClusterFlowNode = Node<OwnedClusterData, 'ownedCluster'>
 type TargetLadderFlowNode = Node<TargetLadderData, 'targetLadder'>
-type WorkflowFlowNode = OwnedClusterFlowNode | TargetLadderFlowNode
+// A: 밴드 헤더 라벨 전용 노드 — handle 없음, 클릭/드래그 불가. 좌표는 기존 클러스터/
+// 사다리 노드를 전혀 옮기지 않고 그 위 음수 y에 얹는다.
+type BandLabelData = { text: string; [key: string]: unknown }
+type BandLabelFlowNode = Node<BandLabelData, 'bandLabel'>
+type WorkflowFlowNode = OwnedClusterFlowNode | TargetLadderFlowNode | BandLabelFlowNode
 
 const GROUP_INITIAL: Record<SkillGroupName, string> = { 언어: '언', 프레임워크: '프', 기타: '기' }
 
@@ -234,9 +277,28 @@ function TargetLadderNode({ data }: NodeProps<TargetLadderFlowNode>) {
         <ol className="wfm-ladder-node__list">
           {data.items.map((item, i) => (
             <li key={item.canonical} className={`wfm-ladder-node__item wfm-ladder-node__item--${item.cls}`}>
-              <span className="wfm-ladder-node__rank">{i + 1}</span>
+              {!data.hideRank && <span className="wfm-ladder-node__rank">{i + 1}</span>}
               <span className="wfm-ladder-node__label" title={item.canonical}>{item.canonical}</span>
-              <span className="wfm-ladder-node__badge">{item.badge}</span>
+              {item.badge && <span className="wfm-ladder-node__badge">{item.badge}</span>}
+              {item.requiredBy.length > 0 && (
+                <span
+                  className="wfm-ladder-node__req"
+                  title={item.requiredBy.map((r) => r.company).join(', ')}
+                >
+                  {item.requiredBy.slice(0, 2).map((r) => (
+                    <span
+                      key={r.company}
+                      className="wfm-ladder-node__req-avatar"
+                      style={{ background: avatarColor(r.company) }}
+                    >
+                      {r.company.slice(0, 1)}
+                    </span>
+                  ))}
+                  {item.requiredBy.length > 2 && (
+                    <span className="wfm-ladder-node__req-more">+{item.requiredBy.length - 2}</span>
+                  )}
+                </span>
+              )}
             </li>
           ))}
           {data.overflow > 0 && (
@@ -248,7 +310,13 @@ function TargetLadderNode({ data }: NodeProps<TargetLadderFlowNode>) {
   )
 }
 
-const NODE_TYPES = { ownedCluster: OwnedClusterNode, targetLadder: TargetLadderNode }
+// A: 밴드 헤더 라벨 — 보유 밴드 위엔 "지금 보유 N개", 목표 밴드 위엔 "배울 것 ·
+// 우선순위순"(B에서 랭크를 숨기는 조건일 땐 "배울 것"만). handle 없음, 클릭 불가.
+function BandLabelNode({ data }: NodeProps<BandLabelFlowNode>) {
+  return <div className="wfm-band-label">{data.text}</div>
+}
+
+const NODE_TYPES = { ownedCluster: OwnedClusterNode, targetLadder: TargetLadderNode, bandLabel: BandLabelNode }
 
 // 고정 좌표 상수 — 노드 높이가 칩/랭크 개수에 따라 가변이라 DOM을 측정해서 정확히 쌓는
 // 대신, 캡이 이미 개수 상한을 걸어준다는 걸 이용해 타입별 고정 높이를 CSS 실측치
@@ -269,6 +337,9 @@ const MODAL_OWNED_H = 150
 const MODAL_TARGET_H = 320
 const MODAL_COLUMN_GAP_X = 120
 const MODAL_ROW_GAP_Y = 40
+// A: 밴드 헤더 라벨 노드 고정 높이 — 기존 좌표 상수는 전혀 건드리지 않고, 라벨은
+// 음수 y로 그 위에 얹는다(아래 buildWorkflowGraph 참고).
+const BAND_LABEL_H = 24
 
 const CONTEXT_EDGE_STYLE = { stroke: '#d8dade', strokeWidth: 1.4 }
 
@@ -289,8 +360,41 @@ type GraphCaps = { ownedCap: number; targetCap: number; mode: 'compact' | 'modal
 // nodes/edges를 따로 계산한다 — 예전엔 한 번 계산한 그래프를 두 <ReactFlow> 인스턴스가
 // 그대로 재사용했지만, 이번엔 캡이 캔버스 크기별로 달라야 해서 의도적으로 그 재사용을
 // 깼다.
+// 사다리 노드 높이 — 세로 리스트라 항목 수의 순수 함수로 결정적 계산이 가능하다(칩
+// wrap과 달리 텍스트 폭에 의존하지 않는다). PR #104가 COMPACT_TARGET_H/MODAL_TARGET_H
+// 같은 고정 상수를 노드 height로 선언해뒀는데, 항목이 몇 개든 항상 그 고정값을 썼다.
+// 실제 렌더 높이(항목 1개면 ~70px)와 선언 높이(320px)가 크게 어긋나면 React Flow가
+// handle 위치·엣지 끝점·fitView 바운딩박스를 전부 선언 높이 기준으로 계산해서, handle이
+// 허공에 뜨고 화살표가 빈 공간을 가리키고 캔버스에 거대한 공백이 생긴다. 아래 상수는
+// CSS 실측(헤더 padding 7+아이콘/타이틀 15px+padding 7, 리스트 행 15px+gap 4px, 리스트
+// 하단 padding 9px)에 여유를 둔 값이라, 선언 height가 항상 실제 렌더 높이 이상이 되게
+// 한다(살짝 여유 있는 건 괜찮지만 모자라면 handle이 다시 밖으로 뜬다).
+const LADDER_HEADER_H = 30
+const LADDER_ROW_H = 20
+const LADDER_PADDING = 14
+
+function ladderHeight(itemCount: number, hasOverflow: boolean): number {
+  return LADDER_HEADER_H + Math.max(1, itemCount) * LADDER_ROW_H + (hasOverflow ? LADDER_ROW_H : 0) + LADDER_PADDING
+}
+
+// A: 이 스킬을 요구하는 "선택된" 공고들의 회사명 목록 — 랭크 행 끝 아바타 귀속용.
+// 같은 회사에서 온 여러 선택 공고가 있어도 아바타는 회사당 1개만(중복 제거).
+function requiredByFor(canonical: string, selectedPostings: PostingDetail[]): { company: string }[] {
+  const seen = new Set<string>()
+  const result: { company: string }[] = []
+  selectedPostings.forEach((p) => {
+    if (!p.skills.includes(canonical)) return
+    const company = p.company ?? '회사명 미상'
+    if (seen.has(company)) return
+    seen.add(company)
+    result.push({ company })
+  })
+  return result
+}
+
 function buildWorkflowGraph(
   ownedSkills: string[],
+  ownedSkillCategories: Record<string, string>,
   liveSteps: ScopedRoadmapData['steps'],
   targetSet: Set<string>,
   selectedPostings: PostingDetail[],
@@ -299,7 +403,9 @@ function buildWorkflowGraph(
   const hasOrder = liveSteps.length > 0
   // 라이브 로드맵을 못 받는 경우(비로그인 · 이력서 없음)엔 선택된 공고들이 그 기술을
   // 몇 번이나 요구하는지로 대체 순서를 만든다 — delta/matched_after 없이 "N개 공고
-  // 요구"만 배지로 쓴다.
+  // 요구"만 배지로 쓴다. 단, 선택 공고가 1개뿐이면 모든 배지가 똑같은 말("1개 공고
+  // 요구")이라 노이즈다 — 이 경우 배지는 비우고(B) 아바타 귀속(A)이 대신 보여주게 한다.
+  const suppressFallbackBadge = selectedPostings.length === 1
   const fallbackOrder = !hasOrder && targetSet.size > 0
     ? [...targetSet]
       .map((canonical) => ({ canonical, count: selectedPostings.filter((p) => p.skills.includes(canonical)).length }))
@@ -307,7 +413,7 @@ function buildWorkflowGraph(
     : []
 
   const ownedByGroup: Record<SkillGroupName, string[]> = { 언어: [], 프레임워크: [], 기타: [] }
-  ownedSkills.forEach((skill) => ownedByGroup[classifySkill(skill)].push(skill))
+  ownedSkills.forEach((skill) => ownedByGroup[classifySkill(skill, ownedSkillCategories[skill])].push(skill))
 
   // 목표/경유 스킬도 같은 3버킷으로 묶되, 버킷 내부 순서는 원래의 학습 우선순위(라이브
   // 로드맵이면 payoff/delta 내림차순, 대체 순서면 공고 요구 빈도 내림차순)를 그대로
@@ -319,11 +425,15 @@ function buildWorkflowGraph(
       cls: targetSet.has(step.canonical) ? 'target' : 'bridge',
       badge: `+${step.delta.toLocaleString()}건 · 누적 ${step.matched_after.toLocaleString()}건`,
       category: step.category,
-      group: classifySkill(step.canonical),
+      group: classifySkill(step.canonical, step.category),
+      requiredBy: requiredByFor(step.canonical, selectedPostings),
     }))
     : fallbackOrder.map((item) => ({
       canonical: item.canonical, cls: 'target' as SkillClass,
-      badge: `${item.count}개 공고 요구`, group: classifySkill(item.canonical),
+      badge: suppressFallbackBadge ? '' : `${item.count}개 공고 요구`,
+      group: classifySkill(item.canonical),
+      count: item.count,
+      requiredBy: requiredByFor(item.canonical, selectedPostings),
     }))
 
   const targetByGroup: Record<SkillGroupName, TargetItem[]> = { 언어: [], 프레임워크: [], 기타: [] }
@@ -332,6 +442,17 @@ function buildWorkflowGraph(
   const nodes: WorkflowFlowNode[] = []
   const edges: Edge[] = []
   let truncated = 0
+  // B: 밴드 헤더의 "우선순위순" 문구는 어딘가 랭크가 실제로 보일 때만 붙인다. 라이브
+  // 모드는 항상 랭크를 보여주므로(카테고리에 항목이 있으면) 즉시 true, 폴백 모드는
+  // 아래 루프에서 카테고리마다 hideRank를 판정하며 갱신한다.
+  let rankVisibleSomewhere = hasOrder && items.length > 0
+  // 모달 모드 누적 y — 레인마다 실제 사다리 높이(ladderHeight)가 달라서, 이전엔 고정
+  // rowStep(=고정 MODAL_TARGET_H 기준)으로 레인 간격을 계산했다가 짧은 사다리 레인
+  // 아래에 다음 레인이 너무 멀리 떨어지거나, 긴 사다리 레인 다음 레인과 겹칠 뻔한
+  // 문제가 있었다. 레인을 순회하며 그 레인의 실제 rowHeight(보유/목표 중 더 큰 쪽)만큼만
+  // 누적해서 다음 레인 y로 쓴다. 컴팩트는 밴드가 가로 나열이라 이 누적이 필요 없다
+  // (기존처럼 고정 y).
+  let modalY = 0
 
   // 관계 엣지가 가리킬 수 있는 후보를 "실제로 화면에 그려진 스킬"로만 좁히기 위한
   // 누적 집합 — 캡 적용 전 원본 ownedSkills/targetSet을 그대로 buildRelationEdges에
@@ -355,27 +476,45 @@ function buildWorkflowGraph(
     truncated += targetOverflow
     const targetId = `target-group-${group}`
 
+    // B: 가짜 순서 제거 — 폴백 모드에서 이 카테고리 전 항목의 count가 동률이면(공고
+    // 요구 빈도로 줄 세울 근거가 없으면) 랭크 번호를 숨긴다. 라이브 모드(delta 순)는
+    // 항상 랭크를 유지한다.
+    const hideRank = !hasOrder && targetFull.length > 0
+      && targetFull.every((it) => it.count === targetFull[0].count)
+    if (targetFull.length > 0 && !hideRank) rankVisibleSomewhere = true
+
+    // B: 항목 수 기반 결정적 계산 — 캡이 이미 개수를 제한하니(targetItems.length) 순수
+    // 함수로 실제 렌더 높이와 항상 일치하는(정확히는 그 이상인) 높이를 얻는다.
+    const targetH = ladderHeight(targetItems.length, targetOverflow > 0)
+
     let ownedPos: { x: number; y: number }
     let targetPos: { x: number; y: number }
-    let nodeW: number, ownedH: number, targetH: number
+    let nodeW: number, ownedH: number
     if (caps.mode === 'compact') {
       const x = laneIndex * (COMPACT_NODE_W + COMPACT_LANE_GAP_X)
       ownedPos = { x, y: 0 }
       targetPos = { x, y: COMPACT_OWNED_H + COMPACT_BAND_GAP_Y }
-      nodeW = COMPACT_NODE_W; ownedH = COMPACT_OWNED_H; targetH = COMPACT_TARGET_H
+      nodeW = COMPACT_NODE_W; ownedH = COMPACT_OWNED_H
     } else {
-      const rowStep = Math.max(MODAL_OWNED_H, MODAL_TARGET_H) + MODAL_ROW_GAP_Y
-      const y = laneIndex * rowStep
+      // 이 레인의 실제 행 높이 — 보유(고정 MODAL_OWNED_H)와 목표(이 레인만의 실제
+      // ladderHeight) 중 큰 쪽. 다음 레인은 이 레인 시작 y + rowHeight + gap에서
+      // 시작하므로, 레인마다 사다리 길이가 달라도 겹치거나 과하게 벌어지지 않는다.
+      const rowHeight = Math.max(MODAL_OWNED_H, targetH)
+      const y = modalY
       ownedPos = { x: 0, y }
       targetPos = { x: MODAL_NODE_W + MODAL_COLUMN_GAP_X, y }
-      nodeW = MODAL_NODE_W; ownedH = MODAL_OWNED_H; targetH = MODAL_TARGET_H
+      nodeW = MODAL_NODE_W; ownedH = MODAL_OWNED_H
+      modalY += rowHeight + MODAL_ROW_GAP_Y
     }
 
     // React Flow는 width/height를 안 주면 렌더된 DOM 콘텐츠 크기를 그대로 노드
     // 바운딩박스로 쓴다(칩 텍스트 길이에 따라 제각각). 그러면 좌표 산수(레인
     // 간격)가 실제 렌더 크기와 안 맞아 옆 노드와 겹치거나 캔버스 밖으로 잘려
     // 나간다. width/height를 명시해 CSS 고정 크기와 React Flow 내부 레이아웃
-    // 계산(겹침 판정 · fitView 바운딩박스)이 항상 일치하게 한다.
+    // 계산(겹침 판정 · fitView 바운딩박스)이 항상 일치하게 한다. targetH는 이제
+    // 고정 상수가 아니라 위에서 계산한 실제 콘텐츠 기반 높이라, 선언 height와
+    // 실제 렌더 높이가 어긋나 handle이 허공에 뜨는 문제(PR #104 버그)가 재발하지
+    // 않는다.
     nodes.push({
       id: ownedId, type: 'ownedCluster', position: ownedPos, draggable: false,
       width: nodeW, height: ownedH,
@@ -384,7 +523,7 @@ function buildWorkflowGraph(
     nodes.push({
       id: targetId, type: 'targetLadder', position: targetPos, draggable: false,
       width: nodeW, height: targetH,
-      data: { group, items: targetItems, overflow: targetOverflow },
+      data: { group, items: targetItems, overflow: targetOverflow, hideRank },
     })
 
     // 엣지는 카테고리당 최대 1개, 목표 쪽이 비어있으면 그 레인은 엣지를 안 그린다.
@@ -400,6 +539,38 @@ function buildWorkflowGraph(
     ownedChips.forEach((s) => shownOwnedSkills.add(s))
     targetItems.forEach((i) => shownTargetSkills.add(i.canonical))
   })
+
+  // A: 밴드 헤더 라벨 — 기존 클러스터/사다리 노드의 좌표는 전혀 옮기지 않고 그 위
+  // 음수 y에 얹는다. 이 캔버스의 철칙대로 width/height를 명시해 DOM 측정에 기대지
+  // 않는다(안 그러면 겹침 버그가 재발한다).
+  const ownedLabelText = `지금 보유 ${ownedSkills.length}개`
+  const targetLabelText = rankVisibleSomewhere ? '배울 것 · 우선순위순' : '배울 것'
+  if (caps.mode === 'compact') {
+    const bandW = COMPACT_NODE_W * SKILL_GROUPS.length + COMPACT_LANE_GAP_X * (SKILL_GROUPS.length - 1)
+    nodes.push({
+      id: 'band-label-owned', type: 'bandLabel', position: { x: 0, y: -34 }, draggable: false,
+      selectable: false, width: bandW, height: BAND_LABEL_H,
+      data: { text: ownedLabelText },
+    })
+    nodes.push({
+      id: 'band-label-target', type: 'bandLabel',
+      position: { x: 0, y: COMPACT_OWNED_H + COMPACT_BAND_GAP_Y - 34 }, draggable: false,
+      selectable: false, width: bandW, height: BAND_LABEL_H,
+      data: { text: targetLabelText },
+    })
+  } else {
+    nodes.push({
+      id: 'band-label-owned', type: 'bandLabel', position: { x: 0, y: -40 }, draggable: false,
+      selectable: false, width: MODAL_NODE_W, height: BAND_LABEL_H,
+      data: { text: ownedLabelText },
+    })
+    nodes.push({
+      id: 'band-label-target', type: 'bandLabel',
+      position: { x: MODAL_NODE_W + MODAL_COLUMN_GAP_X, y: -40 }, draggable: false,
+      selectable: false, width: MODAL_NODE_W, height: BAND_LABEL_H,
+      data: { text: targetLabelText },
+    })
+  }
 
   // 관계(연관·순서) 엣지 — 카테고리 컨텍스트 엣지("함께 필요")와 별개로, 실제 기술 간
   // 방향 있는 관계(예: Java -> Spring)를 클러스터 단위로 얹는다. 칩 단위 Handle은 쓰지
@@ -438,6 +609,9 @@ function avatarColor(seed: string): string {
 export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
   const { activeResume } = useResumesState()
   const ownedSkills = useMemo(() => activeResume?.skills ?? [], [activeResume])
+  // E: 이력서 스킬의 category(백엔드가 이미 내려주는 값)를 classifySkill에 넘겨서
+  // pearl 사전 폴백보다 우선 신뢰하게 한다.
+  const ownedSkillCategories = useMemo(() => activeResume?.skillCategories ?? {}, [activeResume])
   const ownedSet = useMemo(() => new Set(ownedSkills), [ownedSkills])
   const bookmarkIds = useBookmarks()
   const resumeId = Number(activeResume?.id)
@@ -515,20 +689,20 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
 
   // 컴팩트 카드용 그래프 — 캡이 작다(보유 4개/목표 5개). 컴팩트 <ReactFlow>에만 쓰인다.
   const { nodes, edges, truncatedCount } = useMemo(
-    () => buildWorkflowGraph(ownedSkills, roadmap.value.steps, targetSet, selectedPostings, {
+    () => buildWorkflowGraph(ownedSkills, ownedSkillCategories, roadmap.value.steps, targetSet, selectedPostings, {
       ownedCap: COMPACT_OWNED_CAP, targetCap: COMPACT_TARGET_CAP, mode: 'compact',
     }),
-    [roadmap.value, targetSet, selectedPostings, ownedSkills],
+    [roadmap.value, targetSet, selectedPostings, ownedSkills, ownedSkillCategories],
   )
 
   // 크게 보기 모달용 그래프 — 캡이 크다(보유 10개/목표 10개). 예전엔 nodes/edges를 한 번만
   // 계산해서 컴팩트 · 모달 두 <ReactFlow>가 그대로 재사용했지만, 캡이 캔버스 크기에 따라
   // 달라야 하므로 같은 빌더를 캡만 바꿔 한 번 더 호출한다.
   const { nodes: expandedNodes, edges: expandedEdges, truncatedCount: expandedTruncatedCount } = useMemo(
-    () => buildWorkflowGraph(ownedSkills, roadmap.value.steps, targetSet, selectedPostings, {
+    () => buildWorkflowGraph(ownedSkills, ownedSkillCategories, roadmap.value.steps, targetSet, selectedPostings, {
       ownedCap: MODAL_OWNED_CAP, targetCap: MODAL_TARGET_CAP, mode: 'modal',
     }),
-    [roadmap.value, targetSet, selectedPostings, ownedSkills],
+    [roadmap.value, targetSet, selectedPostings, ownedSkills, ownedSkillCategories],
   )
 
   const showNoBookmarks = bookmarkIds.length === 0
@@ -627,9 +801,10 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
 
   // truncated 카운트는 클러스터별(보유 칩 오버플로 + 목표 랭크 오버플로) 합산값이라
   // 컴팩트/모달 캡이 다르면 서로 다른 값이 나온다 — 각 캔버스 아래엔 자기 캡 기준
-  // 카운트로 노트를 띄운다.
+  // 카운트로 노트를 띄운다. B: "선택한 공고가 많아"는 공고 1개일 때도 뜨던 거짓 문구였다
+  // (잘리는 이유는 공고 개수가 아니라 카드/모달의 공간이 좁아서다) — 원인을 정확히 쓴다.
   const renderTruncationNote = (count: number) => count > 0 ? (
-    <div className="wfm-truncation-note">선택한 공고가 많아 카테고리별 상위 기술만 표시했어요(+{count}개 더 있어요).</div>
+    <div className="wfm-truncation-note">공간이 좁아 카테고리별 상위 기술만 표시했어요(+{count}개 더 있어요).</div>
   ) : null
   const truncationNote = renderTruncationNote(truncatedCount)
   const expandedTruncationNote = renderTruncationNote(expandedTruncatedCount)
