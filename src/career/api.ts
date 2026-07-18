@@ -125,7 +125,7 @@ export const authApi = {
 export const jobsApi = {
   list(params: {
     pool?: ApiPool; position?: string; sort?: 'latest' | 'deadline' | 'match'; district?: string
-    q?: string; skills?: string
+    q?: string; company?: string; skills?: string
     deadline_within_days?: number; match_only?: boolean; min_match?: number; resume_id?: number
     rich_only?: boolean
     page?: number; page_size?: number
