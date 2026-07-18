@@ -523,7 +523,8 @@ function ToolResultCard({ result }: { result: ToolResult }) {
     result.kind === 'resume_posting' ||
     result.kind === 'posting_posting' ||
     result.kind === 'resume_market' ||
-    result.kind === 'resume_posting_llm'
+    result.kind === 'resume_posting_llm' ||
+    result.kind === 'posting_posting_llm'
   ) {
     return <ComparisonCard result={result} />
   }
