@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Maximize2, Sparkles, X } from 'lucide-react'
+import { Award, Maximize2, Sparkles, X } from 'lucide-react'
 import {
   ReactFlow, Background, Controls, Handle, Position, MarkerType,
   type Node, type Edge, type NodeProps,
@@ -147,6 +147,18 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
     selectedPostings.forEach((p) => p.skills.forEach((s) => { if (!ownedSet.has(s)) set.add(s) }))
     return set
   }, [selectedPostings, ownedSet])
+
+  // 자격증 트랙 — roadmapScoped는 자격증을 모르므로(학습 순서·payoff 계산 대상이 아님)
+  // 스킬 DAG와는 완전히 별도로, 보유/목표 두 집합만 뽑아 아래 부가 레인에 칩으로 보여준다.
+  // 목표 자격증도 스킬과 동일하게 "선택된" 북마크 공고 기준으로만 모은다.
+  const ownedCerts = useMemo(() => activeResume?.certs ?? [], [activeResume])
+  const ownedCertSet = useMemo(() => new Set(ownedCerts), [ownedCerts])
+  const targetCerts = useMemo(() => {
+    const set = new Set<string>()
+    selectedPostings.forEach((p) => p.certs.forEach((c) => { if (!ownedCertSet.has(c)) set.add(c) }))
+    return [...set]
+  }, [selectedPostings, ownedCertSet])
+  const hasCertLane = ownedCerts.length > 0 || targetCerts.length > 0
 
   const roadmapKey = identity && postingIds.length ? `${resumeId}:${postingIds.slice().sort().join(',')}` : 'idle'
   const roadmap = useWidgetData<ScopedRoadmapData>(
@@ -307,8 +319,38 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
       <span className="wfm-legend__item"><i className="wfm-dot wfm-dot--owned" />보유</span>
       <span className="wfm-legend__item"><i className="wfm-dot wfm-dot--target" />목표</span>
       <span className="wfm-legend__item"><i className="wfm-dot wfm-dot--bridge" />경유</span>
+      {hasCertLane && (
+        <>
+          <span className="wfm-legend__item"><i className="wfm-dot wfm-dot--cert-owned" />보유 자격증</span>
+          <span className="wfm-legend__item"><i className="wfm-dot wfm-dot--cert-target" />목표 자격증</span>
+        </>
+      )}
     </div>
   )
+
+  // 자격증 레인 — 학습 순서가 없는 정보라 메인 DAG 체인에 억지로 엮지 않고, 카드 하단에
+  // 완전히 분리된 작은 패널로만 붙인다. 양쪽 다 비어 있으면(대부분의 비자격증 직군)
+  // 레인 자체를 렌더링하지 않아 빈 상태 노이즈를 만들지 않는다.
+  const certLane = hasCertLane ? (
+    <div className="wfm-cert-lane" aria-label="자격증">
+      <span className="wfm-cert-lane__title">자격증</span>
+      <div className="wfm-cert-lane__row">
+        {ownedCerts.map((c) => (
+          <span key={`oc-${c}`} className="wfm-cert-chip wfm-cert-chip--owned">
+            <Award size={11} />
+            {c}
+          </span>
+        ))}
+        {targetCerts.map((c) => (
+          <span key={`tc-${c}`} className="wfm-cert-chip wfm-cert-chip--target">
+            <Award size={11} />
+            {c}
+            <span className="wfm-cert-chip__badge">필요</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  ) : null
 
   // 왼쪽 패널 — 북마크 전부를 체크박스 행으로 보여준다. 목표 선택 자체가 이 위젯의
   // 주된 진입점이라, "선택 0개" 상태에서도 이 패널만은 계속 온전히 보이고 조작 가능해야 한다.
@@ -431,6 +473,7 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
                     </ReactFlow>
                   </div>
                   {legend}
+                  {certLane}
                   {roadmap.value.as_of && <AsOf asOf={roadmap.value.as_of} n={roadmap.value.total} />}
                 </>
               )}
@@ -473,6 +516,7 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
               </ReactFlow>
             </div>
             {legend}
+            {certLane}
           </div>
         </div>
       )}
