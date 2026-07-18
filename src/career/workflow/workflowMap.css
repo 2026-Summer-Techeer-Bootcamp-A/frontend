@@ -109,6 +109,17 @@
   padding: 2px 7px;
 }
 
+.wfm-goal-year {
+  flex: none;
+  font-size: 10px;
+  font-weight: 700;
+  color: #7c7f88;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  padding: 2px 6px;
+}
+
 .wfm-graph-pane {
   flex: 1;
   min-width: 0;

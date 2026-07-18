@@ -120,7 +120,17 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
   const postingsWithMatch = useMemo(() => postings.map((p) => {
     const heldCount = p.skills.filter((s) => ownedSet.has(s)).length
     const matchPct = p.skills.length ? Math.round(((p.matched_count ?? heldCount) / p.skills.length) * 100) : 0
-    return { detail: p, matchPct }
+    // 게시연도 뱃지 — 올해·작년이면 상대 표기, 그보다 오래됐으면(추천이 아니라 직접
+    // 북마크한 옛날 공고일 수 있음) 연도를 그대로 보여준다. 작년 채용 정보도 올해와
+    // 요구 기술이 크게 다르지 않아 목표를 세우는 참고 자료로는 여전히 유효하다는
+    // 전제라, "오래됨"으로 숨기지 않고 정확한 연도를 알려주는 쪽을 택했다.
+    const postYear = p.post_date ? new Date(p.post_date).getFullYear() : null
+    const currentYear = new Date().getFullYear()
+    const yearBadge = postYear == null ? null
+      : postYear === currentYear ? '올해'
+      : postYear === currentYear - 1 ? '작년'
+      : `${postYear}년`
+    return { detail: p, matchPct, yearBadge }
   }), [postings, ownedSet])
 
   // 선택 상태 — 저장된 선택이 없으면(한 번도 안 건드렸으면) 북마크 전체가 암묵 기본값.
@@ -272,6 +282,7 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
         const results = await Promise.allSettled(
           chunk.map((company) => jobsApi.list({
             pool: 'domestic', company: company.name, sort: 'latest', page: 1, page_size: 2,
+            include_recent_closed: true,
           }, token)),
         )
         for (const result of results) {
@@ -360,7 +371,7 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
         <div className="wfm-goal-loading" role="status" aria-live="polite">북마크를 불러오는 중이에요.</div>
       ) : (
         <ul className="wfm-goal-list">
-          {postingsWithMatch.map(({ detail, matchPct }) => {
+          {postingsWithMatch.map(({ detail, matchPct, yearBadge }) => {
             const id = String(detail.id)
             const checked = selectedIdSet.has(id)
             const company = detail.company ?? '회사명 미상'
@@ -380,6 +391,7 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
                     <span className="wfm-goal-company">{company}</span>
                     <span className="wfm-goal-title" title={detail.title}>{detail.title}</span>
                   </span>
+                  {yearBadge && <span className="wfm-goal-year">{yearBadge}</span>}
                   <span className="wfm-goal-pct">{matchPct}%</span>
                 </label>
               </li>
