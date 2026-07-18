@@ -271,7 +271,7 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
         const chunk = pool.slice(i, i + RECOMMEND_CHUNK_SIZE)
         const results = await Promise.allSettled(
           chunk.map((company) => jobsApi.list({
-            pool: 'domestic', q: company.name, sort: 'latest', page: 1, page_size: 2,
+            pool: 'domestic', company: company.name, sort: 'latest', page: 1, page_size: 2,
           }, token)),
         )
         for (const result of results) {
