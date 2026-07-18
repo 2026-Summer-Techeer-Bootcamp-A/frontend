@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { Award, ListChecks, Maximize2, Sparkles, X } from 'lucide-react'
 import {
-  ReactFlow, Background, Controls, Handle, Position, MarkerType,
+  ReactFlow, Background, Controls, MiniMap, Handle, Position, MarkerType,
   type Node, type Edge, type NodeProps,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import dagre from 'dagre'
 import { SectionHeader, PreviewBadge } from '../kit'
 import { AsOf } from '../charts'
 import { useResumesState } from '../state'
@@ -29,11 +28,10 @@ const DREAM_COMPANIES = dreamCompanies as DreamCompany[]
 const RECOMMEND_TARGET_NEW = 8
 const RECOMMEND_MAX_COMPANIES = 12
 const RECOMMEND_CHUNK_SIZE = 4
-// 로그인 없이 미리보기로 그리는 대체 순서(라이브 로드맵을 못 받을 때)는 목표 스킬
-// 개수에 상한이 없었다. 북마크를 여러 개 선택하면 선택된 공고들의 미보유 스킬
-// 합집합이 수십 개까지 늘어나, 좁은 캔버스에 노드가 뭉개져 그려지는 문제가 있었다.
-// 라이브 로드맵의 steps 상한(10)과 맞춰 대체 순서도 상위 10개로 자른다.
-const FALLBACK_NODE_CAP = 10
+// 로그인 없이 미리보기로 그리는 대체 순서(라이브 로드맵을 못 받을 때)는 예전엔 상한
+// 없이 전부 모아 dagre에 먹였다가 캔버스가 터졌다. 이제는 카테고리별 클러스터 노드가
+// 캡(COMPACT/MODAL_TARGET_CAP)으로 개수를 이미 제한하므로, 그룹으로 나누기 전 단계의
+// 전역 상한은 따로 두지 않고 카테고리별 캡에게 전부 맡긴다.
 
 // 기술 스택 카테고리 분류 — placeholders.tsx(검색 페이지 필터)와 동일하게 pearl/n.json
 // (기술 코-네트워크 그래프 데이터)의 {tech, category} 노드를 재사용한다. 새 API·새 정적
@@ -51,10 +49,13 @@ function classifySkill(name: string): SkillGroupName {
   if (cat === 'backend' || cat === 'frontend' || cat === 'mobile') return '프레임워크'
   return '기타'
 }
-// 그룹당 보여줄 개별 스킬 노드 상한 — 그룹 헤더는 항상 보여주되, 개별 스킬이 너무 많으면
-// "+N개" 오버플로 노드로 묶어 카드 안에서 그래프가 폭발하지 않게 한다.
-const OWNED_GROUP_CAP = 6
-const TARGET_GROUP_CAP = 8
+// 카테고리 클러스터 노드 안에 보여줄 칩/랭크 항목 상한 — 컴팩트 카드는 캔버스가 좁으니
+// 적게, 크게 보기 모달은 넓으니 많이 보여준다. 상한을 넘는 나머지는 "+N개" 칩/행으로
+// 묶는다(그룹 자체를 생략하지는 않는다 — 3레인은 항상 렌더링된다).
+const COMPACT_OWNED_CAP = 4
+const COMPACT_TARGET_CAP = 5
+const MODAL_OWNED_CAP = 10
+const MODAL_TARGET_CAP = 10
 
 function yearBadgeFor(postDate: string | null): string | null {
   if (!postDate) return null
@@ -74,72 +75,223 @@ function matchPctFor(skills: string[], matchedCount: number | null | undefined, 
 // A-5: 목표 · 학습 워크플로우 맵 — 예전엔 북마크한 공고 전부(암묵적 목표)를 그대로
 // 썼지만, 이제는 목표 선택 패널에서 북마크 중 "목표로 삼을 것"을 직접 골라야 한다(안 B,
 // 컴팩트 카드에서는 캔버스 위에 뜨는 플로팅 패널). 선택된 공고들의 요구 기술과 이력서
-// 보유 기술을 좌우 DAG로 이어 "무엇을 어떤 순서로 배우면 좋은가"를 보여준다. 읽기
-// 전용(드래그 연결 불가)이며 dagre로 좌→우 자동 배치한다. 순서는 추천이지 강제 선행
-// 조건이 아니므로 엣지 라벨은 항상 "함께 요구됨" 계열로 두고 "선수"/"prerequisite" 표현은
-// 쓰지 않는다. 보유 · 목표/경유 스킬 모두 언어 · 프레임워크 · 기타 3개 카테고리로 묶어서
-// 그린다(카테고리 그룹 헤더 노드 하나 + 그 안의 개별 스킬들). 카테고리 그룹핑은 "같은
-// 종류끼리 묶어서 보여준다"는 시각적 정리일 뿐, 그룹 사이에 선후 관계가 있다는 뜻은
-// 아니다 — 그래서 헤더→스킬, 보유헤더→목표헤더 연결선은 전부 라벨·화살표 없는 옅은
-// 컨텍스트 선이고, "함께 요구됨" 라벨이 붙은 화살표 선은 같은 카테고리 안에서 학습
-// 우선순위(payoff/delta 내림차순, 또는 대체 순서의 공고 요구 빈도)를 나타낼 때만 쓴다.
+// 보유 기술을 좌우로 이어 "무엇을 어떤 순서로 배우면 좋은가"를 보여준다. 읽기 전용
+// (드래그 연결 불가)이며 좌표는 dagre 없이 고정 산수로 계산한다 — "스킬 1개 = 노드 1개
+// + 엣지 1개"로 dagre에 먹이던 예전 방식은 카테고리별 스킬 개수 편차가 그대로 캔버스
+// 크기 편차가 되는 문제가 있었다. 그래서 노드 단위를 스킬에서 "카테고리 클러스터"로
+// 올렸다 — 보유 스킬은 카테고리(언어/프레임워크/기타)당 칩 묶음 노드 하나
+// (OwnedClusterNode)로, 목표/경유 스킬은 카테고리당 우선순위 사다리 노드 하나
+// (TargetLadderNode)로 그린다. 우선순위(라이브 로드맵이면 payoff/delta 내림차순, 대체
+// 순서면 공고 요구 빈도 내림차순)는 가로 위치가 아니라 사다리 노드 안의 랭크 번호로만
+// 표현하고, 스킬-스킬 체인 엣지("함께 요구됨")는 완전히 없앴다. 카테고리 사이엔 선후
+// 관계가 없으므로 엣지는 카테고리당 최대 1개(owned-group-X -> target-group-X)만 그리고,
+// 라벨 없이 옅은 색 + 흐름 애니메이션으로만 "함께 필요하다"는 느낌을 준다.
 
 type SkillClass = 'owned' | 'target' | 'bridge'
-type SkillNodeData = {
-  label: string; cls: SkillClass; badge?: string; category?: string; isGroupHeader?: boolean
+type TargetLadderItem = { canonical: string; cls: SkillClass; badge: string; category?: string }
+
+type OwnedClusterData = {
+  group: SkillGroupName
+  chips: string[]
+  overflow: number
   [key: string]: unknown
 }
-type SkillFlowNode = Node<SkillNodeData, 'skill'>
+type TargetLadderData = {
+  group: SkillGroupName
+  items: TargetLadderItem[]
+  overflow: number
+  [key: string]: unknown
+}
+type OwnedClusterFlowNode = Node<OwnedClusterData, 'ownedCluster'>
+type TargetLadderFlowNode = Node<TargetLadderData, 'targetLadder'>
+type WorkflowFlowNode = OwnedClusterFlowNode | TargetLadderFlowNode
 
-const CLASS_LABEL: Record<SkillClass, string> = { owned: '보유', target: '목표', bridge: '경유' }
+const GROUP_INITIAL: Record<SkillGroupName, string> = { 언어: '언', 프레임워크: '프', 기타: '기' }
 
-function SkillNode({ data }: NodeProps<SkillFlowNode>) {
-  if (data.isGroupHeader) {
-    return (
-      <div className={`wfm-node wfm-node--header wfm-node--${data.cls}`}>
-        <Handle type="target" position={Position.Left} className="wfm-node__handle" />
-        <span className="wfm-node__label" title={data.label}>{data.label}</span>
-        <Handle type="source" position={Position.Right} className="wfm-node__handle" />
-      </div>
-    )
-  }
+// 보유 스킬 클러스터 — 카테고리 하나의 보유 스킬을 칩으로 wrap해서 보여준다. 레인은
+// 항상 3개 고정으로 렌더링되므로, 그 카테고리에 보유 스킬이 0개여도 노드 자체는 그리고
+// 빈 상태 문구만 보여준다(그룹을 통째로 스킵하지 않는다 — 3행이 항상 정렬되게).
+function OwnedClusterNode({ data }: NodeProps<OwnedClusterFlowNode>) {
   return (
-    <div className={`wfm-node wfm-node--${data.cls}`}>
-      <Handle type="target" position={Position.Left} className="wfm-node__handle" />
-      <span className="wfm-node__class">{CLASS_LABEL[data.cls]}</span>
-      <span className="wfm-node__label" title={data.label}>{data.label}</span>
-      {data.category && <span className="wfm-node__category">{data.category}</span>}
-      {data.badge && <span className="wfm-node__badge">{data.badge}</span>}
+    <div className="wfm-cluster-node wfm-cluster-node--owned">
+      <div className="wfm-cluster-node__header">
+        <span className="wfm-cluster-node__icon wfm-cluster-node__icon--owned">{GROUP_INITIAL[data.group]}</span>
+        <span className="wfm-cluster-node__title">{data.group}</span>
+      </div>
+      {data.chips.length === 0 ? (
+        <div className="wfm-cluster-node__empty">보유 스킬 없음</div>
+      ) : (
+        <div className="wfm-cluster-node__chips">
+          {data.chips.map((skill) => (
+            <span key={skill} className="wfm-cluster-node__chip" title={skill}>{skill}</span>
+          ))}
+          {data.overflow > 0 && (
+            <span className="wfm-cluster-node__chip wfm-cluster-node__chip--more">+{data.overflow}개</span>
+          )}
+        </div>
+      )}
       <Handle type="source" position={Position.Right} className="wfm-node__handle" />
     </div>
   )
 }
 
-const NODE_TYPES = { skill: SkillNode }
-const NODE_W = 156
-const NODE_H = 72
-
-// 2b: 노드 4~5개짜리 짧은 체인도 데이터가 성긴 것처럼 보이지 않도록 랭크 간격을 살짝
-// 좁혔다. 노드 수가 늘어도 dagre가 자동으로 배치하므로 큰 그래프의 가독성은 유지된다.
-function layoutGraph(nodes: SkillFlowNode[], edges: Edge[]): SkillFlowNode[] {
-  const g = new dagre.graphlib.Graph()
-  g.setDefaultEdgeLabel(() => ({}))
-  g.setGraph({ rankdir: 'LR', nodesep: 18, ranksep: 50 })
-  nodes.forEach((n) => g.setNode(n.id, { width: NODE_W, height: NODE_H }))
-  edges.forEach((e) => g.setEdge(e.source, e.target))
-  dagre.layout(g)
-  return nodes.map((n) => {
-    const pos = g.node(n.id)
-    return pos ? { ...n, position: { x: pos.x - NODE_W / 2, y: pos.y - NODE_H / 2 } } : n
-  })
+// 목표/경유 스킬 사다리 — 같은 카테고리의 목표 스킬을 우선순위 내림차순으로 랭크 번호를
+// 붙여 세로 리스트로 보여준다. 목표가 0개인 카테고리도 노드 자체는 그리고 빈 상태
+// 문구만 보여준다.
+function TargetLadderNode({ data }: NodeProps<TargetLadderFlowNode>) {
+  return (
+    <div className="wfm-ladder-node">
+      <Handle type="target" position={Position.Left} className="wfm-node__handle" />
+      <div className="wfm-ladder-node__header">
+        <span className="wfm-ladder-node__icon">{GROUP_INITIAL[data.group]}</span>
+        <span className="wfm-ladder-node__title">{data.group}</span>
+      </div>
+      {data.items.length === 0 ? (
+        <div className="wfm-ladder-node__empty">이 카테고리엔 선택한 목표가 없어요</div>
+      ) : (
+        <ol className="wfm-ladder-node__list">
+          {data.items.map((item, i) => (
+            <li key={item.canonical} className={`wfm-ladder-node__item wfm-ladder-node__item--${item.cls}`}>
+              <span className="wfm-ladder-node__rank">{i + 1}</span>
+              <span className="wfm-ladder-node__label" title={item.canonical}>{item.canonical}</span>
+              <span className="wfm-ladder-node__badge">{item.badge}</span>
+            </li>
+          ))}
+          {data.overflow > 0 && (
+            <li className="wfm-ladder-node__item wfm-ladder-node__item--more">+{data.overflow}개</li>
+          )}
+        </ol>
+      )}
+    </div>
+  )
 }
 
-const CO_EDGE_STYLE = { stroke: '#9a9ca6', strokeWidth: 1.6 }
-const CO_EDGE_LABEL_STYLE = { fontSize: 10, fill: '#7c7f88', fontWeight: 700 }
-const CO_EDGE_LABEL_BG = { fill: '#fff', fillOpacity: 0.92 }
-const CONTEXT_EDGE_STYLE = { stroke: '#d8dade', strokeWidth: 1 }
+const NODE_TYPES = { ownedCluster: OwnedClusterNode, targetLadder: TargetLadderNode }
+
+// 고정 좌표 상수 — 노드 높이가 칩/랭크 개수에 따라 가변이라 DOM을 측정해서 정확히 쌓는
+// 대신, 캡이 이미 개수 상한을 걸어준다는 걸 이용해 타입별 고정 높이를 CSS 실측치
+// 기준으로 정하고 "row index × (고정높이 + gap)"으로만 좌표를 계산한다. 내용이 이
+// 높이를 넘으면 CSS max-height + overflow로 안에서 잘리게 하되, 캡이 이미 개수를
+// 제한하므로 대부분 안 넘친다.
+// 컴팩트는 세로 스택(밴드 2개: 보유 위, 목표 아래) — 레인(언어/프레임워크/기타)은
+// 밴드 안에서 가로로 나열한다.
+const COMPACT_NODE_W = 208
+const COMPACT_OWNED_H = 104
+const COMPACT_TARGET_H = 168
+const COMPACT_LANE_GAP_X = 20
+const COMPACT_BAND_GAP_Y = 72
+// 모달은 2컬럼(왼쪽 보유 클러스터 3개, 오른쪽 목표 사다리 3개) — 같은 레인끼리 y를
+// 맞춰서 나란히 보이게 한다.
+const MODAL_NODE_W = 260
+const MODAL_OWNED_H = 150
+const MODAL_TARGET_H = 320
+const MODAL_COLUMN_GAP_X = 120
+const MODAL_ROW_GAP_Y = 40
+
+const CONTEXT_EDGE_STYLE = { stroke: '#d8dade', strokeWidth: 1.4 }
 
 const MOCK_ROADMAP: ScopedRoadmapData = { start_matched: 0, total: 0, as_of: '', steps: [] }
+
+type GraphCaps = { ownedCap: number; targetCap: number; mode: 'compact' | 'modal' }
+
+// 그래프 빌더 — dagre 대신 순수 함수로 nodes/edges/truncatedCount를 계산한다. 컴팩트
+// 카드와 크게 보기 모달은 캡과 좌표 산수만 다르게 이 함수를 두 번 호출해서 각자의
+// nodes/edges를 따로 계산한다 — 예전엔 한 번 계산한 그래프를 두 <ReactFlow> 인스턴스가
+// 그대로 재사용했지만, 이번엔 캡이 캔버스 크기별로 달라야 해서 의도적으로 그 재사용을
+// 깼다.
+function buildWorkflowGraph(
+  ownedSkills: string[],
+  liveSteps: ScopedRoadmapData['steps'],
+  targetSet: Set<string>,
+  selectedPostings: PostingDetail[],
+  caps: GraphCaps,
+): { nodes: WorkflowFlowNode[]; edges: Edge[]; truncatedCount: number } {
+  const hasOrder = liveSteps.length > 0
+  // 라이브 로드맵을 못 받는 경우(비로그인 · 이력서 없음)엔 선택된 공고들이 그 기술을
+  // 몇 번이나 요구하는지로 대체 순서를 만든다 — delta/matched_after 없이 "N개 공고
+  // 요구"만 배지로 쓴다.
+  const fallbackOrder = !hasOrder && targetSet.size > 0
+    ? [...targetSet]
+      .map((canonical) => ({ canonical, count: selectedPostings.filter((p) => p.skills.includes(canonical)).length }))
+      .sort((a, b) => b.count - a.count)
+    : []
+
+  const ownedByGroup: Record<SkillGroupName, string[]> = { 언어: [], 프레임워크: [], 기타: [] }
+  ownedSkills.forEach((skill) => ownedByGroup[classifySkill(skill)].push(skill))
+
+  // 목표/경유 스킬도 같은 3버킷으로 묶되, 버킷 내부 순서는 원래의 학습 우선순위(라이브
+  // 로드맵이면 payoff/delta 내림차순, 대체 순서면 공고 요구 빈도 내림차순)를 그대로
+  // 보존한다 — 즉 1차 정렬 키는 카테고리, 2차는 원래 우선순위다.
+  type TargetItem = TargetLadderItem & { group: SkillGroupName }
+  const items: TargetItem[] = hasOrder
+    ? liveSteps.map((step) => ({
+      canonical: step.canonical,
+      cls: targetSet.has(step.canonical) ? 'target' : 'bridge',
+      badge: `+${step.delta.toLocaleString()}건 · 누적 ${step.matched_after.toLocaleString()}건`,
+      category: step.category,
+      group: classifySkill(step.canonical),
+    }))
+    : fallbackOrder.map((item) => ({
+      canonical: item.canonical, cls: 'target' as SkillClass,
+      badge: `${item.count}개 공고 요구`, group: classifySkill(item.canonical),
+    }))
+
+  const targetByGroup: Record<SkillGroupName, TargetItem[]> = { 언어: [], 프레임워크: [], 기타: [] }
+  items.forEach((item) => targetByGroup[item.group].push(item))
+
+  const nodes: WorkflowFlowNode[] = []
+  const edges: Edge[] = []
+  let truncated = 0
+
+  // 레인은 항상 3개 고정(언어/프레임워크/기타), 양쪽(보유 클러스터 · 목표 사다리) 다
+  // 항상 렌더링한다 — 그 카테고리가 비어 있어도 빈 상태 문구로 채운 노드를 그린다.
+  SKILL_GROUPS.forEach((group, laneIndex) => {
+    const ownedFull = ownedByGroup[group]
+    const ownedChips = ownedFull.slice(0, caps.ownedCap)
+    const ownedOverflow = ownedFull.length - ownedChips.length
+    truncated += ownedOverflow
+    const ownedId = `owned-group-${group}`
+
+    const targetFull = targetByGroup[group]
+    const targetItems = targetFull.slice(0, caps.targetCap)
+    const targetOverflow = targetFull.length - targetItems.length
+    truncated += targetOverflow
+    const targetId = `target-group-${group}`
+
+    let ownedPos: { x: number; y: number }
+    let targetPos: { x: number; y: number }
+    if (caps.mode === 'compact') {
+      const x = laneIndex * (COMPACT_NODE_W + COMPACT_LANE_GAP_X)
+      ownedPos = { x, y: 0 }
+      targetPos = { x, y: COMPACT_OWNED_H + COMPACT_BAND_GAP_Y }
+    } else {
+      const rowStep = Math.max(MODAL_OWNED_H, MODAL_TARGET_H) + MODAL_ROW_GAP_Y
+      const y = laneIndex * rowStep
+      ownedPos = { x: 0, y }
+      targetPos = { x: MODAL_NODE_W + MODAL_COLUMN_GAP_X, y }
+    }
+
+    nodes.push({
+      id: ownedId, type: 'ownedCluster', position: ownedPos, draggable: false,
+      data: { group, chips: ownedChips, overflow: ownedOverflow },
+    })
+    nodes.push({
+      id: targetId, type: 'targetLadder', position: targetPos, draggable: false,
+      data: { group, items: targetItems, overflow: targetOverflow },
+    })
+
+    // 엣지는 카테고리당 최대 1개, 목표 쪽이 비어있으면 그 레인은 엣지를 안 그린다.
+    if (targetFull.length > 0) {
+      edges.push({
+        id: `${ownedId}->${targetId}`, source: ownedId, target: targetId,
+        animated: true, style: CONTEXT_EDGE_STYLE,
+        markerEnd: { type: MarkerType.ArrowClosed, color: '#b9bcc4' },
+      })
+    }
+  })
+
+  return { nodes, edges, truncatedCount: truncated }
+}
 
 // 목표 후보 아바타 색 — 회사명 해시로 고정 배정해 리렌더돼도 색이 흔들리지 않게 한다.
 const AVATAR_PALETTE = ['#18181b', '#1f9d57', '#3b82f6', '#b45309', '#8b5cf6', '#0891b2']
@@ -227,126 +379,23 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
     roadmapKey,
   )
 
-  const { nodes, edges, truncatedCount } = useMemo(() => {
-    const liveSteps = roadmap.value.steps
-    const hasOrder = liveSteps.length > 0
-    // 라이브 로드맵을 못 받는 경우(비로그인 · 이력서 없음)엔 선택된 공고들이 그 기술을
-    // 몇 번이나 요구하는지로 대체 순서를 만든다 — delta/matched_after 없이 "N개 공고 요구"만 배지로 쓴다.
-    // 선택된 공고가 여러 개면 목표 스킬 합집합이 커지므로 상위 FALLBACK_NODE_CAP개로 자른다.
-    const fullFallbackOrder = !hasOrder && targetSet.size > 0
-      ? [...targetSet]
-        .map((canonical) => ({ canonical, count: selectedPostings.filter((p) => p.skills.includes(canonical)).length }))
-        .sort((a, b) => b.count - a.count)
-      : []
-    const fallbackOrder = fullFallbackOrder.slice(0, FALLBACK_NODE_CAP)
+  // 컴팩트 카드용 그래프 — 캡이 작다(보유 4개/목표 5개). 컴팩트 <ReactFlow>에만 쓰인다.
+  const { nodes, edges, truncatedCount } = useMemo(
+    () => buildWorkflowGraph(ownedSkills, roadmap.value.steps, targetSet, selectedPostings, {
+      ownedCap: COMPACT_OWNED_CAP, targetCap: COMPACT_TARGET_CAP, mode: 'compact',
+    }),
+    [roadmap.value, targetSet, selectedPostings, ownedSkills],
+  )
 
-    const ns: SkillFlowNode[] = []
-    const es: Edge[] = []
-    let truncated = fullFallbackOrder.length - fallbackOrder.length
-
-    // 보유 스킬 -> 언어/프레임워크/기타 3버킷으로 묶는다. 버킷마다 그룹 헤더 노드 하나를
-    // 만들고, 개별 스킬 -> 헤더로 라벨 없는 옅은 선을 이어 "이 스킬들이 이 그룹에 속한다"만
-    // 표시한다(선후 관계 아님). 헤더가 없는 버킷(그 카테고리 보유 스킬이 0개)은 만들지 않는다.
-    const ownedByGroup: Record<SkillGroupName, string[]> = { 언어: [], 프레임워크: [], 기타: [] }
-    ownedSkills.forEach((skill) => ownedByGroup[classifySkill(skill)].push(skill))
-
-    const ownedGroupHeaderIds: string[] = []
-    const ownedGroupHeaderIdByGroup: Partial<Record<SkillGroupName, string>> = {}
-    SKILL_GROUPS.forEach((group) => {
-      const skillsInGroup = ownedByGroup[group]
-      if (skillsInGroup.length === 0) return
-      const headerId = `owned-group-${group}`
-      ownedGroupHeaderIds.push(headerId)
-      ownedGroupHeaderIdByGroup[group] = headerId
-      ns.push({
-        id: headerId, type: 'skill', position: { x: 0, y: 0 }, draggable: false,
-        data: { label: group, cls: 'owned', isGroupHeader: true },
-      })
-      const shown = skillsInGroup.slice(0, OWNED_GROUP_CAP)
-      const rest = skillsInGroup.length - shown.length
-      shown.forEach((skill) => {
-        const id = `owned-${group}-${skill}`
-        ns.push({ id, type: 'skill', position: { x: 0, y: 0 }, draggable: false, data: { label: skill, cls: 'owned' } })
-        es.push({ id: `${id}->${headerId}`, source: id, target: headerId, type: 'straight', style: CONTEXT_EDGE_STYLE })
-      })
-      if (rest > 0) {
-        const moreId = `owned-more-${group}`
-        ns.push({
-          id: moreId, type: 'skill', position: { x: 0, y: 0 }, draggable: false,
-          data: { label: `+${rest}개`, cls: 'owned' },
-        })
-        es.push({ id: `${moreId}->${headerId}`, source: moreId, target: headerId, type: 'straight', style: CONTEXT_EDGE_STYLE })
-      }
-    })
-
-    // 목표/경유 스킬도 같은 3버킷으로 묶되, 버킷 내부 순서는 원래의 학습 우선순위(라이브
-    // 로드맵이면 payoff/delta 내림차순, 대체 순서면 공고 요구 빈도 내림차순)를 그대로
-    // 보존한다 — 즉 1차 정렬 키는 카테고리, 2차는 원래 우선순위다.
-    type TargetItem = { canonical: string; cls: SkillClass; badge: string; category?: string; group: SkillGroupName }
-    const items: TargetItem[] = hasOrder
-      ? liveSteps.map((step) => ({
-        canonical: step.canonical,
-        cls: targetSet.has(step.canonical) ? 'target' : 'bridge',
-        badge: `+${step.delta.toLocaleString()}건 · 누적 ${step.matched_after.toLocaleString()}건`,
-        category: step.category,
-        group: classifySkill(step.canonical),
-      }))
-      : fallbackOrder.map((item) => ({
-        canonical: item.canonical, cls: 'target' as SkillClass,
-        badge: `${item.count}개 공고 요구`, group: classifySkill(item.canonical),
-      }))
-
-    const targetByGroup: Record<SkillGroupName, TargetItem[]> = { 언어: [], 프레임워크: [], 기타: [] }
-    items.forEach((item) => targetByGroup[item.group].push(item))
-
-    SKILL_GROUPS.forEach((group) => {
-      const list = targetByGroup[group]
-      if (list.length === 0) return
-      const shown = list.slice(0, TARGET_GROUP_CAP)
-      truncated += list.length - shown.length
-
-      const headerId = `target-group-${group}`
-      // 헤더는 '경유'(뉴트럴 그레이) 톤으로 그려 실제 목표 스킬(진한 '목표' 톤)과 구분한다 —
-      // 이건 단순 그룹 라벨이지 실제로 배워야 할 스킬 노드가 아니라는 걸 색으로도 드러낸다.
-      ns.push({
-        id: headerId, type: 'skill', position: { x: 0, y: 0 }, draggable: false,
-        data: { label: group, cls: 'bridge', isGroupHeader: true },
-      })
-
-      // 같은 카테고리의 보유 그룹 헤더가 있으면 거기서 이어온다. 없으면(그 카테고리 보유
-      // 스킬이 하나도 없으면) 존재하는 보유 헤더 전부에서 연결해 "지금 여기서 출발"만
-      // 시각적으로 보여준다(강제 선행 조건 아님). 보유 헤더가 하나도 없으면 시작점 없이 둔다.
-      const sameGroupOwnedHeader = ownedGroupHeaderIdByGroup[group]
-      if (sameGroupOwnedHeader) {
-        es.push({ id: `${sameGroupOwnedHeader}->${headerId}`, source: sameGroupOwnedHeader, target: headerId, type: 'straight', style: CONTEXT_EDGE_STYLE })
-      } else {
-        ownedGroupHeaderIds.forEach((oid) => {
-          es.push({ id: `${oid}->${headerId}`, source: oid, target: headerId, type: 'straight', style: CONTEXT_EDGE_STYLE })
-        })
-      }
-
-      let prevId = headerId
-      shown.forEach((item, i) => {
-        const id = `target-${group}-${item.canonical}`
-        ns.push({
-          id, type: 'skill', position: { x: 0, y: 0 }, draggable: false,
-          data: { label: item.canonical, cls: item.cls, category: item.category, badge: item.badge },
-        })
-        if (i === 0) {
-          es.push({ id: `${prevId}->${id}`, source: prevId, target: id, type: 'straight', style: CONTEXT_EDGE_STYLE })
-        } else {
-          es.push({
-            id: `${prevId}->${id}`, source: prevId, target: id, type: 'smoothstep',
-            label: '함께 요구됨', markerEnd: { type: MarkerType.ArrowClosed, color: '#9a9ca6' },
-            style: CO_EDGE_STYLE, labelStyle: CO_EDGE_LABEL_STYLE, labelBgStyle: CO_EDGE_LABEL_BG,
-          })
-        }
-        prevId = id
-      })
-    })
-
-    return { nodes: layoutGraph(ns, es), edges: es, truncatedCount: truncated }
-  }, [roadmap.value, targetSet, selectedPostings, ownedSkills])
+  // 크게 보기 모달용 그래프 — 캡이 크다(보유 10개/목표 10개). 예전엔 nodes/edges를 한 번만
+  // 계산해서 컴팩트 · 모달 두 <ReactFlow>가 그대로 재사용했지만, 캡이 캔버스 크기에 따라
+  // 달라야 하므로 같은 빌더를 캡만 바꿔 한 번 더 호출한다.
+  const { nodes: expandedNodes, edges: expandedEdges, truncatedCount: expandedTruncatedCount } = useMemo(
+    () => buildWorkflowGraph(ownedSkills, roadmap.value.steps, targetSet, selectedPostings, {
+      ownedCap: MODAL_OWNED_CAP, targetCap: MODAL_TARGET_CAP, mode: 'modal',
+    }),
+    [roadmap.value, targetSet, selectedPostings, ownedSkills],
+  )
 
   const showNoBookmarks = bookmarkIds.length === 0
   const showNoSelection = !showNoBookmarks && selectedIds.length === 0
@@ -431,8 +480,9 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [recommendModalOpen])
 
-  // 2a: 크게 보기 — 같은 nodes/edges를 더 큰 캔버스에 그리는 오버레이 모달. 그래프
-  // 자체는 다시 계산하지 않고 그대로 재사용하며, Escape·백드롭 클릭으로 닫는다.
+  // 2a: 크게 보기 — 더 큰 캔버스에 더 큰 캡(expandedNodes/expandedEdges)으로 그리는
+  // 오버레이 모달. 컴팩트 그래프와 별도로 계산된 값이라 캡이 다르다. Escape·백드롭
+  // 클릭으로 닫는다.
   const [expanded, setExpanded] = useState(false)
   useEffect(() => {
     if (!expanded) return
@@ -441,9 +491,14 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [expanded])
 
-  const truncationNote = truncatedCount > 0 ? (
-    <div className="wfm-truncation-note">선택한 공고가 많아 카테고리별 상위 기술만 표시했어요(+{truncatedCount}개 더 있어요).</div>
+  // truncated 카운트는 클러스터별(보유 칩 오버플로 + 목표 랭크 오버플로) 합산값이라
+  // 컴팩트/모달 캡이 다르면 서로 다른 값이 나온다 — 각 캔버스 아래엔 자기 캡 기준
+  // 카운트로 노트를 띄운다.
+  const renderTruncationNote = (count: number) => count > 0 ? (
+    <div className="wfm-truncation-note">선택한 공고가 많아 카테고리별 상위 기술만 표시했어요(+{count}개 더 있어요).</div>
   ) : null
+  const truncationNote = renderTruncationNote(truncatedCount)
+  const expandedTruncationNote = renderTruncationNote(expandedTruncatedCount)
 
   const legend = (
     <div className="wfm-legend">
@@ -456,6 +511,7 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
           <span className="wfm-legend__item"><i className="wfm-dot wfm-dot--cert-target" />목표 자격증</span>
         </>
       )}
+      <span className="wfm-legend__caption">곡선 = 함께 필요(선행조건 아님)</span>
     </div>
   )
 
@@ -612,7 +668,15 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
                 <div className="wfm-loading" role="status" aria-live="polite">워크플로우 맵을 그리는 중이에요.</div>
               ) : (
                 <>
-                  <div className="wfm-canvas" style={{ height: size === '2x2' ? 500 : 260 }}>
+                  <div
+                    className="wfm-canvas"
+                    style={{
+                      height: size === '2x2' ? 500 : 260,
+                      '--wfm-node-w': `${COMPACT_NODE_W}px`,
+                      '--wfm-owned-h': `${COMPACT_OWNED_H}px`,
+                      '--wfm-target-h': `${COMPACT_TARGET_H}px`,
+                    } as CSSProperties}
+                  >
                     <ReactFlow
                       nodes={nodes}
                       edges={edges}
@@ -656,10 +720,17 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
                 <X size={16} />
               </button>
             </div>
-            <div className="wfm-modal__canvas">
+            <div
+              className="wfm-modal__canvas"
+              style={{
+                '--wfm-node-w': `${MODAL_NODE_W}px`,
+                '--wfm-owned-h': `${MODAL_OWNED_H}px`,
+                '--wfm-target-h': `${MODAL_TARGET_H}px`,
+              } as CSSProperties}
+            >
               <ReactFlow
-                nodes={nodes}
-                edges={edges}
+                nodes={expandedNodes}
+                edges={expandedEdges}
                 nodeTypes={NODE_TYPES}
                 fitView
                 fitViewOptions={{ padding: 0.35 }}
@@ -672,10 +743,11 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
               >
                 <Background gap={18} size={1} color="#eceef3" />
                 <Controls showInteractive={false} />
+                <MiniMap pannable zoomable className="wfm-minimap" />
               </ReactFlow>
             </div>
             {legend}
-            {truncationNote}
+            {expandedTruncationNote}
             {certLane}
           </div>
         </div>
