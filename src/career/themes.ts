@@ -9,6 +9,8 @@ export interface CareerTheme {
   primary: string // 버튼/활성
   accent: string // 데이터 시각화(링/바)
   gap: string // 갭(코랄/레드)
+  met: string // 충족(그린)
+  partial: string // 부분(앰버)
   ink: string
   muted: string
   cardBg: string
@@ -30,6 +32,8 @@ export const THEME: CareerTheme = {
   primary: '#0b0b0c',
   accent: '#0b0b0c',
   gap: '#e0453a',
+  met: '#1f7a63',
+  partial: '#8a6d3b',
   ink: '#18181b',
   muted: '#71717a',
   cardBg: '#ffffff',
@@ -47,6 +51,8 @@ export function themeVars(t: CareerTheme): React.CSSProperties {
     '--c-primary': t.primary,
     '--c-accent': t.accent,
     '--c-gap': t.gap,
+    '--c-met': t.met,
+    '--c-partial': t.partial,
     '--c-ink': t.ink,
     '--c-muted': t.muted,
     '--c-card': t.cardBg,
