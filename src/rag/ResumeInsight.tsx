@@ -44,6 +44,7 @@ interface VizResult {
 
 interface AnalysisInput {
   skills: string[]
+  certs: string[]
   position: string
   pool: Pool
   memo: string | null
@@ -54,6 +55,7 @@ interface CachedPayload {
   position: string
   pool: Pool
   skills: string[]
+  certs: string[]
   result: ResumeFeedbackResponse
   viz: VizResult | null
 }
@@ -141,6 +143,7 @@ export default function ResumeInsight() {
   const [position, setPosition] = useState('backend')
   const [pool, setPool] = useState<Pool>('domestic')
   const [skills, setSkills] = useState<string[]>([])
+  const [certs, setCerts] = useState<string[]>([])
   const [skillInput, setSkillInput] = useState('')
   const [status, setStatus] = useState<Status>('idle')
   const [result, setResult] = useState<ResumeFeedbackResponse | null>(null)
@@ -172,6 +175,7 @@ export default function ResumeInsight() {
       setPosition(parsed.position)
       setPool(parsed.pool === 'global' ? 'global' : 'domestic')
       setSkills(parsed.skills)
+      setCerts(Array.isArray(parsed.certs) ? parsed.certs : [])
       setResult(parsed.result)
       setStatus('done')
       if (parsed.viz) {
@@ -197,6 +201,7 @@ export default function ResumeInsight() {
         position: input.position,
         pool: input.pool,
         skills: input.skills,
+        certs: input.certs,
         result: feedbackRes,
         viz: vizRes,
       }
@@ -216,6 +221,7 @@ export default function ResumeInsight() {
 
     const feedbackPromise = postResumeFeedback({
       skills: input.skills.map((s) => ({ canonical: s, category: 'skill', in_dict: false })),
+      certs: input.certs,
       position: input.position,
       careerMin: null,
       careerMax: null,
@@ -290,6 +296,7 @@ export default function ResumeInsight() {
         setPosition(input.position)
         setPool(input.pool)
         setSkills(input.skills)
+        setCerts(input.certs)
         setSelectedMemo(input.memo)
 
         // runAnalysis 전체(피드백+시각화)를 자동 호출하지 않는다 — 여기서는 시각화만
@@ -351,6 +358,7 @@ export default function ResumeInsight() {
         setPosition(input.position)
         setPool(input.pool)
         setSkills(input.skills)
+        setCerts(input.certs)
         setSelectedMemo(input.memo)
         // 저장 이력서를 불러오면 스킬셋 로드가 끝난 즉시 자동으로 분석까지 실행한다.
         runAnalysis(input)
@@ -379,7 +387,7 @@ export default function ResumeInsight() {
 
   const submit = () => {
     if (skills.length === 0 || busy) return
-    runAnalysis({ skills, position, pool, memo: selectedMemo, resumeId: selectedResumeId })
+    runAnalysis({ skills, certs, position, pool, memo: selectedMemo, resumeId: selectedResumeId })
   }
 
   const statusLabel = busy
