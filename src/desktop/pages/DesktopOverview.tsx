@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ReactECharts from 'echarts-for-react'
-import { Sparkles, FileText, Info, X } from 'lucide-react'
+import { Sparkles, FileText, Info } from 'lucide-react'
 import {
   ActivityRings, useCountUp, SectionHeader, CoverageHistogram, TechIcon,
   PreviewBadge, WidgetSettingsMenu, type RingMetric,
@@ -14,14 +14,13 @@ import { useResumesState, getDynamicPostings, calculateCoverage, ddayInfo } from
 import { getAuthToken, useAuth } from '../../career/authStore'
 import {
   dashboardApi, jobsApi,
-  type CoverageData, type DistributionData, type GapData, type Identity, type PivotData, type PostingCard, type WhatIfData,
+  type CoverageData, type DistributionData, type Identity, type PivotData, type PostingCard, type WhatIfData,
 } from '../../career/api'
 import { useWidgetData } from '../../career/useWidgetData'
 import { selectDisplayedCoverage } from '../../career/coverageScore'
 import { useDashboardConfig, isWidgetHidden, getWidgetSize } from '../../career/dashboardConfig'
 import { DASHBOARD_WIDGETS } from '../../career/widgetCatalog'
 import { useBookmarks } from '../../career/bookmarkStore'
-import { useTargetCompany, setTargetCompany } from '../../career/targetContext'
 import data from '../../data/careerData.json'
 import './DesktopOverview.css'
 
@@ -384,45 +383,6 @@ export default function DesktopOverview() {
   const learnSectionRef = useRef<HTMLDivElement>(null)
   const scrollToLearning = () => learnSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
-  // A-1: 목표 기업 앵커 — localStorage 정본(targetContext)을 읽어 이 회사 기준 갭을 별도로 불러온다.
-  const targetCompany = useTargetCompany()
-  const [targetInput, setTargetInput] = useState(targetCompany)
-  useEffect(() => { setTargetInput(targetCompany) }, [targetCompany])
-
-  const [gapData, setGapData] = useState<GapData | null>(null)
-  const [gapLoading, setGapLoading] = useState(false)
-  const [gapError, setGapError] = useState(false)
-  useEffect(() => {
-    if (!identity || !targetCompany) {
-      setGapData(null)
-      setGapLoading(false)
-      setGapError(false)
-      return
-    }
-    let cancelled = false
-    setGapLoading(true)
-    setGapError(false)
-    dashboardApi.gapByCompany(identity, targetCompany)
-      .then((result) => { if (!cancelled) setGapData(result) })
-      .catch(() => {
-        if (!cancelled) {
-          setGapData(null)
-          setGapError(true)
-        }
-      })
-      .finally(() => { if (!cancelled) setGapLoading(false) })
-    return () => { cancelled = true }
-  }, [identity, targetCompany, dashboardRefreshKey])
-
-  const submitTargetCompany = (e: FormEvent) => {
-    e.preventDefault()
-    setTargetCompany(targetInput)
-  }
-  const clearTargetCompany = () => {
-    setTargetCompany('')
-    setTargetInput('')
-  }
-
   // 위젯 리사이즈 헬퍼 — 시장 페이지(DesktopMarket)와 동일 패턴.
   const wsize = (id: string) => {
     const item = DASHBOARD_WIDGETS.find((w) => w.id === id)!
@@ -469,64 +429,6 @@ export default function DesktopOverview() {
           <WidgetSettingsMenu section="dashboard" items={DASHBOARD_WIDGETS} />
         </div>
       </header>
-
-      {/* A-1: 목표 기업 앵커 — 자유 텍스트로 기업명을 입력하면 그 기업 열린 공고 기준 갭을 보여준다. */}
-      <form className="dov__target" onSubmit={submitTargetCompany}>
-        <label className="dov__target-label" htmlFor="dov-target-company">목표 기업</label>
-        <input
-          id="dov-target-company"
-          className="dov__target-input"
-          type="text"
-          value={targetInput}
-          onChange={(e) => setTargetInput(e.target.value)}
-          placeholder="예: 네이버"
-        />
-        <button type="submit" className="dov__target-btn" disabled={!targetInput.trim()}>적용</button>
-        {targetCompany && (
-          <button type="button" className="dov__target-clear" onClick={clearTargetCompany} aria-label="목표 기업 해제">
-            <X size={14} />
-          </button>
-        )}
-      </form>
-      {targetCompany ? (
-        <div className="dov__target-panel">
-          {!identity ? (
-            <span>로그인하고 이력서를 등록하면 <b>{targetCompany}</b> 기준 갭을 보여드려요.</span>
-          ) : gapLoading ? (
-            <span>목표 <b>{targetCompany}</b> 기준 갭을 계산하는 중이에요.</span>
-          ) : gapError ? (
-            <span role="alert">목표 {targetCompany} 데이터를 불러오지 못했어요.</span>
-          ) : gapData ? (
-            <div className="dov__target-rich">
-              <div className="dov__target-headline">
-                <span>목표 <b>{targetCompany}</b>: 매칭 <b>{Math.round(gapData.current_score)}%</b></span>
-                <span className="dov__target-sample">{targetCompany} 열린 공고 {gapData.sample_size.toLocaleString()}건 기준</span>
-                {gapData.sample_warning && <span className="dov__target-warning">표본이 적어 참고용이에요.</span>}
-              </div>
-              {gapData.items.length > 0 ? (
-                <div className="dov__target-gaplist">
-                  {gapData.items.slice(0, 5).map((item) => (
-                    <div key={item.canonical} className="dov__target-gapitem">
-                      <span className={`dov__target-tier dov__target-tier--${item.tier}`}>
-                        {item.tier === 'core' ? '핵심' : '우대'}
-                      </span>
-                      <span className="dov__target-gapname">{item.canonical}</span>
-                      <span className="dov__target-gapgain">+{item.score_gain_if_owned}%</span>
-                      {item.unlocked_posting_count > 0 && (
-                        <span className="dov__target-gapunlock">+{item.unlocked_posting_count}건 지원 가능</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <span className="dov__target-empty">핵심 기술을 이미 모두 보유하고 있어요.</span>
-              )}
-            </div>
-          ) : null}
-        </div>
-      ) : (
-        <div className="dov__target-panel dov__target-panel--empty">목표 기업을 정하면 그 회사 기준 갭을 보여드려요.</div>
-      )}
 
       <div className="dov__layout">
         <div className="dov__insights">
