@@ -132,14 +132,6 @@
 }
 .wfm-empty--selection { padding: 18px 4px; }
 
-.wfm-canvas {
-  width: 100%;
-  border: 1px solid var(--line, #e6e9ef);
-  border-radius: 12px;
-  overflow: hidden;
-  background: #fbfbfc;
-}
-
 /* 4번 피드백: 목표 선택을 캔버스 위에 뜨는 플로팅 토글 + 드로어로. 기본 닫힘이라
    다이어그램이 카드를 거의 다 채우고, 필요할 때만 버튼을 눌러 목표를 고른다. */
 .wfm-goal-toggle {
@@ -219,259 +211,6 @@
 }
 .wfm-goal-drawer__close:hover { background: var(--accent-100, #e4e4e7); color: var(--c-ink, #18181b); }
 
-/* React Flow 배경/컨트롤을 카드 톤에 맞춰 눌러준다 */
-.wfm-canvas .react-flow__attribution { display: none; }
-.wfm-canvas .react-flow__controls {
-  box-shadow: 0 2px 8px rgba(20, 30, 60, 0.08);
-  border-radius: 10px;
-  overflow: hidden;
-}
-.wfm-canvas .react-flow__controls-button {
-  border-bottom: 1px solid var(--line, #e6e9ef);
-  background: #fff;
-}
-
-.wfm-node__handle {
-  width: 6px !important;
-  height: 6px !important;
-  background: #9a9ca6 !important;
-  border: none !important;
-}
-
-/* 카테고리 클러스터/사다리 노드 공용 — 너비와 고정 높이는 wfm-canvas/wfm-modal__canvas가
-   인라인으로 넣어주는 CSS 변수(--wfm-node-w/--wfm-owned-h/--wfm-target-h)를 그대로 쓴다.
-   좌표 계산(WorkflowMap.tsx의 COMPACT_*/MODAL_* 상수)과 시각적 크기가 같은 값을
-   공유하는 단일 소스라, 컴팩트 카드와 크게 보기 모달에서 서로 다른 캡을 써도 노드
-   높이가 좌표 산수와 어긋나지 않는다. */
-.wfm-cluster-node,
-.wfm-ladder-node {
-  position: relative;
-  width: var(--wfm-node-w, 220px);
-  border-radius: 12px;
-  border: 1.4px solid transparent;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  box-shadow: 0 1px 2px rgba(20, 30, 60, 0.06);
-}
-
-.wfm-cluster-node__header,
-.wfm-ladder-node__header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 10px;
-  flex: none;
-}
-
-/* 카테고리 아이콘 배지 — 언/프/기 이니셜을 넣은 15px 정사각 뱃지. 보유 클러스터는
-   초록bg/흰텍스트, 목표 사다리는 검정bg/브랜드그린텍스트로 색을 구분한다. */
-.wfm-cluster-node__icon,
-.wfm-ladder-node__icon {
-  flex: none;
-  width: 15px;
-  height: 15px;
-  border-radius: 4px;
-  display: grid;
-  place-items: center;
-  font-size: 9px;
-  font-weight: 800;
-}
-.wfm-cluster-node__icon--owned {
-  background: #1f9d57;
-  color: #fff;
-}
-.wfm-ladder-node__icon {
-  background: #18181b;
-  color: #9dcfb4;
-}
-
-.wfm-cluster-node__title,
-.wfm-ladder-node__title {
-  font-size: 11.5px;
-  font-weight: 800;
-}
-
-/* 보유 스킬 클러스터 — 그린 톤(기존 .wfm-node--owned/.wfm-chip--owned 토큰 재사용).
-   height:100% — 칩은 가로 wrap이라 텍스트 폭에 따라 내용 높이가 달라져 결정적 계산이
-   불가능하다. 그래서 래퍼(React Flow 노드) 쪽은 고정 선언 높이(COMPACT/MODAL_OWNED_H)를
-   유지하고, 이 안쪽 시각 박스가 그 래퍼를 항상 꽉 채우게 해서 handle 위치(top:35%/65%,
-   이 요소 기준 퍼센트)가 항상 래퍼 크기와 일치하게 한다. 칩이 넘치면 overflow:hidden으로
-   잘리지만 캡이 이미 개수를 제한해 대부분 안 넘친다. */
-.wfm-cluster-node--owned {
-  border-color: #9dcfb4;
-  background: #f5fbf7;
-  height: 100%;
-}
-.wfm-cluster-node--owned .wfm-cluster-node__title { color: #14532d; }
-
-.wfm-cluster-node__chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  padding: 0 10px 9px;
-  overflow: hidden;
-}
-.wfm-cluster-node__chip {
-  font-size: 10.5px;
-  font-weight: 700;
-  color: #1f9d57;
-  background: #fff;
-  border: 1px solid #9dcfb4;
-  border-radius: 999px;
-  padding: 2px 8px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-}
-.wfm-cluster-node__chip--more {
-  color: #14532d;
-  background: #e6f6ec;
-}
-.wfm-cluster-node__empty {
-  padding: 0 10px 10px;
-  font-size: 10.5px;
-  color: #6b8f7a;
-}
-
-/* 목표/경유 사다리 — 다크 톤(기존 .wfm-node--target 토큰 재사용). 개별 항목은 랭크
-   번호와 함께 세로로 쌓인다. height:100% — 래퍼 높이는 이제 buildWorkflowGraph의
-   ladderHeight()가 항목 수 기반으로 결정적으로 계산해 내려주므로 내용과 거의 일치하지만,
-   그래도 이 안쪽 박스가 래퍼를 정확히 꽉 채워야 handle(top:35%/65%, 이 요소 기준 퍼센트)이
-   항상 보이는 테두리 위에 오고 엣지가 빈 공간을 가리키지 않는다. */
-.wfm-ladder-node {
-  border-color: #18181b;
-  background: #18181b;
-  height: 100%;
-}
-.wfm-ladder-node__title { color: #fff; }
-
-.wfm-ladder-node__list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin: 0;
-  padding: 0 9px 9px;
-  overflow: hidden;
-  list-style: none;
-}
-/* C: 발판 칩 추가 이후 항목은 세로 2줄(행 + 발판 칩)이 될 수 있다. .wfm-ladder-node__row가
-   기존 한 줄 레이아웃(랭크·라벨·배지·요구 아바타)을 그대로 맡고, .wfm-ladder-node__item은
-   그 둘을 세로로 쌓는 얇은 컨테이너로만 남는다. */
-.wfm-ladder-node__item {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-.wfm-ladder-node__row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-/* 발판 칩 — 랭크 배지 폭(15px)+gap(6px)만큼 들여써서 스킬명 시작 위치와 맞춘다. */
-.wfm-ladder-node__stepping {
-  padding-left: 21px;
-  font-size: 9px;
-  font-weight: 650;
-  color: #9dcfb4;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-/* 랭크 번호 배지 — 작은 원형, owned 계열 색(그린bg/짙은그린텍스트). */
-.wfm-ladder-node__rank {
-  flex: none;
-  width: 15px;
-  height: 15px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font-size: 9px;
-  font-weight: 800;
-  background: #9dcfb4;
-  color: #14532d;
-}
-.wfm-ladder-node__label {
-  flex: 1;
-  min-width: 0;
-  font-size: 11px;
-  font-weight: 750;
-  color: #fff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.wfm-ladder-node__badge {
-  flex: none;
-  font-size: 9px;
-  font-weight: 700;
-  color: #9dcfb4;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 40%;
-}
-.wfm-ladder-node__item--bridge .wfm-ladder-node__label { color: #d4d4d8; }
-.wfm-ladder-node__item--bridge .wfm-ladder-node__badge { color: #a1a1aa; }
-
-/* A: 공고 귀속 아바타 — 이 스킬을 요구하는 선택된 공고의 회사 이니셜 원형, 최대 2개 +
-   "+n". 행 높이를 키우지 않도록 인라인으로 작게(12px)만 붙인다. */
-.wfm-ladder-node__req {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  margin-left: 2px;
-}
-.wfm-ladder-node__req-avatar {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font-size: 7px;
-  font-weight: 800;
-  color: #fff;
-  text-transform: uppercase;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-}
-.wfm-ladder-node__req-more {
-  font-size: 8px;
-  font-weight: 800;
-  color: #9dcfb4;
-}
-.wfm-ladder-node__item--more {
-  font-size: 10px;
-  font-weight: 700;
-  color: #9dcfb4;
-  padding-left: 21px;
-}
-.wfm-ladder-node__empty {
-  padding: 0 10px 10px;
-  font-size: 10.5px;
-  color: #a1a1aa;
-}
-
-/* A: 밴드 헤더 라벨 — 보유/목표 밴드 위에 얹는 작고 옅은 대문자 라벨. wfm-legend__item과
-   같은 톤(연한 회색, 굵은 작은 글자)을 재사용해 캔버스 크롬처럼 자연스럽게 보이게 한다.
-   handle 없음, selectable:false(React Flow 노드 data에서 지정). */
-.wfm-band-label {
-  display: flex;
-  align-items: center;
-  height: 100%;
-  padding: 0 2px;
-  font-size: 10px;
-  font-weight: 750;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: var(--c-muted, #a1a1aa);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .wfm-legend {
   display: flex;
   gap: 14px;
@@ -490,26 +229,6 @@
 .wfm-dot--owned { background: #1f9d57; }
 .wfm-dot--target { background: #18181b; }
 .wfm-dot--bridge { background: #d8dade; border: 1px solid #b9bcc4; }
-.wfm-dot--cert-owned { background: #d97706; }
-.wfm-dot--cert-target { background: #92400e; }
-
-/* 카테고리당 최대 1개인 owned->target 엣지는 곡선(bezier)이라, 범례 옆에 한 번만
-   "선행조건이 아니다"라는 설명을 붙인다(엣지마다 라벨을 반복하지 않는다). */
-.wfm-legend__caption {
-  font-size: 10.5px;
-  color: var(--c-muted, #a1a1aa);
-  font-style: italic;
-}
-
-/* 크게 보기 모달에만 붙는 MiniMap — 캔버스 톤에 맞춰 옅게 눌러준다(컴팩트 카드는
-   좁아서 MiniMap을 넣지 않는다). */
-.wfm-minimap {
-  background: #fbfbfc !important;
-  border: 1px solid var(--line, #e6e9ef);
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(20, 30, 60, 0.08);
-}
-.wfm-minimap .react-flow__minimap-mask { fill: rgba(20, 30, 60, 0.06); }
 
 /* 자격증 레인 — 스킬 DAG와 완전히 분리된 보조 패널. 학습 순서가 없는 정보라
    앰버/골드 톤만으로 존재를 알리고, 메인 그래프와 시각적으로 경쟁하지 않게 작게 둔다. */
@@ -750,15 +469,7 @@
   transition: transform 0.12s ease, background 0.12s ease, color 0.12s ease;
 }
 .wfm-modal__close:hover { background: var(--accent-100, #e4e4e7); color: var(--c-ink, #18181b); }
-.wfm-modal__canvas { flex: 1; min-height: 0; background: #fbfbfc; }
-.wfm-modal__canvas .react-flow__attribution { display: none; }
 .wfm-modal__card .wfm-legend { padding: 10px 18px 14px; margin-top: 0; }
-
-.wfm-truncation-note {
-  margin-top: 6px;
-  font-size: 11.5px;
-  color: var(--c-muted, #7c7f88);
-}
 
 /* 추천 공고 모달 — 그래프 확대 모달(.wfm-modal__card)과 백드롭·타이틀바는 공유하되,
    목록형 콘텐츠라 그래프용 대형 고정 크기 대신 컴팩트한 크기로 오버라이드한다. */
@@ -871,8 +582,7 @@
   color: var(--c-muted, #a1a1aa);
 }
 
-/* 보유 칩 — flow 뷰의 wfm-cluster-node__chip과 같은 그린 톤을 재사용한다(색 체계
-   일관성 유지). */
+/* 보유 칩 — wfm-chip--owned/wfs-chip과 같은 그린 톤을 재사용한다(색 체계 일관성 유지). */
 .wfm-list-chip {
   font-size: 10.5px;
   font-weight: 700;
@@ -992,4 +702,314 @@
   font-size: 11px;
   color: var(--c-muted, #7c7f88);
   padding: 4px 2px;
+}
+
+/* ============================================================================
+   스테이지 뷰(WorkflowStages.tsx) — 목업(시안 B v2)의 학습 단계 컬럼 + 스킬 단위
+   관계선을 그대로 옮긴 스타일. wfs- 프리픽스로 wfm-*(flow 뷰)/wfm-list-*(리스트 뷰)와
+   완전히 분리한다. 색 토큰은 기존 워크플로우 맵 팔레트(보유 그린 #1f9d57, 목표 다크
+   #18181b, 경유 뉴트럴 그레이, 관계선 블루 #3b82f6)를 그대로 재사용한다.
+   ============================================================================ */
+.wfs-root {
+  position: relative;
+}
+
+.wfs-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 1;
+}
+
+.wfs-edge {
+  opacity: 0.85;
+  transition: opacity 0.15s ease;
+}
+.wfs-edge--dim { opacity: 0.12; }
+
+@media (prefers-reduced-motion: reduce) {
+  .wfs-edge { transition: none; }
+}
+
+.wfs-flow {
+  display: flex;
+  align-items: stretch;
+  gap: 28px;
+  position: relative;
+  z-index: 2;
+}
+
+.wfs-col {
+  flex: 1 1 0;
+  min-width: 168px;
+  display: flex;
+  flex-direction: column;
+}
+.wfs-root--wide .wfs-col { min-width: 210px; }
+
+.wfs-colhead {
+  text-align: center;
+  margin-bottom: 10px;
+  min-height: 30px;
+}
+.wfs-step {
+  font-size: 10px;
+  font-weight: 750;
+  color: #3b82f6;
+  letter-spacing: 0.03em;
+}
+.wfs-steptitle {
+  font-size: 11.5px;
+  font-weight: 750;
+  color: var(--c-ink, #18181b);
+  margin-top: 1px;
+}
+
+.wfs-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.wfs-empty-note {
+  font-size: 11px;
+  color: var(--c-muted, #7c7f88);
+  padding: 8px 2px;
+}
+
+/* 시작 컬럼 — 보유 요약 카드 */
+.wfs-summary {
+  background: #f0fbf4;
+  border: 1px solid #9dcfb4;
+  border-radius: 11px;
+  padding: 11px;
+}
+.wfs-summary__big { font-size: 19px; font-weight: 800; color: #157a41; }
+.wfs-summary__sub { font-size: 10px; color: #3f7a5b; }
+.wfs-summary__lines {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.wfs-summary__lines div {
+  font-size: 10.5px;
+  color: #2f6a49;
+  display: flex;
+  justify-content: space-between;
+}
+.wfs-chiprow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+.wfs-chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #fff;
+  color: #157a41;
+  border: 1px solid #3b82f6;
+  transition: opacity 0.15s ease;
+}
+
+/* 스킬 카드 — 목표(다크) / 경유(회색 점선) */
+.wfs-scard {
+  border-radius: 11px;
+  padding: 9px 11px 10px;
+  border: 1px solid var(--line, #e6e9ef);
+  background: #fff;
+  transition: opacity 0.15s ease;
+}
+.wfs-scard--goal {
+  background: var(--c-ink, #18181b);
+  border-color: var(--c-ink, #18181b);
+  color: #fff;
+}
+.wfs-scard--via {
+  background: #f4f5f7;
+  border: 1.4px dashed #d3d6dc;
+}
+.wfs-dim { opacity: 0.32; }
+@media (prefers-reduced-motion: reduce) {
+  .wfs-scard, .wfs-chip, .wfs-need-card, .wfs-bundle__row { transition: none; }
+}
+
+.wfs-scard__name {
+  font-size: 12.5px;
+  font-weight: 750;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--c-ink, #18181b);
+}
+.wfs-scard--goal .wfs-scard__name { color: #fff; }
+
+.wfs-chip-cat {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--c-muted, #6b6f78);
+  background: #f2f3f5;
+  border: 1px solid #e4e6ea;
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+.wfs-scard--goal .wfs-chip-cat {
+  color: #c5c7cd;
+  background: #2a2a2f;
+  border-color: #3a3a40;
+}
+
+.wfs-scard__reason {
+  font-size: 10px;
+  margin-top: 4px;
+  color: #6b6f78;
+  line-height: 1.45;
+}
+
+.wfs-scard__foot {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 7px;
+  flex-wrap: wrap;
+}
+
+.wfs-scard__alt {
+  margin-top: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #2f5fb0;
+}
+
+.wfs-badge {
+  font-size: 9.5px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #eef0f3;
+  color: #6b6f78;
+  white-space: nowrap;
+}
+.wfs-badge--blue { background: rgba(59, 130, 246, 0.14); color: #2f5fb0; }
+.wfs-scard--goal .wfs-badge--blue { background: rgba(59, 130, 246, 0.22); color: #9cc0ff; }
+
+.wfs-avatar {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #fff;
+  text-transform: uppercase;
+}
+.wfs-avatar--sm { width: 14px; height: 14px; font-size: 8px; }
+.wfs-avatar-more {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--c-muted, #7c7f88);
+}
+
+/* 번들(goes_with) — 점선 박스 안 행 목록 */
+.wfs-bundle {
+  border: 1.4px dashed #8b8f98;
+  border-radius: 9px;
+  padding: 10px 10px 8px;
+  position: relative;
+  background: #fff;
+}
+.wfs-bundle__label {
+  position: absolute;
+  top: -8px;
+  left: 9px;
+  padding: 0 5px;
+  font-size: 9px;
+  font-weight: 700;
+  background: #fff;
+  color: var(--c-muted, #6b6f78);
+}
+.wfs-bundle__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--c-ink, #18181b);
+  padding: 3px 0;
+  transition: opacity 0.15s ease;
+}
+.wfs-bundle__row-name { flex: 1; min-width: 0; }
+.wfs-bundle__note {
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--c-muted, #7c7f88);
+}
+
+/* 자격증 컬럼 */
+.wfs-need-card {
+  width: 100%;
+  background: #fdf3e6;
+  border: 1px solid #ecd4a8;
+  color: #9a6613;
+  border-radius: 10px;
+  padding: 8px 10px;
+  text-align: left;
+  transition: opacity 0.15s ease;
+}
+.wfs-need-card__name {
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.wfs-need-card__reason {
+  font-size: 10px;
+  margin-top: 3px;
+  color: #a5761e;
+}
+
+.wfs-overflow-row {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--c-muted, #7c7f88);
+  padding: 2px 2px;
+}
+
+/* 컴팩트 카드/크게 보기 모달에서 스테이지 뷰를 감싸는 스크롤 컨테이너 — wfm-canvas와
+   달리(React Flow는 내부적으로 pan/zoom을 다루므로 overflow:hidden이었다) 여기는 일반
+   DOM 플로우라 넘치는 컬럼을 가로 스크롤로, 넘치는 카드를 세로 스크롤로 보여줘야 한다. */
+.wfm-stage-pane {
+  width: 100%;
+  overflow: auto;
+  border: 1px solid var(--line, #e6e9ef);
+  border-radius: 12px;
+  background: #fbfbfc;
+  padding: 16px 16px 20px;
+}
+.wfm-modal__stage {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: #fbfbfc;
+  padding: 20px 22px 24px;
+}
+
+.wfm-legend__box {
+  width: 16px;
+  height: 11px;
+  border: 1.4px dashed #8b8f98;
+  border-radius: 4px;
+  display: inline-block;
 }
