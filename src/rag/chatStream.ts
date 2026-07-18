@@ -18,6 +18,10 @@ export interface StreamChatOptions {
   verbose?: boolean
   attachments?: ChatAttachment[]
   signal?: AbortSignal
+  // 이력서 확인 세션 id(POST /resume/confirm 응답의 session_id). 있으면 백엔드가 세션에 실린
+  // 이력서 원문으로 커리어 적합도 LLM 판정(resume_posting_llm_compare, kind="resume_posting_llm")을
+  // 태운다. 세션이 없거나 만료됐으면 백엔드가 기존 태그 기반 비교로 강등한다.
+  resumeSessionId?: string
 }
 
 function isAbortError(err: unknown): boolean {
@@ -78,7 +82,7 @@ export async function streamChat(
   opts: StreamChatOptions,
   handlers: StreamHandlers,
 ): Promise<void> {
-  const { pool, verbose, attachments, signal } = opts
+  const { pool, verbose, attachments, signal, resumeSessionId } = opts
 
   // 이력서는 대화당 1개만(백엔드가 resume_id 단수 필드) — 여러 개 첨부돼 있어도 첫 번째만 쓴다.
   const resumeAttachment = attachments?.find((a) => a.kind === 'resume')
@@ -90,6 +94,7 @@ export async function streamChat(
     ...(verbose ? { verbose: true } : {}),
     ...(resumeAttachment ? { resume_id: resumeAttachment.id } : {}),
     ...(postingIds.length > 0 ? { posting_ids: postingIds } : {}),
+    ...(resumeSessionId ? { resume_session_id: resumeSessionId } : {}),
   }
 
   let response: Response
