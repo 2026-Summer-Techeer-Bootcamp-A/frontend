@@ -1,4 +1,5 @@
 import { getAuthToken } from '../career/authStore'
+import { writeResumeSessionId } from './resumeSession'
 
 // chatApi.ts와 동일한 컨벤션: 상대 경로 API_BASE + fetch + FastAPI detail 파싱.
 // 백엔드 계약 원천: backend/app/schemas/resume.py (ResumeConfirmRequest/Response, ResumeFeedbackRequest/Response).
@@ -20,6 +21,8 @@ export interface ResumeConfirmRequestBody {
   career_max: number | null
   pool: Pool
   memo?: string | null
+  // confirm 세션에 실려 커리어 적합도 LLM 판정이 원문으로 쓰는 값. Postgres 저장 안 함.
+  resume_text?: string | null
 }
 
 export interface ResumeConfirmResponse {
@@ -119,6 +122,24 @@ export async function getSavedResumeDetail(resumeId: number): Promise<SavedResum
   return response.json() as Promise<SavedResumeDetail>
 }
 
+// 이력서 원문을 별도로 받지 않으므로(스킬 직접 입력 방식) 구조화 입력을 사람이 읽는 블록으로
+// 합성해 confirm 세션에 싣는다. LLM 판정이 이 텍스트에서 근거를 인용하고, 할루시네이션 가드가
+// 인용이 이 텍스트의 부분문자열인지 검증한다. 원문 PDF나 개인정보는 담지 않는다.
+function composeResumeText(input: ResumeFeedbackInput): string | null {
+  const lines: string[] = []
+  if (input.position?.trim()) lines.push(`지원 직무: ${input.position.trim()}`)
+  if (input.careerMin != null || input.careerMax != null) {
+    const min = input.careerMin ?? 0
+    lines.push(input.careerMax != null ? `경력: ${min}~${input.careerMax}년` : `경력: ${min}년 이상`)
+  }
+  if (input.skills.length > 0) {
+    lines.push(`보유 기술: ${input.skills.map((s) => s.canonical).join(', ')}`)
+  }
+  if (input.memo?.trim()) lines.push(`경력 요약: ${input.memo.trim()}`)
+  const text = lines.join('\n')
+  return text.length > 0 ? text.slice(0, 20000) : null
+}
+
 /** confirm → feedback 2단계 호출을 한 번에 처리한다.
  *  confirm은 스킬셋을 서버 세션에 짧게 저장하고, feedback이 그 세션을 근거로 피드백·면접 질문을 생성한다. */
 export async function postResumeFeedback(input: ResumeFeedbackInput): Promise<ResumeFeedbackResponse> {
@@ -129,7 +150,12 @@ export async function postResumeFeedback(input: ResumeFeedbackInput): Promise<Re
     career_max: input.careerMax,
     pool: input.pool,
     memo: input.memo ?? null,
+    resume_text: composeResumeText(input),
   })
+
+  // confirm 세션 id를 브리지에 실어 어시스턴트(RagConsole)가 커리어 적합도 LLM 비교를 태울 수
+  // 있게 한다. 세션은 한 시간 뒤 Redis에서 소멸한다.
+  writeResumeSessionId(confirmed.session_id)
 
   return postFeedback(confirmed.session_id, input.position)
 }
