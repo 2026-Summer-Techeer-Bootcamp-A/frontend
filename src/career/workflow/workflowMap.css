@@ -304,6 +304,29 @@
 }
 .wfm-expand-btn:hover { background: var(--accent-100, #e4e4e7); color: var(--c-ink, #18181b); }
 
+/* 데모용 추천 공고 가져오기 버튼 — expand 버튼과 같은 아이콘 버튼 스타일을 공유하고,
+   로딩 중엔 아이콘을 회전시키고, 완료 메시지는 버튼 바로 아래 작은 말풍선으로 띄운다. */
+.wfm-recommend-wrap { position: relative; display: flex; align-items: center; }
+.wfm-recommend-btn:disabled { cursor: default; opacity: 0.7; }
+.wfm-recommend-btn.is-loading svg { animation: wfm-recommend-spin 0.9s linear infinite; }
+@keyframes wfm-recommend-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.wfm-recommend-msg {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 6px;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--c-ink, #18181b);
+  background: #fff;
+  border: 1px solid var(--accent-100, #e4e4e7);
+  padding: 4px 9px;
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 5;
+}
+
 .wfm-modal__backdrop {
   position: fixed;
   inset: 0;

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Maximize2, X } from 'lucide-react'
+import { Maximize2, Sparkles, X } from 'lucide-react'
 import {
   ReactFlow, Background, Controls, Handle, Position, MarkerType,
   type Node, type Edge, type NodeProps,
@@ -10,12 +10,24 @@ import { SectionHeader, PreviewBadge } from '../kit'
 import { AsOf } from '../charts'
 import { useResumesState } from '../state'
 import { getAuthToken } from '../authStore'
-import { useBookmarks, loadBookmarkDetails } from '../bookmarkStore'
-import { useSelectedGoalIds, useGoalSelectionTouched, toggleGoalId } from '../goalSelectionStore'
+import { useBookmarks, loadBookmarkDetails, isBookmarked, toggleBookmark } from '../bookmarkStore'
+import {
+  useSelectedGoalIds, useGoalSelectionTouched, toggleGoalId,
+  getSelectedGoalIds, isGoalSelectionTouched, setSelectedGoalIds,
+} from '../goalSelectionStore'
 import { dashboardApi, jobsApi, type Identity, type PostingDetail, type ScopedRoadmapData } from '../api'
 import { useWidgetData } from '../useWidgetData'
 import type { WidgetSize } from '../dashboardConfig'
+import dreamCompanies from '../../data/dreamCompanies.json'
 import './workflowMap.css'
+
+// 데모용: 클릭 한 번으로 유명 기업 공고를 북마크 + 목표 선택까지 채워 넣어 워크플로우
+// 맵을 즉석에서 populate한다. 실제 검증된 기업명 목록은 dreamCompanies.json에 있다.
+type DreamCompany = { name: string; tier: '대기업' | '중견' }
+const DREAM_COMPANIES = dreamCompanies as DreamCompany[]
+const RECOMMEND_TARGET_NEW = 8
+const RECOMMEND_MAX_COMPANIES = 12
+const RECOMMEND_CHUNK_SIZE = 4
 
 // A-5: 목표 · 학습 워크플로우 맵 — 예전엔 북마크한 공고 전부(암묵적 목표)를 그대로
 // 썼지만, 이제는 왼쪽 패널에서 북마크 중 "목표로 삼을 것"을 직접 골라야 한다(안 B,
@@ -230,6 +242,56 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
   const isLoading = !showNoBookmarks && !showNoSelection && (postingsLoading || (identity !== null && roadmap.loading))
   const canShowGraph = !showNoBookmarks && !showNoSelection && !isLoading
 
+  // 데모용 추천 공고 가져오기 — 검증된 기업명으로 최대 12개 회사를 4개씩 묶어 조회하고,
+  // 아직 안 북마크된 공고를 최대 8개 모아 북마크 + 목표 선택에 반영한다. 개별 회사 조회
+  // 실패는 allSettled로 흡수해 데모 도중 하나가 실패해도 전체가 멈추지 않게 한다.
+  const [recommendLoading, setRecommendLoading] = useState(false)
+  const [recommendMessage, setRecommendMessage] = useState<string | null>(null)
+  const handleRecommendClick = async () => {
+    if (recommendLoading) return
+    setRecommendLoading(true)
+    setRecommendMessage(null)
+    const seenIds = new Set<string>()
+    const collectedIds: string[] = []
+    try {
+      const pool = DREAM_COMPANIES.slice(0, RECOMMEND_MAX_COMPANIES)
+      for (let i = 0; i < pool.length && collectedIds.length < RECOMMEND_TARGET_NEW; i += RECOMMEND_CHUNK_SIZE) {
+        const chunk = pool.slice(i, i + RECOMMEND_CHUNK_SIZE)
+        const results = await Promise.allSettled(
+          chunk.map((company) => jobsApi.list({
+            pool: 'domestic', q: company.name, sort: 'latest', page: 1, page_size: 2,
+          }, token)),
+        )
+        for (const result of results) {
+          if (collectedIds.length >= RECOMMEND_TARGET_NEW) break
+          if (result.status !== 'fulfilled') continue
+          for (const item of result.value.items) {
+            if (collectedIds.length >= RECOMMEND_TARGET_NEW) break
+            const id = String(item.id)
+            if (seenIds.has(id) || isBookmarked(id)) continue
+            seenIds.add(id)
+            collectedIds.push(id)
+          }
+        }
+      }
+
+      if (collectedIds.length === 0) {
+        setRecommendMessage('이미 추천드릴 새 공고가 없어요')
+      } else {
+        collectedIds.forEach((id) => toggleBookmark(id))
+        if (isGoalSelectionTouched()) {
+          setSelectedGoalIds([...new Set([...getSelectedGoalIds(), ...collectedIds])])
+        }
+        setRecommendMessage(`${collectedIds.length}개 추천 공고를 담았어요`)
+      }
+    } catch {
+      setRecommendMessage('추천 공고를 가져오지 못했어요')
+    } finally {
+      setRecommendLoading(false)
+      window.setTimeout(() => setRecommendMessage(null), 4000)
+    }
+  }
+
   // 2a: 크게 보기 — 같은 nodes/edges를 더 큰 캔버스에 그리는 오버레이 모달. 그래프
   // 자체는 다시 계산하지 않고 그대로 재사용하며, Escape·백드롭 클릭으로 닫는다.
   const [expanded, setExpanded] = useState(false)
@@ -292,10 +354,25 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
         <SectionHeader
           title="목표 · 학습 워크플로우 맵"
           hint="북마크에서 목표를 선택하면 학습 순서를 보여줘요"
-          right={!showNoBookmarks ? (
+          right={(
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {!identity && <PreviewBadge />}
-              {canShowGraph && (
+              {!showNoBookmarks && !identity && <PreviewBadge />}
+              <div className="wfm-recommend-wrap">
+                <button
+                  type="button"
+                  className={`wfm-expand-btn wfm-recommend-btn${recommendLoading ? ' is-loading' : ''}`}
+                  onClick={handleRecommendClick}
+                  disabled={recommendLoading}
+                  aria-label="추천 공고 가져오기"
+                  title="추천 공고 가져오기"
+                >
+                  <Sparkles size={14} />
+                </button>
+                {recommendMessage && (
+                  <span className="wfm-recommend-msg" role="status" aria-live="polite">{recommendMessage}</span>
+                )}
+              </div>
+              {!showNoBookmarks && canShowGraph && (
                 <button
                   type="button"
                   className="wfm-expand-btn"
@@ -307,7 +384,7 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
                 </button>
               )}
             </div>
-          ) : undefined}
+          )}
         />
         {showNoBookmarks ? (
           <div className="wfm-empty">
