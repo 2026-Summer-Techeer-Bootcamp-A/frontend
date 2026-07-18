@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Award, Maximize2, Sparkles, X } from 'lucide-react'
+import { Award, ListChecks, Maximize2, Sparkles, X } from 'lucide-react'
 import {
   ReactFlow, Background, Controls, Handle, Position, MarkerType,
   type Node, type Edge, type NodeProps,
@@ -19,6 +19,7 @@ import { dashboardApi, jobsApi, type Identity, type PostingCard, type PostingDet
 import { useWidgetData } from '../useWidgetData'
 import type { WidgetSize } from '../dashboardConfig'
 import dreamCompanies from '../../data/dreamCompanies.json'
+import catData from '../../data/pearl/n.json'
 import './workflowMap.css'
 
 // 데모용: 클릭 한 번으로 유명 기업 공고를 북마크 + 목표 선택까지 채워 넣어 워크플로우
@@ -33,6 +34,27 @@ const RECOMMEND_CHUNK_SIZE = 4
 // 합집합이 수십 개까지 늘어나, 좁은 캔버스에 노드가 뭉개져 그려지는 문제가 있었다.
 // 라이브 로드맵의 steps 상한(10)과 맞춰 대체 순서도 상위 10개로 자른다.
 const FALLBACK_NODE_CAP = 10
+
+// 기술 스택 카테고리 분류 — placeholders.tsx(검색 페이지 필터)와 동일하게 pearl/n.json
+// (기술 코-네트워크 그래프 데이터)의 {tech, category} 노드를 재사용한다. 새 API·새 정적
+// 데이터 없이 이미 번들에 있는 값만 읽는다. 실제 category 값은 language/backend/frontend/
+// mobile/data_db/cloud_services/devops/ai_llm 8종이며, 워크플로우 맵에서는 이걸 언어 ·
+// 프레임워크 · 기타 3버킷으로 더 단순화해서 보유/목표 스킬을 각각 묶는다.
+const TECH_CATEGORY_NODES = (catData as { data: { nodes: { tech: string; category: string }[] } }).data.nodes
+const TECH_CATEGORY: Record<string, string> = Object.fromEntries(TECH_CATEGORY_NODES.map((n) => [n.tech, n.category]))
+
+type SkillGroupName = '언어' | '프레임워크' | '기타'
+const SKILL_GROUPS: SkillGroupName[] = ['언어', '프레임워크', '기타']
+function classifySkill(name: string): SkillGroupName {
+  const cat = TECH_CATEGORY[name]
+  if (cat === 'language') return '언어'
+  if (cat === 'backend' || cat === 'frontend' || cat === 'mobile') return '프레임워크'
+  return '기타'
+}
+// 그룹당 보여줄 개별 스킬 노드 상한 — 그룹 헤더는 항상 보여주되, 개별 스킬이 너무 많으면
+// "+N개" 오버플로 노드로 묶어 카드 안에서 그래프가 폭발하지 않게 한다.
+const OWNED_GROUP_CAP = 6
+const TARGET_GROUP_CAP = 8
 
 function yearBadgeFor(postDate: string | null): string | null {
   if (!postDate) return null
@@ -50,19 +72,37 @@ function matchPctFor(skills: string[], matchedCount: number | null | undefined, 
 }
 
 // A-5: 목표 · 학습 워크플로우 맵 — 예전엔 북마크한 공고 전부(암묵적 목표)를 그대로
-// 썼지만, 이제는 왼쪽 패널에서 북마크 중 "목표로 삼을 것"을 직접 골라야 한다(안 B,
-// 사이드 패널). 선택된 공고들의 요구 기술과 이력서 보유 기술을 좌우 DAG로 이어 "무엇을
-// 어떤 순서로 배우면 좋은가"를 보여준다. 읽기 전용(드래그 연결 불가)이며 dagre로
-// 좌→우 자동 배치한다. 순서는 추천이지 강제 선행 조건이 아니므로 엣지 라벨은 항상
-// "함께 요구됨" 계열로 두고 "선수"/"prerequisite" 표현은 쓰지 않는다.
+// 썼지만, 이제는 목표 선택 패널에서 북마크 중 "목표로 삼을 것"을 직접 골라야 한다(안 B,
+// 컴팩트 카드에서는 캔버스 위에 뜨는 플로팅 패널). 선택된 공고들의 요구 기술과 이력서
+// 보유 기술을 좌우 DAG로 이어 "무엇을 어떤 순서로 배우면 좋은가"를 보여준다. 읽기
+// 전용(드래그 연결 불가)이며 dagre로 좌→우 자동 배치한다. 순서는 추천이지 강제 선행
+// 조건이 아니므로 엣지 라벨은 항상 "함께 요구됨" 계열로 두고 "선수"/"prerequisite" 표현은
+// 쓰지 않는다. 보유 · 목표/경유 스킬 모두 언어 · 프레임워크 · 기타 3개 카테고리로 묶어서
+// 그린다(카테고리 그룹 헤더 노드 하나 + 그 안의 개별 스킬들). 카테고리 그룹핑은 "같은
+// 종류끼리 묶어서 보여준다"는 시각적 정리일 뿐, 그룹 사이에 선후 관계가 있다는 뜻은
+// 아니다 — 그래서 헤더→스킬, 보유헤더→목표헤더 연결선은 전부 라벨·화살표 없는 옅은
+// 컨텍스트 선이고, "함께 요구됨" 라벨이 붙은 화살표 선은 같은 카테고리 안에서 학습
+// 우선순위(payoff/delta 내림차순, 또는 대체 순서의 공고 요구 빈도)를 나타낼 때만 쓴다.
 
 type SkillClass = 'owned' | 'target' | 'bridge'
-type SkillNodeData = { label: string; cls: SkillClass; badge?: string; category?: string; [key: string]: unknown }
+type SkillNodeData = {
+  label: string; cls: SkillClass; badge?: string; category?: string; isGroupHeader?: boolean
+  [key: string]: unknown
+}
 type SkillFlowNode = Node<SkillNodeData, 'skill'>
 
 const CLASS_LABEL: Record<SkillClass, string> = { owned: '보유', target: '목표', bridge: '경유' }
 
 function SkillNode({ data }: NodeProps<SkillFlowNode>) {
+  if (data.isGroupHeader) {
+    return (
+      <div className={`wfm-node wfm-node--header wfm-node--${data.cls}`}>
+        <Handle type="target" position={Position.Left} className="wfm-node__handle" />
+        <span className="wfm-node__label" title={data.label}>{data.label}</span>
+        <Handle type="source" position={Position.Right} className="wfm-node__handle" />
+      </div>
+    )
+  }
   return (
     <div className={`wfm-node wfm-node--${data.cls}`}>
       <Handle type="target" position={Position.Left} className="wfm-node__handle" />
@@ -199,75 +239,111 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
         .sort((a, b) => b.count - a.count)
       : []
     const fallbackOrder = fullFallbackOrder.slice(0, FALLBACK_NODE_CAP)
-    const truncated = fullFallbackOrder.length - fallbackOrder.length
 
     const ns: SkillFlowNode[] = []
     const es: Edge[] = []
+    let truncated = fullFallbackOrder.length - fallbackOrder.length
 
-    const ownedShown = ownedSkills.slice(0, 8)
-    const ownedRest = ownedSkills.length - ownedShown.length
-    const ownedIds: string[] = []
-    ownedShown.forEach((skill) => {
-      const id = `owned-${skill}`
-      ownedIds.push(id)
-      ns.push({ id, type: 'skill', position: { x: 0, y: 0 }, draggable: false, data: { label: skill, cls: 'owned' } })
+    // 보유 스킬 -> 언어/프레임워크/기타 3버킷으로 묶는다. 버킷마다 그룹 헤더 노드 하나를
+    // 만들고, 개별 스킬 -> 헤더로 라벨 없는 옅은 선을 이어 "이 스킬들이 이 그룹에 속한다"만
+    // 표시한다(선후 관계 아님). 헤더가 없는 버킷(그 카테고리 보유 스킬이 0개)은 만들지 않는다.
+    const ownedByGroup: Record<SkillGroupName, string[]> = { 언어: [], 프레임워크: [], 기타: [] }
+    ownedSkills.forEach((skill) => ownedByGroup[classifySkill(skill)].push(skill))
+
+    const ownedGroupHeaderIds: string[] = []
+    const ownedGroupHeaderIdByGroup: Partial<Record<SkillGroupName, string>> = {}
+    SKILL_GROUPS.forEach((group) => {
+      const skillsInGroup = ownedByGroup[group]
+      if (skillsInGroup.length === 0) return
+      const headerId = `owned-group-${group}`
+      ownedGroupHeaderIds.push(headerId)
+      ownedGroupHeaderIdByGroup[group] = headerId
+      ns.push({
+        id: headerId, type: 'skill', position: { x: 0, y: 0 }, draggable: false,
+        data: { label: group, cls: 'owned', isGroupHeader: true },
+      })
+      const shown = skillsInGroup.slice(0, OWNED_GROUP_CAP)
+      const rest = skillsInGroup.length - shown.length
+      shown.forEach((skill) => {
+        const id = `owned-${group}-${skill}`
+        ns.push({ id, type: 'skill', position: { x: 0, y: 0 }, draggable: false, data: { label: skill, cls: 'owned' } })
+        es.push({ id: `${id}->${headerId}`, source: id, target: headerId, type: 'straight', style: CONTEXT_EDGE_STYLE })
+      })
+      if (rest > 0) {
+        const moreId = `owned-more-${group}`
+        ns.push({
+          id: moreId, type: 'skill', position: { x: 0, y: 0 }, draggable: false,
+          data: { label: `+${rest}개`, cls: 'owned' },
+        })
+        es.push({ id: `${moreId}->${headerId}`, source: moreId, target: headerId, type: 'straight', style: CONTEXT_EDGE_STYLE })
+      }
     })
-    if (ownedRest > 0) {
-      ownedIds.push('owned-more')
-      ns.push({ id: 'owned-more', type: 'skill', position: { x: 0, y: 0 }, draggable: false, data: { label: `+${ownedRest}개`, cls: 'owned' } })
-    }
 
-    const chainIds: string[] = []
-    if (hasOrder) {
-      liveSteps.forEach((step, i) => {
-        const id = `step-${step.step}`
-        chainIds.push(id)
-        const cls: SkillClass = targetSet.has(step.canonical) ? 'target' : 'bridge'
+    // 목표/경유 스킬도 같은 3버킷으로 묶되, 버킷 내부 순서는 원래의 학습 우선순위(라이브
+    // 로드맵이면 payoff/delta 내림차순, 대체 순서면 공고 요구 빈도 내림차순)를 그대로
+    // 보존한다 — 즉 1차 정렬 키는 카테고리, 2차는 원래 우선순위다.
+    type TargetItem = { canonical: string; cls: SkillClass; badge: string; category?: string; group: SkillGroupName }
+    const items: TargetItem[] = hasOrder
+      ? liveSteps.map((step) => ({
+        canonical: step.canonical,
+        cls: targetSet.has(step.canonical) ? 'target' : 'bridge',
+        badge: `+${step.delta.toLocaleString()}건 · 누적 ${step.matched_after.toLocaleString()}건`,
+        category: step.category,
+        group: classifySkill(step.canonical),
+      }))
+      : fallbackOrder.map((item) => ({
+        canonical: item.canonical, cls: 'target' as SkillClass,
+        badge: `${item.count}개 공고 요구`, group: classifySkill(item.canonical),
+      }))
+
+    const targetByGroup: Record<SkillGroupName, TargetItem[]> = { 언어: [], 프레임워크: [], 기타: [] }
+    items.forEach((item) => targetByGroup[item.group].push(item))
+
+    SKILL_GROUPS.forEach((group) => {
+      const list = targetByGroup[group]
+      if (list.length === 0) return
+      const shown = list.slice(0, TARGET_GROUP_CAP)
+      truncated += list.length - shown.length
+
+      const headerId = `target-group-${group}`
+      // 헤더는 '경유'(뉴트럴 그레이) 톤으로 그려 실제 목표 스킬(진한 '목표' 톤)과 구분한다 —
+      // 이건 단순 그룹 라벨이지 실제로 배워야 할 스킬 노드가 아니라는 걸 색으로도 드러낸다.
+      ns.push({
+        id: headerId, type: 'skill', position: { x: 0, y: 0 }, draggable: false,
+        data: { label: group, cls: 'bridge', isGroupHeader: true },
+      })
+
+      // 같은 카테고리의 보유 그룹 헤더가 있으면 거기서 이어온다. 없으면(그 카테고리 보유
+      // 스킬이 하나도 없으면) 존재하는 보유 헤더 전부에서 연결해 "지금 여기서 출발"만
+      // 시각적으로 보여준다(강제 선행 조건 아님). 보유 헤더가 하나도 없으면 시작점 없이 둔다.
+      const sameGroupOwnedHeader = ownedGroupHeaderIdByGroup[group]
+      if (sameGroupOwnedHeader) {
+        es.push({ id: `${sameGroupOwnedHeader}->${headerId}`, source: sameGroupOwnedHeader, target: headerId, type: 'straight', style: CONTEXT_EDGE_STYLE })
+      } else {
+        ownedGroupHeaderIds.forEach((oid) => {
+          es.push({ id: `${oid}->${headerId}`, source: oid, target: headerId, type: 'straight', style: CONTEXT_EDGE_STYLE })
+        })
+      }
+
+      let prevId = headerId
+      shown.forEach((item, i) => {
+        const id = `target-${group}-${item.canonical}`
         ns.push({
           id, type: 'skill', position: { x: 0, y: 0 }, draggable: false,
-          data: {
-            label: step.canonical, cls, category: step.category,
-            badge: `+${step.delta.toLocaleString()}건 · 누적 ${step.matched_after.toLocaleString()}건`,
-          },
+          data: { label: item.canonical, cls: item.cls, category: item.category, badge: item.badge },
         })
-        if (i > 0) {
-          const prevId = chainIds[i - 1]
+        if (i === 0) {
+          es.push({ id: `${prevId}->${id}`, source: prevId, target: id, type: 'straight', style: CONTEXT_EDGE_STYLE })
+        } else {
           es.push({
             id: `${prevId}->${id}`, source: prevId, target: id, type: 'smoothstep',
             label: '함께 요구됨', markerEnd: { type: MarkerType.ArrowClosed, color: '#9a9ca6' },
             style: CO_EDGE_STYLE, labelStyle: CO_EDGE_LABEL_STYLE, labelBgStyle: CO_EDGE_LABEL_BG,
           })
         }
+        prevId = id
       })
-    } else {
-      fallbackOrder.forEach((item, i) => {
-        const id = `fb-${i}`
-        chainIds.push(id)
-        ns.push({
-          id, type: 'skill', position: { x: 0, y: 0 }, draggable: false,
-          data: { label: item.canonical, cls: 'target', badge: `${item.count}개 공고 요구` },
-        })
-        if (i > 0) {
-          const prevId = chainIds[i - 1]
-          es.push({
-            id: `${prevId}->${id}`, source: prevId, target: id, type: 'smoothstep',
-            label: '함께 요구됨', markerEnd: { type: MarkerType.ArrowClosed, color: '#9a9ca6' },
-            style: CO_EDGE_STYLE, labelStyle: CO_EDGE_LABEL_STYLE, labelBgStyle: CO_EDGE_LABEL_BG,
-          })
-        }
-      })
-    }
-
-    // 보유 -> 첫 학습 스텝으로 옅은 컨텍스트 선(라벨 없음, 화살표 없음) — "지금 여기서 출발"만
-    // 시각적으로 잇고, 순서를 강제하는 선행 조건처럼 보이지 않게 한다.
-    if (chainIds.length > 0) {
-      ownedIds.forEach((oid) => {
-        es.push({
-          id: `${oid}->${chainIds[0]}`, source: oid, target: chainIds[0], type: 'straight',
-          style: CONTEXT_EDGE_STYLE,
-        })
-      })
-    }
+    })
 
     return { nodes: layoutGraph(ns, es), edges: es, truncatedCount: truncated }
   }, [roadmap.value, targetSet, selectedPostings, ownedSkills])
@@ -276,6 +352,12 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
   const showNoSelection = !showNoBookmarks && selectedIds.length === 0
   const isLoading = !showNoBookmarks && !showNoSelection && (postingsLoading || (identity !== null && roadmap.loading))
   const canShowGraph = !showNoBookmarks && !showNoSelection && !isLoading
+
+  // 컴팩트 카드에서 목표 선택 패널은 이제 캔버스 위에 뜨는 플로팅 드로어다(4번 피드백:
+  // 다이어그램이 카드를 거의 다 채우게). 기본은 닫힘(다이어그램이 바로 보이게)이지만,
+  // 아직 목표를 하나도 안 골랐으면(showNoSelection) 처음부터 열어서 "여기서 고르면
+  // 된다"는 게 바로 보이게 한다 — 이 초기값은 마운트 시점 값만 쓰고, 그 뒤엔 토글 버튼으로만 바뀐다.
+  const [goalPanelOpen, setGoalPanelOpen] = useState(showNoSelection)
 
   // 데모용 추천 공고 가져오기 — 검증된 기업명으로 최대 12개 회사를 4개씩 묶어 조회해
   // 후보를 최대 8개 모은다. 예전엔 모으자마자 전부 자동으로 북마크했는데, 어떤 공고가
@@ -360,7 +442,7 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
   }, [expanded])
 
   const truncationNote = truncatedCount > 0 ? (
-    <div className="wfm-truncation-note">선택한 공고가 많아 상위 {FALLBACK_NODE_CAP}개 기술만 표시했어요(+{truncatedCount}개 더 있어요).</div>
+    <div className="wfm-truncation-note">선택한 공고가 많아 카테고리별 상위 기술만 표시했어요(+{truncatedCount}개 더 있어요).</div>
   ) : null
 
   const legend = (
@@ -493,18 +575,44 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
           </div>
         ) : (
           <div className="wfm-body">
-            {goalPanel}
             <div className="wfm-graph-pane">
+              <button
+                type="button"
+                className="wfm-goal-toggle"
+                onClick={() => setGoalPanelOpen((open) => !open)}
+                aria-expanded={goalPanelOpen}
+                aria-label="목표 선택 패널 토글"
+                title="목표 선택"
+              >
+                <ListChecks size={13} />
+                목표 선택
+              </button>
+              {goalPanelOpen && (
+                <div className="wfm-goal-drawer">
+                  <div className="wfm-goal-drawer__head">
+                    <span className="wfm-goal-drawer__title">목표로 삼을 공고</span>
+                    <button
+                      type="button"
+                      className="wfm-goal-drawer__close"
+                      onClick={() => setGoalPanelOpen(false)}
+                      aria-label="목표 선택 패널 닫기"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                  {goalPanel}
+                </div>
+              )}
               {showNoSelection ? (
                 <div className="wfm-empty wfm-empty--selection">
                   <p className="wfm-empty__lead">북마크한 공고 중 목표로 삼을 걸 선택해보세요.</p>
-                  <span className="wfm-empty__hint">왼쪽에서 하나 이상 체크하면 학습 순서가 나타나요.</span>
+                  <span className="wfm-empty__hint">위의 "목표 선택" 버튼에서 하나 이상 체크하면 학습 순서가 나타나요.</span>
                 </div>
               ) : isLoading ? (
                 <div className="wfm-loading" role="status" aria-live="polite">워크플로우 맵을 그리는 중이에요.</div>
               ) : (
                 <>
-                  <div className="wfm-canvas" style={{ height: size === '2x2' ? 420 : 260 }}>
+                  <div className="wfm-canvas" style={{ height: size === '2x2' ? 500 : 260 }}>
                     <ReactFlow
                       nodes={nodes}
                       edges={edges}
@@ -515,7 +623,7 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
                       nodesConnectable={false}
                       elementsSelectable={false}
                       panOnScroll
-                      zoomOnScroll={false}
+                      zoomOnScroll
                       proOptions={{ hideAttribution: true }}
                     >
                       <Background gap={18} size={1} color="#eceef3" />
