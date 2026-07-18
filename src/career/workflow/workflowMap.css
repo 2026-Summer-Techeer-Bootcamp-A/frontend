@@ -166,6 +166,9 @@
   background: var(--c-ink, #18181b);
   border-color: var(--c-ink, #18181b);
 }
+/* D: 이질성 안내 배너(.wfm-heterogeneous-banner)가 뜰 때만 붙는 수식 클래스.
+   배너가 캔버스 위 공간을 차지하는 만큼 토글을 아래로 밀어 겹침을 막는다. */
+.wfm-goal-toggle--shifted { top: 52px; }
 
 .wfm-goal-drawer {
   position: absolute;
@@ -183,6 +186,7 @@
   overflow: hidden;
   animation: wfm-drawer-in 0.16s ease-out;
 }
+.wfm-goal-drawer--shifted { top: 90px; }
 @keyframes wfm-drawer-in {
   from { opacity: 0; transform: translateY(-4px); }
   to { opacity: 1; transform: translateY(0); }
