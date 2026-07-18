@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Maximize2, X } from 'lucide-react'
+import { Award, Maximize2, Sparkles, X } from 'lucide-react'
 import {
   ReactFlow, Background, Controls, Handle, Position, MarkerType,
   type Node, type Edge, type NodeProps,
@@ -10,12 +10,24 @@ import { SectionHeader, PreviewBadge } from '../kit'
 import { AsOf } from '../charts'
 import { useResumesState } from '../state'
 import { getAuthToken } from '../authStore'
-import { useBookmarks, loadBookmarkDetails } from '../bookmarkStore'
-import { useSelectedGoalIds, useGoalSelectionTouched, toggleGoalId } from '../goalSelectionStore'
+import { useBookmarks, loadBookmarkDetails, isBookmarked, toggleBookmark } from '../bookmarkStore'
+import {
+  useSelectedGoalIds, useGoalSelectionTouched, toggleGoalId,
+  getSelectedGoalIds, isGoalSelectionTouched, setSelectedGoalIds,
+} from '../goalSelectionStore'
 import { dashboardApi, jobsApi, type Identity, type PostingDetail, type ScopedRoadmapData } from '../api'
 import { useWidgetData } from '../useWidgetData'
 import type { WidgetSize } from '../dashboardConfig'
+import dreamCompanies from '../../data/dreamCompanies.json'
 import './workflowMap.css'
+
+// 데모용: 클릭 한 번으로 유명 기업 공고를 북마크 + 목표 선택까지 채워 넣어 워크플로우
+// 맵을 즉석에서 populate한다. 실제 검증된 기업명 목록은 dreamCompanies.json에 있다.
+type DreamCompany = { name: string; tier: '대기업' | '중견' }
+const DREAM_COMPANIES = dreamCompanies as DreamCompany[]
+const RECOMMEND_TARGET_NEW = 8
+const RECOMMEND_MAX_COMPANIES = 12
+const RECOMMEND_CHUNK_SIZE = 4
 
 // A-5: 목표 · 학습 워크플로우 맵 — 예전엔 북마크한 공고 전부(암묵적 목표)를 그대로
 // 썼지만, 이제는 왼쪽 패널에서 북마크 중 "목표로 삼을 것"을 직접 골라야 한다(안 B,
@@ -136,6 +148,18 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
     return set
   }, [selectedPostings, ownedSet])
 
+  // 자격증 트랙 — roadmapScoped는 자격증을 모르므로(학습 순서·payoff 계산 대상이 아님)
+  // 스킬 DAG와는 완전히 별도로, 보유/목표 두 집합만 뽑아 아래 부가 레인에 칩으로 보여준다.
+  // 목표 자격증도 스킬과 동일하게 "선택된" 북마크 공고 기준으로만 모은다.
+  const ownedCerts = useMemo(() => activeResume?.certs ?? [], [activeResume])
+  const ownedCertSet = useMemo(() => new Set(ownedCerts), [ownedCerts])
+  const targetCerts = useMemo(() => {
+    const set = new Set<string>()
+    selectedPostings.forEach((p) => p.certs.forEach((c) => { if (!ownedCertSet.has(c)) set.add(c) }))
+    return [...set]
+  }, [selectedPostings, ownedCertSet])
+  const hasCertLane = ownedCerts.length > 0 || targetCerts.length > 0
+
   const roadmapKey = identity && postingIds.length ? `${resumeId}:${postingIds.slice().sort().join(',')}` : 'idle'
   const roadmap = useWidgetData<ScopedRoadmapData>(
     identity && postingIds.length ? () => dashboardApi.roadmapScoped(identity, postingIds, 10) : null,
@@ -230,6 +254,56 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
   const isLoading = !showNoBookmarks && !showNoSelection && (postingsLoading || (identity !== null && roadmap.loading))
   const canShowGraph = !showNoBookmarks && !showNoSelection && !isLoading
 
+  // 데모용 추천 공고 가져오기 — 검증된 기업명으로 최대 12개 회사를 4개씩 묶어 조회하고,
+  // 아직 안 북마크된 공고를 최대 8개 모아 북마크 + 목표 선택에 반영한다. 개별 회사 조회
+  // 실패는 allSettled로 흡수해 데모 도중 하나가 실패해도 전체가 멈추지 않게 한다.
+  const [recommendLoading, setRecommendLoading] = useState(false)
+  const [recommendMessage, setRecommendMessage] = useState<string | null>(null)
+  const handleRecommendClick = async () => {
+    if (recommendLoading) return
+    setRecommendLoading(true)
+    setRecommendMessage(null)
+    const seenIds = new Set<string>()
+    const collectedIds: string[] = []
+    try {
+      const pool = DREAM_COMPANIES.slice(0, RECOMMEND_MAX_COMPANIES)
+      for (let i = 0; i < pool.length && collectedIds.length < RECOMMEND_TARGET_NEW; i += RECOMMEND_CHUNK_SIZE) {
+        const chunk = pool.slice(i, i + RECOMMEND_CHUNK_SIZE)
+        const results = await Promise.allSettled(
+          chunk.map((company) => jobsApi.list({
+            pool: 'domestic', q: company.name, sort: 'latest', page: 1, page_size: 2,
+          }, token)),
+        )
+        for (const result of results) {
+          if (collectedIds.length >= RECOMMEND_TARGET_NEW) break
+          if (result.status !== 'fulfilled') continue
+          for (const item of result.value.items) {
+            if (collectedIds.length >= RECOMMEND_TARGET_NEW) break
+            const id = String(item.id)
+            if (seenIds.has(id) || isBookmarked(id)) continue
+            seenIds.add(id)
+            collectedIds.push(id)
+          }
+        }
+      }
+
+      if (collectedIds.length === 0) {
+        setRecommendMessage('이미 추천드릴 새 공고가 없어요')
+      } else {
+        collectedIds.forEach((id) => toggleBookmark(id))
+        if (isGoalSelectionTouched()) {
+          setSelectedGoalIds([...new Set([...getSelectedGoalIds(), ...collectedIds])])
+        }
+        setRecommendMessage(`${collectedIds.length}개 추천 공고를 담았어요`)
+      }
+    } catch {
+      setRecommendMessage('추천 공고를 가져오지 못했어요')
+    } finally {
+      setRecommendLoading(false)
+      window.setTimeout(() => setRecommendMessage(null), 4000)
+    }
+  }
+
   // 2a: 크게 보기 — 같은 nodes/edges를 더 큰 캔버스에 그리는 오버레이 모달. 그래프
   // 자체는 다시 계산하지 않고 그대로 재사용하며, Escape·백드롭 클릭으로 닫는다.
   const [expanded, setExpanded] = useState(false)
@@ -245,8 +319,38 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
       <span className="wfm-legend__item"><i className="wfm-dot wfm-dot--owned" />보유</span>
       <span className="wfm-legend__item"><i className="wfm-dot wfm-dot--target" />목표</span>
       <span className="wfm-legend__item"><i className="wfm-dot wfm-dot--bridge" />경유</span>
+      {hasCertLane && (
+        <>
+          <span className="wfm-legend__item"><i className="wfm-dot wfm-dot--cert-owned" />보유 자격증</span>
+          <span className="wfm-legend__item"><i className="wfm-dot wfm-dot--cert-target" />목표 자격증</span>
+        </>
+      )}
     </div>
   )
+
+  // 자격증 레인 — 학습 순서가 없는 정보라 메인 DAG 체인에 억지로 엮지 않고, 카드 하단에
+  // 완전히 분리된 작은 패널로만 붙인다. 양쪽 다 비어 있으면(대부분의 비자격증 직군)
+  // 레인 자체를 렌더링하지 않아 빈 상태 노이즈를 만들지 않는다.
+  const certLane = hasCertLane ? (
+    <div className="wfm-cert-lane" aria-label="자격증">
+      <span className="wfm-cert-lane__title">자격증</span>
+      <div className="wfm-cert-lane__row">
+        {ownedCerts.map((c) => (
+          <span key={`oc-${c}`} className="wfm-cert-chip wfm-cert-chip--owned">
+            <Award size={11} />
+            {c}
+          </span>
+        ))}
+        {targetCerts.map((c) => (
+          <span key={`tc-${c}`} className="wfm-cert-chip wfm-cert-chip--target">
+            <Award size={11} />
+            {c}
+            <span className="wfm-cert-chip__badge">필요</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  ) : null
 
   // 왼쪽 패널 — 북마크 전부를 체크박스 행으로 보여준다. 목표 선택 자체가 이 위젯의
   // 주된 진입점이라, "선택 0개" 상태에서도 이 패널만은 계속 온전히 보이고 조작 가능해야 한다.
@@ -292,10 +396,25 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
         <SectionHeader
           title="목표 · 학습 워크플로우 맵"
           hint="북마크에서 목표를 선택하면 학습 순서를 보여줘요"
-          right={!showNoBookmarks ? (
+          right={(
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {!identity && <PreviewBadge />}
-              {canShowGraph && (
+              {!showNoBookmarks && !identity && <PreviewBadge />}
+              <div className="wfm-recommend-wrap">
+                <button
+                  type="button"
+                  className={`wfm-expand-btn wfm-recommend-btn${recommendLoading ? ' is-loading' : ''}`}
+                  onClick={handleRecommendClick}
+                  disabled={recommendLoading}
+                  aria-label="추천 공고 가져오기"
+                  title="추천 공고 가져오기"
+                >
+                  <Sparkles size={14} />
+                </button>
+                {recommendMessage && (
+                  <span className="wfm-recommend-msg" role="status" aria-live="polite">{recommendMessage}</span>
+                )}
+              </div>
+              {!showNoBookmarks && canShowGraph && (
                 <button
                   type="button"
                   className="wfm-expand-btn"
@@ -307,7 +426,7 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
                 </button>
               )}
             </div>
-          ) : undefined}
+          )}
         />
         {showNoBookmarks ? (
           <div className="wfm-empty">
@@ -354,6 +473,7 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
                     </ReactFlow>
                   </div>
                   {legend}
+                  {certLane}
                   {roadmap.value.as_of && <AsOf asOf={roadmap.value.as_of} n={roadmap.value.total} />}
                 </>
               )}
@@ -396,6 +516,7 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
               </ReactFlow>
             </div>
             {legend}
+            {certLane}
           </div>
         </div>
       )}

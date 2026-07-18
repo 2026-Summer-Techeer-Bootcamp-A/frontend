@@ -267,7 +267,7 @@ export function DesktopJobs() {
 
   useEffect(() => {
     let cancelled = false
-    jobsApi.skills('', 100)
+    jobsApi.skills('', 500)
       .then(({ skills: items }) => {
         if (!cancelled) setBaseSkills(items.map((item) => item.canonical))
       })
@@ -354,9 +354,9 @@ export function DesktopJobs() {
   const techOptions = useMemo(
     () => mergeSkillOptions(
       [...techFilter],
-      skillQuery.trim() ? searchedSkills : [...baseSkills, ...postings.flatMap((posting) => posting.techs)],
+      skillQuery.trim() ? searchedSkills : baseSkills,
     ),
-    [baseSkills, postings, searchedSkills, skillQuery, techFilter],
+    [baseSkills, searchedSkills, skillQuery, techFilter],
   )
   const techGroups = useMemo(() => groupTechOptions(techOptions), [techOptions])
   const list = postings
