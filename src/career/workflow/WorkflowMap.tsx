@@ -38,7 +38,12 @@ const RECOMMEND_CHUNK_SIZE = 4
 // 데이터 없이 이미 번들에 있는 값만 읽는다. 실제 category 값은 language/backend/frontend/
 // mobile/data_db/cloud_services/devops/ai_llm 8종이며, 워크플로우 맵에서는 이걸 언어 ·
 // 프레임워크 · 기타 3버킷으로 더 단순화해서 보유/목표 스킬을 각각 묶는다.
-const TECH_CATEGORY_NODES = (catData as { data: { nodes: { tech: string; category: string }[] } }).data.nodes
+type CatGraphEdge = { a: string; b: string; strength: number }
+const CAT_GRAPH = (catData as {
+  data: { nodes: { tech: string; category: string }[]; edges: CatGraphEdge[] }
+}).data
+const TECH_CATEGORY_NODES = CAT_GRAPH.nodes
+const CAT_EDGES = CAT_GRAPH.edges
 const TECH_CATEGORY: Record<string, string> = Object.fromEntries(TECH_CATEGORY_NODES.map((n) => [n.tech, n.category]))
 
 type SkillGroupName = '언어' | '프레임워크' | '기타'
@@ -49,6 +54,76 @@ function classifySkill(name: string): SkillGroupName {
   if (cat === 'backend' || cat === 'frontend' || cat === 'mobile') return '프레임워크'
   return '기타'
 }
+
+// 관계(연관·순서) 큐레이션 — "네트워크 그래프처럼 순서를 보여달라"는 피드백에 대응해
+// 같은 카테고리 안의 밋밋한 그룹핑 엣지 말고, 실제 기술 간 방향 있는 관계(아는 언어 ->
+// 그 언어로 배우면 좋은 프레임워크)를 소수만 큐레이션한다. Java -> Spring은 자연스럽지만
+// Spring -> Java는 안 그린다. 통계 co-occurrence(strength)는 상관관계라 방향을 안 주므로,
+// 이 표에 없는 쌍만 카테고리 순서(SKILL_GROUPS 인덱스 낮은 쪽 -> 높은 쪽)로 방향을
+// 강제해 보완한다(아래 buildRelationEdges).
+type SkillRelation = { from: string; to: string }
+const CURATED_RELATIONS: SkillRelation[] = [
+  { from: 'Java', to: 'Spring' },
+  { from: 'Kotlin', to: 'Spring' },
+  { from: 'Kotlin', to: 'Android' },
+  { from: 'Python', to: 'Django' },
+  { from: 'JavaScript', to: 'Node.js' },
+  { from: 'JavaScript', to: 'Express' },
+  { from: 'JavaScript', to: 'React' },
+  { from: 'JavaScript', to: 'Vue' },
+  { from: 'JavaScript', to: 'React Native' },
+  { from: 'TypeScript', to: 'Next.js' },
+  { from: 'TypeScript', to: 'Angular' },
+  { from: 'TypeScript', to: 'React' },
+  { from: 'TypeScript', to: 'React Native' },
+  { from: 'C#', to: '.NET' },
+  { from: 'Ruby', to: 'Rails' },
+]
+const RELATION_STAT_MIN_STRENGTH = 0.3
+const RELATION_EDGE_MAX = 4
+
+type RelationCandidate = SkillRelation & { rank: number }
+
+// 관계 엣지 후보 계산 — 순수 함수라 buildWorkflowGraph 밖에서 독립적으로 테스트·재사용
+// 가능하다. ownedSet에 from이 있고(이미 안다) targetSet에 to가 있어야(아직 안 배웠고
+// 이번에 목표로 잡힌) 후보가 된다. 같은 카테고리끼리는 스킵(카테고리 컨텍스트 엣지가
+// 이미 그 역할을 한다). 큐레이션을 통계보다 우선하고, 같은 (from카테고리,to카테고리)
+// 클러스터 쌍엔 최대 1개만, 전체는 최대 RELATION_EDGE_MAX개로 자른다.
+function buildRelationEdges(ownedSet: Set<string>, targetSet: Set<string>): SkillRelation[] {
+  const curatedKeys = new Set(CURATED_RELATIONS.map((r) => `${r.from}|${r.to}`))
+  const candidates: RelationCandidate[] = []
+
+  CURATED_RELATIONS.forEach((r) => {
+    if (classifySkill(r.from) === classifySkill(r.to)) return
+    if (!ownedSet.has(r.from) || !targetSet.has(r.to)) return
+    candidates.push({ ...r, rank: 2 })
+  })
+
+  CAT_EDGES.forEach((e) => {
+    if (e.strength < RELATION_STAT_MIN_STRENGTH) return
+    const groupA = classifySkill(e.a)
+    const groupB = classifySkill(e.b)
+    if (groupA === groupB) return
+    const [from, to] = SKILL_GROUPS.indexOf(groupA) < SKILL_GROUPS.indexOf(groupB) ? [e.a, e.b] : [e.b, e.a]
+    if (curatedKeys.has(`${from}|${to}`)) return
+    if (!ownedSet.has(from) || !targetSet.has(to)) return
+    candidates.push({ from, to, rank: e.strength })
+  })
+
+  candidates.sort((x, y) => y.rank - x.rank)
+
+  const seenClusterPairs = new Set<string>()
+  const chosen: SkillRelation[] = []
+  for (const c of candidates) {
+    const clusterKey = `${classifySkill(c.from)}->${classifySkill(c.to)}`
+    if (seenClusterPairs.has(clusterKey)) continue
+    seenClusterPairs.add(clusterKey)
+    chosen.push({ from: c.from, to: c.to })
+    if (chosen.length >= RELATION_EDGE_MAX) break
+  }
+  return chosen
+}
+
 // 카테고리 클러스터 노드 안에 보여줄 칩/랭크 항목 상한 — 컴팩트 카드는 캔버스가 좁으니
 // 적게, 크게 보기 모달은 넓으니 많이 보여준다. 상한을 넘는 나머지는 "+N개" 칩/행으로
 // 묶는다(그룹 자체를 생략하지는 않는다 — 3레인은 항상 렌더링된다).
@@ -190,6 +265,14 @@ const MODAL_ROW_GAP_Y = 40
 
 const CONTEXT_EDGE_STYLE = { stroke: '#d8dade', strokeWidth: 1.4 }
 
+// 관계(연관·순서) 엣지 스타일 — 카테고리 컨텍스트 엣지(옅은 회색, 애니메이션, 라벨 없음)
+// 와 뚜렷이 구분되게 파랑 · 실선 · 굵게 · 고정(애니메이션 없음)으로 그린다. 파랑은 이미
+// AVATAR_PALETTE에도 쓰는 색이라 새 색상 체계를 만드는 게 아니다. animated:false로 둬서
+// "확정된 학습 순서"라는 느낌을 주고, 흐르는 컨텍스트 엣지와 시각적으로 대비시킨다.
+const RELATION_EDGE_STYLE = { stroke: '#3b82f6', strokeWidth: 2 }
+const RELATION_EDGE_LABEL_STYLE = { fontSize: 10, fill: '#3b82f6', fontWeight: 700 }
+const RELATION_EDGE_LABEL_BG = { fill: '#fff', fillOpacity: 0.92 }
+
 const MOCK_ROADMAP: ScopedRoadmapData = { start_matched: 0, total: 0, as_of: '', steps: [] }
 
 type GraphCaps = { ownedCap: number; targetCap: number; mode: 'compact' | 'modal' }
@@ -298,6 +381,27 @@ function buildWorkflowGraph(
         markerEnd: { type: MarkerType.ArrowClosed, color: '#b9bcc4' },
       })
     }
+  })
+
+  // 관계(연관·순서) 엣지 — 카테고리 컨텍스트 엣지("함께 필요")와 별개로, 실제 기술 간
+  // 방향 있는 관계(예: Java -> Spring)를 클러스터 단위로 얹는다. 칩 단위 Handle은 쓰지
+  // 않는다(오늘 겹침 버그의 원인이 DOM 측정 재도입이었으므로 스코프를 클러스터로 고정).
+  // 같은 카테고리 쌍에 컨텍스트 엣지가 이미 있어도 상관없다 — 별개 엣지로 둘 다 그려지고
+  // 스타일(색·굵기·라벨·애니메이션 여부)로 시각적으로 구분된다.
+  const ownedSet = new Set(ownedSkills)
+  const relations = buildRelationEdges(ownedSet, targetSet)
+  relations.forEach(({ from, to }) => {
+    const source = `owned-group-${classifySkill(from)}`
+    const target = `target-group-${classifySkill(to)}`
+    edges.push({
+      id: `relation-${from}->${to}`, source, target,
+      label: `${from} → ${to}`,
+      animated: false,
+      style: RELATION_EDGE_STYLE,
+      labelStyle: RELATION_EDGE_LABEL_STYLE,
+      labelBgStyle: RELATION_EDGE_LABEL_BG,
+      markerEnd: { type: MarkerType.ArrowClosed, color: '#3b82f6' },
+    })
   })
 
   return { nodes, edges, truncatedCount: truncated }
@@ -521,7 +625,14 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
           <span className="wfm-legend__item"><i className="wfm-dot wfm-dot--cert-target" />목표 자격증</span>
         </>
       )}
-      <span className="wfm-legend__caption">곡선 = 함께 필요(선행조건 아님)</span>
+      <span className="wfm-legend__item">
+        <svg width="18" height="8" viewBox="0 0 18 8" className="wfm-legend__arrow" aria-hidden="true">
+          <line x1="0" y1="4" x2="12" y2="4" stroke="#3b82f6" strokeWidth="2" />
+          <path d="M11 0.5 L17 4 L11 7.5 Z" fill="#3b82f6" />
+        </svg>
+        관련 기술(방향 있음)
+      </span>
+      <span className="wfm-legend__caption">옅은 곡선 = 카테고리 안에서 함께 필요(선행조건 아님), 파란 화살표 = 실제 학습 순서</span>
     </div>
   )
 
