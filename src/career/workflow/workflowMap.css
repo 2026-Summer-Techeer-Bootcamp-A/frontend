@@ -352,11 +352,29 @@
   overflow: hidden;
   list-style: none;
 }
+/* C: 발판 칩 추가 이후 항목은 세로 2줄(행 + 발판 칩)이 될 수 있다. .wfm-ladder-node__row가
+   기존 한 줄 레이아웃(랭크·라벨·배지·요구 아바타)을 그대로 맡고, .wfm-ladder-node__item은
+   그 둘을 세로로 쌓는 얇은 컨테이너로만 남는다. */
 .wfm-ladder-node__item {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.wfm-ladder-node__row {
   display: flex;
   align-items: center;
   gap: 6px;
   min-width: 0;
+}
+/* 발판 칩 — 랭크 배지 폭(15px)+gap(6px)만큼 들여써서 스킬명 시작 위치와 맞춘다. */
+.wfm-ladder-node__stepping {
+  padding-left: 21px;
+  font-size: 9px;
+  font-weight: 650;
+  color: #9dcfb4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 /* 랭크 번호 배지 — 작은 원형, owned 계열 색(그린bg/짙은그린텍스트). */
 .wfm-ladder-node__rank {
@@ -609,6 +627,54 @@
 }
 .wfm-expand-btn:hover { background: var(--accent-100, #e4e4e7); color: var(--c-ink, #18181b); }
 
+/* 2단계: flow/list 아이콘 세그먼트 토글 — wfm-goal-toggle의 active 톤(진한 배경/흰
+   아이콘)을 재사용해 새 색 체계를 만들지 않는다. 추천 버튼(Sparkles) 바로 왼쪽에 둔다. */
+.wfm-view-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--accent-50, #f0f0f1);
+  border-radius: 999px;
+  padding: 2px;
+}
+.wfm-view-toggle__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  color: var(--c-muted, #71717a);
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.wfm-view-toggle__btn:hover { color: var(--c-ink, #18181b); }
+.wfm-view-toggle__btn.is-active {
+  background: var(--c-ink, #18181b);
+  color: #fff;
+}
+
+/* D: 이질성 안내 배너 — flow 캔버스 밖(위) HTML이라 React Flow 좌표에 영향 없다. */
+.wfm-heterogeneous-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #fffbeb;
+  border: 1px solid #f2c879;
+  font-size: 11.5px;
+  color: #78350f;
+}
+.wfm-heterogeneous-banner__btn {
+  font-weight: 750;
+  color: #92400e;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.wfm-heterogeneous-banner__btn:hover { color: #78350f; }
+
 /* 데모용 추천 공고 가져오기 버튼 — expand 버튼과 같은 아이콘 버튼 스타일을 공유하고,
    로딩 중엔 아이콘을 회전시키고, 완료 메시지는 버튼 바로 아래 작은 말풍선으로 띄운다. */
 .wfm-recommend-wrap { position: relative; display: flex; align-items: center; }
@@ -735,4 +801,191 @@
   color: #1f9d57;
   background: #f0fbf4;
   border: 1px solid #9dcfb4;
+}
+
+/* 2단계: 리스트 뷰(WorkflowList.tsx) — flow 캔버스와 달리 좌표 산수가 없는 세로 스크롤
+   목록이라, 카드 컴팩트 영역에서는 wfm-list-pane이, 크게 보기 모달에서는
+   wfm-modal__list가 스크롤 컨테이너를 맡는다. 안쪽 wfm-list-* 클래스는 두 컨테이너
+   어디에 들어가든 동일하게 동작한다. */
+.wfm-list-pane {
+  overflow-y: auto;
+  border: 1px solid var(--line, #e6e9ef);
+  border-radius: 12px;
+  background: #fbfbfc;
+  padding: 12px 14px;
+}
+.wfm-modal__list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 18px 20px;
+  background: #fbfbfc;
+}
+
+.wfm-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.wfm-list-owned__title,
+.wfm-list-section-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--c-ink, #18181b);
+  margin-bottom: 6px;
+}
+
+.wfm-list-owned__groups {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.wfm-list-owned-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.wfm-list-owned-group__label {
+  flex: none;
+  width: 60px;
+  padding-top: 3px;
+  font-size: 10.5px;
+  font-weight: 750;
+  color: var(--c-muted, #7c7f88);
+}
+.wfm-list-owned-group__chips {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.wfm-list-owned-group__empty {
+  padding-top: 3px;
+  font-size: 10.5px;
+  color: var(--c-muted, #a1a1aa);
+}
+
+/* 보유 칩 — flow 뷰의 wfm-cluster-node__chip과 같은 그린 톤을 재사용한다(색 체계
+   일관성 유지). */
+.wfm-list-chip {
+  font-size: 10.5px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 2px 9px;
+  white-space: nowrap;
+}
+.wfm-list-chip--owned {
+  color: #1f9d57;
+  background: #fff;
+  border: 1px solid #9dcfb4;
+}
+
+.wfm-list-core {
+  padding-top: 14px;
+  border-top: 1px dashed var(--line, #e6e9ef);
+}
+
+.wfm-list-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.wfm-list-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 9px;
+  background: #fff;
+  border: 1px solid var(--line, #e6e9ef);
+}
+.wfm-list-row__name {
+  font-size: 11.5px;
+  font-weight: 750;
+  color: var(--c-ink, #18181b);
+}
+.wfm-list-row__count {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--c-muted, #7c7f88);
+}
+/* C: 발판 칩 — "← Python · PostgreSQL 기반" 형태, 리스트 행에선 최대 2개까지 그대로
+   보여준다(플로우 사다리 행과 달리 폭 제약이 느슨하다). */
+.wfm-list-row__stepping {
+  font-size: 10.5px;
+  font-weight: 650;
+  color: #1f9d57;
+}
+.wfm-list-row__cat {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--c-muted, #7c7f88);
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+.wfm-list-row__avatars {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.wfm-list-row__avatar {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 8px;
+  font-weight: 800;
+  color: #fff;
+  text-transform: uppercase;
+}
+.wfm-list-row__avatar-more {
+  font-size: 9px;
+  font-weight: 800;
+  color: var(--c-muted, #7c7f88);
+}
+
+.wfm-list-tracks {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.wfm-list-track {
+  padding-top: 14px;
+  border-top: 1px dashed var(--line, #e6e9ef);
+}
+.wfm-list-track__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+.wfm-list-track__company {
+  flex: none;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--c-ink, #18181b);
+}
+.wfm-list-track__title {
+  flex: 1;
+  min-width: 0;
+  font-size: 10.5px;
+  color: var(--c-muted, #7c7f88);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wfm-list-empty-note {
+  font-size: 11px;
+  color: var(--c-muted, #7c7f88);
+  padding: 4px 2px;
 }
