@@ -1,13 +1,14 @@
-import type { PostingPostingPayload, ResumeMarketPayload, ResumePostingPayload, ToolResult, ToolResultKind } from './chatContract'
+import type { PostingPostingPayload, ResumeMarketPayload, ResumePostingLlmPayload, ResumePostingPayload, ToolResult, ToolResultKind } from './chatContract'
 import SkillDiff from './viz/SkillDiff'
 import PostingDiff from './viz/PostingDiff'
 import ResumeMarketCard from './viz/ResumeMarketCard'
 import CoverageRing from './viz/CoverageRing'
+import { SplitDiff } from './viz/SplitDiff'
 
-// 결과 카드 시스템(스펙 4장) — turn.results 중 비교 3종(resume_posting/posting_posting/
-// resume_market) kind만 골라 전용 카드로 렌더하는 디스패처. 나머지(graph/list/stat/…)는 손대지
-// 않고 AssistantVisualizer가 그대로 담당한다(kind로 분업, 회귀 없음).
-const COMPARE_KINDS = new Set<ToolResultKind>(['resume_posting', 'posting_posting', 'resume_market'])
+// 결과 카드 시스템(스펙 4장) — turn.results 중 비교 4종(resume_posting/posting_posting/
+// resume_market/resume_posting_llm) kind만 골라 전용 카드로 렌더하는 디스패처. 나머지(graph/list/
+// stat/…)는 손대지 않고 AssistantVisualizer가 그대로 담당한다(kind로 분업, 회귀 없음).
+const COMPARE_KINDS = new Set<ToolResultKind>(['resume_posting', 'posting_posting', 'resume_market', 'resume_posting_llm'])
 
 export function isCompareResult(result: ToolResult): boolean {
   return COMPARE_KINDS.has(result.kind) && result.compare != null
@@ -88,6 +89,13 @@ export function ComparisonCard({ result }: { result: ToolResult }) {
           <ResumeMarketCard payload={c} />
         </div>
       )
+    }
+    case 'resume_posting_llm': {
+      const c = result.compare as ResumePostingLlmPayload
+      if (!Array.isArray(c.requirements) || !c.counts) {
+        return <CompareError />
+      }
+      return <SplitDiff payload={c} />
     }
     default:
       return null
