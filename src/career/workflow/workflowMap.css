@@ -232,6 +232,57 @@
 .wfm-dot--owned { background: #1f9d57; }
 .wfm-dot--target { background: #18181b; }
 .wfm-dot--bridge { background: #d8dade; border: 1px solid #b9bcc4; }
+.wfm-dot--cert-owned { background: #d97706; }
+.wfm-dot--cert-target { background: #92400e; }
+
+/* 자격증 레인 — 스킬 DAG와 완전히 분리된 보조 패널. 학습 순서가 없는 정보라
+   앰버/골드 톤만으로 존재를 알리고, 메인 그래프와 시각적으로 경쟁하지 않게 작게 둔다. */
+.wfm-cert-lane {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line, #e6e9ef);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.wfm-cert-lane__title {
+  font-size: 10.5px;
+  font-weight: 750;
+  color: var(--c-muted, #7c7f88);
+}
+.wfm-cert-lane__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.wfm-cert-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 9px;
+  border-radius: 999px;
+}
+.wfm-cert-chip--owned {
+  background: #fffbeb;
+  color: #92400e;
+  border: 1px solid #f2c879;
+}
+.wfm-cert-chip--target {
+  background: #fef3c7;
+  color: #78350f;
+  border: 1px solid #e6ab3a;
+}
+.wfm-cert-chip__badge {
+  font-size: 9px;
+  font-weight: 800;
+  color: #92400e;
+  background: #fff;
+  border-radius: 999px;
+  padding: 1px 5px;
+  margin-left: 1px;
+}
 
 .wfm-loading {
   flex: 1;
@@ -303,6 +354,29 @@
   transition: transform 0.12s ease, background 0.12s ease, color 0.12s ease;
 }
 .wfm-expand-btn:hover { background: var(--accent-100, #e4e4e7); color: var(--c-ink, #18181b); }
+
+/* 데모용 추천 공고 가져오기 버튼 — expand 버튼과 같은 아이콘 버튼 스타일을 공유하고,
+   로딩 중엔 아이콘을 회전시키고, 완료 메시지는 버튼 바로 아래 작은 말풍선으로 띄운다. */
+.wfm-recommend-wrap { position: relative; display: flex; align-items: center; }
+.wfm-recommend-btn:disabled { cursor: default; opacity: 0.7; }
+.wfm-recommend-btn.is-loading svg { animation: wfm-recommend-spin 0.9s linear infinite; }
+@keyframes wfm-recommend-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.wfm-recommend-msg {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 6px;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--c-ink, #18181b);
+  background: #fff;
+  border: 1px solid var(--accent-100, #e4e4e7);
+  padding: 4px 9px;
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 5;
+}
 
 .wfm-modal__backdrop {
   position: fixed;
