@@ -8,25 +8,28 @@
   min-height: 0;
 }
 
-/* 안 B: 사이드 패널 레이아웃 — 왼쪽은 북마크 목표 선택, 오른쪽은 DAG 캔버스.
-   카드가 flex column(height:100%)이라 wfm-body가 남은 세로 공간을 다 쓰고,
-   왼쪽 패널은 그 안에서만 스크롤된다. */
+/* 안 B → 4번 피드백 반영: 컴팩트 카드에서는 다이어그램이 카드를 거의 다 채워야 해서,
+   목표 선택 패널을 옆에 고정폭으로 두는 대신 캔버스 위에 뜨는 플로팅 드로어로 바꿨다
+   (크게 보기 모달은 그대로 넓은 사이드 패널을 쓸 수 있어 이 변경 대상이 아니다).
+   카드가 flex column(height:100%)이라 wfm-body가 남은 세로 공간을 다 쓴다. */
 .wfm-body {
   display: flex;
-  gap: 14px;
+  flex-direction: column;
   flex: 1;
   min-height: 0;
 }
 
 .wfm-goal-panel {
-  flex: none;
-  width: 252px;
-  max-height: 420px;
   overflow-y: auto;
-  border: 1px solid var(--line, #e6e9ef);
-  border-radius: 12px;
-  background: #fbfbfc;
   padding: 6px;
+}
+
+/* 플로팅 드로어 안에서 쓰일 때는 드로어 쪽(.wfm-goal-drawer)이 이미 카드 크롬(테두리·
+   그림자·배경)을 갖고 있으므로 패널 자체의 크기 제약만 남기고 나머지는 지운다. */
+.wfm-goal-drawer .wfm-goal-panel {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
 }
 
 .wfm-goal-loading {
@@ -121,6 +124,7 @@
 }
 
 .wfm-graph-pane {
+  position: relative;
   flex: 1;
   min-width: 0;
   display: flex;
@@ -135,6 +139,81 @@
   overflow: hidden;
   background: #fbfbfc;
 }
+
+/* 4번 피드백: 목표 선택을 캔버스 위에 뜨는 플로팅 토글 + 드로어로. 기본 닫힘이라
+   다이어그램이 카드를 거의 다 채우고, 필요할 때만 버튼을 눌러 목표를 고른다. */
+.wfm-goal-toggle {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 6;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 750;
+  color: var(--c-ink, #18181b);
+  background: #fff;
+  border: 1px solid var(--line, #e6e9ef);
+  border-radius: 999px;
+  padding: 6px 12px;
+  box-shadow: 0 2px 8px rgba(20, 30, 60, 0.1);
+  transition: background 0.12s ease, color 0.12s ease, box-shadow 0.12s ease;
+}
+.wfm-goal-toggle:hover { background: var(--accent-50, #f0f0f1); }
+.wfm-goal-toggle[aria-expanded='true'] {
+  color: #fff;
+  background: var(--c-ink, #18181b);
+  border-color: var(--c-ink, #18181b);
+}
+
+.wfm-goal-drawer {
+  position: absolute;
+  top: 48px;
+  left: 10px;
+  z-index: 5;
+  width: 272px;
+  max-height: 380px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid var(--line, #e6e9ef);
+  box-shadow: 0 14px 32px rgba(20, 30, 60, 0.16), 0 4px 10px rgba(20, 30, 60, 0.08);
+  overflow: hidden;
+  animation: wfm-drawer-in 0.16s ease-out;
+}
+@keyframes wfm-drawer-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.wfm-goal-drawer__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: none;
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--line, #e6e9ef);
+}
+.wfm-goal-drawer__title {
+  font-size: 11px;
+  font-weight: 750;
+  color: var(--c-ink, #18181b);
+}
+.wfm-goal-drawer__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  color: var(--c-muted, #71717a);
+  background: var(--accent-50, #f0f0f1);
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.wfm-goal-drawer__close:hover { background: var(--accent-100, #e4e4e7); color: var(--c-ink, #18181b); }
 
 /* React Flow 배경/컨트롤을 카드 톤에 맞춰 눌러준다 */
 .wfm-canvas .react-flow__attribution { display: none; }
@@ -217,6 +296,23 @@
 .wfm-node--bridge .wfm-node__class,
 .wfm-node--bridge .wfm-node__badge { color: #7c7f88; }
 .wfm-node--bridge .wfm-node__label { color: #43454c; }
+
+/* 카테고리 그룹 헤더 — 언어/프레임워크/기타 묶음의 라벨 노드. 실제 스킬 노드보다 작고
+   옅게 그려서 "이건 그냥 묶음 라벨이지 배워야 할 스킬이 아니다"를 시각적으로 구분한다. */
+.wfm-node--header {
+  width: 96px;
+  padding: 6px 9px;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.85;
+  border-style: dashed;
+}
+.wfm-node--header .wfm-node__label {
+  font-size: 11px;
+  font-weight: 750;
+  white-space: nowrap;
+  text-align: center;
+}
 
 .wfm-node__handle {
   width: 6px !important;
