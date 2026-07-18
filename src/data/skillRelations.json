@@ -1,0 +1,1575 @@
+{
+  "_meta": {
+    "version": "draft-1",
+    "curated_by": "fable",
+    "date": "2026-07-19",
+    "description": "스킬 관계 정본 초안. requires: target을 배우기 전 prereq가 선행(mode any는 목록 중 하나면 충분, all은 전부). goes_with: 같이 배우면 좋은 묶음. alternative: 같은 역할이라 하나만 깊게 파면 되는 그룹. cert_path: 자격증과 선행 스킬. 통계 검증(pair_stats 비대칭)과 taxonomy canonical 검증을 통과해야 정본이 된다.",
+    "uncovered_domains": [
+      "embedded",
+      "cad_eda",
+      "media",
+      "security 상세",
+      "graphics_game 상세"
+    ],
+    "validation": {
+      "validated_by": "validate_relations.py",
+      "total_postings": 44445,
+      "min_cooccur_threshold": 20,
+      "unknown_canonical_excluded": [],
+      "ambiguous_canonical_flagged": [
+        "React",
+        "Swift",
+        "Unity"
+      ]
+    }
+  },
+  "requires": [
+    {
+      "target": "TypeScript",
+      "prereq": [
+        "JavaScript"
+      ],
+      "mode": "all",
+      "note": "JS 문법 위의 타입 시스템",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "JavaScript": {
+            "cooccur": 2301,
+            "count_prereq": 7905,
+            "count_target": 4402,
+            "p_prereq_given_target": 0.5227,
+            "p_target_given_prereq": 0.2911,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "Node.js",
+      "prereq": [
+        "JavaScript"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "JavaScript": {
+            "cooccur": 1491,
+            "count_prereq": 7905,
+            "count_target": 4083,
+            "p_prereq_given_target": 0.3652,
+            "p_target_given_prereq": 0.1886,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "React",
+      "prereq": [
+        "JavaScript",
+        "TypeScript"
+      ],
+      "mode": "any",
+      "primary": "JavaScript",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "JavaScript": {
+            "cooccur": 3046,
+            "count_prereq": 7905,
+            "count_target": 5556,
+            "p_prereq_given_target": 0.5482,
+            "p_target_given_prereq": 0.3853,
+            "level": "strong"
+          },
+          "TypeScript": {
+            "cooccur": 2528,
+            "count_prereq": 4402,
+            "count_target": 5556,
+            "p_prereq_given_target": 0.455,
+            "p_target_given_prereq": 0.5743,
+            "level": "moderate"
+          }
+        }
+      }
+    },
+    {
+      "target": "Vue",
+      "prereq": [
+        "JavaScript"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "JavaScript": {
+            "cooccur": 1615,
+            "count_prereq": 7905,
+            "count_target": 2579,
+            "p_prereq_given_target": 0.6262,
+            "p_target_given_prereq": 0.2043,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "Angular",
+      "prereq": [
+        "TypeScript"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "TypeScript": {
+            "cooccur": 171,
+            "count_prereq": 4402,
+            "count_target": 541,
+            "p_prereq_given_target": 0.3161,
+            "p_target_given_prereq": 0.0388,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "Next.js",
+      "prereq": [
+        "React"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "React": {
+            "cooccur": 1285,
+            "count_prereq": 5556,
+            "count_target": 1576,
+            "p_prereq_given_target": 0.8154,
+            "p_target_given_prereq": 0.2313,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "React Native",
+      "prereq": [
+        "React"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "React": {
+            "cooccur": 718,
+            "count_prereq": 5556,
+            "count_target": 1255,
+            "p_prereq_given_target": 0.5721,
+            "p_target_given_prereq": 0.1292,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "Redux",
+      "prereq": [
+        "React"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "React": {
+            "cooccur": 500,
+            "count_prereq": 5556,
+            "count_target": 586,
+            "p_prereq_given_target": 0.8532,
+            "p_target_given_prereq": 0.09,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "Zustand",
+      "prereq": [
+        "React"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "React": {
+            "cooccur": 111,
+            "count_prereq": 5556,
+            "count_target": 150,
+            "p_prereq_given_target": 0.74,
+            "p_target_given_prereq": 0.02,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "styled-components",
+      "prereq": [
+        "React"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "React": {
+            "cooccur": 81,
+            "count_prereq": 5556,
+            "count_target": 85,
+            "p_prereq_given_target": 0.9529,
+            "p_target_given_prereq": 0.0146,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "Storybook",
+      "prereq": [
+        "React"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "React": {
+            "cooccur": 84,
+            "count_prereq": 5556,
+            "count_target": 100,
+            "p_prereq_given_target": 0.84,
+            "p_target_given_prereq": 0.0151,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "Jest",
+      "prereq": [
+        "JavaScript"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "JavaScript": {
+            "cooccur": 52,
+            "count_prereq": 7905,
+            "count_target": 114,
+            "p_prereq_given_target": 0.4561,
+            "p_target_given_prereq": 0.0066,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "Webpack",
+      "prereq": [
+        "JavaScript"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "JavaScript": {
+            "cooccur": 297,
+            "count_prereq": 7905,
+            "count_target": 402,
+            "p_prereq_given_target": 0.7388,
+            "p_target_given_prereq": 0.0376,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "Vite",
+      "prereq": [
+        "JavaScript"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "JavaScript": {
+            "cooccur": 56,
+            "count_prereq": 7905,
+            "count_target": 114,
+            "p_prereq_given_target": 0.4912,
+            "p_target_given_prereq": 0.0071,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "Babel",
+      "prereq": [
+        "JavaScript"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "JavaScript": {
+            "cooccur": 96,
+            "count_prereq": 7905,
+            "count_target": 108,
+            "p_prereq_given_target": 0.8889,
+            "p_target_given_prereq": 0.0121,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "jQuery",
+      "prereq": [
+        "JavaScript"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "JavaScript": {
+            "cooccur": 1267,
+            "count_prereq": 7905,
+            "count_target": 1606,
+            "p_prereq_given_target": 0.7889,
+            "p_target_given_prereq": 0.1603,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "Express",
+      "prereq": [
+        "Node.js"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "Node.js": {
+            "cooccur": 468,
+            "count_prereq": 4083,
+            "count_target": 513,
+            "p_prereq_given_target": 0.9123,
+            "p_target_given_prereq": 0.1146,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "NestJS",
+      "prereq": [
+        "Node.js",
+        "TypeScript"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "Node.js": {
+            "cooccur": 540,
+            "count_prereq": 4083,
+            "count_target": 838,
+            "p_prereq_given_target": 0.6444,
+            "p_target_given_prereq": 0.1323,
+            "level": "strong"
+          },
+          "TypeScript": {
+            "cooccur": 504,
+            "count_prereq": 4402,
+            "count_target": 838,
+            "p_prereq_given_target": 0.6014,
+            "p_target_given_prereq": 0.1145,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "Spring",
+      "prereq": [
+        "Java",
+        "Kotlin"
+      ],
+      "mode": "any",
+      "primary": "Java",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "Java": {
+            "cooccur": 4686,
+            "count_prereq": 9791,
+            "count_target": 6165,
+            "p_prereq_given_target": 0.7601,
+            "p_target_given_prereq": 0.4786,
+            "level": "strong"
+          },
+          "Kotlin": {
+            "cooccur": 701,
+            "count_prereq": 2200,
+            "count_target": 6165,
+            "p_prereq_given_target": 0.1137,
+            "p_target_given_prereq": 0.3186,
+            "level": "contradicted"
+          }
+        }
+      },
+      "curator_verdict": {
+        "Kotlin": {
+          "decision": "keep",
+          "reason": "Kotlin 단독 근거는 약함. primary는 Java, Kotlin은 보조 경로로 유지"
+        }
+      }
+    },
+    {
+      "target": "Mybatis",
+      "prereq": [
+        "Java"
+      ],
+      "mode": "all",
+      "note": "SQL 병행 필수",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "Java": {
+            "cooccur": 437,
+            "count_prereq": 9791,
+            "count_target": 507,
+            "p_prereq_given_target": 0.8619,
+            "p_target_given_prereq": 0.0446,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "Hibernate",
+      "prereq": [
+        "Java"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "Java": {
+            "cooccur": 126,
+            "count_prereq": 9791,
+            "count_target": 161,
+            "p_prereq_given_target": 0.7826,
+            "p_target_given_prereq": 0.0129,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "QueryDSL",
+      "prereq": [
+        "Java"
+      ],
+      "mode": "all",
+      "note": "실무에선 Spring/JPA 문맥",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "Java": {
+            "cooccur": 179,
+            "count_prereq": 9791,
+            "count_target": 230,
+            "p_prereq_given_target": 0.7783,
+            "p_target_given_prereq": 0.0183,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "Thymeleaf",
+      "prereq": [
+        "Spring"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "Spring": {
+            "cooccur": 78,
+            "count_prereq": 6165,
+            "count_target": 94,
+            "p_prereq_given_target": 0.8298,
+            "p_target_given_prereq": 0.0127,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "Django",
+      "prereq": [
+        "Python"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "Python": {
+            "cooccur": 811,
+            "count_prereq": 10462,
+            "count_target": 966,
+            "p_prereq_given_target": 0.8395,
+            "p_target_given_prereq": 0.0775,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "Flask",
+      "prereq": [
+        "Python"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "Python": {
+            "cooccur": 321,
+            "count_prereq": 10462,
+            "count_target": 406,
+            "p_prereq_given_target": 0.7906,
+            "p_target_given_prereq": 0.0307,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "FastAPI",
+      "prereq": [
+        "Python"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "Python": {
+            "cooccur": 565,
+            "count_prereq": 10462,
+            "count_target": 618,
+            "p_prereq_given_target": 0.9142,
+            "p_target_given_prereq": 0.054,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "NumPy",
+      "prereq": [
+        "Python"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "Python": {
+            "cooccur": 215,
+            "count_prereq": 10462,
+            "count_target": 226,
+            "p_prereq_given_target": 0.9513,
+            "p_target_given_prereq": 0.0206,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "Pandas",
+      "prereq": [
+        "Python"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "Python": {
+            "cooccur": 246,
+            "count_prereq": 10462,
+            "count_target": 263,
+            "p_prereq_given_target": 0.9354,
+            "p_target_given_prereq": 0.0235,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "Scikit-learn",
+      "prereq": [
+        "Python"
+      ],
+      "mode": "all",
+      "note": "NumPy/Pandas 병행",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "Python": {
+            "cooccur": 135,
+            "count_prereq": 10462,
+            "count_target": 150,
+            "p_prereq_given_target": 0.9,
+            "p_target_given_prereq": 0.0129,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "PyTorch",
+      "prereq": [
+        "Python"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "Python": {
+            "cooccur": 1659,
+            "count_prereq": 10462,
+            "count_target": 2197,
+            "p_prereq_given_target": 0.7551,
+            "p_target_given_prereq": 0.1586,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "TensorFlow",
+      "prereq": [
+        "Python"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "Python": {
+            "cooccur": 1300,
+            "count_prereq": 10462,
+            "count_target": 1665,
+            "p_prereq_given_target": 0.7808,
+            "p_target_given_prereq": 0.1243,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "OpenCV",
+      "prereq": [
+        "Python",
+        "C++"
+      ],
+      "mode": "any",
+      "primary": "Python",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "Python": {
+            "cooccur": 552,
+            "count_prereq": 10462,
+            "count_target": 999,
+            "p_prereq_given_target": 0.5526,
+            "p_target_given_prereq": 0.0528,
+            "level": "strong"
+          },
+          "C++": {
+            "cooccur": 690,
+            "count_prereq": 7474,
+            "count_target": 999,
+            "p_prereq_given_target": 0.6907,
+            "p_target_given_prereq": 0.0923,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "Airflow",
+      "prereq": [
+        "Python"
+      ],
+      "mode": "all",
+      "note": "SQL 병행",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "Python": {
+            "cooccur": 168,
+            "count_prereq": 10462,
+            "count_target": 209,
+            "p_prereq_given_target": 0.8038,
+            "p_target_given_prereq": 0.0161,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "iOS",
+      "prereq": [
+        "Swift",
+        "Objective-C"
+      ],
+      "mode": "any",
+      "primary": "Swift",
+      "note": "신규 학습은 Swift, Objective-C는 레거시 유지보수",
+      "evidence": {
+        "level": "contradicted",
+        "per_prereq": {
+          "Swift": {
+            "cooccur": 945,
+            "count_prereq": 1228,
+            "count_target": 2146,
+            "p_prereq_given_target": 0.4404,
+            "p_target_given_prereq": 0.7695,
+            "level": "contradicted"
+          },
+          "Objective-C": {
+            "cooccur": 414,
+            "count_prereq": 536,
+            "count_target": 2146,
+            "p_prereq_given_target": 0.1929,
+            "p_target_given_prereq": 0.7724,
+            "level": "contradicted"
+          }
+        }
+      },
+      "curator_verdict": {
+        "Swift": {
+          "decision": "keep",
+          "reason": "통계 역전은 공고가 플랫폼명(iOS)만 태깅하고 언어를 생략하는 관행 탓. 지식상 선행 유지"
+        },
+        "Objective-C": {
+          "decision": "keep",
+          "reason": "위와 동일한 태깅 관행. 레거시 유지보수 한정 선행으로 유지"
+        }
+      }
+    },
+    {
+      "target": "SwiftUI",
+      "prereq": [
+        "iOS"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "iOS": {
+            "cooccur": 97,
+            "count_prereq": 2146,
+            "count_target": 109,
+            "p_prereq_given_target": 0.8899,
+            "p_target_given_prereq": 0.0452,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "RxSwift",
+      "prereq": [
+        "iOS"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "iOS": {
+            "cooccur": 152,
+            "count_prereq": 2146,
+            "count_target": 161,
+            "p_prereq_given_target": 0.9441,
+            "p_target_given_prereq": 0.0708,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "Android",
+      "prereq": [
+        "Kotlin",
+        "Java"
+      ],
+      "mode": "any",
+      "primary": "Kotlin",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "Kotlin": {
+            "cooccur": 1094,
+            "count_prereq": 2200,
+            "count_target": 2605,
+            "p_prereq_given_target": 0.42,
+            "p_target_given_prereq": 0.4973,
+            "level": "moderate"
+          },
+          "Java": {
+            "cooccur": 974,
+            "count_prereq": 9791,
+            "count_target": 2605,
+            "p_prereq_given_target": 0.3739,
+            "p_target_given_prereq": 0.0995,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "RxJava",
+      "prereq": [
+        "Java",
+        "Kotlin"
+      ],
+      "mode": "any",
+      "note": "주로 Android 문맥",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "Java": {
+            "cooccur": 37,
+            "count_prereq": 9791,
+            "count_target": 81,
+            "p_prereq_given_target": 0.4568,
+            "p_target_given_prereq": 0.0038,
+            "level": "strong"
+          },
+          "Kotlin": {
+            "cooccur": 73,
+            "count_prereq": 2200,
+            "count_target": 81,
+            "p_prereq_given_target": 0.9012,
+            "p_target_given_prereq": 0.0332,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "Jetpack Compose",
+      "prereq": [
+        "Android"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "insufficient",
+        "per_prereq": {
+          "Android": {
+            "cooccur": 15,
+            "count_prereq": 2605,
+            "count_target": 24,
+            "p_prereq_given_target": 0.625,
+            "p_target_given_prereq": 0.0058,
+            "level": "insufficient"
+          }
+        }
+      }
+    },
+    {
+      "target": "Flutter",
+      "prereq": [
+        "Dart"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "contradicted",
+        "per_prereq": {
+          "Dart": {
+            "cooccur": 208,
+            "count_prereq": 221,
+            "count_target": 1157,
+            "p_prereq_given_target": 0.1798,
+            "p_target_given_prereq": 0.9412,
+            "level": "contradicted"
+          }
+        }
+      },
+      "curator_verdict": {
+        "Dart": {
+          "decision": "keep",
+          "reason": "Dart 태깅 공고의 94%가 Flutter 병기 — 태깅 관행에 의한 역전. 지식상 선행 유지"
+        }
+      }
+    },
+    {
+      "target": "fastlane",
+      "prereq": [
+        "iOS",
+        "Android"
+      ],
+      "mode": "any",
+      "note": "모바일 배포 자동화 도구",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "iOS": {
+            "cooccur": 23,
+            "count_prereq": 2146,
+            "count_target": 45,
+            "p_prereq_given_target": 0.5111,
+            "p_target_given_prereq": 0.0107,
+            "level": "strong"
+          },
+          "Android": {
+            "cooccur": 14,
+            "count_prereq": 2605,
+            "count_target": 45,
+            "p_prereq_given_target": 0.3111,
+            "p_target_given_prereq": 0.0054,
+            "level": "insufficient"
+          }
+        }
+      }
+    },
+    {
+      "target": "Kubernetes",
+      "prereq": [
+        "Docker"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "Docker": {
+            "cooccur": 1416,
+            "count_prereq": 3948,
+            "count_target": 2717,
+            "p_prereq_given_target": 0.5212,
+            "p_target_given_prereq": 0.3587,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "Helm",
+      "prereq": [
+        "Kubernetes"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "Kubernetes": {
+            "cooccur": 127,
+            "count_prereq": 2717,
+            "count_target": 129,
+            "p_prereq_given_target": 0.9845,
+            "p_target_given_prereq": 0.0467,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "ArgoCD",
+      "prereq": [
+        "Kubernetes"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "Kubernetes": {
+            "cooccur": 97,
+            "count_prereq": 2717,
+            "count_target": 147,
+            "p_prereq_given_target": 0.6599,
+            "p_target_given_prereq": 0.0357,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "Docker",
+      "prereq": [
+        "Linux"
+      ],
+      "mode": "all",
+      "note": "리눅스 기초가 있어야 수월",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "Linux": {
+            "cooccur": 1210,
+            "count_prereq": 6710,
+            "count_target": 3948,
+            "p_prereq_given_target": 0.3065,
+            "p_target_given_prereq": 0.1803,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "GitHub Actions",
+      "prereq": [
+        "Git"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "Git": {
+            "cooccur": 45,
+            "count_prereq": 7926,
+            "count_target": 259,
+            "p_prereq_given_target": 0.1737,
+            "p_target_given_prereq": 0.0057,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "Jenkins",
+      "prereq": [
+        "Git"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "Git": {
+            "cooccur": 626,
+            "count_prereq": 7926,
+            "count_target": 1091,
+            "p_prereq_given_target": 0.5738,
+            "p_target_given_prereq": 0.079,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "Ansible",
+      "prereq": [
+        "Linux"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "Linux": {
+            "cooccur": 152,
+            "count_prereq": 6710,
+            "count_target": 304,
+            "p_prereq_given_target": 0.5,
+            "p_target_given_prereq": 0.0227,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "Nginx",
+      "prereq": [
+        "Linux"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "Linux": {
+            "cooccur": 171,
+            "count_prereq": 6710,
+            "count_target": 535,
+            "p_prereq_given_target": 0.3196,
+            "p_target_given_prereq": 0.0255,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "Terraform",
+      "prereq": [
+        "AWS",
+        "Azure",
+        "GCP"
+      ],
+      "mode": "any",
+      "primary": "AWS",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "AWS": {
+            "cooccur": 324,
+            "count_prereq": 8041,
+            "count_target": 485,
+            "p_prereq_given_target": 0.668,
+            "p_target_given_prereq": 0.0403,
+            "level": "strong"
+          },
+          "Azure": {
+            "cooccur": 50,
+            "count_prereq": 1555,
+            "count_target": 485,
+            "p_prereq_given_target": 0.1031,
+            "p_target_given_prereq": 0.0322,
+            "level": "moderate"
+          },
+          "GCP": {
+            "cooccur": 96,
+            "count_prereq": 1523,
+            "count_target": 485,
+            "p_prereq_given_target": 0.1979,
+            "p_target_given_prereq": 0.063,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "MySQL",
+      "prereq": [
+        "SQL"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "contradicted",
+        "per_prereq": {
+          "SQL": {
+            "cooccur": 556,
+            "count_prereq": 2797,
+            "count_target": 5153,
+            "p_prereq_given_target": 0.1079,
+            "p_target_given_prereq": 0.1988,
+            "level": "contradicted"
+          }
+        }
+      },
+      "curator_verdict": {
+        "SQL": {
+          "decision": "keep",
+          "reason": "커플링 자체가 약한 경계선 역전. SQL 문법은 교육적으로 자명한 선행이라 유지"
+        }
+      }
+    },
+    {
+      "target": "PostgreSQL",
+      "prereq": [
+        "SQL"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "moderate",
+        "per_prereq": {
+          "SQL": {
+            "cooccur": 275,
+            "count_prereq": 2797,
+            "count_target": 1847,
+            "p_prereq_given_target": 0.1489,
+            "p_target_given_prereq": 0.0983,
+            "level": "moderate"
+          }
+        }
+      }
+    },
+    {
+      "target": "MariaDB",
+      "prereq": [
+        "SQL"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "moderate",
+        "per_prereq": {
+          "SQL": {
+            "cooccur": 127,
+            "count_prereq": 2797,
+            "count_target": 1463,
+            "p_prereq_given_target": 0.0868,
+            "p_target_given_prereq": 0.0454,
+            "level": "moderate"
+          }
+        }
+      }
+    },
+    {
+      "target": "Oracle",
+      "prereq": [
+        "SQL"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "SQL": {
+            "cooccur": 366,
+            "count_prereq": 2797,
+            "count_target": 2218,
+            "p_prereq_given_target": 0.165,
+            "p_target_given_prereq": 0.1309,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "SQL Server",
+      "prereq": [
+        "SQL"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "moderate",
+        "per_prereq": {
+          "SQL": {
+            "cooccur": 215,
+            "count_prereq": 2797,
+            "count_target": 1685,
+            "p_prereq_given_target": 0.1276,
+            "p_target_given_prereq": 0.0769,
+            "level": "moderate"
+          }
+        }
+      }
+    },
+    {
+      "target": ".NET",
+      "prereq": [
+        "C#"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "C#": {
+            "cooccur": 773,
+            "count_prereq": 3464,
+            "count_target": 1130,
+            "p_prereq_given_target": 0.6841,
+            "p_target_given_prereq": 0.2232,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "WPF",
+      "prereq": [
+        "C#"
+      ],
+      "mode": "all",
+      "note": ".NET 문맥",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "C#": {
+            "cooccur": 604,
+            "count_prereq": 3464,
+            "count_target": 623,
+            "p_prereq_given_target": 0.9695,
+            "p_target_given_prereq": 0.1744,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "Unity",
+      "prereq": [
+        "C#"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "C#": {
+            "cooccur": 247,
+            "count_prereq": 3464,
+            "count_target": 441,
+            "p_prereq_given_target": 0.5601,
+            "p_target_given_prereq": 0.0713,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "Unreal Engine",
+      "prereq": [
+        "C++"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "C++": {
+            "cooccur": 126,
+            "count_prereq": 7474,
+            "count_target": 221,
+            "p_prereq_given_target": 0.5701,
+            "p_target_given_prereq": 0.0169,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "CodeIgniter",
+      "prereq": [
+        "PHP"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "PHP": {
+            "cooccur": 104,
+            "count_prereq": 1523,
+            "count_target": 106,
+            "p_prereq_given_target": 0.9811,
+            "p_target_given_prereq": 0.0683,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "Laravel",
+      "prereq": [
+        "PHP"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "PHP": {
+            "cooccur": 355,
+            "count_prereq": 1523,
+            "count_target": 378,
+            "p_prereq_given_target": 0.9392,
+            "p_target_given_prereq": 0.2331,
+            "level": "strong"
+          }
+        }
+      }
+    },
+    {
+      "target": "Rails",
+      "prereq": [
+        "Ruby"
+      ],
+      "mode": "all",
+      "evidence": {
+        "level": "strong",
+        "per_prereq": {
+          "Ruby": {
+            "cooccur": 32,
+            "count_prereq": 114,
+            "count_target": 60,
+            "p_prereq_given_target": 0.5333,
+            "p_target_given_prereq": 0.2807,
+            "level": "strong"
+          }
+        }
+      }
+    }
+  ],
+  "goes_with": [
+    {
+      "skills": [
+        "HTML",
+        "CSS"
+      ],
+      "label": "마크업 기초",
+      "note": "사실상 한 몸, 같이 시작"
+    },
+    {
+      "skills": [
+        "React",
+        "TypeScript"
+      ],
+      "label": "모던 프론트 표준 조합"
+    },
+    {
+      "skills": [
+        "Pandas",
+        "NumPy"
+      ],
+      "label": "데이터 분석 기초 묶음"
+    },
+    {
+      "skills": [
+        "fastlane",
+        "GitHub Actions"
+      ],
+      "label": "배포 자동화 묶음",
+      "context": "mobile"
+    },
+    {
+      "skills": [
+        "Prometheus",
+        "Grafana"
+      ],
+      "label": "모니터링 묶음"
+    },
+    {
+      "skills": [
+        "Jira",
+        "Confluence"
+      ],
+      "label": "협업 도구 묶음"
+    },
+    {
+      "skills": [
+        "Docker",
+        "Git"
+      ],
+      "label": "개발 환경 기본기",
+      "note": "어느 트랙이든 초반에 함께"
+    }
+  ],
+  "alternative": [
+    {
+      "skills": [
+        "React",
+        "Vue",
+        "Angular"
+      ],
+      "label": "프론트 프레임워크",
+      "note": "채용 수요는 React가 압도적"
+    },
+    {
+      "skills": [
+        "Django",
+        "Flask",
+        "FastAPI"
+      ],
+      "label": "파이썬 웹 프레임워크",
+      "note": "최근 수요는 FastAPI 상승세"
+    },
+    {
+      "skills": [
+        "PyTorch",
+        "TensorFlow"
+      ],
+      "label": "딥러닝 프레임워크",
+      "note": "연구·신규는 PyTorch 우세"
+    },
+    {
+      "skills": [
+        "MySQL",
+        "PostgreSQL",
+        "MariaDB",
+        "Oracle",
+        "SQL Server"
+      ],
+      "label": "관계형 DB",
+      "note": "하나 깊게, 나머지는 이전 학습이 쉬움"
+    },
+    {
+      "skills": [
+        "AWS",
+        "Azure",
+        "GCP"
+      ],
+      "label": "클라우드",
+      "note": "국내 수요는 AWS가 압도적"
+    },
+    {
+      "skills": [
+        "Swift",
+        "Objective-C"
+      ],
+      "label": "iOS 언어",
+      "note": "신규는 Swift"
+    },
+    {
+      "skills": [
+        "Kotlin",
+        "Java"
+      ],
+      "label": "Android 언어",
+      "note": "신규는 Kotlin"
+    }
+  ],
+  "cert_path": [
+    {
+      "cert": "CKAD",
+      "prereq_skills": [
+        "Kubernetes"
+      ],
+      "note": "개발자 트랙 자격증"
+    },
+    {
+      "cert": "CKA",
+      "prereq_skills": [
+        "Kubernetes"
+      ],
+      "note": "관리자 트랙 자격증. CKAD와 선후 관계 없음(병렬 트랙)"
+    },
+    {
+      "cert": "CKS",
+      "prereq_skills": [
+        "Kubernetes"
+      ],
+      "prereq_certs": [
+        "CKA"
+      ],
+      "note": "CKA 합격이 응시 조건(공식 요건)"
+    },
+    {
+      "cert": "AWS Certified",
+      "prereq_skills": [
+        "AWS"
+      ],
+      "note": "일반적으로 SAA부터 응시"
+    },
+    {
+      "cert": "SQLD",
+      "prereq_skills": [
+        "SQL"
+      ]
+    },
+    {
+      "cert": "ADsP",
+      "prereq_skills": [],
+      "note": "데이터 분석 기초 이론, 코딩 선행 불필요"
+    },
+    {
+      "cert": "정보처리기사",
+      "prereq_skills": [],
+      "note": "전공 지식 전반, 특정 스킬 선행 없음"
+    },
+    {
+      "cert": "리눅스마스터",
+      "prereq_skills": [
+        "Linux"
+      ]
+    }
+  ]
+}
