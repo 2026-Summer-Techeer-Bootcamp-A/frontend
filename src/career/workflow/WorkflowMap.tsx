@@ -15,7 +15,7 @@ import {
   useSelectedGoalIds, useGoalSelectionTouched, toggleGoalId,
   getSelectedGoalIds, isGoalSelectionTouched, setSelectedGoalIds,
 } from '../goalSelectionStore'
-import { dashboardApi, jobsApi, type Identity, type PostingDetail, type ScopedRoadmapData } from '../api'
+import { dashboardApi, jobsApi, type Identity, type PostingCard, type PostingDetail, type ScopedRoadmapData } from '../api'
 import { useWidgetData } from '../useWidgetData'
 import type { WidgetSize } from '../dashboardConfig'
 import dreamCompanies from '../../data/dreamCompanies.json'
@@ -28,6 +28,26 @@ const DREAM_COMPANIES = dreamCompanies as DreamCompany[]
 const RECOMMEND_TARGET_NEW = 8
 const RECOMMEND_MAX_COMPANIES = 12
 const RECOMMEND_CHUNK_SIZE = 4
+// 로그인 없이 미리보기로 그리는 대체 순서(라이브 로드맵을 못 받을 때)는 목표 스킬
+// 개수에 상한이 없었다. 북마크를 여러 개 선택하면 선택된 공고들의 미보유 스킬
+// 합집합이 수십 개까지 늘어나, 좁은 캔버스에 노드가 뭉개져 그려지는 문제가 있었다.
+// 라이브 로드맵의 steps 상한(10)과 맞춰 대체 순서도 상위 10개로 자른다.
+const FALLBACK_NODE_CAP = 10
+
+function yearBadgeFor(postDate: string | null): string | null {
+  if (!postDate) return null
+  const postYear = new Date(postDate).getFullYear()
+  const currentYear = new Date().getFullYear()
+  if (postYear === currentYear) return '올해'
+  if (postYear === currentYear - 1) return '작년'
+  return `${postYear}년`
+}
+
+function matchPctFor(skills: string[], matchedCount: number | null | undefined, ownedSet: Set<string>): number {
+  if (!skills.length) return 0
+  const heldCount = skills.filter((s) => ownedSet.has(s)).length
+  return Math.round(((matchedCount ?? heldCount) / skills.length) * 100)
+}
 
 // A-5: 목표 · 학습 워크플로우 맵 — 예전엔 북마크한 공고 전부(암묵적 목표)를 그대로
 // 썼지만, 이제는 왼쪽 패널에서 북마크 중 "목표로 삼을 것"을 직접 골라야 한다(안 B,
@@ -117,21 +137,11 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
 
   // 왼쪽 패널 체크박스 행에 쓸 공고별 매칭률 — placeholders.tsx의 기존 패턴과 동일하게
   // matched_count가 있으면 그걸, 없으면 보유 기술 교집합 개수를 쓴다. 새 백엔드 호출 없음.
-  const postingsWithMatch = useMemo(() => postings.map((p) => {
-    const heldCount = p.skills.filter((s) => ownedSet.has(s)).length
-    const matchPct = p.skills.length ? Math.round(((p.matched_count ?? heldCount) / p.skills.length) * 100) : 0
-    // 게시연도 뱃지 — 올해·작년이면 상대 표기, 그보다 오래됐으면(추천이 아니라 직접
-    // 북마크한 옛날 공고일 수 있음) 연도를 그대로 보여준다. 작년 채용 정보도 올해와
-    // 요구 기술이 크게 다르지 않아 목표를 세우는 참고 자료로는 여전히 유효하다는
-    // 전제라, "오래됨"으로 숨기지 않고 정확한 연도를 알려주는 쪽을 택했다.
-    const postYear = p.post_date ? new Date(p.post_date).getFullYear() : null
-    const currentYear = new Date().getFullYear()
-    const yearBadge = postYear == null ? null
-      : postYear === currentYear ? '올해'
-      : postYear === currentYear - 1 ? '작년'
-      : `${postYear}년`
-    return { detail: p, matchPct, yearBadge }
-  }), [postings, ownedSet])
+  const postingsWithMatch = useMemo(() => postings.map((p) => ({
+    detail: p,
+    matchPct: matchPctFor(p.skills, p.matched_count, ownedSet),
+    yearBadge: yearBadgeFor(p.post_date),
+  })), [postings, ownedSet])
 
   // 선택 상태 — 저장된 선택이 없으면(한 번도 안 건드렸으면) 북마크 전체가 암묵 기본값.
   // 북마크가 지워졌는데 선택 목록엔 남아 있을 수 있어(스토어는 그 경로를 모른다) 현재
@@ -177,16 +187,19 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
     roadmapKey,
   )
 
-  const { nodes, edges } = useMemo(() => {
+  const { nodes, edges, truncatedCount } = useMemo(() => {
     const liveSteps = roadmap.value.steps
     const hasOrder = liveSteps.length > 0
     // 라이브 로드맵을 못 받는 경우(비로그인 · 이력서 없음)엔 선택된 공고들이 그 기술을
     // 몇 번이나 요구하는지로 대체 순서를 만든다 — delta/matched_after 없이 "N개 공고 요구"만 배지로 쓴다.
-    const fallbackOrder = !hasOrder && targetSet.size > 0
+    // 선택된 공고가 여러 개면 목표 스킬 합집합이 커지므로 상위 FALLBACK_NODE_CAP개로 자른다.
+    const fullFallbackOrder = !hasOrder && targetSet.size > 0
       ? [...targetSet]
         .map((canonical) => ({ canonical, count: selectedPostings.filter((p) => p.skills.includes(canonical)).length }))
         .sort((a, b) => b.count - a.count)
       : []
+    const fallbackOrder = fullFallbackOrder.slice(0, FALLBACK_NODE_CAP)
+    const truncated = fullFallbackOrder.length - fallbackOrder.length
 
     const ns: SkillFlowNode[] = []
     const es: Edge[] = []
@@ -256,7 +269,7 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
       })
     }
 
-    return { nodes: layoutGraph(ns, es), edges: es }
+    return { nodes: layoutGraph(ns, es), edges: es, truncatedCount: truncated }
   }, [roadmap.value, targetSet, selectedPostings, ownedSkills])
 
   const showNoBookmarks = bookmarkIds.length === 0
@@ -264,20 +277,25 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
   const isLoading = !showNoBookmarks && !showNoSelection && (postingsLoading || (identity !== null && roadmap.loading))
   const canShowGraph = !showNoBookmarks && !showNoSelection && !isLoading
 
-  // 데모용 추천 공고 가져오기 — 검증된 기업명으로 최대 12개 회사를 4개씩 묶어 조회하고,
-  // 아직 안 북마크된 공고를 최대 8개 모아 북마크 + 목표 선택에 반영한다. 개별 회사 조회
-  // 실패는 allSettled로 흡수해 데모 도중 하나가 실패해도 전체가 멈추지 않게 한다.
+  // 데모용 추천 공고 가져오기 — 검증된 기업명으로 최대 12개 회사를 4개씩 묶어 조회해
+  // 후보를 최대 8개 모은다. 예전엔 모으자마자 전부 자동으로 북마크했는데, 어떤 공고가
+  // 담기는지 미리 보고 골라 담고 싶다는 요청으로 모달에 나열하고 개별 추가 버튼으로
+  // 바꿨다. 개별 회사 조회 실패는 allSettled로 흡수해 하나 실패해도 전체가 안 멈춘다.
   const [recommendLoading, setRecommendLoading] = useState(false)
   const [recommendMessage, setRecommendMessage] = useState<string | null>(null)
+  const [recommendCandidates, setRecommendCandidates] = useState<PostingCard[]>([])
+  const [recommendModalOpen, setRecommendModalOpen] = useState(false)
+  const [addedCandidateIds, setAddedCandidateIds] = useState<Set<string>>(new Set())
+
   const handleRecommendClick = async () => {
     if (recommendLoading) return
     setRecommendLoading(true)
     setRecommendMessage(null)
     const seenIds = new Set<string>()
-    const collectedIds: string[] = []
+    const collected: PostingCard[] = []
     try {
       const pool = DREAM_COMPANIES.slice(0, RECOMMEND_MAX_COMPANIES)
-      for (let i = 0; i < pool.length && collectedIds.length < RECOMMEND_TARGET_NEW; i += RECOMMEND_CHUNK_SIZE) {
+      for (let i = 0; i < pool.length && collected.length < RECOMMEND_TARGET_NEW; i += RECOMMEND_CHUNK_SIZE) {
         const chunk = pool.slice(i, i + RECOMMEND_CHUNK_SIZE)
         const results = await Promise.allSettled(
           chunk.map((company) => jobsApi.list({
@@ -286,34 +304,50 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
           }, token)),
         )
         for (const result of results) {
-          if (collectedIds.length >= RECOMMEND_TARGET_NEW) break
+          if (collected.length >= RECOMMEND_TARGET_NEW) break
           if (result.status !== 'fulfilled') continue
           for (const item of result.value.items) {
-            if (collectedIds.length >= RECOMMEND_TARGET_NEW) break
+            if (collected.length >= RECOMMEND_TARGET_NEW) break
             const id = String(item.id)
             if (seenIds.has(id) || isBookmarked(id)) continue
             seenIds.add(id)
-            collectedIds.push(id)
+            collected.push(item)
           }
         }
       }
 
-      if (collectedIds.length === 0) {
+      if (collected.length === 0) {
         setRecommendMessage('이미 추천드릴 새 공고가 없어요')
+        window.setTimeout(() => setRecommendMessage(null), 4000)
       } else {
-        collectedIds.forEach((id) => toggleBookmark(id))
-        if (isGoalSelectionTouched()) {
-          setSelectedGoalIds([...new Set([...getSelectedGoalIds(), ...collectedIds])])
-        }
-        setRecommendMessage(`${collectedIds.length}개 추천 공고를 담았어요`)
+        setRecommendCandidates(collected)
+        setAddedCandidateIds(new Set())
+        setRecommendModalOpen(true)
       }
     } catch {
       setRecommendMessage('추천 공고를 가져오지 못했어요')
+      window.setTimeout(() => setRecommendMessage(null), 4000)
     } finally {
       setRecommendLoading(false)
-      window.setTimeout(() => setRecommendMessage(null), 4000)
     }
   }
+
+  const handleAddCandidate = (item: PostingCard) => {
+    const id = String(item.id)
+    if (addedCandidateIds.has(id)) return
+    toggleBookmark(id)
+    if (isGoalSelectionTouched()) {
+      setSelectedGoalIds([...new Set([...getSelectedGoalIds(), id])])
+    }
+    setAddedCandidateIds((prev) => new Set(prev).add(id))
+  }
+
+  useEffect(() => {
+    if (!recommendModalOpen) return
+    const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') setRecommendModalOpen(false) }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [recommendModalOpen])
 
   // 2a: 크게 보기 — 같은 nodes/edges를 더 큰 캔버스에 그리는 오버레이 모달. 그래프
   // 자체는 다시 계산하지 않고 그대로 재사용하며, Escape·백드롭 클릭으로 닫는다.
@@ -324,6 +358,10 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [expanded])
+
+  const truncationNote = truncatedCount > 0 ? (
+    <div className="wfm-truncation-note">선택한 공고가 많아 상위 {FALLBACK_NODE_CAP}개 기술만 표시했어요(+{truncatedCount}개 더 있어요).</div>
+  ) : null
 
   const legend = (
     <div className="wfm-legend">
@@ -485,6 +523,7 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
                     </ReactFlow>
                   </div>
                   {legend}
+                  {truncationNote}
                   {certLane}
                   {roadmap.value.as_of && <AsOf asOf={roadmap.value.as_of} n={roadmap.value.total} />}
                 </>
@@ -528,7 +567,58 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
               </ReactFlow>
             </div>
             {legend}
+            {truncationNote}
             {certLane}
+          </div>
+        </div>
+      )}
+
+      {recommendModalOpen && (
+        <div className="wfm-modal__backdrop" onClick={() => setRecommendModalOpen(false)}>
+          <div
+            className="wfm-modal__card wfm-recommend-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="추천 공고"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="wfm-modal__titlebar">
+              <span className="wfm-modal__title">추천 공고</span>
+              <button type="button" className="wfm-modal__close" onClick={() => setRecommendModalOpen(false)} aria-label="닫기">
+                <X size={16} />
+              </button>
+            </div>
+            <p className="wfm-recommend-modal__hint">담고 싶은 공고만 골라서 추가하세요. 추가하면 북마크되고 목표로도 반영돼요.</p>
+            <ul className="wfm-recommend-modal__list">
+              {recommendCandidates.map((item) => {
+                const id = String(item.id)
+                const added = addedCandidateIds.has(id)
+                const company = item.company ?? '회사명 미상'
+                const matchPct = matchPctFor(item.skills, item.matched_count, ownedSet)
+                const yearBadge = yearBadgeFor(item.post_date)
+                return (
+                  <li key={id} className="wfm-recommend-modal__item">
+                    <span className="wfm-goal-avatar" style={{ background: avatarColor(company) }}>
+                      {company.slice(0, 1)}
+                    </span>
+                    <span className="wfm-goal-info">
+                      <span className="wfm-goal-company">{company}</span>
+                      <span className="wfm-goal-title" title={item.title}>{item.title}</span>
+                    </span>
+                    {yearBadge && <span className="wfm-goal-year">{yearBadge}</span>}
+                    <span className="wfm-goal-pct">{matchPct}%</span>
+                    <button
+                      type="button"
+                      className={`wfm-recommend-modal__add${added ? ' is-added' : ''}`}
+                      onClick={() => handleAddCandidate(item)}
+                      disabled={added}
+                    >
+                      {added ? '추가됨' : '추가'}
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
           </div>
         </div>
       )}
