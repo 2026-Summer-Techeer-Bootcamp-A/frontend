@@ -1,3 +1,4 @@
+import { useId, useState } from 'react'
 import type { RequirementVerdict, SplitDiffPayload, SplitDiffRequirement } from '../chatContract'
 import './SplitDiff.css'
 
@@ -22,11 +23,39 @@ const VERDICT_LABEL: Record<RequirementVerdict, string> = {
   gap: '공백',
 }
 
+// 인라인 배지(vpill)용 짧은 라벨 — 노트 카드의 VERDICT_LABEL과 달리 한 줄에 붙는 배지라 더
+// 짧게 줄인다("부분 · 전이가능"은 인라인에서 너무 길다).
+const VERDICT_PILL_LABEL: Record<RequirementVerdict, string> = {
+  met: '충족',
+  partial: '부분',
+  gap: '공백',
+}
+
 // diff 라인 마커 — met은 추가(+), partial은 걸침(~), gap은 빠짐(−).
 const VERDICT_MARK: Record<RequirementVerdict, string> = {
   met: '+',
   partial: '~',
   gap: '−',
+}
+
+// 요구사항 레이아웃 토글 — 시안 1(여백 주석형)과 시안 3(인라인 배지형) 중 선택.
+// WorkflowMap.tsx의 techeer_workflow_view와 같은 패턴(localStorage가 정본, 마운트 시 1회만 읽고
+// 이후엔 토글 버튼으로만 바뀐다)을 따른다.
+type SplitDiffLayout = 'margin' | 'inline'
+const LAYOUT_STORAGE_KEY = 'techeer_splitdiff_layout'
+
+function readStoredLayout(): SplitDiffLayout {
+  try {
+    return localStorage.getItem(LAYOUT_STORAGE_KEY) === 'inline' ? 'inline' : 'margin'
+  } catch {
+    return 'margin'
+  }
+}
+
+// 형광펜을 그을 텍스트 — source_quote가 있으면 그걸, 없으면 요구사항 짧은 제목(text)을 쓴다.
+// 둘 다 동시에 보여주지 않는다(한 항목당 한 줄만, 깔끔함 우선).
+function highlightText(req: SplitDiffRequirement): string {
+  return req.source_quote || req.text
 }
 
 function clampPct(v: number): number {
@@ -43,6 +72,16 @@ export function SplitDiff({ payload }: SplitDiffProps) {
   const { base_role, base_title, target_role, target_title, score, counts, summary, requirements, degraded } = payload
   const total = counts.met + counts.partial + counts.gap
   const roundedScore = Math.round(clampPct(score))
+  const [layout, setLayoutState] = useState<SplitDiffLayout>(readStoredLayout)
+
+  const setLayout = (next: SplitDiffLayout) => {
+    setLayoutState(next)
+    try {
+      localStorage.setItem(LAYOUT_STORAGE_KEY, next)
+    } catch {
+      // localStorage 접근 불가(프라이빗 모드 등)해도 레이아웃 전환 자체는 계속 동작해야 한다.
+    }
+  }
 
   // 가중 도넛 — met은 온전한 비중, partial은 절반 비중만 채워 "충족 4 + 부분 1×0.5 + 공백 1×0"의
   // 가중 점수를 시각적으로 그대로 옮긴다(스코어%와 도넛 채움 비율이 항상 일치하는 정직한 도넛).
@@ -68,6 +107,23 @@ export function SplitDiff({ payload }: SplitDiffProps) {
           <span className="role">판정</span>
           {roleLabel(target_role, target_title)}
         </span>
+
+        <div className="rv__sd-toggle" role="group" aria-label="요구사항 레이아웃 전환">
+          <button
+            type="button"
+            aria-pressed={layout === 'margin'}
+            onClick={() => setLayout('margin')}
+          >
+            여백 주석
+          </button>
+          <button
+            type="button"
+            aria-pressed={layout === 'inline'}
+            onClick={() => setLayout('inline')}
+          >
+            인라인
+          </button>
+        </div>
       </div>
 
       <div className="rv__sd-summary">
@@ -137,84 +193,101 @@ export function SplitDiff({ payload }: SplitDiffProps) {
         </div>
       </div>
 
-      <div className="rv__sd-colhead">
-        <span>{base_role}가 원하는 것 · 원문 인용</span>
-        <span />
-        <span className="right">{target_role}가 제공하는 것 · 판정</span>
-      </div>
+      {layout === 'margin' ? (
+        <SplitDiffMarginLayout requirements={requirements} targetRole={target_role} />
+      ) : (
+        <SplitDiffInlineLayout requirements={requirements} targetRole={target_role} />
+      )}
+    </div>
+  )
+}
 
-      <div className="rv__sd-rows">
+// 형광펜 강조 span — 두 레이아웃이 공유한다. verdict 색은 색각 대응을 위해 항상 옆/아래에 글자
+// 라벨이 같이 붙으므로(노트의 verdict 라벨, 인라인의 vpill), 여기 자체는 색으로만 표시해도 된다.
+function SplitDiffHighlight({ req }: { req: SplitDiffRequirement }) {
+  return <span className={`rv__sd-hl rv__sd-hl--${req.verdict}`}>{highlightText(req)}</span>
+}
+
+// 판정 대상 문서(target)의 원문 근거(quote)를 다시 살리는 자리 — quote가 있을 때만 작은
+// 인용 표식을 두고, 마우스 호버뿐 아니라 키보드 포커스로도 전문을 볼 수 있게 한다. 네이티브
+// title 속성만으론 포커스 시 안 뜨므로, aria-describedby로 이어진 CSS 툴팁(role="tooltip")을
+// 직접 만든다. 트리거는 실제 button(탭 가능)이라 마우스 없이도 Tab만으로 도달·확인된다.
+function QuoteCue({ quote, targetRole }: { quote: string; targetRole: string }) {
+  const tooltipId = useId()
+  if (!quote) return null
+  return (
+    <span className="rv__sd-quotecue">
+      <button type="button" className="rv__sd-quotecue-btn" aria-describedby={tooltipId} aria-label={`${targetRole} 원문 근거 보기`}>
+        <span aria-hidden="true">”</span>
+      </button>
+      <span role="tooltip" id={tooltipId} className="rv__sd-quotecue-tip">
+        <span className="rv__sd-quotecue-tip-role">{targetRole} 원문</span>
+        <span className="rv__sd-quotecue-tip-text">{quote}</span>
+      </span>
+    </span>
+  )
+}
+
+// 시안 1 · 여백 주석형 — 좌측은 공고(base) 문서를 요구사항 순서대로 나열하며 형광펜을 긋고,
+// 우측 여백엔 연결선(leader line)으로 이어진 노트 카드(verdict 라벨 + 판정 근거 + 보완점)를 둔다.
+function SplitDiffMarginLayout({ requirements, targetRole }: { requirements: SplitDiffRequirement[]; targetRole: string }) {
+  return (
+    <div className="rv__sd-marg">
+      <ul className="rv__sd-marg-doc">
         {requirements.map((req) => (
-          <SplitDiffRow key={req.id} req={req} baseRole={base_role} targetRole={target_role} />
+          <li key={req.id}>
+            <SplitDiffHighlight req={req} />
+          </li>
+        ))}
+      </ul>
+      <div className="rv__sd-marg-notes">
+        {requirements.map((req) => (
+          <SplitDiffNote key={req.id} req={req} targetRole={targetRole} />
         ))}
       </div>
     </div>
   )
 }
 
-function SplitDiffRow({ req, baseRole, targetRole }: { req: SplitDiffRequirement; baseRole: string; targetRole: string }) {
-  const { id, text, source_quote, verdict, quote, rationale, next_step } = req
-  const evClass = verdict === 'met' ? 'rv__sd-side--met' : verdict === 'partial' ? 'rv__sd-side--partial' : 'rv__sd-side--gap'
-  const rowClass = verdict === 'met' ? 'rv__sd-row--met' : verdict === 'partial' ? 'rv__sd-row--partial' : 'rv__sd-row--gap'
-  const mark = VERDICT_MARK[verdict]
-
+function SplitDiffNote({ req, targetRole }: { req: SplitDiffRequirement; targetRole: string }) {
+  const { verdict, rationale, next_step, quote } = req
   return (
-    <div className={`rv__sd-row ${rowClass}`}>
-      <div className="rv__sd-side rv__sd-side--req">
-        <div className="rv__sd-req-top">
-          <span className="rv__sd-idx">{id}</span>
-          <span className="rv__sd-req-title">{text}</span>
+    <div className={`rv__sd-note rv__sd-note--${verdict}`}>
+      <span className="rv__sd-note-head">
+        <span className="rv__sd-note-nv">{VERDICT_LABEL[verdict]}</span>
+        <QuoteCue quote={quote} targetRole={targetRole} />
+      </span>
+      {rationale && <p className="rv__sd-note-rationale">{rationale}</p>}
+      {next_step && (
+        <div className="rv__sd-note-next">
+          <span className="tag">보완점</span>
+          <span className="step">{next_step}</span>
         </div>
-        {source_quote && (
-          <div className="rv__sd-dquote">
-            <span className="rv__sd-mk">|</span>
-            <p className="rv__sd-quote">
-              <span className="rv__sd-quote-text">{source_quote}</span>
-              <span className="rv__sd-prov">{baseRole} 원문</span>
-            </p>
-          </div>
-        )}
-      </div>
-
-      <div className="rv__sd-rail">
-        <span className="rv__sd-node" />
-      </div>
-
-      <div className={`rv__sd-side ${evClass}`}>
-        <span className="rv__sd-verdict">
-          <span className="rv__sd-vm">{mark}</span>
-          {VERDICT_LABEL[verdict]}
-        </span>
-
-        {quote && (
-          <div className="rv__sd-dquote">
-            <span className="rv__sd-mk">{mark}</span>
-            <p className="rv__sd-quote">
-              <span className="rv__sd-quote-text">{quote}</span>
-              <span className="rv__sd-prov">{targetRole} 원문</span>
-            </p>
-          </div>
-        )}
-
-        {verdict === 'gap' && !quote && (
-          <p className="rv__sd-gapmiss">{targetRole}에서 근거를 찾지 못했어요</p>
-        )}
-
-        {rationale && (
-          <p className="rv__sd-rationale">
-            <span className="k">판정 근거</span>
-            <span>{rationale}</span>
-          </p>
-        )}
-
-        {next_step && (
-          <div className="rv__sd-next">
-            <span className="tag">보완점</span>
-            <span className="step">{next_step}</span>
-          </div>
-        )}
-      </div>
+      )}
     </div>
+  )
+}
+
+// 시안 3 · 인라인 배지형 — 형광펜 그은 문구 바로 뒤에 verdict pill을 붙인다. 기본은 한 줄이고,
+// gap/partial 항목만 정보 손실 방지를 위해 보조 줄로 next_step을 보여준다(met은 보조 줄 없음).
+function SplitDiffInlineLayout({ requirements, targetRole }: { requirements: SplitDiffRequirement[]; targetRole: string }) {
+  return (
+    <ul className="rv__sd-inline">
+      {requirements.map((req) => (
+        <li key={req.id}>
+          <div className="rv__sd-inline-row">
+            <SplitDiffHighlight req={req} />
+            <span className={`rv__sd-vpill rv__sd-vpill--${req.verdict}`}>
+              {VERDICT_MARK[req.verdict]} {VERDICT_PILL_LABEL[req.verdict]}
+            </span>
+            <QuoteCue quote={req.quote} targetRole={targetRole} />
+          </div>
+          {req.verdict !== 'met' && req.next_step && (
+            <p className="rv__sd-inline-sub">{req.next_step}</p>
+          )}
+        </li>
+      ))}
+    </ul>
   )
 }
 
