@@ -1,5 +1,12 @@
 /* ============ 인사이트 위젯 (.ins-*) — report.md Wow-Point + 통계 탭 확장 ============ */
 
+.ins-empty {
+  font-size: 13px;
+  color: var(--c-muted);
+  padding: 24px 2px;
+  text-align: center;
+}
+
 .ins-legend {
   display: flex;
   align-items: center;
