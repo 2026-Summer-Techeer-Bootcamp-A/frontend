@@ -798,12 +798,12 @@ export function CardModeToggle({ mode, onChange }: { mode: CardMode; onChange: (
 /* ---------- 슬라이딩 세그먼트(탭 셀렉터 공통) — toss-details.css의 .td-seg 패턴을
    앱 전역에서 재사용할 수 있도록 일반화. 인디케이터가 스프링으로 미끄러진다. ---------- */
 export function SegmentedControl({
-  options, value, onChange, size = 'md',
-}: { options: { key: string; label: string }[]; value: string; onChange: (key: string) => void; size?: 'md' | 'sm' }) {
+  options, value, onChange, size = 'md', className = '',
+}: { options: { key: string; label: string }[]; value: string; onChange: (key: string) => void; size?: 'md' | 'sm'; className?: string }) {
   const idx = Math.max(0, options.findIndex((o) => o.key === value))
   const n = options.length
   return (
-    <div className={`kit-segctl${size === 'sm' ? ' sm' : ''}`}>
+    <div className={`kit-segctl${size === 'sm' ? ' sm' : ''}${className ? ` ${className}` : ''}`}>
       <div className="kit-segctl__pill" style={{ width: `calc(${100 / n}% - 4px)`, left: `calc(${(100 / n) * idx}% + 2px)` }} />
       {options.map((o) => (
         <button key={o.key} className={value === o.key ? 'on' : ''} onClick={() => onChange(o.key)}>{o.label}</button>

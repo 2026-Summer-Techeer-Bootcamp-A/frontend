@@ -556,3 +556,61 @@ export function TechMoversBar() {
     </div>
   )
 }
+
+/* ============================================================
+   시장 인기 기술 위젯 — 히트 스트립 (시안 2c)
+   기술마다 연도별 점유율을 히트 셀로 깔고 오른쪽에 최신 비율 + 등락 배지를
+   붙인다. 월별 데이터는 없음 — techYearly가 가진 해상도는 연도(2022~2025,
+   jumpit 단일소스)뿐이라 셀 라벨도 연도로 표기한다(월별을 지어내지 않음).
+   같은 이유로 techYearly에 없는 기술(예: JavaScript, React 등 skillShare
+   상위권)은 이 위젯엔 등장하지 않는다 — 순위가 아니라 "연도 추이가 실측된
+   기술"만 다루는 별도 관점의 위젯이라는 뜻. 국내(jumpit) 단일 소스라 풀
+   토글과 무관하게 항상 국내 값을 보여주며 배지로 이를 밝힌다. */
+export function TechDemandHeatStrip({ onSelect }: { onSelect?: (tech: string) => void }) {
+  const rows = useMemo(
+    () => [...YEARLY.series].sort((a, b) => b.shares[b.shares.length - 1] - a.shares[a.shares.length - 1]),
+    [],
+  )
+  const globalMax = useMemo(() => Math.max(...YEARLY.series.flatMap((r) => r.shares)), [])
+
+  return (
+    <div className="ins-heat">
+      <div className="ins-scopebadge">국내 전용 · {YEARLY.source} 단일 소스</div>
+      <div className="ins-heat__rows">
+        {rows.map((r) => {
+          const current = r.shares[r.shares.length - 1]
+          const rising = r.delta >= 0
+          return (
+            <button
+              type="button"
+              className="ins-heat__row"
+              key={r.tech}
+              onClick={() => onSelect?.(r.tech)}
+            >
+              <span className="ins-heat__k"><TechIcon tech={r.tech} size={16} /> {r.tech}</span>
+              <span className="ins-heat__cells">
+                {r.shares.map((v, i) => (
+                  <i key={YEARLY.years[i]} style={{ opacity: Math.max(0.14, v / globalMax) }} />
+                ))}
+              </span>
+              <span className="ins-heat__v">
+                {current}%
+                <span className={`ins-heat__badge ${rising ? 'up' : 'down'}`}>
+                  {rising ? '▲' : '▼'}{Math.abs(r.delta)}
+                </span>
+              </span>
+            </button>
+          )
+        })}
+      </div>
+      <div className="ins-heat__yscale">
+        <span className="ins-heat__yscale-spacer" />
+        <span className="ins-heat__yscale-cells">
+          {YEARLY.years.map((y) => <span key={y}>{y}</span>)}
+        </span>
+        <span className="ins-heat__yscale-spacer" />
+      </div>
+      <AsOf asOf={YEARLY.asOf} n={YEARLY.N} note="연도별 셀 · 월별 데이터는 미보유" />
+    </div>
+  )
+}
