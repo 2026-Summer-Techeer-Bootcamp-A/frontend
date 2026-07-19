@@ -1,4 +1,4 @@
-// 데모 시나리오 — 프리셋 칩(하단 rc__chips·빈 상태 rc__suggest-card)의 시드 데이터.
+// 데모 시나리오 — 프리셋 칩(하단 rc__chips·빈 상태 CommandPalette의 rc__palette-item)의 시드 데이터.
 // RagConsole은 이 중 chip(칩 라벨)·userQ(실제로 보내는 질문)만 쓴다 — 클릭하면 userQ를 실 백엔드
 // /chat/stream으로 그대로 보내 진짜 응답을 받아온다(칩은 가짜 답변을 재생하지 않는다).
 // thinking/query/vizLabel/viz/answer/n은 DemoScenario 타입을 채우기 위한 예시성 참고 데이터로,
