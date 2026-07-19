@@ -1,9 +1,7 @@
 import type { PostingPostingPayload, ResumeMarketPayload, ResumePostingPayload, SplitDiffPayload, ToolResult, ToolResultKind } from './chatContract'
-import SkillDiff from './viz/SkillDiff'
-import PostingDiff from './viz/PostingDiff'
 import ResumeMarketCard from './viz/ResumeMarketCard'
-import CoverageRing from './viz/CoverageRing'
 import { SplitDiff } from './viz/SplitDiff'
+import { postingPostingToSplitDiff, resumePostingToSplitDiff } from './viz/comparisonAdapter'
 
 // 결과 카드 시스템(스펙 4장) — turn.results 중 비교 5종(resume_posting/posting_posting/
 // resume_market/resume_posting_llm/posting_posting_llm) kind만 골라 전용 카드로 렌더하는
@@ -43,39 +41,16 @@ export function ComparisonCard({ result }: { result: ToolResult }) {
       if (!Array.isArray(c.matched_skills) || !Array.isArray(c.missing_skills)) {
         return <CompareError />
       }
-      return (
-        <div className="rc__viz-box rv__comparecard">
-          <div className="rc__viz-header">
-            <span className="rc__viz-title">{c.resume_title} ↔ {c.posting_title}</span>
-          </div>
-          <div className="rv__rp-body">
-            <CoverageRing
-              score={c.coverage_pct}
-              ownedCount={c.matched_skills.length}
-              totalCount={c.matched_skills.length + c.missing_skills.length}
-              size={112}
-            />
-            <SkillDiff matched={c.matched_skills} missing={c.missing_skills} extra={c.extra_skills} />
-          </div>
-        </div>
-      )
+      // 태그 기반 간이 비교도 SplitDiff로 흡수한다(항상 같은 비교 UI를 쓴다는 요구사항).
+      return <SplitDiff payload={resumePostingToSplitDiff(c)} />
     }
     case 'posting_posting': {
       const c = result.compare as PostingPostingPayload
       if (!Array.isArray(c.shared) || !Array.isArray(c.onlyA) || !Array.isArray(c.onlyB)) {
         return <CompareError />
       }
-      return (
-        <div className="rc__viz-box rv__comparecard">
-          <div className="rc__viz-header">
-            <span className="rc__viz-title">{c.postingA} ↔ {c.postingB}</span>
-          </div>
-          <PostingDiff shared={c.shared} onlyA={c.onlyA} onlyB={c.onlyB} labelA={`${c.postingA}만`} labelB={`${c.postingB}만`} />
-          <div className="rv__pd-summary">
-            공통 {c.shared.length}개 · {c.postingA} 고유 {c.onlyA.length} · {c.postingB} 고유 {c.onlyB.length}
-          </div>
-        </div>
-      )
+      // 태그 기반 간이 비교도 SplitDiff로 흡수한다(항상 같은 비교 UI를 쓴다는 요구사항).
+      return <SplitDiff payload={postingPostingToSplitDiff(c)} />
     }
     case 'resume_market': {
       const c = result.compare as ResumeMarketPayload
