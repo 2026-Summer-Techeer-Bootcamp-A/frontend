@@ -29,6 +29,48 @@ function WidgetCard({ label, onOpen, children }: { label: string; onOpen?: () =>
 }
 
 
+/* ---------- 1c. 마감 캘린더 스트립 ----------
+   이번 주(월~일) 요일별로 북마크·매칭 50%+ 공고의 마감을 점으로 찍고, 오늘 위치를 강조한다.
+   데이터는 CareerDashboard가 이미 계산해둔 poolPostings/savedKeys를 그대로 재사용하고(새 API
+   없음), 마감 정보가 없는 날은 점을 비운다. 호출부에서 candidates가 비면 위젯 자체를
+   렌더링하지 않아 빈 밴드가 뜨는 걸 막는다. */
+export type WeekDay = { iso: string; dow: string; dn: number; isToday: boolean; dotCount: number }
+export type WeekDeadlineJob = { id: string; company: string; title: string; matchPct?: number; dday: number; dowLabel: string }
+
+export function DeadlineCalendarStrip({
+  days, jobs, onOpen,
+}: { days: WeekDay[]; jobs: WeekDeadlineJob[]; onOpen: (id: string) => void }) {
+  return (
+    <div className="kit-cal">
+      <div className="kit-cal__eyebrow">이번 주 마감</div>
+      <div className="kit-cal__strip">
+        {days.map((d) => (
+          <div key={d.iso} className={`kit-cal__day${d.isToday ? ' today' : d.dotCount ? ' has' : ''}`}>
+            <div className="kit-cal__dow">{d.isToday ? '오늘' : d.dow}</div>
+            <div className="kit-cal__dn">{d.dn}</div>
+            <div className="kit-cal__dots">
+              {Array.from({ length: Math.min(d.dotCount, 3) }).map((_, i) => <i key={i} />)}
+            </div>
+          </div>
+        ))}
+      </div>
+      {jobs.length > 0 && (
+        <div className="kit-cal__jobs">
+          {jobs.map((j) => (
+            <button key={j.id} type="button" className="kit-cal__job" onClick={() => onOpen(j.id)}>
+              <span className="kit-cal__jt">
+                {j.title}
+                <small>{j.company} · {j.dowLabel} 마감{j.matchPct != null ? ` · 매칭 ${j.matchPct}%` : ''}</small>
+              </span>
+              <span className="kit-cal__jd">D-{j.dday}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 /* ---------- 1. 마감임박 × 매칭도 ---------- */
 export type DeadlinePosting = { id: string; company: string; title: string; matchPct?: number; dday: number }
 export function DeadlineMatchWidget({

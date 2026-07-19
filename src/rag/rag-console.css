@@ -9,7 +9,7 @@
 }
 
 /* 헤더 */
-.rc__head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.rc__head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; position: relative; }
 .rc__avatar { width: 32px; height: 32px; border-radius: 10px; background: #eef3fb; color: #0b0b0c;
   display: grid; place-items: center; }
 .rc__nm { font-size: 14px; font-weight: 700; color: #1c1d21; letter-spacing: -0.2px; }
@@ -217,9 +217,10 @@
 .rc__empty { font-size: 13px; color: #a2a6b0; padding: 10px 2px; }
 .rc__turn { display: flex; flex-direction: column; gap: 10px; }
 
-/* === 빈 상태 히어로 — 대화 시작 전 ChatGPT류 중앙 정렬 그리팅 + 추천 질문 카드.
+/* === 빈 상태 히어로(CommandPalette, 2c/4c) — 대화 시작 전 중앙 정렬 그리팅 + 커맨드 팔레트.
    .rc__body의 유일한 자식일 때 flex:1로 남는 공간을 다 먹으면서 내용을 세로+가로 중앙에 둔다.
-   기존 rc__* 규칙과 달리, 여기서부터 새로 추가하는 규칙은 테마 캐스케이드 토큰(var(--c-*))을 쓴다. */
+   기존 rc__* 규칙과 달리, 여기서부터 새로 추가하는 규칙은 테마 캐스케이드 토큰(var(--c-*))을 쓴다.
+   팔레트 자체 스타일(.rc__palette-*)은 아래 "커맨드 팔레트 빈 상태" 블록에 있다. */
 .rc__hero {
   flex: 1;
   min-height: 0;
@@ -237,26 +238,6 @@
 }
 .rc__hero-greet { font-size: 19px; font-weight: 700; color: var(--c-ink); letter-spacing: -0.3px; }
 .rc__hero-sub { font-size: 13px; color: var(--c-muted); margin: 6px 0 22px; }
-
-/* 추천 질문 카드 — 컨테이너 폭에 맞춰 auto-fit으로 2열↔1열이 자연스럽게 접힌다(좁은 분할 뷰 대응). */
-.rc__suggest {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 10px; width: 100%; max-width: 560px;
-}
-.rc__suggest-card {
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  text-align: left; background: var(--c-chipbg); border: none; border-radius: var(--c-radius, 12px);
-  padding: 12px 14px; cursor: pointer; transition: transform .12s ease;
-}
-.rc__suggest-card:hover { transform: translateY(-1px); }
-.rc__suggest-card:active { transform: scale(0.98); }
-.rc__suggest-card:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-.rc__suggest-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.rc__suggest-title { font-size: 13px; font-weight: 700; color: var(--c-ink); }
-.rc__suggest-q {
-  font-size: 11.5px; color: var(--c-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.rc__suggest-chev { flex: none; color: var(--c-muted); opacity: 0.6; }
 
 /* 로딩 스켈레톤 — 단일 뉴트럴 톤, 무지개 시머 금지 */
 .rc__skeleton { display: flex; flex-direction: column; gap: 7px; padding: 2px 0; }
@@ -335,8 +316,6 @@
 /* 모바일 — 셸 카드 없이 프레임리스로 렌더되므로 자체 여백을 확보한다 */
 @media (max-width: 1023px) {
   .rc { padding: 16px; min-height: 100dvh; }
-  /* 좁은 화면에서는 추천 카드를 1열로 접어 가독성을 유지한다(auto-fit으로도 대부분 커버되지만 명시적으로 고정) */
-  .rc__suggest { grid-template-columns: 1fr; }
 }
 
 /* 모바일(≤480px, 스펙 1.8의 390 기준을 포함) — 칩 트레이는 폭을 넘지 않게 가로 스크롤,
@@ -389,56 +368,74 @@
   width: 100%;
 }
 
-/* === 분석 과정 타임라인(ProcessTimeline) — 접히는 스테퍼(스펙 2.4). rc__think 톤을 확장한다.
-   진행 중엔 자동 펼침, 완료 500ms 후 자동 접힘(요약 헤더만), 수동 토글은 항상 존중. === */
-.rc__timeline { display: flex; flex-direction: column; }
-.rc__timeline-head {
-  display: flex; align-items: center; gap: 7px; width: 100%;
-  background: transparent; border: none; padding: 4px 2px; cursor: pointer; font-family: inherit; text-align: left;
+/* === 파이프라인 계기판(PipelineDashboard, 1a) — 옛 접히는 타임라인을 대체한다. plan → 실행된
+   도구 스텝 → 종합을 가로 노드 레일로 그린다. 노드 개수는 고정 5개가 아니라 실제로 도착한
+   step(kind==='tool') 프레임 수만큼 동적으로 늘어난다(위 PipelineDashboard.tsx 주석 참고). */
+.rc__pipe { display: flex; flex-direction: column; gap: 14px; padding: 2px; animation: rc-fade .3s ease both; }
+.rc__pipe-top { display: flex; justify-content: flex-end; }
+.rc__pipe-timer {
+  font-family: 'SF Mono', ui-monospace, monospace; font-size: 11px; color: #7c7f88; font-variant-numeric: tabular-nums;
 }
-.rc__timeline-head:focus-visible { outline: 2px solid #28539c; outline-offset: 1px; border-radius: 4px; }
-.rc__timeline-head-icon { display: inline-flex; color: #0b0b0c; flex: none; }
-.rc__timeline-head-icon--error { color: #c8382d; }
-.rc__timeline-head-icon--loading { color: #5b5e66; }
-.rc__timeline-spin { animation: rc-spin 0.9s linear infinite; }
-@keyframes rc-spin { to { transform: rotate(360deg); } }
-.rc__timeline-head-label {
-  flex: 1; min-width: 0; font-size: 10.5px; font-weight: 700; letter-spacing: 0.02em; color: #5b5e66;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.rc__timeline-toggle { display: inline-flex; align-items: center; gap: 3px; font-size: 10.5px; font-weight: 600; color: #a2a6b0; flex: none; }
 
-.rc__timeline-body { position: relative; display: flex; flex-direction: column; padding-left: 15px; margin-top: 2px; }
-.rc__timeline-row {
-  /* minmax(0, ...)가 핵심 — 그냥 1fr/auto만 쓰면 grid item의 기본 min-width가 콘텐츠
-     전체 폭(min-content)이 되어(특히 white-space: nowrap 라벨은 줄어들 수조차 없다) 라벨이
-     공간을 다 차지해버리고, 오른쪽 meta 칸은 뒤에서 강제로 몇 글자만 겨우 보이게 짜부라진다.
-     min-width: 0으로 두 칸 모두 실제로 줄어들 수 있게 풀어줘야 ellipsis가 의미 있게 동작한다. */
-  position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 46%);
-  column-gap: 8px; align-items: baseline;
-  padding: 4px 0; font-size: 12.5px; animation: rc-rise .3s cubic-bezier(0,0,0.2,1) both;
+.rc__pipe-rail { position: relative; display: flex; gap: 4px; padding-top: 2px; }
+.rc__pipe-track {
+  content: ''; position: absolute; left: 22px; right: 22px; top: 21px; height: 2px; background: #e2e5ec; border-radius: 2px;
 }
-/* 세로 커넥터 — 각 행의 다음 행까지 이어지는 1px 선분. 도트는 ::after로 그 위에 얹는다. */
-.rc__timeline-row:not(:last-child)::before {
-  content: ''; position: absolute; left: -12px; top: 13px; bottom: -5px; width: 1px; background: #e2e5ec;
+.rc__pipe-progress {
+  position: absolute; left: 22px; top: 21px; height: 2px; border-radius: 2px; background: #0b0b0c;
+  transition: width .5s cubic-bezier(0.25,0.1,0.25,1);
 }
-.rc__timeline-row::after {
-  content: ''; position: absolute; left: -15px; top: 6px; width: 6px; height: 6px; border-radius: 999px; background: #cdd2db;
+.rc__pipe-rail--error .rc__pipe-progress { background: #c8382d; }
+
+.rc__pipe-node { flex: 1 1 0; min-width: 56px; display: flex; flex-direction: column; align-items: center; gap: 8px; position: relative; z-index: 1; }
+.rc__pipe-bead {
+  width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center;
+  background: #fff; border: 1.5px solid #e2e5ec; color: #a2a6b0; transition: all .25s ease;
 }
-.rc__timeline-row--done::after { background: #0b0b0c; }
-.rc__timeline-row--active::after { background: #0b0b0c; animation: rc-pulse 1.1s ease-in-out infinite; }
-.rc__timeline-row--error::after { background: #c8382d; }
-.rc__timeline-label {
-  min-width: 0; color: #1c1d21; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+.rc__pipe-nlabel { font-size: 10.5px; font-weight: 600; color: #a2a6b0; text-align: center; letter-spacing: -0.1px; }
+.rc__pipe-chip {
+  font-size: 9.5px; font-weight: 700; padding: 3px 8px; border-radius: 999px;
+  background: #fff; border: 1px solid #e2e5ec; color: #a2a6b0; white-space: nowrap; text-align: center;
 }
-.rc__timeline-row--pending .rc__timeline-label { color: #a2a6b0; font-weight: 500; }
-.rc__timeline-row--active .rc__timeline-label { color: #1c1d21; }
-.rc__timeline-meta {
-  min-width: 0; color: #7c7f88; font-size: 11px; text-align: right; white-space: nowrap; overflow: hidden;
-  text-overflow: ellipsis; font-variant-numeric: tabular-nums;
+
+.rc__pipe-node--done .rc__pipe-bead { background: #0b0b0c; border-color: #0b0b0c; color: #fff; }
+.rc__pipe-node--done .rc__pipe-nlabel { color: #1c1d21; }
+.rc__pipe-node--done .rc__pipe-chip { color: #1c1d21; border-color: #cdd2db; }
+
+.rc__pipe-node--active .rc__pipe-bead {
+  border-color: #0b0b0c; color: #0b0b0c; background: #fff; box-shadow: 0 0 0 4px rgba(11,11,12,0.08);
+  animation: rc-pipe-glow 1.8s ease-in-out infinite;
 }
-.rc__timeline-row--active .rc__timeline-meta { color: #5b5e66; }
-.rc__timeline-row--error .rc__timeline-label { color: #8f2a22; }
+@keyframes rc-pipe-glow { 0%,100% { box-shadow: 0 0 0 3px rgba(11,11,12,0.06); } 50% { box-shadow: 0 0 0 7px rgba(11,11,12,0.12); } }
+.rc__pipe-bead--spin svg { animation: rc-spin 1.4s linear infinite; }
+@keyframes rc-spin { to { transform: rotate(360deg); } }
+.rc__pipe-node--active .rc__pipe-nlabel { color: #1c1d21; }
+.rc__pipe-node--active .rc__pipe-chip { color: #1c1d21; border-color: #cdd2db; position: relative; overflow: hidden; }
+.rc__pipe-chip--shimmer::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(100deg, transparent 20%, rgba(11,11,12,0.08) 50%, transparent 80%);
+  animation: rc-pipe-shimmer 1.6s linear infinite;
+}
+@keyframes rc-pipe-shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+.rc__pipe-node--error .rc__pipe-bead { border-color: #c8382d; color: #c8382d; background: #fbe9e7; }
+.rc__pipe-node--error .rc__pipe-nlabel { color: #8f2a22; }
+.rc__pipe-node--error .rc__pipe-chip { color: #8f2a22; border-color: #f5d2cd; background: #fbe9e7; }
+
+.rc__pipe-foot { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #7c7f88; flex-wrap: wrap; }
+.rc__pipe-foot--done { color: #1c7a4d; }
+.rc__pipe-foot--error { color: #8f2a22; }
+.rc__pipe-mini { margin-left: auto; display: flex; gap: 10px; }
+.rc__pipe-mini span {
+  font-family: 'SF Mono', ui-monospace, monospace; font-size: 10.5px; color: #5b5e66; font-variant-numeric: tabular-nums;
+  background: #f6f8fc; border-radius: 6px; padding: 2px 7px;
+}
+
+@media (max-width: 560px) {
+  .rc__pipe-rail { flex-wrap: wrap; row-gap: 14px; }
+  .rc__pipe-track, .rc__pipe-progress { display: none; }
+  .rc__pipe-node { flex: 1 1 30%; min-width: 76px; }
+}
 
 /* === 비교 카드(ComparisonCards) — 이력서↔공고 / 공고↔공고 / 이력서↔시장 3종(스펙 3·4장).
    기존 rc__viz-box/rc__viz-header/rc__viz-title 크롬을 그대로 재사용해 새 시각 언어를 만들지 않는다. */
@@ -661,3 +658,121 @@
   font-family: 'SF Mono', ui-monospace, monospace;
   overflow-wrap: anywhere;
 }
+
+/* === 비교 보드(ComparisonBoard, 4b) — 헤더 우측 토글 + 접이식 드로어. 지금까지 비교한 공고를
+   카드로 쌓아두고, 카드를 누르면 그 공고와 재비교 질문을 자동 구성해 보낸다. === */
+.rc__board-toggle {
+  display: inline-flex; align-items: center; gap: 5px; margin-left: auto; flex: none;
+  background: #f6f8fc; border: 1px solid #e2e5ec; border-radius: 999px; padding: 6px 10px;
+  color: #5b5e66; cursor: pointer; font-family: inherit;
+}
+.rc__board-toggle:hover { background: #eef1f6; color: #1c1d21; }
+.rc__board-toggle[aria-expanded="true"] { background: #eef3fb; border-color: #dde8f9; color: #1c1d21; }
+.rc__board-toggle-cnt {
+  font-family: 'SF Mono', ui-monospace, monospace; font-size: 10.5px; font-weight: 700;
+  background: #0b0b0c; color: #fff; border-radius: 999px; min-width: 16px; height: 16px;
+  display: inline-flex; align-items: center; justify-content: center; padding: 0 4px;
+}
+.rc__board {
+  position: absolute; top: 54px; right: 0; width: 300px; max-width: calc(100vw - 32px); max-height: 60vh;
+  display: flex; flex-direction: column; background: #fff; border: 1px solid #e2e5ec; border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(20,30,60,0.1), 0 2px 6px rgba(20,30,60,0.06); z-index: 30;
+  animation: rc-pickerpop 0.25s cubic-bezier(0.175,0.885,0.32,1.275) both;
+}
+.rc__board-head {
+  display: flex; align-items: center; gap: 7px; padding: 12px 12px 10px; font-size: 12px; font-weight: 700; color: #1c1d21;
+  border-bottom: 1px solid #eef1f6;
+}
+.rc__board-head-cnt { font-size: 10.5px; font-weight: 600; color: #a2a6b0; font-variant-numeric: tabular-nums; }
+.rc__board-close { margin-left: auto; border: none; background: transparent; color: #a2a6b0; cursor: pointer; display: grid; place-items: center; padding: 2px; }
+.rc__board-close:hover { color: #1c1d21; }
+.rc__board-list { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; overflow-y: auto; }
+.rc__board-card { display: flex; align-items: center; gap: 4px; }
+.rc__board-card-main {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; text-align: left;
+  border: 1px solid #e2e5ec; border-radius: 12px; padding: 9px 10px; background: #fff; cursor: pointer; font-family: inherit;
+  transition: border-color .15s ease, background .15s ease;
+}
+.rc__board-card-main:hover { border-color: #bcd0f0; background: #f9fafc; }
+.rc__board-card-main:disabled { opacity: 0.5; cursor: not-allowed; }
+.rc__board-card-logo {
+  width: 28px; height: 28px; border-radius: 8px; background: #eef1f6; color: #5b5e66; font-weight: 800; font-size: 11px;
+  display: grid; place-items: center; flex: none;
+}
+.rc__board-card-info { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 1px; }
+.rc__board-card-title { font-size: 12px; font-weight: 700; color: #1c1d21; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rc__board-card-meta { font-size: 10.5px; color: #a2a6b0; }
+.rc__board-card-fit {
+  font-size: 10px; font-weight: 700; color: #1c7a4d; background: #e6f5ed; border-radius: 999px; padding: 3px 8px; white-space: nowrap; flex: none;
+}
+.rc__board-card-x { flex: none; border: none; background: transparent; color: #a2a6b0; cursor: pointer; display: grid; place-items: center; padding: 4px; }
+.rc__board-card-x:hover { color: #c8382d; }
+.rc__board-hint {
+  display: flex; align-items: center; gap: 6px; font-size: 10.5px; color: #a2a6b0; padding: 8px 12px 10px; border-top: 1px solid #eef1f6;
+}
+
+/* === 커맨드 팔레트 빈 상태(CommandPalette, 2c) — 옛 카드 그리드 히어로를 대체한다. 실제 컴포저
+   textarea 값을 그대로 받아 demoScenarios를 실시간으로 필터링해 보여준다. === */
+.rc__palette { width: 100%; max-width: 560px; text-align: left; border: 1px solid #d4d4d8; border-radius: 16px;
+  background: #fff; box-shadow: 0 1px 2px rgba(20,30,60,0.05), 0 12px 32px rgba(20,30,60,0.08); overflow: hidden; }
+.rc__palette-group-h { font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #a2a6b0; padding: 12px 16px 6px; }
+.rc__palette-item {
+  display: flex; align-items: center; gap: 11px; width: 100%; padding: 10px 16px; border: none; background: transparent;
+  cursor: pointer; font-family: inherit; text-align: left;
+}
+.rc__palette-item:hover, .rc__palette-item:focus-visible { background: #f6f8fc; }
+.rc__palette-item:disabled { opacity: 0.5; cursor: not-allowed; }
+.rc__palette-ic { width: 28px; height: 28px; border-radius: 9px; background: #eef1f6; border: 1px solid #e2e5ec; color: #1c1d21;
+  display: grid; place-items: center; flex: none; }
+.rc__palette-text { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.rc__palette-title { font-size: 13px; font-weight: 700; color: #1c1d21; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rc__palette-sub { font-size: 11px; color: #7c7f88; }
+.rc__palette-empty { padding: 16px; font-size: 12px; color: #a2a6b0; text-align: center; }
+
+/* 4c 첨부 딥링크 착지 — 팔레트 위에 배너 + 첨부 칩을 얹는다. */
+.rc__land-banner {
+  display: flex; align-items: center; gap: 9px; padding: 9px 12px; background: #eef3fb; border: 1px solid #dde8f9;
+  border-radius: 11px; font-size: 11.5px; color: #1c1d21; margin-bottom: 12px; width: 100%; max-width: 560px;
+}
+.rc__land-banner b { font-weight: 700; }
+.rc__land-achips { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 12px; width: 100%; max-width: 560px; justify-content: center; }
+
+/* === 리포트 카드(ReportCard, 3a) — FinalBlock 상단에 얹는 헤드라인 + 미니 요약 스트립 + 다음
+   액션. 카드 왼쪽 세로 액센트 보더는 쓰지 않는다(AI 클리셰 지적으로 SplitDiff에서도 이미 제거된
+   패턴) — 대신 스코어 배지 색과 배경 틴트로 상태를 구분한다. */
+.rc__report { display: flex; flex-direction: column; gap: 12px; padding: 13px 15px; background: #f6f8fc; border: 1px solid #e2e5ec; border-radius: 14px; }
+.rc__report-head { display: flex; align-items: flex-start; gap: 13px; }
+.rc__report-score { flex: none; text-align: center; width: 52px; }
+.rc__report-score-v { font-size: 22px; font-weight: 800; letter-spacing: -0.8px; line-height: 1; font-variant-numeric: tabular-nums; color: #1c1d21; }
+.rc__report-score-l { font-size: 9px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #a2a6b0; margin-top: 3px; }
+.rc__report-headline { min-width: 0; flex: 1; font-size: 13.5px; font-weight: 700; color: #1c1d21; line-height: 1.45; letter-spacing: -0.2px; }
+.rc__report-strip { display: flex; gap: 8px; flex-wrap: wrap; }
+.rc__report-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 4px 10px; }
+.rc__report-pill--met { color: #1c7a4d; background: #e6f5ed; }
+.rc__report-pill--partial { color: #c76a2e; background: #fbeee2; }
+.rc__report-pill--gap { color: #8f2a22; background: #fbe9e7; }
+.rc__report-cta {
+  display: inline-flex; align-items: center; gap: 7px; align-self: flex-start; border-radius: 11px; padding: 9px 14px;
+  font-size: 12.5px; font-weight: 700; font-family: inherit; cursor: pointer; border: 1px solid #e2e5ec; background: #fff; color: #1c1d21;
+}
+.rc__report-cta:hover { background: #f6f8fc; }
+.rc__report-cta[aria-pressed="true"] { background: #0b0b0c; color: #fff; border-color: #0b0b0c; }
+.rc__report-cta:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* === 후속 질문 체인(FollowUpChips, 4d) — final 프레임 뒤, 답변 하단에 붙는다. 이전 답변 수치를
+   인용 배지로 표기해 왜 이 질문을 제안하는지 드러낸다. */
+.rc__followups { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.rc__followups-h { font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #a2a6b0; }
+.rc__followup {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 10px 13px;
+  border: 1px solid #e2e5ec; border-radius: 12px; background: #fff; cursor: pointer; font-family: inherit;
+  transition: border-color .15s ease, transform .15s ease;
+}
+.rc__followup:hover { border-color: #bcd0f0; transform: translateX(2px); }
+.rc__followup:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.rc__followup-badge {
+  font-family: 'SF Mono', ui-monospace, monospace; font-size: 9.5px; font-weight: 700; padding: 3px 7px; border-radius: 999px;
+  background: #eef1f6; color: #1c1d21; white-space: nowrap; flex: none; border: 1px solid #e2e5ec;
+}
+.rc__followup-q { flex: 1; min-width: 0; font-size: 12.5px; font-weight: 600; color: #1c1d21; letter-spacing: -0.1px; }
+.rc__followup-chev { flex: none; color: #a2a6b0; }

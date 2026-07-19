@@ -178,3 +178,78 @@
 .ins-mov__v { width: 48px; flex: none; font-size: 11.5px; font-weight: 800; text-align: right; }
 .ins-mov__v.up { color: var(--c-accent); }
 .ins-mov__v.down { color: #c8382d; }
+
+/* ---- 기술별 수요 히트 스트립 (시안 2c) ---- */
+.ins-heat__rows { display: flex; flex-direction: column; }
+.ins-heat__row {
+  display: grid;
+  grid-template-columns: 92px 1fr 68px;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 6px;
+  margin: 0 -6px;
+  border-radius: 10px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.ins-heat__row:hover, .ins-heat__row:focus-visible { background: var(--accent-50); }
+.ins-heat__k {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--c-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ins-heat__cells {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 3px;
+}
+.ins-heat__cells i {
+  display: block;
+  aspect-ratio: 1;
+  border-radius: 3px;
+  background: var(--c-accent);
+}
+.ins-heat__v {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-ink);
+}
+.ins-heat__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.ins-heat__badge.up { color: var(--c-accent); }
+.ins-heat__badge.down { color: #c8382d; }
+.ins-heat__yscale {
+  display: grid;
+  grid-template-columns: 92px 1fr 68px;
+  gap: 8px;
+  margin-top: 2px;
+}
+.ins-heat__yscale-cells {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--c-muted);
+  font-variant-numeric: tabular-nums;
+}
