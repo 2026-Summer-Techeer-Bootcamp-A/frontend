@@ -1,0 +1,176 @@
+/* 데스크톱 대시보드 채택 시안 3종(1a 액션 큐 · 2c 발표 오토 투어 · 3a 지원 가능 공고 카드)의
+   스타일. DesktopOverview.css가 잡아둔 .dov 스코프 변수(--line/--e1~3/--dov-*)와
+   DesktopShell이 주입하는 테마 변수(--c-ink/--c-muted/--c-accent/--c-card)에 얹는다.
+   카드 왼쪽 세로 액센트 보더는 쓰지 않고 배경 틴트·아이콘·색으로만 위계를 준다. */
+
+/* ---------- 발표 모드 트리거(헤더) ---------- */
+.dov__tour-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  color: var(--c-muted);
+  background: var(--c-card);
+  border: 1px solid var(--line);
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.dov__tour-trigger:hover { color: var(--c-ink); border-color: var(--accent-100); background: var(--accent-50); }
+
+/* ---------- 1a 액션 큐 ---------- */
+.dov-aq { margin-top: 12px; }
+.dov-aq__progress {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+  font-family: 'SF Mono', 'Roboto Mono', ui-monospace, monospace;
+  font-size: 10px; font-weight: 700; color: var(--c-muted); letter-spacing: 0.04em;
+}
+.dov-aq__bar { flex: 1; height: 3px; border-radius: 2px; background: var(--accent-50); overflow: hidden; }
+.dov-aq__bar i { display: block; height: 100%; background: var(--c-accent); transition: width 0.3s cubic-bezier(0.25, 0.1, 0.25, 1); }
+.dov-aq__pn { font-variant-numeric: tabular-nums; }
+
+.dov-aq__stack { position: relative; height: 158px; }
+.dov-aq__card {
+  position: absolute; left: 0; right: 0;
+  background: var(--c-card); border: 1px solid var(--line); border-radius: 14px;
+  box-shadow: var(--e2); padding: 13px 14px;
+  transition: top 0.26s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.26s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.26s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.dov-aq__card--pos0 { top: 0; z-index: 3; transform: scale(1); opacity: 1; }
+.dov-aq__card--pos1 { top: 12px; z-index: 2; transform: scale(0.97); opacity: 0.92; }
+.dov-aq__card--pos2 { top: 24px; z-index: 1; transform: scale(0.94); opacity: 0.6; }
+
+.dov-aq__row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.dov-aq__eyebrow { font-size: 11px; font-weight: 700; color: var(--c-muted); letter-spacing: 0.01em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dov-aq__dday {
+  flex: none; font-family: 'SF Mono', 'Roboto Mono', ui-monospace, monospace; font-size: 10px; font-weight: 700;
+  color: var(--dov-warning-ink); background: var(--dov-warning-bg); border-radius: 6px; padding: 2px 6px;
+  font-variant-numeric: tabular-nums;
+}
+.dov-aq__title {
+  font-size: 14px; font-weight: 700; letter-spacing: -0.3px; margin: 7px 0 10px; color: var(--c-ink);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.dov-aq__foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.dov-aq__metric { font-size: 11px; font-weight: 600; color: var(--c-muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dov-aq__metric b { color: var(--c-ink); font-weight: 700; font-variant-numeric: tabular-nums; }
+.dov-aq__btn {
+  flex: none; font-size: 11.5px; font-weight: 700; letter-spacing: -0.2px; color: #fff; background: var(--c-accent);
+  border: none; border-radius: 8px; padding: 7px 13px; cursor: pointer;
+  transition: opacity 0.2s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.1s ease;
+}
+.dov-aq__btn:hover { opacity: 0.86; }
+.dov-aq__btn:active { transform: scale(0.97); }
+.dov-aq__btn.ghost { color: var(--c-ink); background: var(--accent-50); border: 1px solid var(--line); }
+.dov-aq__btn.ghost:hover { background: var(--accent-100); opacity: 1; }
+.dov-aq__btn--preview { pointer-events: none; opacity: 0.7; cursor: default; }
+
+.dov-aq__check {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: rgba(255, 255, 255, 0.94); border-radius: 14px;
+  animation: dov-aq-check-in 0.18s cubic-bezier(0, 0, 0.2, 1) both;
+}
+.dov-aq__check-ring {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--dov-success-bg); color: var(--dov-success-ink);
+  display: flex; align-items: center; justify-content: center;
+}
+@keyframes dov-aq-check-in { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: scale(1); } }
+
+.dov-aq--empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+  gap: 5px; padding: 30px 12px;
+}
+.dov-aq__empty-icon {
+  display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%;
+  background: var(--dov-success-bg); color: var(--dov-success-ink); margin-bottom: 5px;
+}
+.dov-aq__empty-title { font-size: 14px; font-weight: 700; color: var(--c-ink); }
+.dov-aq__empty-sub { font-size: 12px; color: var(--c-muted); }
+
+/* ---------- 3a 지원 가능 공고 카드 ---------- */
+.dov-avc { display: grid; gap: 9px; margin-top: 10px; }
+.dov-avc__card {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center;
+  width: 100%; text-align: left; background: var(--c-card); border: 1px solid var(--line); border-radius: 14px;
+  padding: 12px 13px; box-shadow: var(--e1); cursor: pointer;
+  transition: box-shadow 0.2s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.dov-avc__card:hover { box-shadow: var(--e2); transform: translateY(-1px); }
+.dov-avc__card:active { transform: scale(0.99); }
+.dov-avc__ring { flex: none; display: flex; }
+.dov-avc__main { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.dov-avc__co { font-size: 10.5px; font-weight: 700; color: var(--c-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dov-avc__ti { font-size: 13px; font-weight: 700; letter-spacing: -0.3px; color: var(--c-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dov-avc__gap {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 600; color: var(--c-ink);
+  background: var(--accent-50); border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px;
+  margin-top: 4px; width: fit-content; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.dov-avc__gap i { flex: none; width: 5px; height: 5px; border-radius: 50%; background: #a1a1aa; }
+.dov-avc__dday {
+  flex: none; align-self: flex-start; font-family: 'SF Mono', 'Roboto Mono', ui-monospace, monospace;
+  font-size: 11px; font-weight: 700; color: var(--dov-warning-ink); background: var(--dov-warning-bg);
+  border-radius: 7px; padding: 4px 8px; font-variant-numeric: tabular-nums;
+}
+
+/* ---------- 2c 발표 오토 투어 ---------- */
+.dov-tour {
+  position: fixed; inset: 0; z-index: 900; cursor: pointer;
+  animation: dov-tour-fade-in 0.2s cubic-bezier(0, 0, 0.2, 1) both;
+}
+@keyframes dov-tour-fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+.dov-tour__spot {
+  position: fixed; border-radius: 18px; pointer-events: none;
+  box-shadow: 0 0 0 9999px rgba(8, 8, 10, 0.62);
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  transition: top 0.42s cubic-bezier(0.25, 0.1, 0.25, 1), left 0.42s cubic-bezier(0.25, 0.1, 0.25, 1),
+    width 0.42s cubic-bezier(0.25, 0.1, 0.25, 1), height 0.42s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.dov-tour__panel {
+  position: fixed; width: min(320px, calc(100vw - 32px));
+  background: var(--c-card, #fff); color: var(--c-ink, #18181b);
+  border-radius: 16px; box-shadow: var(--e3); padding: 14px 16px 12px; cursor: default;
+  transition: top 0.42s cubic-bezier(0.25, 0.1, 0.25, 1), left 0.42s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.dov-tour__steplabel {
+  font-family: 'SF Mono', 'Roboto Mono', ui-monospace, monospace; font-size: 10px; font-weight: 700;
+  letter-spacing: 0.06em; color: var(--c-muted); text-transform: uppercase;
+}
+.dov-tour__caption { margin-top: 6px; animation: dov-tour-caption-in 0.26s cubic-bezier(0, 0, 0.2, 1) both; }
+@keyframes dov-tour-caption-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+.dov-tour__ctitle { font-size: 12.5px; font-weight: 700; color: var(--c-muted); }
+.dov-tour__cnum {
+  display: flex; align-items: baseline; margin-top: 4px; font-size: 30px; font-weight: 800;
+  letter-spacing: -1.2px; line-height: 1; color: var(--c-ink); font-variant-numeric: tabular-nums;
+}
+.dov-tour__cnum span { margin-left: 2px; font-size: 15px; font-weight: 700; opacity: 0.6; }
+.dov-tour__ctext { margin-top: 5px; font-size: 19px; font-weight: 800; letter-spacing: -0.5px; color: var(--c-ink); }
+.dov-tour__cempty { margin-top: 6px; font-size: 13px; color: var(--c-muted); }
+.dov-tour__csub { margin-top: 6px; font-size: 11.5px; color: var(--c-muted); letter-spacing: -0.2px; }
+
+.dov-tour__controls {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line);
+}
+.dov-tour__dots { display: flex; gap: 6px; }
+.dov-tour__dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--accent-100); border: none; padding: 0; cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+.dov-tour__dot.on { background: var(--c-accent); transform: scale(1.3); }
+.dov-tour__pausebtn, .dov-tour__closebtn {
+  display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 8px;
+  color: var(--c-muted); transition: background 0.15s ease, color 0.15s ease;
+}
+.dov-tour__pausebtn:hover, .dov-tour__closebtn:hover { background: var(--accent-50); color: var(--c-ink); }
+
+@media (prefers-reduced-motion: reduce) {
+  .dov-aq__card, .dov-aq__bar i, .dov-aq__btn { transition: none; }
+  .dov-aq__check { animation: none; }
+  .dov-tour, .dov-tour__caption { animation: none; }
+  .dov-tour__spot, .dov-tour__panel, .dov-tour__dot { transition: none; }
+}

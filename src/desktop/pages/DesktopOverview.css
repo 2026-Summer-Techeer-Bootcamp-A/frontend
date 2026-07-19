@@ -11,6 +11,16 @@
   --e1: 0 1px 2px rgba(20, 30, 60, 0.05), 0 1px 1px rgba(20, 30, 60, 0.04);
   --e2: 0 2px 8px rgba(20, 30, 60, 0.06), 0 1px 2px rgba(20, 30, 60, 0.05);
   --e3: 0 8px 24px rgba(20, 30, 60, 0.08), 0 2px 6px rgba(20, 30, 60, 0.05);
+  /* 의미색 정본(design/tokens.ts palette.semantic) + AA 대비용 파생 토큰.
+     -ink는 tint/화이트 표면 위 텍스트용(4.5:1+), -d는 near-black 표면 위 배치용.
+     시안(dashboard-uiux-mockups.html) 색상 감사에서 고정된 값을 그대로 옮긴다. */
+  --dov-success: #218a58;
+  --dov-success-bg: #e6f5ed;
+  --dov-success-ink: #1a6e46;
+  --dov-warning: #c76a2e;
+  --dov-warning-bg: #fbeee2;
+  --dov-warning-ink: #9c531f;
+  --dov-danger-d: #ef6f63;
 }
 
 /* 대시보드 위젯 카드.

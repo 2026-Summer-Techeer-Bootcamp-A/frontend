@@ -1,13 +1,12 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ReactECharts from 'echarts-for-react'
-import { Sparkles, FileText, Info } from 'lucide-react'
+import { Sparkles, FileText, Info, Presentation } from 'lucide-react'
 import {
   ActivityRings, useCountUp, SectionHeader, CoverageHistogram, TechIcon,
   PreviewBadge, WidgetSettingsMenu, type RingMetric,
 } from '../../career/kit'
 import { IndustryFitRadar } from '../../career/insights'
-import { HBars } from '../../career/charts'
 import { LatestJobsTimeline } from '../../career/wowWidgets'
 import { WorkflowMap } from '../../career/workflow/WorkflowMap'
 import { useResumesState, getDynamicPostings, calculateCoverage, ddayInfo } from '../../career/state'
@@ -21,8 +20,12 @@ import { selectDisplayedCoverage } from '../../career/coverageScore'
 import { useDashboardConfig, isWidgetHidden, getWidgetSize } from '../../career/dashboardConfig'
 import { DASHBOARD_WIDGETS } from '../../career/widgetCatalog'
 import { useBookmarks } from '../../career/bookmarkStore'
+import { BriefingQueue, type QueueCard } from './dashboard/BriefingQueue'
+import { ApplyCardStack, buildApplyCards } from './dashboard/ApplyCardStack'
+import { PresentationTour, type TourZone } from './dashboard/PresentationTour'
 import data from '../../data/careerData.json'
 import './DesktopOverview.css'
+import './dashboard/dashboardWidgets.css'
 
 const asOf = data.meta.asOf
 const TOTAL = data.meta.totalPostings
@@ -333,18 +336,9 @@ export default function DesktopOverview() {
     return () => { cancelled = true }
   }, [identity, dashboardRefreshKey])
 
-  const matchedJobChart = useMemo(() => (matchedJobs ?? []).map((job) => {
-    const requiredCount = job.skills.length
-    const matchPct = requiredCount > 0
-      ? Math.round(((job.matched_count ?? 0) / requiredCount) * 100)
-      : 0
-    return {
-      label: `${job.company ?? '회사명 미상'} · ${job.title}`,
-      value: matchPct,
-      pct: matchPct,
-      owned: true,
-    }
-  }), [matchedJobs])
+  // 3a 지원 가능 공고 카드 — 기존 skill-momentum 위젯이 쓰던 matchedJobs를 그대로 재사용해
+  // 매치율 내림차순 카드 스택으로 보여준다(새 API 없음).
+  const applyCards = useMemo(() => buildApplyCards(matchedJobs, skills, asOf), [matchedJobs, skills])
   const weightedScoreEnabled = import.meta.env.VITE_MATCH_SCORE_VERSION === 'weighted-v1'
   const shownCoverage = selectDisplayedCoverage(
     coverageData.value,
@@ -383,23 +377,64 @@ export default function DesktopOverview() {
   const learnSectionRef = useRef<HTMLDivElement>(null)
   const scrollToLearning = () => learnSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
+  // 2c 발표 오토 투어 스포트라이트 대상 — 히어로존/내 시장 진단 존은 이 페이지 전용 ref로
+  // 새로 잡고, 워크플로우 맵 존은 A-3에서 이미 쓰던 learnSectionRef를 그대로 재사용한다.
+  const heroZoneRef = useRef<HTMLDivElement>(null)
+  const marketZoneRef = useRef<HTMLDivElement>(null)
+  const [tourOpen, setTourOpen] = useState(false)
+
   // 위젯 리사이즈 헬퍼 — 시장 페이지(DesktopMarket)와 동일 패턴.
   const wsize = (id: string) => {
     const item = DASHBOARD_WIDGETS.find((w) => w.id === id)!
     return getWidgetSize('dashboard', id, item.defaultSize)
   }
 
-  const briefSize = wsize('brief')
-  const briefLines: ReactNode[] = [
-    <li key="dl"><b>{deadlineSoonCount}건</b>이 곧 마감돼요</li>,
-    hasResume && (heroDataPending
-      ? <li key="app-loading" className="dov__brief-loading">맞춤 지표를 불러오는 중이에요.</li>
-      : heroDataError
-        ? <li key="app-error">맞춤 지표를 불러오지 못했어요.</li>
-        : <li key="app">지원 가능 공고 <b>{shownApplicable.toLocaleString()}건</b> · 커버리지 <b>{shownCoverage}%</b></li>),
-    hasResume && topGap[0] && <li key="gap">가장 자주 요구되는 미보유 기술: <b>{topGap[0][0]}</b></li>,
-  ].filter(Boolean) as ReactNode[]
-  const briefVisible = briefSize === '1x1' ? briefLines.slice(0, 2) : briefLines
+  // 1a 액션 큐 — "오늘 브리핑"의 세 문장(마감 임박 · 커버리지 갭 · 신규 공고)을 각각
+  // 처리 가능한 카드로 재구성한다. 데이터는 기존 브리핑 계산(deadlineInfos/nextMove/
+  // recentCount)을 그대로 재사용하고 추가 요청은 없다.
+  const nearestDeadline = useMemo(
+    () => [...deadlineInfos].sort((a, b) => a.dd.d - b.dd.d)[0] ?? null,
+    [deadlineInfos],
+  )
+  const queueCards = useMemo<QueueCard[]>(() => {
+    const items: QueueCard[] = []
+    if (nearestDeadline) {
+      items.push({
+        id: `deadline:${nearestDeadline.p.id}`,
+        kind: 'deadline',
+        eyebrow: nearestDeadline.p.company,
+        title: nearestDeadline.p.title,
+        ddayLabel: `D-${nearestDeadline.dd.d}`,
+        metricLabel: <>매칭 <b>{nearestDeadline.p.matchPct}%</b></>,
+        ctaLabel: '공고 보기',
+        onAction: () => navigate(`/job/${encodeURIComponent(nearestDeadline.p.id)}`),
+      })
+    }
+    if (hasResume && nextMove) {
+      items.push({
+        id: `roadmap:${nextMove.skill}`,
+        kind: 'roadmap',
+        eyebrow: '학습 로드맵',
+        title: `${nextMove.skill} 배우기`,
+        metricLabel: <>지금 배우면 <b>{nextMove.label}</b></>,
+        ctaLabel: '로드맵 보기',
+        ghost: true,
+        onAction: scrollToLearning,
+      })
+    }
+    if (recentCount > 0) {
+      items.push({
+        id: 'new-postings',
+        kind: 'new',
+        eyebrow: '신규 공고',
+        title: `최근 3개월 새 공고 ${recentCount.toLocaleString()}건`,
+        metricLabel: '국내 공고 기준',
+        ctaLabel: '둘러보기',
+        onAction: () => navigate('/jobs'),
+      })
+    }
+    return items
+  }, [nearestDeadline, hasResume, nextMove, recentCount, navigate])
 
   // 라벨 섹션 표시 여부 — 섹션 내 위젯이 전부 숨겨지면 섹션 헤더째로 렌더하지 않는다.
   const secMarketVisible = !isWidgetHidden('dashboard', 'industry-fit')
@@ -420,12 +455,68 @@ export default function DesktopOverview() {
   ).filter((tile): tile is Exclude<typeof tile, false> => !!tile)
   const heroCardVisible = heroScoreVisible || kpiTiles.length > 0
 
+  // 2c 발표 오토 투어 — 실제로 화면에 렌더되는 존만 스텝으로 잡는다(위젯 표시/숨김 설정에
+  // 맞춰 자동으로 줄어든다). 캡션 숫자는 히어로/시장 진단에서 이미 계산해둔 값을 그대로 쓴다.
+  const tourZones = useMemo<TourZone[]>(() => {
+    const zones: TourZone[] = []
+    if (heroCardVisible) {
+      zones.push({
+        key: 'hero',
+        ref: heroZoneRef,
+        stepLabel: 'STEP 1 · 히어로',
+        caption: {
+          title: '내 커리어 점수',
+          value: scoreData.value.coverage,
+          unit: '%',
+          sub: `국내 공고 ${scoreData.value.domesticTotal.toLocaleString()}건 · 지원 가능 ${shownApplicable.toLocaleString()}건`,
+        },
+      })
+    }
+    if (secMarketVisible) {
+      zones.push({
+        key: 'market',
+        ref: marketZoneRef,
+        stepLabel: 'STEP 2 · 내 시장 진단',
+        caption: {
+          title: '기준 통과 공고',
+          value: shownApplicable,
+          unit: '건',
+          sub: `국내 공고 ${shownTotal.toLocaleString()}건 기준`,
+        },
+      })
+    }
+    if (secLearnVisible) {
+      zones.push({
+        key: 'workflow',
+        ref: learnSectionRef,
+        stepLabel: 'STEP 3 · 로드맵',
+        caption: nextMove
+          ? { title: '다음 한 수', value: null, textValue: nextMove.skill, sub: `지금 배우면 ${nextMove.label}` }
+          : { title: '다음 한 수', value: null, emptyText: '모든 핵심 기술을 갖췄어요.' },
+      })
+    }
+    return zones
+  }, [heroCardVisible, secMarketVisible, secLearnVisible, scoreData, shownApplicable, shownTotal, nextMove])
+
   return (
     <div className="dov">
       <header className="dov__head">
         <h1 className="dov__title">{user?.nickname ? `안녕하세요, ${user.nickname}님` : '로그인하고 나만의 커리어 인사이트를 확인해보세요'}</h1>
         <div className="dov__head-r">
           <div className="dov__asof">기준일 {asOf} · 공고 {TOTAL.toLocaleString()}건</div>
+          {/* 2c 발표 오토 투어 트리거 — 개인화 데이터가 없는 게스트 상태에서는 보여줄 스텝이
+              빈약해 의미가 없으니 이력서가 있을 때만 노출한다. */}
+          {hasResume && tourZones.length > 0 && (
+            <button
+              type="button"
+              className="dov__tour-trigger"
+              onClick={() => setTourOpen(true)}
+              aria-label="발표 모드 시작"
+              title="발표 모드"
+            >
+              <Presentation size={16} />
+            </button>
+          )}
           <WidgetSettingsMenu section="dashboard" items={DASHBOARD_WIDGETS} />
         </div>
       </header>
@@ -435,6 +526,7 @@ export default function DesktopOverview() {
           {/* Zone 1 — 히어로존: 검정 카드 1개, 좌(커리어 점수) · 우(KPI 2x2) 2열. above-fold. */}
           {heroCardVisible && (
             <div
+              ref={heroZoneRef}
               className="dov__hero-card"
               style={{ gridTemplateColumns: heroScoreVisible && kpiTiles.length > 0 ? 'minmax(260px, 1fr) minmax(300px, 1fr)' : '1fr' }}
             >
@@ -511,7 +603,7 @@ export default function DesktopOverview() {
 
           {/* Zone 2 — 내 시장 진단: 업종 적합도 · 커버리지 분포 · 지금 지원할 만한 공고 */}
           {secMarketVisible && (
-            <section className="dov__sec">
+            <section className="dov__sec" ref={marketZoneRef}>
               <h2 className="dov__sec-title">내 시장 진단</h2>
               <div className="dov__sec-grid dov__sec-grid--3">
                 {!isWidgetHidden('dashboard', 'industry-fit') && (
@@ -566,14 +658,8 @@ export default function DesktopOverview() {
                         <DashboardSkeleton label="지원할 만한 공고를 불러오는 중이에요." />
                       ) : matchedJobsError ? (
                         <div className="dov__empty" role="alert">공고를 불러오지 못했어요.</div>
-                      ) : matchedJobs.length > 0 ? (
-                        <div className="dov__matched-jobs">
-                          <HBars
-                            items={matchedJobChart}
-                            unit="%"
-                            onClick={(index) => navigate(`/job/${matchedJobs[index].id}`)}
-                          />
-                        </div>
+                      ) : applyCards.length > 0 ? (
+                        <ApplyCardStack cards={applyCards} onOpen={(id) => navigate(`/job/${encodeURIComponent(id)}`)} />
                       ) : <div className="dov__empty">조건에 맞는 공고가 없어요.</div>}
                     </section>
                   </div>
@@ -604,7 +690,7 @@ export default function DesktopOverview() {
             {!isWidgetHidden('dashboard', 'brief') && (
               <section className="dcard" style={{ flex: 'none' }}>
                 <span className="dov__card-eyebrow"><Sparkles size={14} /> 오늘 브리핑</span>
-                <ul className="dov__brief">{briefVisible}</ul>
+                <BriefingQueue cards={queueCards} />
               </section>
             )}
             {!isWidgetHidden('dashboard', 'latest-timeline') && (
@@ -615,6 +701,8 @@ export default function DesktopOverview() {
           </div>
         </aside>
       </div>
+
+      <PresentationTour open={tourOpen} onClose={() => setTourOpen(false)} zones={tourZones} />
     </div>
   )
 }
