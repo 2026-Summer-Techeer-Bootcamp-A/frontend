@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Award, List, ListChecks, Maximize2, Sparkles, Workflow, X } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Award, List, Maximize2, Plus, Sparkles, Workflow, X } from 'lucide-react'
 import { SectionHeader, PreviewBadge } from '../kit'
 import { AsOf } from '../charts'
 import { useResumesState } from '../state'
@@ -27,11 +27,15 @@ const RECOMMEND_MAX_COMPANIES = 12
 const RECOMMEND_CHUNK_SIZE = 4
 
 // A-5: 목표 · 학습 워크플로우 맵 — 북마크한 공고 전부(암묵적 목표) 대신 목표 선택
-// 패널에서 "목표로 삼을 것"을 직접 골라야 한다(캔버스 위에 뜨는 플로팅 드로어). 선택된
+// 패널에서 "목표로 삼을 것"을 직접 골라야 한다. 시안 1: 예전엔 이 선택 UI가 다이어그램
+// 위에 겹치는 플로팅 드로어였는데, 위젯 헤더 바로 아래 상시 노출되는 앵커 바(선택된
+// 목표를 매칭률+삭제(X) 칩으로)와 그 옆의 "목표 추가" 팝오버로 옮겼다 — 다이어그램은
+// 그 아래 온전히 남고, 목표 추가/삭제는 팝오버 안에서 in place로 끝난다(시안 2: 위젯
+// 밖 스크롤 위치를 흔들지 않기 위해 handleToggle이 스크롤 위치를 보존한다). 선택된
 // 공고들의 요구 기술과 이력서 보유 기술을 스테이지 뷰(WorkflowStages)로 이어 "무엇을
-// 어떤 순서로 배우면 좋은가"를 보여준다. 좌표 계산·React Flow 캔버스·카테고리 클러스터
-// 노드는 전부 WorkflowStages.tsx로 옮겼다 — 이 파일은 데이터 패칭, 목표 선택, 추천 공고
-// 모달, 크게 보기 모달, 뷰(stages/list) 토글 같은 위젯 셸만 담당한다. list 뷰
+// 어떤 순서로 배우면 좋은가"를 보여준다. 좌표 계산·엣지 라우팅 등은 전부
+// WorkflowStages.tsx(+workflowLayout.ts)로 옮겼다 — 이 파일은 데이터 패칭, 목표 선택,
+// 추천 공고 모달, 크게 보기 모달, 뷰(stages/list) 토글 같은 위젯 셸만 담당한다. list 뷰
 // (WorkflowList)와 workflowShared.ts의 공용 헬퍼(분류·아바타색·매치율 등)는 그대로
 // 유지한다 — list 뷰가 여전히 그 헬퍼들을 쓴다.
 
@@ -89,7 +93,20 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
     return base.filter((id) => bookmarkIdSet.has(id))
   }, [touched, storedSelected, bookmarkIds, bookmarkIdSet])
   const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds])
-  const handleToggle = (id: string) => toggleGoalId(id, selectedIds)
+  // 시안 2: 목표를 고르면 "선택 없음" 안내 -> 전체 다이어그램으로 위젯 높이가 크게
+  // 바뀐다. 위젯 자체엔 overflow-anchor: none을 걸어 두지만(workflowMap.css), 그와
+  // 별개로 위젯 밖(페이지) 스크롤 위치도 명시적으로 붙잡아 리플로우로 스크롤이 위로
+  // 튀지 않게 한다 — 두 번의 requestAnimationFrame으로 리액트 렌더+브라우저 레이아웃이
+  // 끝난 뒤에 원래 스크롤 위치를 복원한다.
+  const handleToggle = (id: string) => {
+    const scrollY = window.scrollY
+    toggleGoalId(id, selectedIds)
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (Math.abs(window.scrollY - scrollY) > 0) window.scrollTo({ top: scrollY })
+      })
+    })
+  }
 
   const selectedPostings = useMemo(
     () => postings.filter((p) => selectedIdSet.has(String(p.id))),
@@ -128,11 +145,35 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
   const isLoading = !showNoBookmarks && !showNoSelection && (postingsLoading || (identity !== null && roadmap.loading))
   const canShowGraph = !showNoBookmarks && !showNoSelection && !isLoading
 
-  // 컴팩트 카드에서 목표 선택 패널은 이제 캔버스 위에 뜨는 플로팅 드로어다(4번 피드백:
-  // 다이어그램이 카드를 거의 다 채우게). 기본은 닫힘(다이어그램이 바로 보이게)이지만,
-  // 아직 목표를 하나도 안 골랐으면(showNoSelection) 처음부터 열어서 "여기서 고르면
-  // 된다"는 게 바로 보이게 한다 — 이 초기값은 마운트 시점 값만 쓰고, 그 뒤엔 토글 버튼으로만 바뀐다.
+  // 시안 1: 목표 선택 패널은 이제 앵커 바 옆 "목표 추가" 팝오버다(다이어그램 위에
+  // 겹치지 않는다). 기본은 닫힘이지만, 아직 목표를 하나도 안 골랐으면(showNoSelection)
+  // 처음부터 열어서 "여기서 고르면 된다"는 게 바로 보이게 한다 — 이 초기값은 마운트
+  // 시점 값만 쓰고, 그 뒤엔 토글 버튼/바깥 클릭/Escape로만 바뀐다.
   const [goalPanelOpen, setGoalPanelOpen] = useState(showNoSelection)
+  const goalPopoverWrapRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!goalPanelOpen) return
+    const onPointerDown = (e: MouseEvent) => {
+      if (goalPopoverWrapRef.current && !goalPopoverWrapRef.current.contains(e.target as Node)) {
+        setGoalPanelOpen(false)
+      }
+    }
+    const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') setGoalPanelOpen(false) }
+    document.addEventListener('mousedown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [goalPanelOpen])
+
+  // 앵커 바에 상시 노출할 선택된 목표 칩 — selectedIds(스토어 순서)를 기준으로
+  // postingsWithMatch에서 상세를 찾아 매칭 퍼센트까지 함께 붙인다. 아직 상세가
+  // 로딩되지 않은 항목은(postingsLoading 동안) 조용히 걸러진다.
+  const selectedGoalChips = useMemo(() => {
+    const byId = new Map(postingsWithMatch.map((pw) => [String(pw.detail.id), pw]))
+    return selectedIds.map((id) => byId.get(id)).filter((pw): pw is typeof postingsWithMatch[number] => !!pw)
+  }, [selectedIds, postingsWithMatch])
 
   // 2단계: stages/list 보기 전환 — dashboardConfig.ts와 같은 패턴(localStorage가 정본)을
   // 이 위젯 안에서 useState+localStorage로 간단히 구현한다(별도 스토어 모듈은 과하다).
@@ -160,11 +201,6 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
     if (selectedPostings.length < 2) return false
     return minPairwiseJaccard(selectedPostings.map((p) => new Set(p.skills))) < 0.2
   }, [selectedPostings])
-
-  // D: 이질성 배너가 실제로 렌더되는 조건(아래 stages 뷰 분기와 동일해야 한다). 배너가
-  // 뜰 때만 캔버스 좌상단에 고정된 목표 선택 토글/드로어를 배너 높이만큼 아래로 밀어
-  // 배너 텍스트를 가리지 않게 한다.
-  const bannerVisible = !showNoSelection && !isLoading && view !== 'list' && heterogeneousGoals
 
   // 데모용 추천 공고 가져오기 — 검증된 기업명으로 최대 12개 회사를 4개씩 묶어 조회해
   // 후보를 최대 8개 모은다. 예전엔 모으자마자 전부 자동으로 북마크했는데, 어떤 공고가
@@ -410,38 +446,74 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
           </div>
         ) : (
           <div className="wfm-body">
-            <div className="wfm-graph-pane">
-              <button
-                type="button"
-                className={`wfm-goal-toggle${bannerVisible ? ' wfm-goal-toggle--shifted' : ''}`}
-                onClick={() => setGoalPanelOpen((open) => !open)}
-                aria-expanded={goalPanelOpen}
-                aria-label="목표 선택 패널 토글"
-                title="목표 선택"
-              >
-                <ListChecks size={13} />
-                목표 선택
-              </button>
-              {goalPanelOpen && (
-                <div className={`wfm-goal-drawer${bannerVisible ? ' wfm-goal-drawer--shifted' : ''}`}>
-                  <div className="wfm-goal-drawer__head">
-                    <span className="wfm-goal-drawer__title">목표로 삼을 공고</span>
-                    <button
-                      type="button"
-                      className="wfm-goal-drawer__close"
-                      onClick={() => setGoalPanelOpen(false)}
-                      aria-label="목표 선택 패널 닫기"
-                    >
-                      <X size={12} />
-                    </button>
+            {/* 시안 1: 선택된 목표는 위젯 헤더 바로 아래 앵커 바에 상시 칩으로 뜬다
+                (매칭 퍼센트 + 삭제(X) 포함). 목표 추가는 옆 팝오버로 열리고, 팝오버는
+                position:absolute라 열려도 이 바 아래 다이어그램 레이아웃을 흔들지
+                않는다(시안 2). */}
+            <div className="wfm-goal-anchorbar">
+              <span className="wfm-goal-anchorbar__label">목표</span>
+              <div className="wfm-goal-chips">
+                {selectedGoalChips.length === 0 ? (
+                  <span className="wfm-goal-anchorbar__empty">아직 목표를 선택하지 않았어요</span>
+                ) : (
+                  selectedGoalChips.map(({ detail, matchPct }) => {
+                    const id = String(detail.id)
+                    const company = detail.company ?? '회사명 미상'
+                    return (
+                      <span key={id} className="wfm-goal-chip">
+                        <span className="wfm-goal-chip__avatar" style={{ background: avatarColor(company) }}>
+                          {company.slice(0, 1)}
+                        </span>
+                        <span className="wfm-goal-chip__name" title={`${company} · ${detail.title}`}>{company}</span>
+                        <span className="wfm-goal-chip__pct">{matchPct}%</span>
+                        <button
+                          type="button"
+                          className="wfm-goal-chip__remove"
+                          onClick={() => handleToggle(id)}
+                          aria-label={`${company} 목표에서 제거`}
+                        >
+                          <X size={10} />
+                        </button>
+                      </span>
+                    )
+                  })
+                )}
+              </div>
+              <div className="wfm-goal-add-wrap" ref={goalPopoverWrapRef}>
+                <button
+                  type="button"
+                  className={`wfm-goal-add-btn${goalPanelOpen ? ' is-active' : ''}`}
+                  onClick={() => setGoalPanelOpen((open) => !open)}
+                  aria-expanded={goalPanelOpen}
+                  aria-label="목표 추가"
+                  title="목표 추가"
+                >
+                  <Plus size={13} />
+                  목표 추가
+                </button>
+                {goalPanelOpen && (
+                  <div className="wfm-goal-popover">
+                    <div className="wfm-goal-popover__head">
+                      <span className="wfm-goal-popover__title">목표로 삼을 공고</span>
+                      <button
+                        type="button"
+                        className="wfm-goal-popover__close"
+                        onClick={() => setGoalPanelOpen(false)}
+                        aria-label="목표 추가 팝오버 닫기"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                    {goalPanel}
                   </div>
-                  {goalPanel}
-                </div>
-              )}
+                )}
+              </div>
+            </div>
+            <div className="wfm-graph-pane">
               {showNoSelection ? (
                 <div className="wfm-empty wfm-empty--selection">
                   <p className="wfm-empty__lead">북마크한 공고 중 목표로 삼을 걸 선택해보세요.</p>
-                  <span className="wfm-empty__hint">위의 "목표 선택" 버튼에서 하나 이상 체크하면 학습 순서가 나타나요.</span>
+                  <span className="wfm-empty__hint">위의 "목표 추가" 버튼에서 하나 이상 체크하면 학습 순서가 나타나요.</span>
                 </div>
               ) : isLoading ? (
                 <div className="wfm-loading" role="status" aria-live="polite">워크플로우 맵을 그리는 중이에요.</div>

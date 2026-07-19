@@ -1,15 +1,28 @@
-import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Award } from 'lucide-react'
 import type { PostingDetail, ScopedRoadmapStep } from '../api'
 import { classifySkill, avatarColor, requiredByFor, type SkillGroupName } from './workflowShared'
-import { buildStages, type StageEdge, type Bundle } from './relations'
+import { buildStages, type Bundle } from './relations'
+import {
+  layoutStages, roundedPath, estimateSkillCardHeight, estimateBundleHeight, estimateCertCardHeight,
+  estimateStartSummaryHeight, estimateChipWidth, NODE_WIDTH, NODE_WIDTH_WIDE, COLUMN_GAP, CHIP_HEIGHT,
+  type LayoutNode, type LayoutEdgeInput, type ElkLayoutResult, type LayoutRect,
+} from './workflowLayout'
 
 // 스테이지 뷰 — 목업(시안 B v2)의 학습 단계 컬럼 + 스킬 단위 관계선을 그대로 옮긴다.
-// 좌표는 dagre 없이 실제 DOM 렌더 크기를 측정해서 그린다(레이아웃은 CSS flex가 맡고,
-// 이 컴포넌트는 측정 결과로 SVG 오버레이만 그린다) — 카드 개수·문구 길이에 따라 카드
-// 높이가 달라져도 화살표가 항상 카드에 정확히 붙는다.
+// 시안 4/5: 좌표는 더 이상 렌더 후 DOM을 측정해서 얻지 않는다(리사이즈·스크롤·폰트
+// 로딩마다 재측정이 일어나 화살표가 흔들리던 원인). 카드 크기를 "이 카드에 어떤
+// 내용이 들어가는지"(이유/페이오프/대안 배지 유무, 번들 멤버 수 등 렌더 이전에 이미
+// 아는 데이터)만으로 순수 추정하고, elkjs의 layered 알고리즘에 넘겨 노드 좌표와 겹치지
+// 않는 직교(orthogonal) 엣지 경로를 한 번에 계산한다(workflowLayout.ts). 같은 입력이면
+// 항상 같은 좌표가 나오므로 리사이즈/스크롤/폰트로딩과 무관하게 안정적이다. elkjs의
+// layout()은 Promise를 반환하므로 이펙트 안에서 계산해 결과를 state로만 들고 렌더한다.
+// 번들(goes_with)은 멤버 스킬을 각각 elk 노드로 두지 않고 번들 박스 하나를 노드로
+// 취급한다 — 번들 멤버를 가리키는 엣지는 번들 박스로 리다이렉트된다(호버 dim은 원래
+// 스킬 단위 그대로 유지된다).
 
 const CARD_CAP = 6
+const SUMMARY_NODE_ID = '__wfs_summary__'
 
 type ColumnKey = 'start' | 1 | 2 | 3 | 'cert'
 
@@ -23,147 +36,25 @@ function countFor(canonical: string, selectedPostings: PostingDetail[]): number 
   return selectedPostings.filter((p) => p.skills.includes(canonical)).length
 }
 
-// 목업의 orthogonal polyline(라운드 코너) 함수를 그대로 옮긴다 — 하단 통로 라우팅에 쓴다.
-function roundedPath(pts: { x: number; y: number }[], r: number): string {
-  if (!pts.length) return ''
-  let d = `M${pts[0].x} ${pts[0].y}`
-  for (let i = 1; i < pts.length - 1; i++) {
-    const p0 = pts[i - 1]
-    const p1 = pts[i]
-    const p2 = pts[i + 1]
-    const v1x = p0.x - p1.x
-    const v1y = p0.y - p1.y
-    const v2x = p2.x - p1.x
-    const v2y = p2.y - p1.y
-    const len1 = Math.hypot(v1x, v1y) || 1
-    const len2 = Math.hypot(v2x, v2y) || 1
-    const rr = Math.min(r, len1 / 2, len2 / 2)
-    const e1x = p1.x + (v1x / len1) * rr
-    const e1y = p1.y + (v1y / len1) * rr
-    const e2x = p1.x + (v2x / len2) * rr
-    const e2y = p1.y + (v2y / len2) * rr
-    d += ` L${e1x} ${e1y} Q${p1.x} ${p1.y} ${e2x} ${e2y}`
-  }
-  const last = pts[pts.length - 1]
-  d += ` L${last.x} ${last.y}`
-  return d
+function bundleNodeId(b: Bundle): string {
+  return `bundle:${b.column}:${b.label}`
 }
 
-type DrawnPath = {
-  key: string
-  from: string
-  to: string
-  d: string
-  evidencePhrase?: string
-  labelX?: number
-  labelY?: number
-}
+type DrawnPath = { key: string; from: string; to: string; d: string; evidencePhrase?: string }
 
-// 엣지 오버레이 — 목업의 draw()/roundedPath()/레인 라우팅을 React 이펙트로 포팅한다.
-// 컨테이너 크기 변화(ResizeObserver) · 창 리사이즈 · 폰트 로드(document.fonts.ready)
-// 마다 requestAnimationFrame으로 디바운스해 다시 그린다.
-function useEdgeOverlay(
-  containerRef: RefObject<HTMLDivElement | null>,
-  nodeMap: Map<string, HTMLElement>,
-  edges: StageEdge[],
-  columnIndexOf: (id: string) => number | undefined,
-): DrawnPath[] {
-  const [paths, setPaths] = useState<DrawnPath[]>([])
-
+// elkjs 레이아웃 계산 — nodeSpecs/edgeInputs가 실제로 바뀔 때만(참조가 아니라 내용이
+// 바뀔 때만, useMemo로 안정화된 배열을 넘겨받으므로) 재계산한다. 계산 자체는 브라우저
+// 리사이즈·스크롤·폰트로딩과 무관하다(그 어느 것도 이 훅의 의존값이 아니다).
+function useElkLayout(nodeSpecs: LayoutNode[], edgeInputs: LayoutEdgeInput[], nodeWidth: number): ElkLayoutResult | null {
+  const [layout, setLayout] = useState<ElkLayoutResult | null>(null)
   useEffect(() => {
-    const container = containerRef.current
-    if (!container) return undefined
-
-    function draw() {
-      const cb = container!.getBoundingClientRect()
-      if (!cb.width || !cb.height) return
-      const flow = container!.querySelector('.wfs-flow') as HTMLElement | null
-      const laneBase = flow ? flow.getBoundingClientRect().bottom - cb.top + 16 : cb.height - 50
-      let corridorIndex = 0
-      const next: DrawnPath[] = []
-      edges.forEach((e) => {
-        const a = nodeMap.get(e.from)
-        const b = nodeMap.get(e.to)
-        if (!a || !b) return
-        const ra = a.getBoundingClientRect()
-        const rb = b.getBoundingClientRect()
-        const colA = columnIndexOf(e.from)
-        const colB = columnIndexOf(e.to)
-        const gap = colA !== undefined && colB !== undefined ? colB - colA : 1
-        let d: string
-        let labelX: number | undefined
-        let labelY: number | undefined
-        if (gap === 0) {
-          // 같은 컬럼 안(예: CKAD -> CKA) — 세로로 쌓인 카드끼리는 위아래를 잇는다.
-          const x1 = ra.left + ra.width / 2 - cb.left
-          const y1 = ra.bottom - cb.top
-          const x2 = rb.left + rb.width / 2 - cb.left
-          const y2 = rb.top - cb.top
-          const dy = Math.max(Math.abs(y2 - y1) * 0.5, 14)
-          d = `M${x1} ${y1} C ${x1} ${y1 + dy} ${x2} ${y2 - dy} ${x2} ${y2}`
-        } else if (Math.abs(gap) >= 2) {
-          // 컬럼을 2개 이상 건너뛰는 긴 선 — 카드 위를 지나지 않게 하단 통로로 우회한다.
-          // 레인(lane)을 나눠 여러 통로 선이 겹치지 않게 한다.
-          const lane = corridorIndex
-          corridorIndex += 1
-          const sx = ra.left + ra.width / 2 - cb.left
-          const sy = ra.bottom - cb.top
-          const laneY = laneBase + lane * 11
-          const entryX = rb.left - cb.left
-          const entryY = rb.top + rb.height / 2 - cb.top
-          const ascentX = entryX - 22 + (lane - 1) * 7
-          d = roundedPath(
-            [
-              { x: sx, y: sy },
-              { x: sx, y: laneY },
-              { x: ascentX, y: laneY },
-              { x: ascentX, y: entryY },
-              { x: entryX, y: entryY },
-            ],
-            10,
-          )
-          labelX = (sx + ascentX) / 2
-          labelY = laneY
-        } else {
-          // 인접 컬럼 — 부드러운 베지어 곡선.
-          const x1 = ra.right - cb.left
-          const y1 = ra.top + ra.height / 2 - cb.top
-          const x2 = rb.left - cb.left
-          const y2 = rb.top + rb.height / 2 - cb.top
-          const dx = Math.max(Math.abs(x2 - x1) * 0.45, 28)
-          d = `M${x1} ${y1} C ${x1 + dx} ${y1} ${x2 - dx} ${y2} ${x2} ${y2}`
-        }
-        next.push({ key: `${e.from}->${e.to}`, from: e.from, to: e.to, d, evidencePhrase: e.evidencePhrase, labelX, labelY })
-      })
-      setPaths(next)
-    }
-
-    let raf: number | null = null
-    function schedule() {
-      if (raf !== null) cancelAnimationFrame(raf)
-      raf = requestAnimationFrame(() => {
-        raf = null
-        draw()
-      })
-    }
-
-    schedule()
-    const ro = new ResizeObserver(schedule)
-    ro.observe(container)
-    window.addEventListener('resize', schedule)
     let cancelled = false
-    if (document.fonts?.ready) {
-      document.fonts.ready.then(() => { if (!cancelled) schedule() })
-    }
-    return () => {
-      cancelled = true
-      if (raf !== null) cancelAnimationFrame(raf)
-      ro.disconnect()
-      window.removeEventListener('resize', schedule)
-    }
-  }, [containerRef, nodeMap, edges, columnIndexOf])
-
-  return paths
+    layoutStages(nodeSpecs, edgeInputs, nodeWidth)
+      .then((result) => { if (!cancelled) setLayout(result) })
+      .catch(() => { if (!cancelled) setLayout(null) })
+    return () => { cancelled = true }
+  }, [nodeSpecs, edgeInputs, nodeWidth])
+  return layout
 }
 
 export function WorkflowStages({
@@ -186,6 +77,7 @@ export function WorkflowStages({
   wide?: boolean
 }) {
   const ownedSet = useMemo(() => new Set(ownedSkills), [ownedSkills])
+  const nodeWidth = wide ? NODE_WIDTH_WIDE : NODE_WIDTH
 
   const stages = useMemo(
     () => buildStages(ownedSkills, targetSkills, targetCerts, ownedCerts),
@@ -210,6 +102,16 @@ export function WorkflowStages({
     return map
   }, [stages.altBadges])
 
+  // 시안 3: "배우면 지원 가능 +N건" payoff — 억지로 새 계산을 만들지 않고, 라이브
+  // 로드맵(roadmapScoped) 스텝에 이미 있는 delta(그 스킬을 그리디 순서에 넣었을 때
+  // 매칭 공고 수가 늘어난 폭)를 그대로 쓴다. 로드맵이 비어 있으면(liveSteps.length===0)
+  // 아무 카드에도 payoff가 붙지 않는다 — 근거 없는 숫자를 지어내지 않는다.
+  const deltaBySkill = useMemo(() => {
+    const map = new Map<string, number>()
+    liveSteps.forEach((s) => { if (s.delta > 0) map.set(s.canonical, s.delta) })
+    return map
+  }, [liveSteps])
+
   // 보유 요약 카드 — 총 개수 + 언어/프레임워크/기타 카운트. classifySkill을 재사용해
   // list 뷰·flow 뷰와 같은 분류 기준을 그대로 쓴다.
   const ownedGroupCounts = useMemo(() => {
@@ -217,6 +119,8 @@ export function WorkflowStages({
     ownedSkills.forEach((s) => { counts[classifySkill(s, ownedSkillCategories[s])] += 1 })
     return counts
   }, [ownedSkills, ownedSkillCategories])
+
+  const totalOwned = ownedSkills.length
 
   // 엣지 출발점인 보유 스킬만 시작 컬럼에 칩으로 노출한다(전체 보유 스킬을 다 늘어놓으면
   // 이 카드가 list 뷰와 중복되는 정보가 된다 — 여기선 "무엇에서 시작하는지"만 보여준다).
@@ -242,6 +146,14 @@ export function WorkflowStages({
     const set = new Set<string>()
     bundlesByColumn.forEach((list) => list.forEach((b) => b.skills.forEach((s) => set.add(s))))
     return set
+  }, [bundlesByColumn])
+
+  // 번들 멤버를 가리키는 엣지를 번들 박스 노드로 리다이렉트하는 매핑 — elk 그래프에서
+  // 번들은 멤버 하나하나가 아니라 박스 하나가 노드다.
+  const skillToBundleId = useMemo(() => {
+    const map = new Map<string, string>()
+    bundlesByColumn.forEach((list) => list.forEach((b) => b.skills.forEach((s) => map.set(s, bundleNodeId(b)))))
+    return map
   }, [bundlesByColumn])
 
   const hasOrder = liveSteps.length > 0
@@ -288,41 +200,30 @@ export function WorkflowStages({
     return { items: capped, overflow: items.length - capped.length }
   }
 
+  // 1/2/3단계 각각의 정렬+캡 결과 — 노드 목록 만들 때와 렌더할 때 둘 다 이 결과를 쓴다.
+  const stageItemsByColumn = useMemo(() => {
+    const map = new Map<1 | 2 | 3, { items: ColumnItem[]; overflow: number }>()
+    ;([1, 2, 3] as const).forEach((d) => { map.set(d, columnItemsFor(d)) })
+    return map
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- columnItemsFor는 매 렌더 새 클로저지만
+    // 아래 값들이 바뀔 때만 실제 출력이 바뀐다.
+  }, [skillsByColumn, bundlesByColumn, depthBySkill, hasOrder, liveOrder, selectedPostings])
+
   const renderedColumnKeys = useMemo(() => {
     const keys: ColumnKey[] = ['start']
     ;([1, 2, 3] as const).forEach((d) => {
-      const hasSkills = (skillsByColumn.get(d)?.length ?? 0) > 0
-      const hasBundles = (bundlesByColumn.get(d)?.length ?? 0) > 0
-      if (hasSkills || hasBundles) keys.push(d)
+      const { items } = stageItemsByColumn.get(d) ?? { items: [] }
+      if (items.length > 0) keys.push(d)
     })
     if (certColumn.length > 0) keys.push('cert')
     return keys
-  }, [skillsByColumn, bundlesByColumn, certColumn])
+  }, [stageItemsByColumn, certColumn])
 
   const columnPosition = useMemo(() => {
     const map = new Map<ColumnKey, number>()
     renderedColumnKeys.forEach((k, i) => map.set(k, i))
     return map
   }, [renderedColumnKeys])
-
-  const certSet = useMemo(() => new Set(certColumn.map((c) => c.cert)), [certColumn])
-
-  // columnIndexOf는 엣지 오버레이 이펙트의 의존값으로 쓰이므로, 매 렌더 새 클로저를
-  // 만들면(예: hover만 바뀌어도 재생성) 이펙트가 계속 재실행돼 무한 재측정 루프에 빠진다.
-  // 실제로 컬럼 구성이 바뀔 때만 참조가 바뀌도록 useMemo로 감싼다.
-  const columnIndexOf = useMemo(() => {
-    const columnKeyOfId = (id: string): ColumnKey | undefined => {
-      if (ownedSet.has(id)) return 'start'
-      if (certSet.has(id)) return 'cert'
-      const d = depthBySkill.get(id)
-      if (d === undefined) return undefined
-      return Math.min(Math.max(d, 1), 3) as 1 | 2 | 3
-    }
-    return (id: string): number | undefined => {
-      const key = columnKeyOfId(id)
-      return key === undefined ? undefined : columnPosition.get(key)
-    }
-  }, [ownedSet, certSet, depthBySkill, columnPosition])
 
   const neighbors = useMemo(() => {
     const map = new Map<string, Set<string>>()
@@ -342,132 +243,253 @@ export function WorkflowStages({
     return !(neighbors.get(hoveredId)?.has(id) ?? false)
   }
 
-  const containerRef = useRef<HTMLDivElement>(null)
-  const nodeMapRef = useRef<Map<string, HTMLElement>>(new Map())
-  const registerNode = (id: string) => (el: HTMLElement | null) => {
-    if (el) nodeMapRef.current.set(id, el)
-    else nodeMapRef.current.delete(id)
-  }
+  // elk 그래프 노드 — 카드 크기는 DOM 측정이 아니라 렌더될 내용(이유/payoff/대안 배지
+  // 유무, 번들 멤버 수)만으로 결정된다.
+  const nodeSpecs = useMemo<LayoutNode[]>(() => {
+    const specs: LayoutNode[] = []
+    const startCol = columnPosition.get('start') ?? 0
 
-  // 카드 컨테이너(wfs-root) 크기 변화는 ResizeObserver가 잡아준다 — 카드가 늘거나
-  // 줄어 컬럼 높이가 바뀌면 컨테이너 높이도 같이 바뀌므로 별도 트리거 없이 재측정된다.
-  const paths = useEdgeOverlay(containerRef, nodeMapRef.current, edges, columnIndexOf)
+    specs.push({ id: SUMMARY_NODE_ID, column: startCol, width: nodeWidth, height: estimateStartSummaryHeight(totalOwned) })
+    ownedEdgeSources.forEach((skill) => {
+      specs.push({ id: skill, column: startCol, width: estimateChipWidth(skill), height: CHIP_HEIGHT })
+    })
+
+    ;([1, 2, 3] as const).forEach((depth) => {
+      const col = columnPosition.get(depth)
+      if (col === undefined) return
+      const { items } = stageItemsByColumn.get(depth) ?? { items: [] }
+      items.forEach((item) => {
+        if (item.kind === 'skill') {
+          const skill = item.skill
+          const hasReason = viaReasonBySkill.has(skill)
+          const hasPayoff = (deltaBySkill.get(skill) ?? 0) > 0
+          const hasAlt = altBadgeBySkill.has(skill)
+          specs.push({ id: skill, column: col, width: nodeWidth, height: estimateSkillCardHeight({ hasReason, hasPayoff, hasAlt }) })
+        } else {
+          specs.push({
+            id: bundleNodeId(item.bundle),
+            column: col,
+            width: nodeWidth,
+            height: estimateBundleHeight(item.bundle.skills.length, !!item.bundle.note),
+          })
+        }
+      })
+    })
+
+    const certCol = columnPosition.get('cert')
+    if (certCol !== undefined) {
+      certColumn.slice(0, CARD_CAP).forEach((c) => {
+        specs.push({ id: c.cert, column: certCol, width: nodeWidth, height: estimateCertCardHeight(!!c.note) })
+      })
+    }
+    return specs
+  }, [columnPosition, nodeWidth, totalOwned, ownedEdgeSources, stageItemsByColumn, viaReasonBySkill, deltaBySkill, altBadgeBySkill, certColumn])
+
+  // elk 그래프 엣지 — 번들 멤버를 가리키는 엣지는 번들 박스로 리다이렉트한다. 양 끝이
+  // 같은 박스로 접히면(같은 번들 안 두 멤버 사이 엣지) 자기 자신을 향하는 선이 되므로 뺀다.
+  const { edgeInputs, edgeMeta } = useMemo(() => {
+    const inputs: LayoutEdgeInput[] = []
+    const meta = new Map<string, { evidencePhrase?: string; logicalFrom: string; logicalTo: string }>()
+    edges.forEach((e) => {
+      const from = skillToBundleId.get(e.from) ?? e.from
+      const to = skillToBundleId.get(e.to) ?? e.to
+      if (from === to) return
+      const id = `${e.from}->${e.to}`
+      inputs.push({ id, from, to })
+      meta.set(id, { evidencePhrase: e.evidencePhrase, logicalFrom: e.from, logicalTo: e.to })
+    })
+    return { edgeInputs: inputs, edgeMeta: meta }
+  }, [edges, skillToBundleId])
+
+  const layout = useElkLayout(nodeSpecs, edgeInputs, nodeWidth)
+
+  const renderLayout = useMemo(() => {
+    if (!layout) return null
+    const paths: DrawnPath[] = layout.edges.map((e) => {
+      const meta = edgeMeta.get(e.id)
+      return {
+        key: e.id,
+        from: meta?.logicalFrom ?? e.from,
+        to: meta?.logicalTo ?? e.to,
+        d: roundedPath(e.points, 8),
+        evidencePhrase: meta?.evidencePhrase,
+      }
+    })
+    return {
+      width: layout.width + 4,
+      height: layout.height + 4,
+      rectOf: (id: string): LayoutRect | undefined => layout.nodes.get(id),
+      columnBox: (colIndex: number) => layout.columns.get(colIndex) ?? { x: colIndex * (nodeWidth + COLUMN_GAP), width: nodeWidth },
+      paths,
+    }
+  }, [layout, edgeMeta, nodeWidth])
+
+  // 컬럼 안 넘친(overflow) 항목 배지의 위치 — 그 컬럼에서 실제 렌더된 항목들 중 가장
+  // 아래에 있는 것 바로 밑에 붙인다.
+  function overflowPosition(ids: string[]): { x: number; y: number; width: number } {
+    let bottom = 0
+    let x = 0
+    let width = nodeWidth
+    ids.forEach((id) => {
+      const r = renderLayout?.rectOf(id)
+      if (!r) return
+      if (r.y + r.height > bottom) bottom = r.y + r.height
+      x = r.x
+      width = r.width
+    })
+    return { x, y: bottom + 8, width }
+  }
 
   const renderBadges = (skill: string) => {
     const count = countFor(skill, selectedPostings)
     const requiredBy = requiredByFor(skill, selectedPostings)
     return (
-      <div className="wfs-scard__foot">
+      <div className="wfs-scard__demand">
         {count > 0 && <span className="wfs-badge wfs-badge--blue">{count}개 공고 요구</span>}
-        {requiredBy.slice(0, 2).map((r) => (
-          <span key={r.company} className="wfs-avatar" style={{ background: avatarColor(r.company) }}>
-            {r.company.slice(0, 1)}
+        {requiredBy.length > 0 && (
+          <span className="wfs-scard__avatars">
+            {requiredBy.slice(0, 3).map((r) => (
+              <span key={r.company} className="wfs-avatar" style={{ background: avatarColor(r.company) }}>
+                {r.company.slice(0, 1)}
+              </span>
+            ))}
+            {requiredBy.length > 3 && <span className="wfs-avatar-more">+{requiredBy.length - 3}</span>}
           </span>
-        ))}
-        {requiredBy.length > 2 && <span className="wfs-avatar-more">+{requiredBy.length - 2}</span>}
+        )}
       </div>
     )
   }
 
+  // 시안 3: 스킬명 -> 카테고리 -> 수요(공고 수 + 회사 아바타) -> (있으면) payoff 순으로
+  // 여백 있게 배치한다. 카드 높이는 이 구성요소 유무만으로 미리 정확히 추정되므로(
+  // workflowLayout.ts의 estimateSkillCardHeight) DOM에서 실제로 렌더되는 내용과
+  // 어긋나지 않게, 각 블록은 항상 estimateSkillCardHeight가 가정한 것과 동일한 조건
+  // (hasReason/hasPayoff/hasAlt)으로만 나타난다.
   const renderSkillCard = (skill: string) => {
+    const rect = renderLayout?.rectOf(skill)
+    if (!rect) return null
     const isTarget = !viaReasonBySkill.has(skill)
     const category = classifySkill(skill)
     const reason = viaReasonBySkill.get(skill)
     const altBadge = altBadgeBySkill.get(skill)
+    const payoff = deltaBySkill.get(skill)
     return (
       <div
         key={skill}
-        ref={registerNode(skill)}
+        style={{ position: 'absolute', left: rect.x, top: rect.y, width: rect.width, height: rect.height }}
         className={`wfs-scard${isTarget ? ' wfs-scard--goal' : ' wfs-scard--via'}${isDimmed(skill) ? ' wfs-dim' : ''}`}
         onMouseEnter={() => setHoveredId(skill)}
         onMouseLeave={() => setHoveredId(null)}
       >
-        <div className="wfs-scard__name">
-          {skill}
+        <div className="wfs-scard__head">
+          <span className="wfs-scard__name" title={skill}>{skill}</span>
           <span className="wfs-chip-cat">{category}</span>
         </div>
         {reason && <div className="wfs-scard__reason">{reason}</div>}
         {renderBadges(skill)}
+        {payoff !== undefined && payoff > 0 && (
+          <div className="wfs-scard__payoff">배우면 <b>+{payoff}건</b> 더 지원 가능</div>
+        )}
         {altBadge && <div className="wfs-scard__alt">{altBadge}</div>}
       </div>
     )
   }
 
-  const renderBundleCard = (bundle: Bundle) => (
-    <div key={bundle.label} className="wfs-bundle">
-      <span className="wfs-bundle__label">{bundle.label}</span>
-      {bundle.skills.map((skill) => {
-        const rendered = depthBySkill.has(skill)
-        const count = countFor(skill, selectedPostings)
-        const requiredBy = requiredByFor(skill, selectedPostings)
-        return (
-          <div
-            key={skill}
-            ref={rendered ? registerNode(skill) : undefined}
-            className={`wfs-bundle__row${rendered && isDimmed(skill) ? ' wfs-dim' : ''}`}
-            onMouseEnter={rendered ? () => setHoveredId(skill) : undefined}
-            onMouseLeave={rendered ? () => setHoveredId(null) : undefined}
-          >
-            <span className="wfs-bundle__row-name">{skill}</span>
-            {count > 0 && <span className="wfs-badge wfs-badge--blue">{count}개 공고</span>}
-            {requiredBy.slice(0, 2).map((r) => (
-              <span key={r.company} className="wfs-avatar wfs-avatar--sm" style={{ background: avatarColor(r.company) }}>
-                {r.company.slice(0, 1)}
-              </span>
-            ))}
-          </div>
-        )
-      })}
-      {bundle.note && <div className="wfs-bundle__note">{bundle.note}</div>}
-    </div>
-  )
+  const renderBundleCard = (bundle: Bundle) => {
+    const id = bundleNodeId(bundle)
+    const rect = renderLayout?.rectOf(id)
+    if (!rect) return null
+    return (
+      <div
+        key={id}
+        style={{ position: 'absolute', left: rect.x, top: rect.y, width: rect.width, height: rect.height }}
+        className="wfs-bundle"
+      >
+        <span className="wfs-bundle__label">{bundle.label}</span>
+        {bundle.skills.map((skill) => {
+          const count = countFor(skill, selectedPostings)
+          const requiredBy = requiredByFor(skill, selectedPostings)
+          return (
+            <div
+              key={skill}
+              className={`wfs-bundle__row${isDimmed(skill) ? ' wfs-dim' : ''}`}
+              onMouseEnter={() => setHoveredId(skill)}
+              onMouseLeave={() => setHoveredId(null)}
+            >
+              <span className="wfs-bundle__row-name">{skill}</span>
+              {count > 0 && <span className="wfs-badge wfs-badge--blue">{count}개 공고</span>}
+              {requiredBy.slice(0, 2).map((r) => (
+                <span key={r.company} className="wfs-avatar wfs-avatar--sm" style={{ background: avatarColor(r.company) }}>
+                  {r.company.slice(0, 1)}
+                </span>
+              ))}
+            </div>
+          )
+        })}
+        {bundle.note && <div className="wfs-bundle__note">{bundle.note}</div>}
+      </div>
+    )
+  }
 
   const renderColumnItem = (item: ColumnItem) => (item.kind === 'skill' ? renderSkillCard(item.skill) : renderBundleCard(item.bundle))
 
-  const totalOwned = ownedSkills.length
-
   return (
-    <div ref={containerRef} className={`wfs-root${wide ? ' wfs-root--wide' : ''}`}>
-      <svg className="wfs-svg" aria-hidden="true">
-        <defs>
-          <marker id="wfsHead" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto">
-            <path d="M0 0 L7 4 L0 8 Z" fill="#3b82f6" />
-          </marker>
-        </defs>
-        {paths.map((p) => {
-          const dim = hoveredId !== null && hoveredId !== p.from && hoveredId !== p.to
-          return (
-            <path
-              key={p.key}
-              className={`wfs-edge${dim ? ' wfs-edge--dim' : ''}`}
-              d={p.d}
-              fill="none"
-              stroke="#3b82f6"
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              markerEnd="url(#wfsHead)"
-            >
-              {p.evidencePhrase && <title>{p.evidencePhrase}</title>}
-            </path>
-          )
-        })}
-      </svg>
-
-      <div className="wfs-flow">
-        {renderedColumnKeys.map((key) => {
-          if (key === 'start') {
-            return (
-              <div className="wfs-col" key="start">
-                <div className="wfs-colhead">
-                  <div className="wfs-step">시작</div>
-                  <div className="wfs-steptitle">지금 보유</div>
+    <div className={`wfs-root${wide ? ' wfs-root--wide' : ''}`}>
+      {!renderLayout ? (
+        <div className="wfs-layout-loading" role="status" aria-live="polite">학습 지도를 그리는 중이에요.</div>
+      ) : (
+        <>
+          <div className="wfs-headrow" style={{ position: 'relative', width: renderLayout.width, height: 30 }}>
+            {renderedColumnKeys.map((key) => {
+              const colIndex = columnPosition.get(key) ?? 0
+              const box = renderLayout.columnBox(colIndex)
+              const step = key === 'start' ? '시작' : key === 'cert' ? '자격증' : COLUMN_META[key].step
+              const title = key === 'start' ? '지금 보유' : key === 'cert' ? undefined : COLUMN_META[key].title
+              return (
+                <div key={String(key)} className="wfs-colhead" style={{ position: 'absolute', left: box.x, width: box.width }}>
+                  <div className="wfs-step">{step}</div>
+                  {title && <div className="wfs-steptitle">{title}</div>}
                 </div>
-                <div className="wfs-body">
+              )
+            })}
+          </div>
+
+          <div className="wfs-canvas" style={{ position: 'relative', width: renderLayout.width, height: renderLayout.height }}>
+            <svg className="wfs-svg" width={renderLayout.width} height={renderLayout.height} aria-hidden="true">
+              <defs>
+                <marker id="wfsHead" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto">
+                  <path d="M0 0 L7 4 L0 8 Z" fill="#3b82f6" />
+                </marker>
+              </defs>
+              {renderLayout.paths.map((p) => {
+                const dim = hoveredId !== null && hoveredId !== p.from && hoveredId !== p.to
+                return (
+                  <path
+                    key={p.key}
+                    className={`wfs-edge${dim ? ' wfs-edge--dim' : ''}`}
+                    d={p.d}
+                    fill="none"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    markerEnd="url(#wfsHead)"
+                  >
+                    {p.evidencePhrase && <title>{p.evidencePhrase}</title>}
+                  </path>
+                )
+              })}
+            </svg>
+
+            {(() => {
+              const rect = renderLayout.rectOf(SUMMARY_NODE_ID)
+              if (!rect) return null
+              return (
+                <div className="wfs-summary" style={{ position: 'absolute', left: rect.x, top: rect.y, width: rect.width, height: rect.height }}>
                   {totalOwned === 0 ? (
                     <div className="wfs-empty-note">아직 등록된 보유 기술이 없어요.</div>
                   ) : (
-                    <div className="wfs-summary">
+                    <>
                       <div className="wfs-summary__big">{totalOwned}개</div>
                       <div className="wfs-summary__sub">비교 기준 스택</div>
                       <div className="wfs-summary__lines">
@@ -475,38 +497,54 @@ export function WorkflowStages({
                         <div><span>프레임워크</span><b>{ownedGroupCounts.프레임워크}</b></div>
                         <div><span>기타</span><b>{ownedGroupCounts.기타}</b></div>
                       </div>
-                      {ownedEdgeSources.size > 0 && (
-                        <div className="wfs-chiprow">
-                          {[...ownedEdgeSources].map((skill) => (
-                            <span
-                              key={skill}
-                              ref={registerNode(skill)}
-                              className={`wfs-chip${isDimmed(skill) ? ' wfs-dim' : ''}`}
-                              onMouseEnter={() => setHoveredId(skill)}
-                              onMouseLeave={() => setHoveredId(null)}
-                            >
-                              {skill}
-                            </span>
-                          ))}
-                        </div>
-                      )}
+                    </>
+                  )}
+                </div>
+              )
+            })()}
+
+            {[...ownedEdgeSources].map((skill) => {
+              const rect = renderLayout.rectOf(skill)
+              if (!rect) return null
+              return (
+                <span
+                  key={skill}
+                  style={{ position: 'absolute', left: rect.x, top: rect.y, width: rect.width, height: rect.height }}
+                  className={`wfs-chip${isDimmed(skill) ? ' wfs-dim' : ''}`}
+                  onMouseEnter={() => setHoveredId(skill)}
+                  onMouseLeave={() => setHoveredId(null)}
+                >
+                  {skill}
+                </span>
+              )
+            })}
+
+            {([1, 2, 3] as const).map((depth) => {
+              if (!renderedColumnKeys.includes(depth)) return null
+              const { items, overflow } = stageItemsByColumn.get(depth) ?? { items: [], overflow: 0 }
+              const ids = items.map((item) => (item.kind === 'skill' ? item.skill : bundleNodeId(item.bundle)))
+              const overflowPos = overflow > 0 ? overflowPosition(ids) : null
+              return (
+                <div key={depth}>
+                  {items.map(renderColumnItem)}
+                  {overflowPos && (
+                    <div className="wfs-overflow-row" style={{ position: 'absolute', left: overflowPos.x, top: overflowPos.y, width: overflowPos.width }}>
+                      +{overflow}개
                     </div>
                   )}
                 </div>
-              </div>
-            )
-          }
-          if (key === 'cert') {
-            return (
-              <div className="wfs-col" key="cert">
-                <div className="wfs-colhead">
-                  <div className="wfs-step">자격증</div>
-                </div>
-                <div className="wfs-body">
-                  {certColumn.slice(0, CARD_CAP).map((c) => (
+              )
+            })}
+
+            {certColumn.length > 0 && (
+              <>
+                {certColumn.slice(0, CARD_CAP).map((c) => {
+                  const rect = renderLayout.rectOf(c.cert)
+                  if (!rect) return null
+                  return (
                     <div
                       key={c.cert}
-                      ref={registerNode(c.cert)}
+                      style={{ position: 'absolute', left: rect.x, top: rect.y, width: rect.width, height: rect.height }}
                       className={`wfs-need-card${isDimmed(c.cert) ? ' wfs-dim' : ''}`}
                       onMouseEnter={() => setHoveredId(c.cert)}
                       onMouseLeave={() => setHoveredId(null)}
@@ -514,30 +552,21 @@ export function WorkflowStages({
                       <div className="wfs-need-card__name"><Award size={12} />{c.cert}</div>
                       {c.note && <div className="wfs-need-card__reason">{c.note}</div>}
                     </div>
-                  ))}
-                  {certColumn.length > CARD_CAP && (
-                    <div className="wfs-overflow-row">+{certColumn.length - CARD_CAP}개</div>
-                  )}
-                </div>
-              </div>
-            )
-          }
-          const { items, overflow } = columnItemsFor(key)
-          const meta = COLUMN_META[key]
-          return (
-            <div className="wfs-col" key={key}>
-              <div className="wfs-colhead">
-                <div className="wfs-step">{meta.step}</div>
-                <div className="wfs-steptitle">{meta.title}</div>
-              </div>
-              <div className="wfs-body">
-                {items.map(renderColumnItem)}
-                {overflow > 0 && <div className="wfs-overflow-row">+{overflow}개</div>}
-              </div>
-            </div>
-          )
-        })}
-      </div>
+                  )
+                })}
+                {certColumn.length > CARD_CAP && (() => {
+                  const pos = overflowPosition(certColumn.slice(0, CARD_CAP).map((c) => c.cert))
+                  return (
+                    <div className="wfs-overflow-row" style={{ position: 'absolute', left: pos.x, top: pos.y, width: pos.width }}>
+                      +{certColumn.length - CARD_CAP}개
+                    </div>
+                  )
+                })()}
+              </>
+            )}
+          </div>
+        </>
+      )}
     </div>
   )
 }
