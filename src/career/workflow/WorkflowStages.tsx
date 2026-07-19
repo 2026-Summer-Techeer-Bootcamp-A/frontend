@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Award } from 'lucide-react'
 import type { PostingDetail, ScopedRoadmapStep } from '../api'
 import { classifySkill, avatarColor, requiredByFor, type SkillGroupName } from './workflowShared'
@@ -6,18 +6,22 @@ import { buildStages, type Bundle } from './relations'
 import {
   layoutStages, roundedPath, estimateSkillCardHeight, estimateBundleHeight, estimateCertCardHeight,
   estimateStartSummaryHeight, estimateChipWidth, NODE_WIDTH, NODE_WIDTH_WIDE, COLUMN_GAP, CHIP_HEIGHT,
-  type LayoutNode, type LayoutEdgeInput, type ElkLayoutResult, type LayoutRect,
+  type LayoutNode, type LayoutEdgeInput, type LayoutRect,
 } from './workflowLayout'
 
 // 스테이지 뷰 — 목업(시안 B v2)의 학습 단계 컬럼 + 스킬 단위 관계선을 그대로 옮긴다.
 // 시안 4/5: 좌표는 더 이상 렌더 후 DOM을 측정해서 얻지 않는다(리사이즈·스크롤·폰트
-// 로딩마다 재측정이 일어나 화살표가 흔들리던 원인). 카드 크기를 "이 카드에 어떤
-// 내용이 들어가는지"(이유/페이오프/대안 배지 유무, 번들 멤버 수 등 렌더 이전에 이미
-// 아는 데이터)만으로 순수 추정하고, elkjs의 layered 알고리즘에 넘겨 노드 좌표와 겹치지
-// 않는 직교(orthogonal) 엣지 경로를 한 번에 계산한다(workflowLayout.ts). 같은 입력이면
-// 항상 같은 좌표가 나오므로 리사이즈/스크롤/폰트로딩과 무관하게 안정적이다. elkjs의
-// layout()은 Promise를 반환하므로 이펙트 안에서 계산해 결과를 state로만 들고 렌더한다.
-// 번들(goes_with)은 멤버 스킬을 각각 elk 노드로 두지 않고 번들 박스 하나를 노드로
+// 로딩마다 재측정이 일어나 화살표가 흔들리던 원인). elkjs의 layered 알고리즘으로도
+// 시도했으나, partitioning 힌트가 절대 제약이 아니라서 라이브 화면에서 스테이지 컬럼이
+// 시각적으로 무너지는 문제가 있었다(노드가 컬럼 경계 없이 흩어짐) — "컬럼이 또렷한
+// 세로 레인"이라는 요구가 협상 불가라서 elk를 걷어내고, workflowLayout.ts의
+// layoutStages가 순수 함수로 컬럼 x(오직 컬럼 인덱스의 함수)와 컬럼 안 y(누적 스택)를
+// 직접 계산하고, 엣지도 그 알려진 좌표에서 직교(orthogonal) polyline으로 직접
+// 계산한다. 카드 크기는 "이 카드에 어떤 내용이 들어가는지"(이유/페이오프/대안 배지
+// 유무, 번들 멤버 수 등)만으로 순수 추정한다 — DOM 측정도, 외부 레이아웃 엔진도 없는
+// 완전한 순수 함수라 리사이즈/스크롤/폰트로딩과 100% 무관하고, useMemo 안에서 동기로
+// 계산한다(비동기 로딩 상태가 아예 없다).
+// 번들(goes_with)은 멤버 스킬을 각각 노드로 두지 않고 번들 박스 하나를 노드로
 // 취급한다 — 번들 멤버를 가리키는 엣지는 번들 박스로 리다이렉트된다(호버 dim은 원래
 // 스킬 단위 그대로 유지된다).
 
@@ -41,21 +45,6 @@ function bundleNodeId(b: Bundle): string {
 }
 
 type DrawnPath = { key: string; from: string; to: string; d: string; evidencePhrase?: string }
-
-// elkjs 레이아웃 계산 — nodeSpecs/edgeInputs가 실제로 바뀔 때만(참조가 아니라 내용이
-// 바뀔 때만, useMemo로 안정화된 배열을 넘겨받으므로) 재계산한다. 계산 자체는 브라우저
-// 리사이즈·스크롤·폰트로딩과 무관하다(그 어느 것도 이 훅의 의존값이 아니다).
-function useElkLayout(nodeSpecs: LayoutNode[], edgeInputs: LayoutEdgeInput[], nodeWidth: number): ElkLayoutResult | null {
-  const [layout, setLayout] = useState<ElkLayoutResult | null>(null)
-  useEffect(() => {
-    let cancelled = false
-    layoutStages(nodeSpecs, edgeInputs, nodeWidth)
-      .then((result) => { if (!cancelled) setLayout(result) })
-      .catch(() => { if (!cancelled) setLayout(null) })
-    return () => { cancelled = true }
-  }, [nodeSpecs, edgeInputs, nodeWidth])
-  return layout
-}
 
 export function WorkflowStages({
   ownedSkills,
@@ -148,8 +137,8 @@ export function WorkflowStages({
     return set
   }, [bundlesByColumn])
 
-  // 번들 멤버를 가리키는 엣지를 번들 박스 노드로 리다이렉트하는 매핑 — elk 그래프에서
-  // 번들은 멤버 하나하나가 아니라 박스 하나가 노드다.
+  // 번들 멤버를 가리키는 엣지를 번들 박스 노드로 리다이렉트하는 매핑 — layoutStages가
+  // 보는 노드 목록에서 번들은 멤버 하나하나가 아니라 박스 하나가 노드다.
   const skillToBundleId = useMemo(() => {
     const map = new Map<string, string>()
     bundlesByColumn.forEach((list) => list.forEach((b) => b.skills.forEach((s) => map.set(s, bundleNodeId(b)))))
@@ -243,8 +232,9 @@ export function WorkflowStages({
     return !(neighbors.get(hoveredId)?.has(id) ?? false)
   }
 
-  // elk 그래프 노드 — 카드 크기는 DOM 측정이 아니라 렌더될 내용(이유/payoff/대안 배지
-  // 유무, 번들 멤버 수)만으로 결정된다.
+  // layoutStages에 넘길 노드 목록 — 카드 크기는 DOM 측정이 아니라 렌더될 내용(이유/
+  // payoff/대안 배지 유무, 번들 멤버 수)만으로 결정된다. column은 렌더링 순서와 동일한
+  // 인덱스라 layoutStages가 이 순서 그대로 위에서부터 세로로 쌓는다.
   const nodeSpecs = useMemo<LayoutNode[]>(() => {
     const specs: LayoutNode[] = []
     const startCol = columnPosition.get('start') ?? 0
@@ -285,8 +275,9 @@ export function WorkflowStages({
     return specs
   }, [columnPosition, nodeWidth, totalOwned, ownedEdgeSources, stageItemsByColumn, viaReasonBySkill, deltaBySkill, altBadgeBySkill, certColumn])
 
-  // elk 그래프 엣지 — 번들 멤버를 가리키는 엣지는 번들 박스로 리다이렉트한다. 양 끝이
-  // 같은 박스로 접히면(같은 번들 안 두 멤버 사이 엣지) 자기 자신을 향하는 선이 되므로 뺀다.
+  // layoutStages에 넘길 엣지 목록 — 번들 멤버를 가리키는 엣지는 번들 박스로
+  // 리다이렉트한다. 양 끝이 같은 박스로 접히면(같은 번들 안 두 멤버 사이 엣지) 자기
+  // 자신을 향하는 선이 되므로 뺀다.
   const { edgeInputs, edgeMeta } = useMemo(() => {
     const inputs: LayoutEdgeInput[] = []
     const meta = new Map<string, { evidencePhrase?: string; logicalFrom: string; logicalTo: string }>()
@@ -301,10 +292,12 @@ export function WorkflowStages({
     return { edgeInputs: inputs, edgeMeta: meta }
   }, [edges, skillToBundleId])
 
-  const layout = useElkLayout(nodeSpecs, edgeInputs, nodeWidth)
+  // layoutStages는 순수 동기 함수다(DOM 측정도, 외부 레이아웃 엔진 호출도 없다) —
+  // 비동기 로딩 상태 자체가 없으므로 nodeSpecs/edgeInputs/nodeWidth가 바뀔 때만
+  // useMemo로 재계산한다.
+  const layout = useMemo(() => layoutStages(nodeSpecs, edgeInputs, nodeWidth), [nodeSpecs, edgeInputs, nodeWidth])
 
   const renderLayout = useMemo(() => {
-    if (!layout) return null
     const paths: DrawnPath[] = layout.edges.map((e) => {
       const meta = edgeMeta.get(e.id)
       return {
@@ -435,11 +428,7 @@ export function WorkflowStages({
 
   return (
     <div className={`wfs-root${wide ? ' wfs-root--wide' : ''}`}>
-      {!renderLayout ? (
-        <div className="wfs-layout-loading" role="status" aria-live="polite">학습 지도를 그리는 중이에요.</div>
-      ) : (
-        <>
-          <div className="wfs-headrow" style={{ position: 'relative', width: renderLayout.width, height: 30 }}>
+      <div className="wfs-headrow" style={{ position: 'relative', width: renderLayout.width, height: 30 }}>
             {renderedColumnKeys.map((key) => {
               const colIndex = columnPosition.get(key) ?? 0
               const box = renderLayout.columnBox(colIndex)
@@ -564,9 +553,7 @@ export function WorkflowStages({
                 })()}
               </>
             )}
-          </div>
-        </>
-      )}
+      </div>
     </div>
   )
 }
