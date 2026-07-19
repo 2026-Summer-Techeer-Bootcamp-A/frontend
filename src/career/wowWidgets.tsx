@@ -2298,20 +2298,22 @@ export function ConceptTechSankeyWidget({ pool }: { pool: PoolChoice }) {
           },
         }
       }),
-      // 링크는 출발 개념의 색을 낮은 opacity로 tint — 어느 흐름이 어느 개념에서 나왔는지 색으로 추적.
+      // 링크는 출발 개념의 색을 tint — 어느 흐름이 어느 개념에서 나왔는지 색으로 추적.
+      // 2026-07-19: 선이 얇아 흐름이 잘 안 읽힌다는 피드백으로 opacity·테두리를 키워
+      // 선을 더 또렷하고 굵어 보이게 했다(실측 두께는 SANKEY_CHART_LAYOUT.height로 조정).
       links: data.links.map((l) => {
         const c = conceptColor.get(l.source)
         return {
           ...l,
           lineStyle: {
             color: c ? sankeyRgb(c) : 'rgb(170, 176, 187)',
-            opacity: 0.56,
-            borderWidth: 1,
-            borderColor: c ? sankeyRgba(c, 0.42) : 'rgba(170, 176, 187, 0.42)',
+            opacity: 0.72,
+            borderWidth: 1.5,
+            borderColor: c ? sankeyRgba(c, 0.55) : 'rgba(170, 176, 187, 0.55)',
           },
         }
       }),
-      lineStyle: { curveness: 0.5 },
+      lineStyle: { curveness: 0.56 },
     }],
   }), [data, conceptColor, visibleConceptNames])
 

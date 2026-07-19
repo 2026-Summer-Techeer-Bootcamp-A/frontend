@@ -64,12 +64,15 @@
 .wow-unlock-mini__tech { font-size: 17px; font-weight: 800; color: var(--c-ink); }
 .wow-unlock-mini__delta { font-size: 14px; font-weight: 800; color: #d9822b; }
 
-/* ---------- 위젯 1: 타임라인 ---------- */
+/* ---------- 위젯 1: 타임라인 ----------
+   1번 작업(2026-07-19): 대시보드 우측 레일에서 스파크라인·공고 리스트가 눌려 보인다는
+   피드백으로 스파크라인 높이를 68px -> 108px로 키워 막대가 더 잘 보이게 했다(리스트 쪽
+   여유는 아래 .wow-joblist 행 패딩/간격을 넓혀 확보). */
 .wow-timeline {
   display: flex;
   align-items: flex-end;
   gap: 2px;
-  height: 68px;
+  height: 108px;
   flex: none;
 }
 .wow-timeline--mini { height: 44px; flex: 1; }
@@ -128,7 +131,7 @@
 .wow-joblist {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -136,10 +139,10 @@
 .wow-joblist__row {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 7px;
   width: 100%;
   text-align: left;
-  padding: 10px 8px;
+  padding: 12px 10px;
   border-radius: 12px;
   border-top: 1px solid var(--line);
   transition: background 0.12s ease;

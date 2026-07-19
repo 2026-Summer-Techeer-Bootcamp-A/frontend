@@ -6,22 +6,21 @@ import {
   ActivityRings, useCountUp, SectionHeader, CoverageHistogram, TechIcon,
   PreviewBadge, WidgetSettingsMenu, type RingMetric,
 } from '../../career/kit'
-import { IndustryFitRadar } from '../../career/insights'
+import { IndustryFitRadar, NETWORK_CATEGORY_LABEL, NETWORK_CATEGORY_COLOR } from '../../career/insights'
 import { LatestJobsTimeline } from '../../career/wowWidgets'
 import { WorkflowMap } from '../../career/workflow/WorkflowMap'
 import { useResumesState, getDynamicPostings, calculateCoverage, ddayInfo } from '../../career/state'
 import { getAuthToken, useAuth } from '../../career/authStore'
 import {
-  dashboardApi, jobsApi,
-  type CoverageData, type DistributionData, type Identity, type PivotData, type PostingCard, type WhatIfData,
+  dashboardApi,
+  type CoverageData, type DistributionData, type Identity, type PivotData, type WhatIfData,
 } from '../../career/api'
 import { useWidgetData } from '../../career/useWidgetData'
 import { selectDisplayedCoverage } from '../../career/coverageScore'
 import { useDashboardConfig, isWidgetHidden, getWidgetSize } from '../../career/dashboardConfig'
 import { DASHBOARD_WIDGETS } from '../../career/widgetCatalog'
 import { useBookmarks } from '../../career/bookmarkStore'
-import { BriefingQueue, type QueueCard } from './dashboard/BriefingQueue'
-import { ApplyCardStack, buildApplyCards } from '../../career/ApplyCardStack'
+import { GrowthSnapshot, type GrowthCategoryCount } from './dashboard/GrowthSnapshot'
 import { PresentationTour, type TourZone } from './dashboard/PresentationTour'
 import data from '../../data/careerData.json'
 import './DesktopOverview.css'
@@ -296,49 +295,6 @@ export default function DesktopOverview() {
     dashboardRefreshKey,
   )
   const pivotData = useWidgetData<PivotData | null>(identity ? () => dashboardApi.pivot(identity) : null, null, dashboardRefreshKey)
-  const [matchedJobs, setMatchedJobs] = useState<PostingCard[]>([])
-  const [matchedJobsLoading, setMatchedJobsLoading] = useState(false)
-  const [matchedJobsError, setMatchedJobsError] = useState(false)
-
-  useEffect(() => {
-    if (!identity) {
-      setMatchedJobs([])
-      setMatchedJobsLoading(false)
-      setMatchedJobsError(false)
-      return
-    }
-
-    let cancelled = false
-    setMatchedJobs([])
-    setMatchedJobsLoading(true)
-    setMatchedJobsError(false)
-    jobsApi.list({
-      pool: 'domestic',
-      sort: 'match',
-      min_match: 50,
-      resume_id: identity.resumeId,
-      page: 1,
-      page_size: 3,
-    }, identity.token)
-      .then((result) => {
-        if (!cancelled) setMatchedJobs(result.items)
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setMatchedJobs([])
-          setMatchedJobsError(true)
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setMatchedJobsLoading(false)
-      })
-
-    return () => { cancelled = true }
-  }, [identity, dashboardRefreshKey])
-
-  // 3a 지원 가능 공고 카드 — 기존 skill-momentum 위젯이 쓰던 matchedJobs를 그대로 재사용해
-  // 매치율 내림차순 카드 스택으로 보여준다(새 API 없음).
-  const applyCards = useMemo(() => buildApplyCards(matchedJobs, skills, asOf), [matchedJobs, skills])
   const weightedScoreEnabled = import.meta.env.VITE_MATCH_SCORE_VERSION === 'weighted-v1'
   const shownCoverage = selectDisplayedCoverage(
     coverageData.value,
@@ -389,57 +345,22 @@ export default function DesktopOverview() {
     return getWidgetSize('dashboard', id, item.defaultSize)
   }
 
-  // 1a 액션 큐 — "오늘 브리핑"의 세 문장(마감 임박 · 커버리지 갭 · 신규 공고)을 각각
-  // 처리 가능한 카드로 재구성한다. 데이터는 기존 브리핑 계산(deadlineInfos/nextMove/
-  // recentCount)을 그대로 재사용하고 추가 요청은 없다.
-  const nearestDeadline = useMemo(
-    () => [...deadlineInfos].sort((a, b) => a.dd.d - b.dd.d)[0] ?? null,
-    [deadlineInfos],
-  )
-  const queueCards = useMemo<QueueCard[]>(() => {
-    const items: QueueCard[] = []
-    if (nearestDeadline) {
-      items.push({
-        id: `deadline:${nearestDeadline.p.id}`,
-        kind: 'deadline',
-        eyebrow: nearestDeadline.p.company,
-        title: nearestDeadline.p.title,
-        ddayLabel: `D-${nearestDeadline.dd.d}`,
-        metricLabel: <>매칭 <b>{nearestDeadline.p.matchPct}%</b></>,
-        ctaLabel: '공고 보기',
-        onAction: () => navigate(`/job/${encodeURIComponent(nearestDeadline.p.id)}`),
-      })
-    }
-    if (hasResume && nextMove) {
-      items.push({
-        id: `roadmap:${nextMove.skill}`,
-        kind: 'roadmap',
-        eyebrow: '학습 로드맵',
-        title: `${nextMove.skill} 배우기`,
-        metricLabel: <>지금 배우면 <b>{nextMove.label}</b></>,
-        ctaLabel: '로드맵 보기',
-        ghost: true,
-        onAction: scrollToLearning,
-      })
-    }
-    if (recentCount > 0) {
-      items.push({
-        id: 'new-postings',
-        kind: 'new',
-        eyebrow: '신규 공고',
-        title: `최근 3개월 새 공고 ${recentCount.toLocaleString()}건`,
-        metricLabel: '국내 공고 기준',
-        ctaLabel: '둘러보기',
-        onAction: () => navigate('/jobs'),
-      })
-    }
-    return items
-  }, [nearestDeadline, hasResume, nextMove, recentCount, navigate])
+  // 2번 작업 — "오늘 브리핑"(텍스트 액션 큐) 자리를 대신하는 "요즘 내 성장" 시각화 위젯의
+  // 데이터. 시계열 히스토리(스킬을 언제 배웠는지 등)가 없어 추이는 만들지 않고, activeResume가
+  // 이미 갖고 있는 skillCategories(스킬→카테고리)로 "지금" 보유 기술의 카테고리별 분포만
+  // 집계한다. 분류 사전에 없는 스킬은 세지 않으므로(state.ts 주석 참고) 합이 skills.length보다
+  // 작을 수 있다 — GrowthSnapshot이 그 경우 "분류 가능한 기술 기준"이라고 표시한다.
+  const skillCategoryCounts = useMemo<GrowthCategoryCount[]>(() => {
+    const counts = new Map<string, number>()
+    Object.values(activeResume?.skillCategories ?? {}).forEach((cat) => counts.set(cat, (counts.get(cat) ?? 0) + 1))
+    return [...counts.entries()]
+      .map(([key, count]) => ({ key, count, label: NETWORK_CATEGORY_LABEL[key] ?? key, color: NETWORK_CATEGORY_COLOR[key] ?? '#a1a1aa' }))
+      .sort((a, b) => b.count - a.count)
+  }, [activeResume])
 
   // 라벨 섹션 표시 여부 — 섹션 내 위젯이 전부 숨겨지면 섹션 헤더째로 렌더하지 않는다.
   const secMarketVisible = !isWidgetHidden('dashboard', 'industry-fit')
     || !isWidgetHidden('dashboard', 'coverage-histogram')
-    || !isWidgetHidden('dashboard', 'skill-momentum')
   const secLearnVisible = !isWidgetHidden('dashboard', 'workflow-map')
 
   const heroScoreVisible = !isWidgetHidden('dashboard', 'hero-score')
@@ -605,7 +526,7 @@ export default function DesktopOverview() {
           {secMarketVisible && (
             <section className="dov__sec" ref={marketZoneRef}>
               <h2 className="dov__sec-title">내 시장 진단</h2>
-              <div className="dov__sec-grid dov__sec-grid--3">
+              <div className="dov__sec-grid dov__sec-grid--2">
                 {!isWidgetHidden('dashboard', 'industry-fit') && (
                   <div className="dov__card-item">
                     <section className="dcard">
@@ -650,20 +571,6 @@ export default function DesktopOverview() {
                     </section>
                   </div>
                 )}
-                {!isWidgetHidden('dashboard', 'skill-momentum') && (
-                  <div className="dov__card-item">
-                    <section className="dcard" aria-busy={matchedJobsLoading}>
-                      <SectionHeader title="지금 지원할 만한 공고" hint="내 기술 50%+ · 국내" />
-                      {matchedJobsLoading ? (
-                        <DashboardSkeleton label="지원할 만한 공고를 불러오는 중이에요." />
-                      ) : matchedJobsError ? (
-                        <div className="dov__empty" role="alert">공고를 불러오지 못했어요.</div>
-                      ) : applyCards.length > 0 ? (
-                        <ApplyCardStack cards={applyCards} onOpen={(id) => navigate(`/job/${encodeURIComponent(id)}`)} />
-                      ) : <div className="dov__empty">조건에 맞는 공고가 없어요.</div>}
-                    </section>
-                  </div>
-                )}
               </div>
             </section>
           )}
@@ -689,8 +596,15 @@ export default function DesktopOverview() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minHeight: 0 }}>
             {!isWidgetHidden('dashboard', 'brief') && (
               <section className="dcard" style={{ flex: 'none' }}>
-                <span className="dov__card-eyebrow"><Sparkles size={14} /> 오늘 브리핑</span>
-                <BriefingQueue cards={queueCards} />
+                <span className="dov__card-eyebrow"><Sparkles size={14} /> 요즘 내 성장</span>
+                <GrowthSnapshot
+                  hasResume={hasResume}
+                  coveragePct={shownCoverage}
+                  skillCount={skills.length}
+                  applicableCount={shownApplicable}
+                  categories={skillCategoryCounts}
+                  onRegister={() => navigate('/resume/submit')}
+                />
               </section>
             )}
             {!isWidgetHidden('dashboard', 'latest-timeline') && (

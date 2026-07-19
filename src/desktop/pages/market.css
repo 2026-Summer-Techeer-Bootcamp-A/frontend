@@ -180,6 +180,19 @@
 .dmkt2__network-filter:hover { background: var(--accent-50); }
 .dmkt2__network-filter input { width: 14px; height: 14px; margin: 0; accent-color: #18181b; }
 .dmkt2__network-filter.is-disabled { cursor: not-allowed; color: var(--c-muted); opacity: .55; }
+
+/* 네트워크 카테고리 필터 — 노드가 많은 큰 네트워크를 종류별로 좁혀보는 멀티 토글 칩(4번 작업).
+   기존 "내 이력서 기술 기준" 체크박스 옆에 나란히 놓는다. */
+.dmkt2__network-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.dmkt2__network-catfilter { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.dmkt2__network-catchip {
+  display: inline-flex; align-items: center; gap: 0;
+  padding: 5px 9px; border: 1px solid var(--line); border-radius: 8px;
+  background: #fff; color: var(--c-muted); font-size: 11px; font-weight: 700;
+  cursor: pointer; transition: background 0.13s ease, color 0.13s ease, border-color 0.13s ease;
+}
+.dmkt2__network-catchip:hover { background: var(--accent-50); color: var(--c-ink); }
+.dmkt2__network-catchip.on { background: var(--accent-50); }
 .dmkt2__netsummary { flex: 1; min-width: 0; border-left: 1px solid var(--line); padding-left: 14px; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; min-height: 0; }
 .dmkt2__netsummary-t { font-size: 11.5px; font-weight: 700; color: var(--c-muted); margin-bottom: 4px; }
 /* Top-5 각 기술 그룹 — 기술 행(1) + 동반 요구 상위 서브행(3) 묶음. 그룹 사이만 간격을 준다. */
