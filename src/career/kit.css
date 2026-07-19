@@ -731,6 +731,21 @@ button.kit-wcard:active { opacity: 0.6; }
   font-weight: 700;
 }
 
+/* ---- 많은 옵션(5개 이상)을 한 줄에 담는 탭 바 변형 — 좁은 화면에서도 줄바꿈 없이
+   패딩/글자 크기를 줄여 전 폭을 채운다. 넘칠 땐 가로 스크롤로 안전하게 대응. ---- */
+.kit-segctl.wide {
+  display: flex;
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.kit-segctl.wide::-webkit-scrollbar { display: none; }
+.kit-segctl.wide button {
+  padding: 6px 4px;
+  font-size: 10.5px;
+  letter-spacing: -0.2px;
+}
+
 /* ---- DS 쇼케이스 데모 래퍼 ---- */
 .kit-showcase { display: flex; flex-direction: column; gap: 22px; }
 .kit-demo {

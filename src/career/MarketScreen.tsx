@@ -1,16 +1,14 @@
 import { useState, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Award, ChevronRight, UploadCloud } from 'lucide-react'
-import { CareerScreen, ScreenHead, PoolToggle, AsOf, Card, HBars } from './charts'
+import { CareerScreen, ScreenHead, PoolToggle, AsOf, Card } from './charts'
 import {
   SectionHeader, DisclosureCard, OpportunityQuadrant,
   ResumeHeroCard, ActivityRings, RingLegend, CoverageHistogram,
   type QuadItem
 } from './kit'
-import {
-  TechCoNetworkGraph, TrendPropagationGraph, TierCompareChart, GenerationTrendChart,
-  TechYearlyTrendChart, TechMoversBar, IndustryFitRadar, TechChainRoadmap
-} from './insights'
+import { IndustryFitRadar, TechChainRoadmap, TechDemandHeatStrip } from './insights'
+import { TrendTabStage } from './TrendTabStage'
 import { useResumesState, getDynamicPostings, calculateCoverage } from './state'
 import market from '../data/marketData.json'
 import career from '../data/careerData.json'
@@ -28,7 +26,6 @@ export default function MarketScreen() {
 
   const [pool, setPool] = useState<Pool>('국내')
   const [sel, setSel] = useState('Python')
-  const [showAllDemand, setShowAllDemand] = useState(false)
 
   // Dynamic calculation of postings matching the active resume skills
   const activeSkills = useMemo(() => hasResume ? activeResume.skills : [], [hasResume, activeResume])
@@ -56,16 +53,6 @@ export default function MarketScreen() {
       .slice(0, 5)
       .map((i) => ({ tech: i.tech, count: i.count }))
   }, [pool, activeSkills])
-
-  // General market data calculations
-  const share = (market.skillShare as never as Record<Pool, {
-    asOf: string; N: number; techFiltered: boolean
-    items: { tech: string; count: number; share: number; owned: boolean }[]
-  }>)[pool]
-  const maxShare = share.items[0]?.share || 1
-  const bars = share.items.map((it) => ({
-    label: it.tech, value: it.count, pct: Math.round((it.share / maxShare) * 100), owned: activeSkills.includes(it.tech),
-  }))
 
   const quad: QuadItem[] = career.topTechs.slice(0, 12).map((t) => ({
     tech: t.tech, demand: t.count, owned: activeSkills.includes(t.tech), count: t.count,
@@ -147,18 +134,9 @@ export default function MarketScreen() {
       )}
 
       {/* 2. 시장 기술 현황 및 트렌드 (이력서 유무 불문 표시) */}
-      <SectionHeader title="시장 인기 기술" hint="탭하면 상세 동시요구 조회" />
+      <SectionHeader title="시장 인기 기술" hint="기술별 연도 수요 히트 · 탭하면 동시요구 조회" />
       <Card>
-        <div className="scr-card__hint" style={{ marginTop: 0 }}>{pool} 공고 요구 비율 · ■보유</div>
-        <HBars items={showAllDemand ? bars.slice(0, 12) : bars.slice(0, 3)} onClick={(i) => setSel(bars[i].label)} />
-        <button
-          className="cr-morebtn"
-          style={{ width: '100%', display: 'block', textRendering: 'optimizeLegibility', textAlign: 'center', marginTop: 12 }}
-          onClick={() => setShowAllDemand(!showAllDemand)}
-        >
-          {showAllDemand ? '접기 ‹' : '시장 수요 더보기 ›'}
-        </button>
-        <AsOf asOf={share.asOf} n={share.N} note={share.techFiltered ? '기술 직군' : '기술보드'} />
+        <TechDemandHeatStrip onSelect={setSel} />
       </Card>
 
       {/* cooc disclosure (인기 기술 탭 시 동작) */}
@@ -179,30 +157,9 @@ export default function MarketScreen() {
         </DisclosureCard>
       )}
 
-      {/* 기타 트렌드 차트 (progressive disclosure 형태로 접어서 깔끔하게 보관) */}
-      <DisclosureCard title="국내 기술 점유율 추이" summary="2022~2025 · 점핏 단일 소스" defaultOpen={false}>
-        <TechYearlyTrendChart skills={activeSkills} />
-      </DisclosureCard>
-
-      <DisclosureCard title="급상승 · 급감 Top 6" summary="같은 기간 점유율 변화폭 순" defaultOpen={false}>
-        <TechMoversBar />
-      </DisclosureCard>
-
-      <DisclosureCard title="기술 공동출현 네트워크" summary="함께 요구되는 기술 구조" defaultOpen={false}>
-        <TechCoNetworkGraph skills={activeSkills} />
-      </DisclosureCard>
-
-      <DisclosureCard title="트렌드 전파 네트워크" summary="다음에 뜰 기술(글로벌)" defaultOpen={false}>
-        <TrendPropagationGraph />
-      </DisclosureCard>
-
-      <DisclosureCard title="레거시 → 신진 기업 스택 변화" summary="회사 설립 세대별 기술 점유율" defaultOpen={false}>
-        <GenerationTrendChart skills={activeSkills} />
-      </DisclosureCard>
-
-      <DisclosureCard title="기업 규모별 기술 요구 차이" summary="대기업 · 중견 · 중소 실측 비교" defaultOpen={false}>
-        <TierCompareChart />
-      </DisclosureCard>
+      {/* 트렌드 6종 — 탭 스테이지(시안 1a): 선택된 하나만 크게, 나머지는 미니 프리뷰 */}
+      <SectionHeader title="시장 트렌드" hint="탭으로 전환 · 나머지는 아래 미리보기" />
+      <TrendTabStage skills={activeSkills} />
 
       <button className="scr-linkbtn" onClick={() => navigate('/cert-gap')} style={{ marginTop: 14 }}>
         <Award size={15} style={{ verticalAlign: -3, marginRight: 6 }} />자격증 갭 보기
