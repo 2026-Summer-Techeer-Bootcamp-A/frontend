@@ -9,7 +9,11 @@ export const CURATED_SANKEY_CONCEPTS = [
 ] as const
 
 export const SANKEY_CHART_LAYOUT = {
-  height: 500,
+  // 2026-07-19: 링크(흐름 선)가 너무 얇아 보인다는 피드백으로 height를 500->640으로
+  // 키웠다. ECharts sankey는 링크 두께를 값(value) 비율로만 계산하므로(고정 px 설정
+  // 불가) 캔버스 자체를 키우는 게 비율은 그대로 지키면서 절대 두께를 키우는 유일한
+  // 정직한 방법이다 — 데이터를 부풀리지 않는다.
+  height: 640,
   nodeGap: 24,
   labelFontSize: 14,
   top: 30,

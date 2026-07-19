@@ -11,6 +11,7 @@ import {
 } from '../../career/kit'
 import {
   TechCoNetworkGraph, TechMoversBar, getNetworkTopConnections, getNetworkTopPairs,
+  NETWORK_CATEGORIES, NETWORK_CATEGORY_LABEL, NETWORK_CATEGORY_COLOR,
 } from '../../career/insights'
 import {
   HypeVsHireWidget, GithubChronicleWidget, GlobalDomesticGapWidget,
@@ -799,6 +800,16 @@ export function DesktopMarket() {
   useDashboardConfig() // 위젯 표시/숨김 변경 시 리렌더 트리거
   const { activeResume } = useResumesState()
   const [resumeNetworkOnly, setResumeNetworkOnly] = useState(false)
+  // 4번 작업 — 기술 관계 네트워크 카테고리 필터. 빈 Set = 필터 없음(전체 표시).
+  const [networkCategories, setNetworkCategories] = useState<Set<string>>(new Set())
+  const toggleNetworkCategory = (cat: string) => {
+    setNetworkCategories((prev) => {
+      const next = new Set(prev)
+      if (next.has(cat)) next.delete(cat)
+      else next.add(cat)
+      return next
+    })
+  }
   // A-2: 시장 페이지 전역 "내 스킬 강조" 토글 — 이미 보유(owned) 오버레이 개념을 갖고 있던
   // 위젯(기술 관계 네트워크 · Hype vs Hire · GitHub 스타 모멘텀)에만 이력서 기술을 넘겨
   // 하이라이트를 켠다. 새로 오버레이 개념을 만들지 않고 기존 것을 한 곳에서 묶어 켜고 끈다.
@@ -1076,15 +1087,31 @@ export function DesktopMarket() {
                     title="기술 관계 네트워크"
                     hint="함께 요구되는 기술 · force graph"
                     right={(
-                      <label className={`dmkt2__network-filter${!activeResume?.skills.length ? ' is-disabled' : ''}`}>
-                        <input
-                          type="checkbox"
-                          checked={resumeNetworkOnly}
-                          disabled={!activeResume?.skills.length}
-                          onChange={(event) => setResumeNetworkOnly(event.target.checked)}
-                        />
-                        <span>내 이력서 기술 기준</span>
-                      </label>
+                      <div className="dmkt2__network-controls">
+                        <div className="dmkt2__network-catfilter" role="group" aria-label="기술 카테고리 필터">
+                          {NETWORK_CATEGORIES.map((cat) => (
+                            <button
+                              key={cat}
+                              type="button"
+                              className={`dmkt2__network-catchip${networkCategories.has(cat) ? ' on' : ''}`}
+                              style={networkCategories.has(cat) ? { color: NETWORK_CATEGORY_COLOR[cat], borderColor: NETWORK_CATEGORY_COLOR[cat] } : undefined}
+                              aria-pressed={networkCategories.has(cat)}
+                              onClick={() => toggleNetworkCategory(cat)}
+                            >
+                              {NETWORK_CATEGORY_LABEL[cat] ?? cat}
+                            </button>
+                          ))}
+                        </div>
+                        <label className={`dmkt2__network-filter${!activeResume?.skills.length ? ' is-disabled' : ''}`}>
+                          <input
+                            type="checkbox"
+                            checked={resumeNetworkOnly}
+                            disabled={!activeResume?.skills.length}
+                            onChange={(event) => setResumeNetworkOnly(event.target.checked)}
+                          />
+                          <span>내 이력서 기술 기준</span>
+                        </label>
+                      </div>
                     )}
                   />
                   <p className="dmkt2__takeaway">하나 배우면 딸려오는 기술들 — <b>함께 요구되는 스택 지도</b>.</p>
@@ -1093,6 +1120,7 @@ export function DesktopMarket() {
                       <TechCoNetworkGraph
                         skills={(highlightOwned || resumeNetworkOnly) ? activeResume?.skills ?? NO_SKILLS : NO_SKILLS}
                         resumeOnly={resumeNetworkOnly}
+                        categoryFilter={networkCategories}
                       />
                     </div>
                     <aside className="dmkt2__netsummary">
