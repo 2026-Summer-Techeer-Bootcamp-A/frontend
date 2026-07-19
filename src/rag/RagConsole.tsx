@@ -4,16 +4,22 @@ import { ChevronRight, Compass, Paperclip, RotateCcw, Send, Square } from 'lucid
 import { SCENARIOS } from './demoScenarios'
 import { streamChat } from './chatStream'
 import { normalizeStreamResult } from './chatContract'
-import type { ChatAttachment, Citation, Confidence, Plan, Route, ToolResult } from './chatContract'
+import type { ChatAttachment, Citation, Confidence, Plan, Route, SplitDiffPayload, ToolResult } from './chatContract'
 import AssistantVisualizer from './AssistantVisualizer'
 import EngineFlowLog from './EngineFlowLog'
 import AttachmentChip from './AttachmentChip'
 import AttachmentPicker from './AttachmentPicker'
-import ProcessTimeline from './ProcessTimeline'
-import type { StepEntry } from './ProcessTimeline'
+import PipelineDashboard from './PipelineDashboard'
+import type { StepEntry } from './PipelineDashboard'
 import ComparisonCards, { ComparisonCard } from './ComparisonCards'
 import ComparisonSummary from './ComparisonSummary'
+import ComparisonBoard from './ComparisonBoard'
+import { addToCompareBoard } from './compareBoardStore'
+import type { CompareBoardCard } from './compareBoardStore'
 import PostingResultCards, { PostingResultCard } from './PostingResultCards'
+import CommandPalette from './CommandPalette'
+import ReportCard from './ReportCard'
+import FollowUpChips from './FollowUpChips'
 import { useAttachments } from './useAttachments'
 import { consumeAttachmentIntent } from './attachmentIntentStore'
 import { routeLabel, intentLabel } from './chatLabels'
@@ -57,6 +63,20 @@ interface Turn {
 
 let nextTurnId = 1
 
+// 4b 비교 보드 — resume_posting_llm/posting_posting_llm 결과가 도착할 때마다 그 결과가 겨냥한
+// 공고(들)를 보드에 쌓는다. 공고 id는 result payload에 없고(제목만 있음) 그 턴에 실제로 첨부한
+// ChatAttachment[]에만 있으므로, 스트리밍 콜백 클로저가 들고 있는 turnAttachments를 그대로 받는다.
+function pushCompareBoardEntry(result: ToolResult, turnAttachments: ChatAttachment[]) {
+  if (result.kind !== 'resume_posting_llm' && result.kind !== 'posting_posting_llm') return
+  if (!result.compare || !('counts' in result.compare)) return
+  const payload = result.compare as SplitDiffPayload
+  const score = `적합도 ${Math.round(Math.max(0, Math.min(100, payload.score)))}%`
+  const postings = turnAttachments.filter((a) => a.kind === 'posting')
+  for (const posting of postings) {
+    addToCompareBoard({ id: posting.id, title: posting.title, subtitle: score })
+  }
+}
+
 // 이력서 확인 세션(POST /resume/confirm 응답 session_id)이 있으면 챗 요청에 실어 커리어
 // 적합도 LLM 판정(resume_posting_llm_compare)을 태운다. RagConsole 자체는 확인 세션을 만들지
 // 않고(그건 ResumeInsight 화면 몫), 이미 만들어진 세션이 있으면 sessionStorage에서 읽어 전달만
@@ -76,6 +96,9 @@ export default function RagConsole() {
   // 빈 상태 그리팅을 로그인 여부에 따라 개인화하는 데만 쓴다.
   const { user, isAuthed } = useAuth()
   const { attachments, add: addAttachment, remove: removeAttachment, clear: clearAttachments, defaultQuestion } = useAttachments()
+  // 4c 첨부 딥링크 착지 — 외부 화면(공고 상세 등)에서 넘어온 경우에만 채워지고, 빈 상태
+  // 커맨드 팔레트(2c)가 이 값의 유무로 배너 + 맞춤 제안 모드를 켠다. 평소 마운트는 null 그대로다.
+  const [landedFrom, setLandedFrom] = useState<string | null>(null)
 
   // 외부 화면(공고 상세의 "내 이력서와 비교" 등)이 딥링크로 넘긴 첨부 의도를 마운트 시 1회
   // 소비한다. consumeAttachmentIntent()는 첫 호출 이후 계속 null을 돌려주므로(스토어가 즉시
@@ -87,6 +110,10 @@ export default function RagConsole() {
     if (!intent) return
     intent.attachments.forEach(addAttachment)
     if (intent.seedQuestion) setInput(intent.seedQuestion)
+    // 배너 문구는 공고 첨부 제목을 우선하고(가장 흔한 진입 경로 — 공고 상세→비교), 공고가
+    // 없으면 이력서 제목으로 대체한다.
+    const source = intent.attachments.find((a) => a.kind === 'posting') ?? intent.attachments[0]
+    if (source) setLandedFrom(source.title)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -118,7 +145,11 @@ export default function RagConsole() {
           patchTurn(id, (t) => ({
             steps: [...t.steps, { kind: e.kind, tool: e.tool, label: e.label, detail: e.detail, durationMs: e.duration_ms, debug: e.debug }],
           })),
-        onResult: (e) => patchTurn(id, (t) => ({ results: [...t.results, normalizeStreamResult(e.result)] })),
+        onResult: (e) => {
+          const result = normalizeStreamResult(e.result)
+          patchTurn(id, (t) => ({ results: [...t.results, result] }))
+          pushCompareBoardEntry(result, turnAttachments)
+        },
         onFinal: (e) =>
           patchTurn(id, {
             status: 'done',
@@ -164,7 +195,26 @@ export default function RagConsole() {
     setInput('')
     clearAttachments()
     setPickerOpen(false)
+    setLandedFrom(null)
     if (textareaRef.current) textareaRef.current.style.height = ''
+  }
+
+  // 2c 팔레트·4c 착지 제안·하단 시나리오 칩이 공유하는 전송 경로 — 클릭한 질문을 현재 컴포저의
+  // 첨부와 함께 그대로 보낸다. 예전 RcEmptyState는 onPick={submit}으로 바로 연결돼 있어 클릭 시
+  // 첨부가 함께 전송되지 않는 결함이 있었다(제출 폼의 handleSubmit만 attachments를 넘겼다) —
+  // 여기서 한 곳으로 모아 고친다.
+  const pickSuggestion = (question: string) => {
+    if (busy) return
+    submit(question, attachments)
+    resetComposer()
+  }
+
+  // 4b 보드 카드 재비교 — 그 공고를 첨부로 붙여 재비교 질문을 자동 구성해 보낸다. 이력서는
+  // 첨부 목록이 아니라 세션(readResumeSessionId)으로 따로 실리므로 여기서 다시 챙기지 않아도
+  // resume_posting_llm_compare가 그대로 탄다.
+  const recompareWithBoardCard = (card: CompareBoardCard) => {
+    if (busy) return
+    submit(`${card.title} 공고랑 다시 비교해줘`, [{ kind: 'posting', id: card.id, title: card.title }])
   }
 
   const handleSubmit = (e: FormEvent) => {
@@ -203,6 +253,7 @@ export default function RagConsole() {
           <div className="rc__nm">커리어 어시스턴트</div>
           <div className={`rc__st${busy ? ' rc__st--live' : ''}`}>{status}</div>
         </div>
+        <ComparisonBoard busy={busy} onRecompare={recompareWithBoardCard} />
       </div>
 
       <div className="rc__toolbar">
@@ -215,10 +266,19 @@ export default function RagConsole() {
 
       <div className="rc__body" ref={bodyRef}>
         {turns.length === 0 && (
-          <RcEmptyState isAuthed={isAuthed} nickname={user?.nickname} busy={busy} onPick={submit} />
+          <CommandPalette
+            isAuthed={isAuthed}
+            nickname={user?.nickname}
+            busy={busy}
+            input={input}
+            attachments={attachments}
+            landedFrom={landedFrom}
+            onRemoveAttachment={removeAttachment}
+            onPick={pickSuggestion}
+          />
         )}
         {turns.map((turn) => (
-          <TurnBlock key={turn.id} turn={turn} mode={mode} onRetry={() => retry(turn)} />
+          <TurnBlock key={turn.id} turn={turn} mode={mode} busy={busy} onRetry={() => retry(turn)} onFollowUp={pickSuggestion} />
         ))}
       </div>
 
@@ -292,7 +352,7 @@ export default function RagConsole() {
         {turns.length > 0 && (
           <div className="rc__chips">
             {SCENARIOS.map((s) => (
-              <button key={s.id} type="button" className="rc__chip" onClick={() => submit(s.userQ)} disabled={busy}>
+              <button key={s.id} type="button" className="rc__chip" onClick={() => pickSuggestion(s.userQ)} disabled={busy}>
                 {s.chip} <ChevronRight size={13} className="chev" />
               </button>
             ))}
@@ -303,48 +363,19 @@ export default function RagConsole() {
   )
 }
 
-// 빈 상태(첫 화면) 그리팅 + 추천 질문 카드. 로그인 여부에 따라 문구만 갈라지고,
-// 카드 문구는 하단 rc__chips와 동일하게 SCENARIOS를 그대로 재사용한다(하드코딩 중복 금지).
-interface RcEmptyStateProps {
-  isAuthed: boolean
-  nickname: string | null | undefined
+function TurnBlock({
+  turn,
+  mode,
+  busy,
+  onRetry,
+  onFollowUp,
+}: {
+  turn: Turn
+  mode: Mode
   busy: boolean
-  onPick: (question: string) => void
-}
-
-function RcEmptyState({ isAuthed, nickname, busy, onPick }: RcEmptyStateProps) {
-  // 로그인 상태면 닉네임(없으면 '리버')으로 개인화하고, 비로그인이면 완전히 중립적인 문구로 대체한다.
-  const greeting = isAuthed
-    ? `${nickname ?? '리버'}님, 오늘은 뭘 볼까요?`
-    : '채용 시장에 대해 무엇이든 물어보세요'
-
-  return (
-    <div className="rc__hero">
-      <span className="rc__hero-badge"><Compass size={20} /></span>
-      <div className="rc__hero-greet">{greeting}</div>
-      <div className="rc__hero-sub">채용 시장, 이력서, 기술 트렌드 — 실제 데이터로 답해드려요.</div>
-      <div className="rc__suggest">
-        {SCENARIOS.map((s) => (
-          <button
-            key={s.id}
-            type="button"
-            className="rc__suggest-card"
-            onClick={() => onPick(s.userQ)}
-            disabled={busy}
-          >
-            <span className="rc__suggest-text">
-              <span className="rc__suggest-title">{s.chip}</span>
-              <span className="rc__suggest-q">{s.userQ}</span>
-            </span>
-            <ChevronRight size={14} className="rc__suggest-chev" />
-          </button>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function TurnBlock({ turn, mode, onRetry }: { turn: Turn; mode: Mode; onRetry: () => void }) {
+  onRetry: () => void
+  onFollowUp: (question: string) => void
+}) {
   const nothingYet = !turn.plan && turn.steps.length === 0 && turn.status === 'loading'
 
   return (
@@ -378,13 +409,15 @@ function TurnBlock({ turn, mode, onRetry }: { turn: Turn; mode: Mode; onRetry: (
       )}
 
       {mode === 'basic' && !nothingYet && (turn.plan || turn.steps.length > 0) && (
-        <ProcessTimeline
+        <PipelineDashboard
           route={turn.route}
           plan={turn.plan}
           planDurationMs={turn.planDurationMs}
           steps={turn.steps}
+          results={turn.results}
           status={turn.status}
           totalDurationMs={turn.final?.totalDurationMs}
+          citationsCount={turn.final?.citations.length}
         />
       )}
 
@@ -431,7 +464,14 @@ function TurnBlock({ turn, mode, onRetry }: { turn: Turn; mode: Mode; onRetry: (
         </div>
       )}
 
-      {turn.status === 'done' && turn.final && <FinalBlock final={turn.final} mode={mode} />}
+      {turn.status === 'done' && turn.final && (
+        <>
+          <FinalBlock final={turn.final} mode={mode} results={turn.results} attachments={turn.attachments} />
+          {mode === 'basic' && (
+            <FollowUpChips confidence={turn.final.confidence} results={turn.results} busy={busy} onPick={onFollowUp} />
+          )}
+        </>
+      )}
     </div>
   )
 }
@@ -463,12 +503,26 @@ function renderAnswerMarkdown(answer: string): React.ReactNode[] {
   })
 }
 
-function FinalBlock({ final, mode }: { final: FinalPayload; mode: Mode }) {
+function FinalBlock({
+  final,
+  mode,
+  results,
+  attachments,
+}: {
+  final: FinalPayload
+  mode: Mode
+  results: ToolResult[]
+  attachments: ChatAttachment[]
+}) {
   const confLabel = final.confidence.level >= 4 ? '높음' : final.confidence.level >= 2 ? '보통' : '낮음'
   const dots = Array.from({ length: 5 }, (_, i) => i < final.confidence.level)
 
   return (
     <div className="rc__out">
+      {final.answer.trim() && (
+        <ReportCard answer={final.answer} citations={final.citations} confidence={final.confidence} results={results} attachments={attachments} />
+      )}
+
       <div className="rc__answer">
         {final.answer.trim()
           ? renderAnswerMarkdown(final.answer)
