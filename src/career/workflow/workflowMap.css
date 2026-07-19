@@ -794,8 +794,9 @@
    관계선을 그대로 옮긴 스타일. wfs- 프리픽스로 wfm-*(flow 뷰)/wfm-list-*(리스트 뷰)와
    완전히 분리한다. 색 토큰은 기존 워크플로우 맵 팔레트(보유 그린 #1f9d57, 목표 다크
    #18181b, 경유 뉴트럴 그레이, 관계선 블루 #3b82f6)를 그대로 재사용한다.
-   시안 4/5: 좌표는 더 이상 DOM 측정이 아니라 elkjs(workflowLayout.ts)가 계산한
-   결정적 좌표다 — wfs-headrow/wfs-canvas 안의 모든 카드는 position:absolute로,
+   시안 4/5: 좌표는 더 이상 DOM 측정이 아니라 workflowLayout.ts의 layoutStages가
+   계산한 결정적 좌표다(컬럼 x는 컬럼 인덱스만의 함수, 외부 레이아웃 엔진 없음) —
+   wfs-headrow/wfs-canvas 안의 모든 카드는 position:absolute로,
    컴포넌트가 인라인 style(left/top/width/height)에 그 좌표를 그대로 꽂는다. 이 파일의
    치수 상수(패딩·행 높이 등)는 workflowLayout.ts의 estimate*Height 함수가 가정하는
    값과 반드시 같아야 추정 높이와 실제 렌더 높이가 어긋나지 않는다.
@@ -845,40 +846,32 @@
   .wfs-edge { transition: none; }
 }
 
-.wfs-layout-loading {
-  min-height: 220px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  color: var(--c-muted, #7c7f88);
-}
-
 .wfs-empty-note {
   font-size: 11px;
   color: var(--c-muted, #7c7f88);
   padding: 8px 2px;
 }
 
-/* 시작 컬럼 — 보유 요약 카드 */
+/* 시작 컬럼 — 보유 요약 카드. 목표 선택 여부와 무관하게 항상 이 크기로 나온다
+   (workflowLayout.ts의 estimateStartSummaryHeight가 ownedSkills 총량에만 의존). */
 .wfs-summary {
   box-sizing: border-box;
   background: #f0fbf4;
   border: 1px solid #9dcfb4;
-  border-radius: 11px;
-  padding: 12px;
+  border-radius: 12px;
+  padding: 22px 18px;
   overflow: hidden;
 }
-.wfs-summary__big { font-size: 19px; font-weight: 800; color: #157a41; }
-.wfs-summary__sub { font-size: 10px; color: #3f7a5b; }
+.wfs-summary__big { font-size: 26px; font-weight: 800; color: #157a41; }
+.wfs-summary__sub { font-size: 11px; color: #3f7a5b; }
 .wfs-summary__lines {
-  margin-top: 8px;
+  margin-top: 16px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 8px;
 }
 .wfs-summary__lines div {
-  font-size: 10.5px;
+  font-size: 11.5px;
   color: #2f6a49;
   display: flex;
   justify-content: space-between;
@@ -901,13 +894,14 @@
   transition: opacity 0.15s ease;
 }
 
-/* 스킬 카드 — 시안 3: 기존 대비 높이를 30% 이상 키우고, 스킬명 -> 카테고리 ->
-   수요(공고 수 + 회사 아바타) -> (있으면) payoff 순으로 여백 있게 배치한다. 목표(다크)
-   / 경유(회색 점선) 색 구분은 그대로 유지한다. */
+/* 스킬 카드 — 시안 3 + 라이브 피드백: 카드 높이를 훨씬 키우고(workflowLayout.ts의
+   MIN_SKILL_CARD_H이 목표 선택 여부와 무관하게 항상 적용되는 바닥값이다), 스킬명 ->
+   카테고리 -> 수요(공고 수 + 회사 아바타) -> (있으면) payoff 순으로 여백 있게
+   배치한다. 목표(다크) / 경유(회색 점선) 색 구분은 그대로 유지한다. */
 .wfs-scard {
   box-sizing: border-box;
-  border-radius: 12px;
-  padding: 16px 14px;
+  border-radius: 14px;
+  padding: 22px 18px;
   border: 1px solid var(--line, #e6e9ef);
   background: #fff;
   overflow: hidden;
@@ -936,7 +930,7 @@
 .wfs-scard__name {
   min-width: 0;
   flex: 1;
-  font-size: 13px;
+  font-size: 14.5px;
   font-weight: 750;
   color: var(--c-ink, #18181b);
   white-space: nowrap;
@@ -963,7 +957,7 @@
 
 .wfs-scard__reason {
   font-size: 10px;
-  margin-top: 10px;
+  margin-top: 16px;
   color: #6b6f78;
   line-height: 1.45;
   display: -webkit-box;
@@ -977,7 +971,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-top: 10px;
+  margin-top: 16px;
   flex-wrap: wrap;
 }
 .wfs-scard__avatars {
@@ -987,7 +981,7 @@
 }
 
 .wfs-scard__payoff {
-  margin-top: 10px;
+  margin-top: 16px;
   font-size: 10.5px;
   font-weight: 650;
   color: #157a41;
@@ -996,7 +990,7 @@
 .wfs-scard--goal .wfs-scard__payoff { color: #7fe3ac; }
 
 .wfs-scard__alt {
-  margin-top: 10px;
+  margin-top: 16px;
   font-size: 10px;
   font-weight: 700;
   color: #2f5fb0;
@@ -1035,13 +1029,13 @@
   color: var(--c-muted, #7c7f88);
 }
 
-/* 번들(goes_with) — 점선 박스 안 행 목록. 박스 하나가 elk 노드 하나다(멤버 각각이
-   아니라) — 박스를 가리키는 엣지는 박스 테두리에 붙는다. */
+/* 번들(goes_with) — 점선 박스 안 행 목록. 박스 하나가 layoutStages의 노드 하나다
+   (멤버 각각이 아니라) — 박스를 가리키는 엣지는 박스 테두리에 붙는다. */
 .wfs-bundle {
   box-sizing: border-box;
   border: 1.4px dashed #8b8f98;
-  border-radius: 10px;
-  padding: 12px 11px 9px;
+  border-radius: 12px;
+  padding: 18px 16px 14px;
   position: relative;
   background: #fff;
   overflow: hidden;
@@ -1060,14 +1054,14 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--c-ink, #18181b);
-  padding: 3px 0;
+  padding: 6px 0;
   transition: opacity 0.15s ease;
 }
 .wfs-bundle__row-name { flex: 1; min-width: 0; }
 .wfs-bundle__note {
-  margin-top: 4px;
+  margin-top: 8px;
   font-size: 10px;
   color: var(--c-muted, #7c7f88);
 }
@@ -1079,22 +1073,22 @@
   background: #fdf3e6;
   border: 1px solid #ecd4a8;
   color: #9a6613;
-  border-radius: 10px;
-  padding: 8px 10px;
+  border-radius: 12px;
+  padding: 18px 16px;
   text-align: left;
   overflow: hidden;
   transition: opacity 0.15s ease;
 }
 .wfs-need-card__name {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   display: flex;
   align-items: center;
   gap: 6px;
 }
 .wfs-need-card__reason {
-  font-size: 10px;
-  margin-top: 3px;
+  font-size: 11px;
+  margin-top: 10px;
   color: #a5761e;
   display: -webkit-box;
   -webkit-line-clamp: 2;
