@@ -151,8 +151,14 @@ const CAT_LABEL: Record<string, string> = {
   cloud_services: '클라우드', devops: '데브옵스', ai_llm: 'AI/LLM', mobile: '모바일',
 }
 const OWNED_RING = '#18181b'
+// 네트워크가 카테고리 8종을 한 화면에 다 그리면 노드가 너무 많아 읽기 어려워지는 문제(4번
+// 작업) — 카테고리 필터 UI(placeholders.tsx)가 쓸 전체 목록을 여기서 함께 내보낸다.
+export const NETWORK_CATEGORIES = [...new Set(N_DATA.data.nodes.map((n) => n.category))]
+export { CAT_LABEL as NETWORK_CATEGORY_LABEL, CAT_COLOR as NETWORK_CATEGORY_COLOR }
 
-export function TechCoNetworkGraph({ skills = RESUME, resumeOnly = false }: { skills?: string[]; resumeOnly?: boolean }) {
+export function TechCoNetworkGraph({
+  skills = RESUME, resumeOnly = false, categoryFilter = null,
+}: { skills?: string[]; resumeOnly?: boolean; categoryFilter?: Set<string> | null }) {
   const resumeSet = useMemo(() => new Set(skills), [skills])
   const focusedTechs = useMemo(() => {
     if (!resumeOnly || resumeSet.size === 0) return null
@@ -166,16 +172,25 @@ export function TechCoNetworkGraph({ skills = RESUME, resumeOnly = false }: { sk
     })
     return visible.size > 0 ? visible : null
   }, [resumeOnly, resumeSet, skills])
-  const nodes = useMemo(
-    () => focusedTechs ? N_DATA.data.nodes.filter((node) => focusedTechs.has(node.tech)) : N_DATA.data.nodes,
-    [focusedTechs],
-  )
+  // 카테고리 필터 — 노드가 많아 복잡한 네트워크를 종류별로 좁혀볼 수 있게 한다(4번 작업).
+  // 빈 Set/undefined는 "필터 없음"으로 취급해 전체를 보여준다.
+  const hasCategoryFilter = !!categoryFilter && categoryFilter.size > 0
+  const nodes = useMemo(() => {
+    const base = focusedTechs ? N_DATA.data.nodes.filter((node) => focusedTechs.has(node.tech)) : N_DATA.data.nodes
+    return hasCategoryFilter ? base.filter((node) => categoryFilter!.has(node.category)) : base
+  }, [focusedTechs, hasCategoryFilter, categoryFilter])
+  // 엣지는 (필터 후) 남은 노드 이름 집합을 기준으로 다시 걸러 노드-엣지 정합을 유지한다.
+  const nodeNameSet = useMemo(() => new Set(nodes.map((n) => n.tech)), [nodes])
   const edges = useMemo(
-    () => focusedTechs ? N_DATA.data.edges.filter((edge) => focusedTechs.has(edge.a) && focusedTechs.has(edge.b)) : N_DATA.data.edges,
-    [focusedTechs],
+    () => N_DATA.data.edges.filter((edge) => nodeNameSet.has(edge.a) && nodeNameSet.has(edge.b)),
+    [nodeNameSet],
   )
-  const maxN = Math.max(...nodes.map((n) => n.n))
+  const maxN = Math.max(...nodes.map((n) => n.n), 1)
   const categories = [...new Set(nodes.map((n) => n.category))]
+
+  if (nodes.length === 0) {
+    return <div className="ins-empty">필터 조건에 맞는 기술이 없어요.</div>
+  }
   const option = useMemo(() => ({
     animationDuration: 800, animationEasing: 'cubicOut',
     tooltip: {

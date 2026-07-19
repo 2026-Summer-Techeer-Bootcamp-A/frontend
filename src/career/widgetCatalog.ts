@@ -20,11 +20,10 @@ export const DASHBOARD_WIDGETS: WidgetCatalogItem[] = [
   { id: 'hero-applicable', label: '지원 가능 공고', shape: 'hero', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
   { id: 'stat-recent', label: '신규 공고', shape: 'stat', allowedSizes: ['1x1'], defaultSize: '1x1' },
   { id: 'coverage-histogram', label: '커버리지 분포', shape: 'bars', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
-  { id: 'brief', label: '오늘 브리핑', shape: 'list', allowedSizes: ['1x1', '1x2', '2x1'], defaultSize: '1x1' },
+  { id: 'brief', label: '요즘 내 성장', shape: 'ring', allowedSizes: ['1x1', '1x2', '2x1'], defaultSize: '1x1' },
   { id: 'deadlines', label: '마감 임박', shape: 'list', allowedSizes: ['1x1', '1x2', '2x1', '2x2'], defaultSize: '2x1' },
   { id: 'industry-fit', label: '업종 적합도', shape: 'radar', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
   { id: 'bookmarks', label: '북마크한 공고', shape: 'list', allowedSizes: ['1x1', '1x2', '2x1', '2x2'], defaultSize: '2x1' },
-  { id: 'skill-momentum', label: '지금 지원할 만한 공고', shape: 'bars', allowedSizes: ['2x1', '2x2'], defaultSize: '2x1' },
   { id: 'latest-timeline', label: '최신 공고 타임라인', shape: 'line', allowedSizes: ['2x1', '2x2'], defaultSize: '2x2' },
   { id: 'workflow-map', label: '목표 · 학습 워크플로우 맵', shape: 'network', allowedSizes: ['2x2'], defaultSize: '2x2' },
 ]
