@@ -1127,3 +1127,64 @@ button.kit-wcard:active { opacity: 0.6; }
 .kit-wset__sizepills { flex: none; display: flex; gap: 3px; }
 .kit-wset__sizepill { font-size: 10px; font-weight: 700; color: var(--c-muted); border: 1px solid var(--line); border-radius: 6px; padding: 3px 5px; }
 .kit-wset__sizepill.on { color: #fff; background: var(--c-accent); border-color: var(--c-accent); }
+
+/* ---- 17. ApplyCardStack(3a 지원 가능 공고 카드) — 데스크톱 대시보드·모바일 홈 공용 ----
+   .dov- 접두는 데스크톱 대시보드(DesktopOverview)에서 먼저 만든 이름을 그대로 쓴다(새 접두
+   붙이지 않고 재사용). --dov-warning-bg/ink는 DesktopOverview.css가 정의하는 파생 토큰이라
+   모바일 career 테마엔 없으므로, tokens.ts의 warning/warningBg와 같은 값을 폴백으로 둔다. */
+.dov-avc { display: grid; gap: 9px; margin-top: 10px; }
+.dov-avc__card {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center;
+  width: 100%; text-align: left; background: var(--c-card); border: 1px solid var(--line); border-radius: 14px;
+  padding: 12px 13px; box-shadow: var(--e1); cursor: pointer;
+  transition: box-shadow 0.2s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.dov-avc__card:hover { box-shadow: var(--e2); transform: translateY(-1px); }
+.dov-avc__card:active { transform: scale(0.99); }
+.dov-avc__ring { flex: none; display: flex; }
+.dov-avc__main { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.dov-avc__co { font-size: 10.5px; font-weight: 700; color: var(--c-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dov-avc__ti { font-size: 13px; font-weight: 700; letter-spacing: -0.3px; color: var(--c-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dov-avc__gap {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 600; color: var(--c-ink);
+  background: var(--accent-50); border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px;
+  margin-top: 4px; width: fit-content; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.dov-avc__gap i { flex: none; width: 5px; height: 5px; border-radius: 50%; background: #a1a1aa; }
+.dov-avc__dday {
+  flex: none; align-self: flex-start; font-family: 'SF Mono', 'Roboto Mono', ui-monospace, monospace;
+  font-size: 11px; font-weight: 700; color: var(--dov-warning-ink, #c76a2e); background: var(--dov-warning-bg, #fbeee2);
+  border-radius: 7px; padding: 4px 8px; font-variant-numeric: tabular-nums;
+}
+
+/* ---- 18. DeadlineCalendarStrip(1c 마감 캘린더 스트립) — 모바일 홈 전용 ----
+   이번 주 7일을 가로 스트립으로, 마감 공고가 있는 날엔 점을 찍고 오늘을 강조한다. 점 색은
+   cr-dday·kit-previewBadge가 이미 쓰는 warning 계열(#d9822b/#fbeee2)을 그대로 재사용한다. */
+.kit-cal { margin-top: 14px; }
+.kit-cal__eyebrow { font-size: 12px; font-weight: 700; color: var(--c-muted); margin-bottom: 9px; }
+.kit-cal__strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.kit-cal__day { text-align: center; border-radius: 10px; padding: 7px 0 8px; transition: background 0.15s ease; }
+.kit-cal__day.has { background: var(--accent-50); }
+.kit-cal__day.today { background: var(--c-accent); }
+.kit-cal__dow { font-size: 9.5px; font-weight: 600; color: var(--c-muted); }
+.kit-cal__day.today .kit-cal__dow { color: #fff; }
+.kit-cal__dn { font-size: 12.5px; font-weight: 700; color: var(--c-ink); margin-top: 3px; font-variant-numeric: tabular-nums; }
+.kit-cal__day.today .kit-cal__dn { color: #fff; }
+.kit-cal__dots { height: 7px; display: flex; gap: 2px; justify-content: center; align-items: center; margin-top: 4px; }
+.kit-cal__dots i { width: 4px; height: 4px; border-radius: 50%; background: var(--dataviz-warn, #d9822b); }
+.kit-cal__day.today .kit-cal__dots i { background: #fff; }
+.kit-cal__jobs { margin-top: 10px; display: grid; gap: 7px; }
+.kit-cal__job {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  width: 100%; text-align: left; background: var(--c-card); border: 1px solid var(--line); border-radius: 12px;
+  padding: 9px 12px; box-shadow: var(--e1); cursor: pointer;
+  transition: box-shadow 0.2s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.kit-cal__job:active { transform: scale(0.99); }
+.kit-cal__jt { min-width: 0; font-size: 12px; font-weight: 700; letter-spacing: -0.2px; color: var(--c-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kit-cal__jt small { display: block; font-weight: 500; font-size: 10.5px; color: var(--c-muted); margin-top: 2px; }
+.kit-cal__jd {
+  flex: none; font-family: 'SF Mono', 'Roboto Mono', ui-monospace, monospace; font-size: 11px; font-weight: 700;
+  color: var(--dataviz-warn, #d9822b); background: var(--warning-bg, #fbeee2); border-radius: 7px; padding: 3px 7px;
+  font-variant-numeric: tabular-nums;
+}

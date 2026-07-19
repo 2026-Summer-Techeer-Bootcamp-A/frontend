@@ -5,7 +5,8 @@ import PhoneFrame from '../components/PhoneFrame'
 import CompanyLogo from './CompanyLogo'
 import CareerTabBar from './CareerTabBar'
 import { PageTransition, StatHero, SectionHeader, JobCardCompact, CardModeToggle, ActivityRings, RingLegend, ResumeEmptyCard, SegmentedControl, BottomSheet, matchGrad, type CardMode, type RingMetric } from './kit'
-import { RoadmapTeaserWidget, BigCoGapWidget, TechTemperatureWidget, type DeadlinePosting } from './homeWidgets'
+import { RoadmapTeaserWidget, BigCoGapWidget, TechTemperatureWidget, DeadlineCalendarStrip, type DeadlinePosting, type WeekDay, type WeekDeadlineJob } from './homeWidgets'
+import { ApplyCardStack, type ApplyCardJob } from './ApplyCardStack'
 import { THEME, themeVars } from './themes'
 import data from '../data/careerData.json'
 import { useResumesState, getDynamicPostings, calculateCoverage, ddayInfo, useHeroMode, useSavedJobs, jobKey, HERO_MODES, type HeroMode } from './state'
@@ -140,6 +141,23 @@ const tierRank = (t: string | null) => (t && t in TIER_RANK ? TIER_RANK[t] : 3)
 
 const AS_OF = data.meta.asOf
 const MARKET: Record<string, { open: number; soon: number }> = data.meta.market
+
+// 1c 마감 캘린더 스트립용 이번 주(월~일) 요일 메타. AS_OF는 데이터 스냅샷 고정값이라 모듈
+// 스코프에서 한 번만 계산하면 된다. 로컬 타임존에 따라 날짜가 밀리는 걸 막기 위해 UTC
+// 에폭 연산만 쓴다(new Date(asOf).getDay() 같은 로컬 getter는 쓰지 않음).
+const WEEK_DOW = ['월', '화', '수', '목', '금', '토', '일']
+const WEEK_DAY_META: { iso: string; dow: string; dn: number; isToday: boolean }[] = (() => {
+  const [y, m, d] = AS_OF.split('-').map(Number)
+  const asOfUTC = Date.UTC(y, m - 1, d)
+  const asOfDow = new Date(asOfUTC).getUTCDay() // 0=일 ~ 6=토
+  const mondayOffsetDays = asOfDow === 0 ? -6 : 1 - asOfDow
+  const mondayUTC = asOfUTC + mondayOffsetDays * 86400000
+  return Array.from({ length: 7 }, (_, i) => {
+    const t = new Date(mondayUTC + i * 86400000)
+    const iso = `${t.getUTCFullYear()}-${String(t.getUTCMonth() + 1).padStart(2, '0')}-${String(t.getUTCDate()).padStart(2, '0')}`
+    return { iso, dow: WEEK_DOW[i], dn: t.getUTCDate(), isToday: iso === AS_OF }
+  })
+})()
 
 function careerLabel(min: number | null, max: number | null) {
   if (!min) return '신입·무관'
@@ -342,6 +360,54 @@ export default function CareerDashboard() {
     return out
   }, [poolPostings, hasResume])
 
+  // 1c 마감 캘린더 스트립: 이번 주(월~일) 안에 마감이 있는 북마크·매칭 50%+ 공고만 후보로 삼는다
+  // (deadlineItems와 같은 기준). 과거 요일(오늘 이전)은 ddayInfo가 null을 돌려줘 자연히 빠진다.
+  const weekCandidates = useMemo(() => {
+    const isoSet = new Set(WEEK_DAY_META.map((w) => w.iso))
+    const base = hasResume ? poolPostings.filter((p) => savedKeys.has(jobKey(p)) || p.matchPct >= 50) : poolPostings
+    return base.flatMap((p) => {
+      if (!p.closeDate || !isoSet.has(p.closeDate)) return []
+      const dd = ddayInfo(p.closeDate, AS_OF)
+      return dd ? [{ p, dd }] : []
+    })
+  }, [poolPostings, hasResume, savedKeys])
+
+  const weekDays: WeekDay[] = useMemo(
+    () => WEEK_DAY_META.map((w) => ({ ...w, dotCount: weekCandidates.filter((x) => x.p.closeDate === w.iso).length })),
+    [weekCandidates],
+  )
+
+  const weekJobs: WeekDeadlineJob[] = useMemo(
+    () => [...weekCandidates]
+      .sort((a, b) => a.dd.d - b.dd.d)
+      .slice(0, 2)
+      .map((x) => {
+        const dowIdx = WEEK_DAY_META.findIndex((w) => w.iso === x.p.closeDate)
+        return {
+          id: x.p.id, company: x.p.company, title: x.p.title,
+          matchPct: hasResume ? x.p.matchPct : undefined,
+          dday: x.dd.d,
+          dowLabel: `${WEEK_DOW[dowIdx]}요일`,
+        }
+      }),
+    [weekCandidates, hasResume],
+  )
+
+  // 3a 지원 가능 공고 카드: 매칭 50%+ 이면서 내 경력 상한을 넘지 않는(isReachable) 공고 중
+  // 매칭 높은 순 3건 — 데스크톱 대시보드가 API에서 min_match=50 · page_size=3으로 받아오는
+  // 것과 같은 기준을 정적 데이터에 적용한다. 이력서 없는 게스트는 매칭 자체가 의미 없어 숨긴다.
+  const applyCards: ApplyCardJob[] = useMemo(() => {
+    if (!hasResume) return []
+    return [...poolPostings]
+      .filter(isReachable)
+      .sort((a, b) => b.matchPct - a.matchPct)
+      .slice(0, 3)
+      .map((p) => ({
+        id: p.id, company: p.company, title: p.title, matchPct: p.matchPct,
+        gapSkill: p.gap[0] ?? null,
+        dday: p.closeDate ? ddayInfo(p.closeDate, AS_OF) : null,
+      }))
+  }, [poolPostings, hasResume, myCareerMax])
 
   return (
     <div className="stage stage--app">
@@ -409,11 +475,29 @@ export default function CareerDashboard() {
               </div>
             </BottomSheet>
 
+            {/* 히어로 아래 얇은 밴드: 이번 주 마감 캘린더 — 마감 공고가 하나도 없으면 숨겨서
+                빈 밴드가 뜨지 않게 한다 */}
+            {weekCandidates.length > 0 && (
+              <DeadlineCalendarStrip
+                days={weekDays}
+                jobs={weekJobs}
+                onOpen={(id) => navigate(`/job/${encodeURIComponent(id)}`)}
+              />
+            )}
+
             {/* 공고 현황 2열 컴팩트 */}
             <div className="cr-minstat" style={{ marginBottom: 14 }}>
               <div><b>{mk.open.toLocaleString()}</b><span>전체 공고</span></div>
               <div><b className="warn">{mk.soon.toLocaleString()}</b><span>곧 마감</span></div>
             </div>
+
+            {/* 바로 지원 후보(3a) — 맞춤 공고 리스트보다 위에서, 매칭 높은 공고 소수만 카드로 */}
+            {applyCards.length > 0 && (
+              <>
+                <SectionHeader title="바로 지원 후보" />
+                <ApplyCardStack cards={applyCards} onOpen={(id) => navigate(`/job/${encodeURIComponent(id)}`)} />
+              </>
+            )}
 
             {/* 맞춤 공고 / 채용 공고 */}
             <SectionHeader title={hasResume ? '맞춤 공고' : '채용 공고'} />

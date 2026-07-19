@@ -89,31 +89,8 @@
 .dov-aq__empty-title { font-size: 14px; font-weight: 700; color: var(--c-ink); }
 .dov-aq__empty-sub { font-size: 12px; color: var(--c-muted); }
 
-/* ---------- 3a 지원 가능 공고 카드 ---------- */
-.dov-avc { display: grid; gap: 9px; margin-top: 10px; }
-.dov-avc__card {
-  display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center;
-  width: 100%; text-align: left; background: var(--c-card); border: 1px solid var(--line); border-radius: 14px;
-  padding: 12px 13px; box-shadow: var(--e1); cursor: pointer;
-  transition: box-shadow 0.2s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
-}
-.dov-avc__card:hover { box-shadow: var(--e2); transform: translateY(-1px); }
-.dov-avc__card:active { transform: scale(0.99); }
-.dov-avc__ring { flex: none; display: flex; }
-.dov-avc__main { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.dov-avc__co { font-size: 10.5px; font-weight: 700; color: var(--c-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dov-avc__ti { font-size: 13px; font-weight: 700; letter-spacing: -0.3px; color: var(--c-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dov-avc__gap {
-  display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 600; color: var(--c-ink);
-  background: var(--accent-50); border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px;
-  margin-top: 4px; width: fit-content; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.dov-avc__gap i { flex: none; width: 5px; height: 5px; border-radius: 50%; background: #a1a1aa; }
-.dov-avc__dday {
-  flex: none; align-self: flex-start; font-family: 'SF Mono', 'Roboto Mono', ui-monospace, monospace;
-  font-size: 11px; font-weight: 700; color: var(--dov-warning-ink); background: var(--dov-warning-bg);
-  border-radius: 7px; padding: 4px 8px; font-variant-numeric: tabular-nums;
-}
+/* 3a 지원 가능 공고 카드(.dov-avc)는 career/kit.css로 옮겨 모바일 홈과 공유한다
+   (src/career/ApplyCardStack.tsx 참고). */
 
 /* ---------- 2c 발표 오토 투어 ---------- */
 .dov-tour {

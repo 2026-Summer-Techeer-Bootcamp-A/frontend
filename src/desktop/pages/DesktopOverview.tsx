@@ -21,7 +21,7 @@ import { useDashboardConfig, isWidgetHidden, getWidgetSize } from '../../career/
 import { DASHBOARD_WIDGETS } from '../../career/widgetCatalog'
 import { useBookmarks } from '../../career/bookmarkStore'
 import { BriefingQueue, type QueueCard } from './dashboard/BriefingQueue'
-import { ApplyCardStack, buildApplyCards } from './dashboard/ApplyCardStack'
+import { ApplyCardStack, buildApplyCards } from '../../career/ApplyCardStack'
 import { PresentationTour, type TourZone } from './dashboard/PresentationTour'
 import data from '../../data/careerData.json'
 import './DesktopOverview.css'
