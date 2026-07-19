@@ -128,6 +128,12 @@ function LiveCoverageHistogram({
   const [whatIf, setWhatIf] = useState<WhatIfData | null>(null)
   const [whatIfLoading, setWhatIfLoading] = useState(false)
   const [whatIfError, setWhatIfError] = useState(false)
+  const cacheRef = useRef<Map<string, WhatIfData>>(new Map())
+
+  // 캐시 무효화: refreshKey 또는 identity 변화 시 이전 결과는 더 이상 유효하지 않음
+  useEffect(() => {
+    cacheRef.current.clear()
+  }, [refreshKey, identity])
 
   useEffect(() => {
     if (!active || !identity) {
@@ -136,11 +142,26 @@ function LiveCoverageHistogram({
       setWhatIfError(false)
       return
     }
+
+    // 캐시 확인 — 이미 조회한 기술이면 네트워크 요청 없이 즉시 반환
+    const cached = cacheRef.current.get(active)
+    if (cached) {
+      setWhatIf(cached)
+      setWhatIfLoading(false)
+      setWhatIfError(false)
+      return
+    }
+
     let cancelled = false
     setWhatIfLoading(true)
     setWhatIfError(false)
     dashboardApi.whatIf(identity, active)
-      .then((result) => { if (!cancelled) setWhatIf(result) })
+      .then((result) => {
+        if (!cancelled) {
+          cacheRef.current.set(active, result)
+          setWhatIf(result)
+        }
+      })
       .catch(() => {
         if (!cancelled) {
           setWhatIf(null)
