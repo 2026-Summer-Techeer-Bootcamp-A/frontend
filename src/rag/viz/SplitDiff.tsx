@@ -38,17 +38,19 @@ const VERDICT_MARK: Record<RequirementVerdict, string> = {
   gap: '−',
 }
 
-// 요구사항 레이아웃 토글 — 시안 1(여백 주석형)과 시안 3(인라인 배지형) 중 선택.
+// 요구사항 레이아웃 토글 — 가로 넓은 상세 카드형(detail)과 인라인 배지형(inline) 중 선택.
 // WorkflowMap.tsx의 techeer_workflow_view와 같은 패턴(localStorage가 정본, 마운트 시 1회만 읽고
-// 이후엔 토글 버튼으로만 바뀐다)을 따른다.
-type SplitDiffLayout = 'margin' | 'inline'
+// 이후엔 토글 버튼으로만 바뀐다)을 따른다. 예전엔 'margin'(좌우 2열 여백 주석형)이었는데, 라이브
+// 피드백으로 폭 좁은 노트 컬럼을 버리고 전체 폭 카드로 바꾸면서 값 이름도 바꿨다 — 옛 저장값
+// 'margin'은 이제 모르는 값이라 기본값(detail)으로 자연히 폴백된다(마이그레이션 코드 불필요).
+type SplitDiffLayout = 'detail' | 'inline'
 const LAYOUT_STORAGE_KEY = 'techeer_splitdiff_layout'
 
 function readStoredLayout(): SplitDiffLayout {
   try {
-    return localStorage.getItem(LAYOUT_STORAGE_KEY) === 'inline' ? 'inline' : 'margin'
+    return localStorage.getItem(LAYOUT_STORAGE_KEY) === 'inline' ? 'inline' : 'detail'
   } catch {
-    return 'margin'
+    return 'detail'
   }
 }
 
@@ -111,17 +113,17 @@ export function SplitDiff({ payload }: SplitDiffProps) {
         <div className="rv__sd-toggle" role="group" aria-label="요구사항 레이아웃 전환">
           <button
             type="button"
-            aria-pressed={layout === 'margin'}
-            onClick={() => setLayout('margin')}
+            aria-pressed={layout === 'detail'}
+            onClick={() => setLayout('detail')}
           >
-            여백 주석
+            상세
           </button>
           <button
             type="button"
             aria-pressed={layout === 'inline'}
             onClick={() => setLayout('inline')}
           >
-            인라인
+            간단
           </button>
         </div>
       </div>
@@ -193,8 +195,8 @@ export function SplitDiff({ payload }: SplitDiffProps) {
         </div>
       </div>
 
-      {layout === 'margin' ? (
-        <SplitDiffMarginLayout requirements={requirements} targetRole={target_role} />
+      {layout === 'detail' ? (
+        <SplitDiffDetailLayout requirements={requirements} targetRole={target_role} />
       ) : (
         <SplitDiffInlineLayout requirements={requirements} targetRole={target_role} />
       )}
@@ -228,38 +230,50 @@ function QuoteCue({ quote, targetRole }: { quote: string; targetRole: string }) 
   )
 }
 
-// 시안 1 · 여백 주석형 — 좌측은 공고(base) 문서를 요구사항 순서대로 나열하며 형광펜을 긋고,
-// 우측 여백엔 연결선(leader line)으로 이어진 노트 카드(verdict 라벨 + 판정 근거 + 보완점)를 둔다.
-function SplitDiffMarginLayout({ requirements, targetRole }: { requirements: SplitDiffRequirement[]; targetRole: string }) {
+// 상세 카드형 — 요구사항마다 (a) 공고 문구를 형광펜으로 그은 줄, (b) 그 바로 아래 전체 폭을 쓰는
+// 상세 카드를 세로로 쌓는다. 좌우 2열 + 좁은 노트 컬럼 구조는 버렸다(화면이 넓어도 노트가 좁다는
+// 피드백). 카드 안에서 quote(판정 대상 원문)를 직접 인용하므로 여기선 QuoteCue 툴팁을 쓰지 않는다
+// (같은 정보를 두 번 보여주는 중복이라서). 판정 구분은 뱃지 + 옅은 배경 틴트로만 하고, 어디에도
+// 왼쪽 컬러 테두리(레일)를 두지 않는다 — "AI 클리셰"라는 라이브 피드백으로 명시적으로 제거됨.
+function SplitDiffDetailLayout({ requirements, targetRole }: { requirements: SplitDiffRequirement[]; targetRole: string }) {
   return (
-    <div className="rv__sd-marg">
-      <ul className="rv__sd-marg-doc">
-        {requirements.map((req) => (
-          <li key={req.id}>
+    <div className="rv__sd-detail">
+      {requirements.map((req) => (
+        <div key={req.id} className="rv__sd-detail-item">
+          <p className="rv__sd-detail-line">
             <SplitDiffHighlight req={req} />
-          </li>
-        ))}
-      </ul>
-      <div className="rv__sd-marg-notes">
-        {requirements.map((req) => (
-          <SplitDiffNote key={req.id} req={req} targetRole={targetRole} />
-        ))}
-      </div>
+          </p>
+          <SplitDiffDetailCard req={req} targetRole={targetRole} />
+        </div>
+      ))}
     </div>
   )
 }
 
-function SplitDiffNote({ req, targetRole }: { req: SplitDiffRequirement; targetRole: string }) {
-  const { verdict, rationale, next_step, quote } = req
+function SplitDiffDetailCard({ req, targetRole }: { req: SplitDiffRequirement; targetRole: string }) {
+  const { verdict, quote, rationale, next_step } = req
   return (
-    <div className={`rv__sd-note rv__sd-note--${verdict}`}>
-      <span className="rv__sd-note-head">
-        <span className="rv__sd-note-nv">{VERDICT_LABEL[verdict]}</span>
-        <QuoteCue quote={quote} targetRole={targetRole} />
-      </span>
-      {rationale && <p className="rv__sd-note-rationale">{rationale}</p>}
+    <div className={`rv__sd-detailcard rv__sd-detailcard--${verdict}`}>
+      <span className={`rv__sd-vbadge rv__sd-vbadge--${verdict}`}>{VERDICT_LABEL[verdict]}</span>
+
+      <div className="rv__sd-detailcard-quote">
+        <span className="rv__sd-detailcard-quote-label">{targetRole} 원문</span>
+        {quote ? (
+          <blockquote className="rv__sd-detailcard-quote-text">{quote}</blockquote>
+        ) : (
+          <p className="rv__sd-detailcard-quote-missing">{targetRole}에서 근거를 찾지 못했어요</p>
+        )}
+      </div>
+
+      {rationale && (
+        <p className="rv__sd-detailcard-rationale">
+          <span className="k">판정 근거</span>
+          <span>{rationale}</span>
+        </p>
+      )}
+
       {next_step && (
-        <div className="rv__sd-note-next">
+        <div className="rv__sd-detailcard-next">
           <span className="tag">보완점</span>
           <span className="step">{next_step}</span>
         </div>
