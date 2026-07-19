@@ -41,30 +41,48 @@ beforeEach(() => {
   localStorage.clear()
 })
 
-test('renders weighted score, pair bar, summary, and default margin layout (highlight + note)', () => {
-  render(<SplitDiff payload={jobVsResumePayload as any} />)
+test('renders weighted score, pair bar, summary, and default detail layout (full-width card with quote)', () => {
+  const { container } = render(<SplitDiff payload={jobVsResumePayload as any} />)
   expect(screen.getByText(/75%/)).toBeInTheDocument()
   expect(screen.getByText('공고 · 플랫폼 백엔드')).toBeInTheDocument()
   expect(screen.getByText('내 이력서')).toBeInTheDocument()
   expect(screen.getByText(/K8s 운영이 공백/)).toBeInTheDocument()
-  // 좌측 문서 형광펜 — source_quote 텍스트가 강조된다.
+
+  // 공고 문구 형광펜 줄
   expect(screen.getByText('FastAPI로 운영할 분')).toBeInTheDocument()
   expect(screen.getByText('EKS 운영')).toBeInTheDocument()
-  // 우측 노트 카드 — verdict 라벨 + rationale + next_step(보완점).
+
+  // 상세 카드 안: 판정 뱃지 + 내 이력서 원문 인용(quote) + 판정 근거(rationale) + 보완점(next_step)
   expect(screen.getByText('충족')).toBeInTheDocument()
   expect(screen.getByText('부분 · 전이가능')).toBeInTheDocument()
   expect(screen.getByText('공백')).toBeInTheDocument()
+  expect(screen.getByText('FastAPI 40개 엔드포인트 운영')).toBeInTheDocument()
+  expect(screen.getByText('장애 대응 프로세스를 운영했습니다.')).toBeInTheDocument()
   expect(screen.getByText('일치')).toBeInTheDocument()
   expect(screen.getByText(/사이드프로젝트를 EKS에 배포/)).toBeInTheDocument()
   expect(screen.getByText('보완점')).toBeInTheDocument()
+
+  // 왼쪽 컬러 레일(테두리)은 어디에도 없어야 한다 — 옛 노트 카드의 verdict 전용 클래스가
+  // 남아있지 않은지 확인한다(rv__sd-note는 상단 score-strip 안내문과 클래스명이 겹치므로 제외).
+  expect(container.querySelector('.rv__sd-note-nv')).toBeNull()
+  expect(container.querySelector('.rv__sd-note--met')).toBeNull()
+  expect(container.querySelector('.rv__sd-vbadge--met')).not.toBeNull()
+  expect(container.querySelector('.rv__sd-detailcard--gap')).not.toBeNull()
 })
 
-test('note card degrades gracefully when rationale and next_step are both empty', () => {
+test('detail card shows the missing-evidence message when quote is empty', () => {
+  render(<SplitDiff payload={jobVsResumePayload as any} />)
+  // R6(gap)은 quote가 빈 문자열이라 인용 대신 안내 문구가 떠야 한다.
+  expect(screen.getByText('내 이력서에서 근거를 찾지 못했어요')).toBeInTheDocument()
+})
+
+test('detail card degrades gracefully when rationale and next_step are both empty', () => {
   // postingVsPostingPayload의 B4는 rationale/next_step이 전부 빈 문자열인 간이 비교 데이터다.
-  // 노트 카드는 깨지지 않고 verdict 라벨("공백")만 보여줘야 한다.
+  // 카드는 깨지지 않고 판정 뱃지와 원문 안내(근거 없음)만 보여줘야 한다.
   render(<SplitDiff payload={postingVsPostingPayload as any} />)
   expect(screen.getByText('ECC에서 S/4HANA로의 전환 프로젝트 참여')).toBeInTheDocument()
   expect(screen.getAllByText('공백').length).toBeGreaterThan(0)
+  expect(screen.getByText('비교 공고에서 근거를 찾지 못했어요')).toBeInTheDocument()
 })
 
 test('renders posting vs posting payload through the same component, including degraded badge', () => {
@@ -75,31 +93,15 @@ test('renders posting vs posting payload through the same component, including d
   expect(screen.getByText(/비교 공고 원문을 찾지 못해 보유 기술 태그 기반 비교로 대체됐어요/)).toBeInTheDocument()
 })
 
-test('quote cue tooltip appears only when quote is non-empty, is keyboard-focusable, and carries the quote text', () => {
+test('toggling to inline layout ("간단") shows verdict pills, quote tooltip cues, and only surfaces next_step for gap/partial', () => {
   render(<SplitDiff payload={jobVsResumePayload as any} />)
-  // R1(met)과 R4(partial)는 quote가 있고, R6(gap)은 quote가 빈 문자열이라 표식이 없어야 한다.
-  const cueButtons = screen.getAllByRole('button', { name: '내 이력서 원문 근거 보기' })
-  expect(cueButtons).toHaveLength(2)
 
-  // 표식은 진짜 button이라 별도 tabIndex 없이도 Tab으로 포커스되고, aria-describedby로 이어진
-  // role="tooltip" 요소가 quote 전문을 담고 있다(네이티브 title 하나로 때우지 않는다).
-  const describedbyId = cueButtons[0].getAttribute('aria-describedby')
-  expect(describedbyId).toBeTruthy()
-  const tooltip = document.getElementById(describedbyId as string)
-  expect(tooltip).toHaveAttribute('role', 'tooltip')
-  expect(tooltip).toHaveTextContent('FastAPI 40개 엔드포인트 운영')
+  // 기본(상세) 레이아웃엔 카드 안에서 이미 quote를 직접 인용하므로 quotecue 툴팁이 없어야 한다(중복 방지).
+  expect(screen.queryByRole('button', { name: '내 이력서 원문 근거 보기' })).not.toBeInTheDocument()
 
-  // 인라인 레이아웃으로 전환해도 같은 표식이 유지된다(두 레이아웃 모두 적용 요구사항).
-  fireEvent.click(screen.getByRole('button', { name: '인라인' }))
-  expect(screen.getAllByRole('button', { name: '내 이력서 원문 근거 보기' })).toHaveLength(2)
-})
-
-test('toggling to inline layout shows verdict pills and only surfaces next_step for gap/partial', () => {
-  render(<SplitDiff payload={jobVsResumePayload as any} />)
-  fireEvent.click(screen.getByRole('button', { name: '인라인' }))
-
-  expect(screen.getByRole('button', { name: '인라인' })).toHaveAttribute('aria-pressed', 'true')
-  expect(screen.getByRole('button', { name: '여백 주석' })).toHaveAttribute('aria-pressed', 'false')
+  fireEvent.click(screen.getByRole('button', { name: '간단' }))
+  expect(screen.getByRole('button', { name: '간단' })).toHaveAttribute('aria-pressed', 'true')
+  expect(screen.getByRole('button', { name: '상세' })).toHaveAttribute('aria-pressed', 'false')
 
   // vpill은 마커+짧은 라벨을 이중 표기한다.
   expect(screen.getByText(/\+ 충족/)).toBeInTheDocument()
@@ -110,5 +112,23 @@ test('toggling to inline layout shows verdict pills and only surfaces next_step 
   expect(screen.getByText(/사이드프로젝트를 EKS에 배포/)).toBeInTheDocument()
   expect(screen.queryByText('일치')).not.toBeInTheDocument()
 
+  // 인라인에서는 quote 툴팁 표식이 유지된다(quote가 있는 R1, R4만).
+  const cueButtons = screen.getAllByRole('button', { name: '내 이력서 원문 근거 보기' })
+  expect(cueButtons).toHaveLength(2)
+  const describedbyId = cueButtons[0].getAttribute('aria-describedby')
+  expect(describedbyId).toBeTruthy()
+  const tooltip = document.getElementById(describedbyId as string)
+  expect(tooltip).toHaveAttribute('role', 'tooltip')
+  expect(tooltip).toHaveTextContent('FastAPI 40개 엔드포인트 운영')
+
   expect(localStorage.getItem('techeer_splitdiff_layout')).toBe('inline')
+})
+
+test('unknown stored layout value (e.g. legacy "margin") falls back to the default detail layout', () => {
+  localStorage.setItem('techeer_splitdiff_layout', 'margin')
+  render(<SplitDiff payload={jobVsResumePayload as any} />)
+  expect(screen.getByRole('button', { name: '상세' })).toHaveAttribute('aria-pressed', 'true')
+  expect(screen.getByRole('button', { name: '간단' })).toHaveAttribute('aria-pressed', 'false')
+  // 상세 레이아웃 특유의 인용 블록이 보이면 정상적으로 폴백된 것이다.
+  expect(screen.getByText('FastAPI 40개 엔드포인트 운영')).toBeInTheDocument()
 })
