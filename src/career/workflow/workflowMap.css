@@ -8,9 +8,10 @@
   min-height: 0;
 }
 
-/* 6: 뷰 토글·AI 보강·추천·크게 보기 버튼을 위젯 헤더 툴바(SectionHeader의 right
-   슬롯) 한 줄에 정렬한다 — 캔버스 위에 떠 있는 별도 컨트롤이 아니라 헤더 소속임을
-   레이아웃으로도 분명히 한다. flex-wrap:nowrap이라 좁아져도 두 줄로 안 깨진다. */
+/* 6: AI 보강·추천·크게 보기 버튼을 위젯 헤더 툴바(SectionHeader의 right 슬롯) 한 줄에
+   정렬한다 — 캔버스 위에 떠 있는 별도 컨트롤이 아니라 헤더 소속임을 레이아웃으로도
+   분명히 한다. flex-wrap:nowrap이라 좁아져도 두 줄로 안 깨진다. 2단계: 뷰 토글(로드맵/
+   단계별/리스트)을 걷어내면서 이 gap만으로도 남은 버튼들이 자연스레 정렬된다. */
 .wfm-header-actions {
   display: flex;
   align-items: center;
@@ -304,78 +305,6 @@
   display: flex;
   flex-direction: column;
 }
-.wfm-empty--selection { padding: 18px 4px; }
-
-.wfm-legend {
-  display: flex;
-  gap: 14px;
-  margin-top: 10px;
-  flex-wrap: wrap;
-}
-.wfm-legend__item {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 10.5px;
-  color: var(--c-muted, #7c7f88);
-  font-weight: 650;
-}
-.wfm-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-.wfm-dot--owned { background: #1f9d57; }
-.wfm-dot--target { background: #18181b; }
-.wfm-dot--bridge { background: #d8dade; border: 1px solid #b9bcc4; }
-/* F: 노드 타입 3색군(기술/자격증/개념·연차) 범례 스와치 — 스테이지 뷰 카드의 좌측
-   테두리와 같은 색을 그대로 쓴다. */
-.wfm-legend__bar { width: 10px; height: 8px; border-radius: 2px; display: inline-block; }
-
-/* 자격증 레인 — 스킬 DAG와 완전히 분리된 보조 패널. 학습 순서가 없는 정보라
-   앰버/골드 톤만으로 존재를 알리고, 메인 그래프와 시각적으로 경쟁하지 않게 작게 둔다. */
-.wfm-cert-lane {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px dashed var(--line, #e6e9ef);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.wfm-cert-lane__title {
-  font-size: 10.5px;
-  font-weight: 750;
-  color: var(--c-muted, #7c7f88);
-}
-.wfm-cert-lane__row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.wfm-cert-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 4px 9px;
-  border-radius: 999px;
-}
-.wfm-cert-chip--owned {
-  background: #fffbeb;
-  color: #92400e;
-  border: 1px solid #f2c879;
-}
-.wfm-cert-chip--target {
-  background: #fef3c7;
-  color: #78350f;
-  border: 1px solid #e6ab3a;
-}
-.wfm-cert-chip__badge {
-  font-size: 9px;
-  font-weight: 800;
-  color: #92400e;
-  background: #fff;
-  border-radius: 999px;
-  padding: 1px 5px;
-  margin-left: 1px;
-}
 
 .wfm-loading {
   flex: 1;
@@ -385,52 +314,6 @@
   min-height: 220px;
   color: var(--c-muted, #7c7f88);
   font-size: 12.5px;
-}
-
-.wfm-empty {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  justify-content: center;
-  padding: 18px 4px;
-}
-.wfm-empty__lead {
-  font-size: 13.5px;
-  font-weight: 750;
-  color: var(--c-ink, #18181b);
-  margin: 0;
-}
-.wfm-empty__hint {
-  font-size: 11.5px;
-  color: var(--c-muted, #7c7f88);
-}
-.wfm-empty__owned {
-  margin-top: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.wfm-empty__owned-label {
-  font-size: 10.5px;
-  font-weight: 700;
-  color: var(--c-muted, #7c7f88);
-}
-.wfm-empty__chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.wfm-chip {
-  font-size: 11px;
-  font-weight: 700;
-  padding: 4px 9px;
-  border-radius: 999px;
-}
-.wfm-chip--owned {
-  background: #f0fbf4;
-  color: #1f9d57;
-  border: 1px solid #9dcfb4;
 }
 
 /* 2a: 크게 보기 버튼 + 전체화면 모달. SkillManagerModal의 중앙 다이얼로그 패턴(백드롭
@@ -448,77 +331,11 @@
 }
 .wfm-expand-btn:hover { background: var(--accent-100, #e4e4e7); color: var(--c-ink, #18181b); }
 
-/* 2단계: flow/list 아이콘 세그먼트 토글 — wfm-goal-add-btn.is-active와 같은 active
-   톤(진한 배경/흰 아이콘)을 재사용해 새 색 체계를 만들지 않는다. 추천 버튼(Sparkles)
-   바로 왼쪽에 둔다. */
-.wfm-view-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  background: var(--accent-50, #f0f0f1);
-  border-radius: 999px;
-  padding: 2px;
-}
-.wfm-view-toggle__btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 999px;
-  color: var(--c-muted, #71717a);
-  transition: background 0.12s ease, color 0.12s ease;
-}
-.wfm-view-toggle__btn:hover { color: var(--c-ink, #18181b); }
-.wfm-view-toggle__btn.is-active {
-  background: var(--c-ink, #18181b);
-  color: #fff;
-}
-
-/* D: 이질성 안내 배너 — flow 캔버스 밖(위) HTML이라 React Flow 좌표에 영향 없다. */
-.wfm-heterogeneous-banner {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 8px;
-  padding: 8px 12px;
-  border-radius: 10px;
-  background: #fffbeb;
-  border: 1px solid #f2c879;
-  font-size: 11.5px;
-  color: #78350f;
-}
-.wfm-heterogeneous-banner__btn {
-  font-weight: 750;
-  color: #92400e;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-.wfm-heterogeneous-banner__btn:hover { color: #78350f; }
-
-/* 데모용 추천 공고 가져오기 버튼 — expand 버튼과 같은 아이콘 버튼 스타일을 공유하고,
-   로딩 중엔 아이콘을 회전시키고, 완료 메시지는 버튼 바로 아래 작은 말풍선으로 띄운다. */
+/* 데모용 추천 공고 버튼 — expand 버튼과 같은 아이콘 버튼 스타일을 공유한다. 이제
+   careerData.json에서 미리 계산해둔 고정 결과를 보여줄 뿐이라(demoRecommend.ts)
+   네트워크 대기가 없어 로딩/에러 상태 자체가 없다. */
 .wfm-recommend-wrap { position: relative; display: flex; align-items: center; }
-.wfm-recommend-btn:disabled { cursor: default; opacity: 0.7; }
-.wfm-recommend-btn.is-loading svg { animation: wfm-recommend-spin 0.9s linear infinite; }
 @keyframes wfm-recommend-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-.wfm-recommend-msg {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 6px;
-  white-space: nowrap;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--c-ink, #18181b);
-  background: #fff;
-  border: 1px solid var(--accent-100, #e4e4e7);
-  padding: 4px 9px;
-  border-radius: 999px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  z-index: 5;
-}
 
 /* F-2: AI 로드맵 보강 버튼 — 옆의 추천 공고 버튼(Sparkles, 중립 회색)과 시각적으로
    헷갈리지 않도록 은은한 인디고 틴트를 얹는다(모노크롬+그린 톤 안에서 절제된 유일한
@@ -579,14 +396,15 @@
   transition: transform 0.12s ease, background 0.12s ease, color 0.12s ease;
 }
 .wfm-modal__close:hover { background: var(--accent-100, #e4e4e7); color: var(--c-ink, #18181b); }
-.wfm-modal__card .wfm-legend { padding: 10px 18px 14px; margin-top: 0; }
 
 /* 추천 공고 모달 — 그래프 확대 모달(.wfm-modal__card)과 백드롭·타이틀바는 공유하되,
-   목록형 콘텐츠라 그래프용 대형 고정 크기 대신 컴팩트한 크기로 오버라이드한다. */
+   직무 8개 섹션을 세로로 늘어놓는 목록형 콘텐츠라 그래프용 대형 고정 크기 대신
+   컴팩트한 크기로 오버라이드한다. 카드 안에 칩·자격요건 줄까지 들어가 예전 한 줄
+   목록보다 폭이 더 필요해 480px보다 넓혔다. */
 .wfm-recommend-modal {
-  width: min(480px, 92vw);
+  width: min(640px, 94vw);
   height: auto;
-  max-height: min(640px, 88vh);
+  max-height: min(720px, 88vh);
 }
 .wfm-recommend-modal__hint {
   flex: none;
@@ -594,38 +412,112 @@
   font-size: 12.5px;
   color: var(--c-muted, #7c7f88);
 }
-.wfm-recommend-modal__list {
+.wfm-recommend-modal__roles {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 8px 10px 14px;
+  padding: 10px 18px 20px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 16px;
 }
-.wfm-recommend-modal__item {
+
+/* 직무 섹션 — 이름 + 개수 헤더 아래 그 직무의 큐레이션 공고 카드들을 세로로 쌓는다. */
+.wfm-demo-role__head {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.wfm-demo-role__name {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--c-ink, #18181b);
+}
+.wfm-demo-role__count {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--c-muted, #7c7f88);
+}
+.wfm-demo-role__cards {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* 공고 카드 — 로고 + (회사명 · 대기업 배지 · 연차) + 직함 + 기술 칩 + 자격요건 한 줄.
+   모노크롬 근간에 그린 포인트(대기업 배지, 자격요건 라벨색)만 얹는다. */
+.wfm-demo-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line, #e6e9ef);
+  border-radius: 12px;
+  background: #fff;
+}
+.wfm-demo-card__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.wfm-demo-card__headline {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 8px;
-  border-radius: 10px;
+  flex-wrap: wrap;
+  gap: 6px;
 }
-.wfm-recommend-modal__item:hover { background: var(--accent-50, #f0f0f1); }
-.wfm-recommend-modal__add {
+.wfm-demo-card__company {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--c-ink, #18181b);
+}
+.wfm-demo-card__tier {
   flex: none;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 5px 12px;
-  border-radius: 999px;
-  color: #fff;
-  background: var(--c-ink, #18181b);
-  transition: background 0.12s ease, color 0.12s ease, opacity 0.12s ease;
-}
-.wfm-recommend-modal__add:hover:not(:disabled) { background: #000; }
-.wfm-recommend-modal__add.is-added {
+  font-size: 9.5px;
+  font-weight: 800;
   color: #1f9d57;
   background: #f0fbf4;
   border: 1px solid #9dcfb4;
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+.wfm-demo-card__career {
+  flex: none;
+  margin-left: auto;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--c-muted, #7c7f88);
+}
+.wfm-demo-card__title {
+  font-size: 11.5px;
+  color: var(--c-muted, #6b6f78);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wfm-demo-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+.wfm-demo-card__chip {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--c-ink, #18181b);
+  background: var(--accent-50, #f0f0f1);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+.wfm-demo-card__chip--more { color: var(--c-muted, #7c7f88); background: transparent; }
+.wfm-demo-card__req {
+  margin: 4px 0 0;
+  font-size: 10.5px;
+  color: #157a41;
+  line-height: 1.4;
 }
 
 /* F-2: AI 로드맵 보강 모달 — 그래프 확대 모달과 백드롭·타이틀바(.wfm-modal__card)는
@@ -749,25 +641,6 @@
   line-height: 1.45;
 }
 .wfm-enrich-step__project b { font-weight: 750; }
-
-/* 2단계: 리스트 뷰(WorkflowList.tsx) — flow 캔버스와 달리 좌표 산수가 없는 세로 스크롤
-   목록이라, 카드 컴팩트 영역에서는 wfm-list-pane이, 크게 보기 모달에서는
-   wfm-modal__list가 스크롤 컨테이너를 맡는다. 안쪽 wfm-list-* 클래스는 두 컨테이너
-   어디에 들어가든 동일하게 동작한다. */
-/* 5: 스테이지 pane과 같은 이유로 자체 테두리·배경을 없애 바깥 위젯 카드와 하나의
-   면으로 통일한다. */
-.wfm-list-pane {
-  box-sizing: border-box;
-  overflow-y: auto;
-  padding: 4px 0;
-}
-.wfm-modal__list {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding: 16px 18px 20px;
-  background: #fbfbfc;
-}
 
 /* Phase 1: 로드맵 백본 모달 — RoadmapView 자신이 이미 고정 높이 + 내부 스크롤을
    가지므로 이 래퍼는 여백만 준다. */
@@ -961,9 +834,10 @@
   position: relative;
   /* 2026-07-20(2차): 전체 폭 컨테이너에서 콘텐츠가 컨테이너보다 좁으면 왼쪽에 붙어
      오른쪽만 텅 비어 보였다 — inline-block(콘텐츠 폭만큼만 차지)으로 바꾸고, 감싸는
-     .wfm-stage-pane/.wfm-modal__stage의 text-align:center로 좌우 여백을 고르게
-     나눈다. 컬럼 좌표 자체(workflowLayout.ts)는 전혀 건드리지 않는 순수 시각 정렬이라,
-     콘텐츠가 컨테이너보다 넓을 때는 그대로 좌측부터 스크롤된다. */
+     컨테이너의 text-align:center로 좌우 여백을 고르게 나눈다(2단계: 뷰가 로드맵으로
+     단일화되면서 이 컴포넌트를 감싸던 wfm-stage-pane/wfm-modal__stage는 제거됐다).
+     컬럼 좌표 자체(workflowLayout.ts)는 전혀 건드리지 않는 순수 시각 정렬이라, 콘텐츠가
+     컨테이너보다 넓을 때는 그대로 좌측부터 스크롤된다. */
   display: inline-block;
   text-align: left;
 }
@@ -1474,46 +1348,3 @@
   padding: 2px 2px;
 }
 
-/* 컴팩트 카드/크게 보기 모달에서 스테이지 뷰를 감싸는 스크롤 컨테이너 — wfm-canvas와
-   달리(React Flow는 내부적으로 pan/zoom을 다루므로 overflow:hidden이었다) 여기는 일반
-   DOM 플로우라 넘치는 컬럼을 가로 스크롤로, 넘치는 카드를 세로 스크롤로 보여줘야 한다.
-   5: 예전엔 이 pane 자신도 테두리·배경·좌우 패딩을 가진 "박스"라 바깥 위젯 카드
-   (dcard) 안에 또 카드가 있는 것처럼 보였다 — 테두리/배경/좌우 패딩을 없애 바깥
-   위젯과 하나의 면으로 통일하고, 캔버스가 위젯 전체 폭을 끝까지 채우게 한다.
-   4: 높이는 WorkflowMap.tsx가 상태(목표 미선택·로딩·AI 보강 렌더)와 무관하게 항상
-   같은 고정 height를 인라인 style로 넘긴다 — 내용이 그보다 크면 이 안에서만
-   스크롤한다. 7: 빈 캔버스 영역을 마우스로 눌러 끌면 스크롤 위치가 옮겨지는(패닝)
-   보조 조작을 WorkflowMap.tsx의 usePanScroll이 붙인다 — 평소 커서는 grab, 드래그
-   중엔 grabbing(.is-panning)으로 바뀐다. */
-.wfm-stage-pane {
-  box-sizing: border-box;
-  width: 100%;
-  overflow: auto;
-  background: transparent;
-  padding: 6px 0 4px;
-  cursor: grab;
-}
-.wfm-stage-pane.is-panning {
-  cursor: grabbing;
-  user-select: none;
-}
-.wfm-modal__stage {
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
-  background: transparent;
-  padding: 12px 0 24px;
-  cursor: grab;
-}
-.wfm-modal__stage.is-panning {
-  cursor: grabbing;
-  user-select: none;
-}
-
-.wfm-legend__box {
-  width: 16px;
-  height: 11px;
-  border: 1.4px dashed #8b8f98;
-  border-radius: 4px;
-  display: inline-block;
-}
