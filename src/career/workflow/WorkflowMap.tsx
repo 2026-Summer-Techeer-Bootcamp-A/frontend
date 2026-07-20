@@ -13,6 +13,7 @@ import {
 } from '../api'
 import type { WidgetSize } from '../dashboardConfig'
 import { getDemoRecommendations } from '../../data/demoRecommend'
+import careerData from '../../data/careerData.json'
 import CompanyLogo from '../CompanyLogo'
 import { avatarColor, matchPctFor, yearBadgeFor, type PostingDetailWithConcepts } from './workflowShared'
 import { RoadmapView } from './RoadmapView'
@@ -27,6 +28,49 @@ import './workflowMap.css'
 // 다시 계산할 이유가 없기 때문이다(리렌더 때마다 배열을 새로 만들면 각 그룹의
 // postings 배열 참조가 매번 바뀌어 하위 리스트의 불필요한 재조정만 늘어난다).
 const DEMO_RECOMMEND_GROUPS = getDemoRecommendations()
+
+// 추천 공고 모달에서 "목표로 추가"한 데모 공고(careerData.json)의 상세를 채우기 위한
+// id -> PostingDetail 맵. placeholders.tsx(DesktopMy)가 북마크/최근본 공고 상세를
+// 채울 때 쓰는 것과 같은 패턴 — careerData.json에 이미 있는 id는 백엔드에 없거나
+// 게스트라 jobsApi.detail이 항상 실패하므로, API를 부르는 대신 이 정적 데이터에서
+// 바로 채운다. 이게 없으면 목표로 고른 추천 공고가 postings에 전혀 안 담겨
+// selectedPostings가 비고, inferRoadmapTrackId가 항상 backend로 폴백해버린다.
+// careerData.json의 필드명(techs/postDate/closeDate/careerMin/careerMax/logo)을
+// PostingDetail이 기대하는 필드명(skills/post_date/close_date/career_min/career_max/
+// logo_url)으로 맞춰 매핑하고, certs/categories/concepts처럼 careerData에 아예 없는
+// 필드는 안전하게 빈 값으로 둔다. id는 careerData.json에서 문자열(예:
+// "wanted:wanted:https://...")이라 PostingDetail.id(number) 타입과는 다르지만, 이
+// 파일에서 posting.id는 항상 String(...)으로 감싸 문자열 비교에만 쓰이므로 런타임
+// 동작엔 영향이 없다.
+type CareerDataPosting = (typeof careerData.postings)[number]
+function toCareerDataPostingDetail(p: CareerDataPosting): PostingDetail {
+  return {
+    id: p.id as unknown as number,
+    title: p.title,
+    company: p.company,
+    post_date: p.postDate || null,
+    close_date: p.closeDate || null,
+    skills: p.techs,
+    url: '',
+    logo_url: p.logo || null,
+    matched_count: null,
+    source: p.source,
+    pool: p.pool,
+    career_min: p.careerMin,
+    career_max: p.careerMax,
+    region: p.region ?? null,
+    lat: null,
+    lng: null,
+    industry: p.industry ?? null,
+    response_rate: null,
+    categories: [],
+    certs: [],
+    desc_sections: p.descSections,
+  }
+}
+const CAREER_DATA_POSTINGS_BY_ID = new Map<string, PostingDetail>(
+  careerData.postings.map((p) => [p.id, toCareerDataPostingDetail(p)]),
+)
 
 // JobSheet.tsx의 careerText와 같은 표기(신입·무관 / 경력 N년+ / 경력 N~M년)를 그대로
 // 따른다 — 이 워크플로우 맵 파일 안에서만 쓰는 값이라 workflowShared.ts에 새 export를
@@ -192,6 +236,75 @@ function canvasHeightFor(size: WidgetSize): number {
   return size === '2x2' ? 720 : 260
 }
 
+// G: 목표 직군 추론 — 로드맵이 항상 backend 트랙으로 고정돼 있던 문제를 풀기 위해,
+// 선택된 목표 공고(selectedPostings)의 title/skills 키워드로 직군을 판정하고 그
+// 직군을 로드맵 트랙 id로 그대로 쓴다(직군명과 트랙 id가 1:1이라 별도 매핑 테이블이
+// 필요 없다: 백엔드/풀스택 -> backend, 프론트엔드 -> frontend, 데이터 분석·엔지니어·
+// ML/AI -> data, 데브옵스·SRE -> devops, 모바일 -> mobile). 아직 registry에 없는
+// 트랙 id를 반환해도 loadRoadmapTrack이 backend로 폴백하므로 안전하다.
+//
+// 판정 순서(TRACK_PRIORITY)는 식별력이 높은 직군(모바일 -> 프론트엔드 -> 데이터 ->
+// 데브옵스)을 먼저 검사하고 backend를 캐치올로 둔다 — 예를 들어 "TypeScript"만으로는
+// 프론트/백엔드 구분이 안 되지만 "React"가 함께 있으면 프론트엔드로 확정할 수 있는
+// 식으로, 키워드 자체를 직군 고유 도구/프레임워크 위주로 골랐다.
+type RoadmapTrackHintId = 'mobile' | 'frontend' | 'data' | 'devops' | 'backend'
+const TRACK_PRIORITY: RoadmapTrackHintId[] = ['mobile', 'frontend', 'data', 'devops', 'backend']
+const TRACK_KEYWORDS: Record<RoadmapTrackHintId, string[]> = {
+  mobile: [
+    'kotlin', 'swift', 'swiftui', 'flutter', 'dart', 'android', 'ios',
+    'react native', '리액트 네이티브', '안드로이드', '모바일', '앱 개발', 'jetpack compose',
+  ],
+  frontend: [
+    'react', 'vue', 'angular', 'svelte', 'next.js', 'nuxt', 'html', 'css', 'sass',
+    '프론트엔드', '프론트', 'ui/ux', '웹퍼블리셔', 'webpack', 'vite',
+  ],
+  data: [
+    'sql', 'pandas', 'numpy', 'tensorflow', 'pytorch', 'spark', 'hadoop', 'airflow',
+    '머신러닝', '딥러닝', '인공지능', '데이터 분석', '데이터 엔지니어', '데이터 사이언스',
+    'ml', 'ai', '빅데이터', 'etl', 'tableau',
+  ],
+  devops: [
+    'kubernetes', 'k8s', 'terraform', 'ansible', 'jenkins', 'helm', 'prometheus', 'grafana',
+    '데브옵스', 'sre', '인프라', 'ci/cd', 'argocd',
+  ],
+  backend: [
+    'spring', 'django', 'flask', 'fastapi', 'express', 'nestjs', 'node.js', 'node',
+    'jpa', 'mysql', 'postgresql', 'redis', 'kafka', 'msa', '서버', '백엔드', 'java', 'go', 'golang',
+  ],
+}
+
+// 공고 하나의 직군을 title + skills 키워드로 판정한다. TRACK_PRIORITY 순서대로 훑어
+// 처음 매칭되는 직군을 쓰고, 아무 키워드도 안 걸리면 backend로 캐치올한다.
+function classifyPostingTrack(posting: Pick<PostingDetail, 'title' | 'skills'>): RoadmapTrackHintId {
+  const haystack = [posting.title, ...(posting.skills ?? [])].join(' ').toLowerCase()
+  for (const trackHint of TRACK_PRIORITY) {
+    if (TRACK_KEYWORDS[trackHint].some((kw) => haystack.includes(kw))) return trackHint
+  }
+  return 'backend'
+}
+
+// 선택된 목표 여러 개 중 가장 많이 나온 직군(최빈값)을 로드맵 트랙으로 쓴다. 목표가
+// 없으면 DEFAULT_ROADMAP_TRACK_ID(backend)로 둔다. 동점일 때는 TRACK_PRIORITY 순서
+// (식별력 높은 직군 우선)로 타이브레이크한다.
+function inferRoadmapTrackId(postings: Pick<PostingDetail, 'title' | 'skills'>[]): string {
+  if (postings.length === 0) return DEFAULT_ROADMAP_TRACK_ID
+  const counts = new Map<RoadmapTrackHintId, number>()
+  postings.forEach((p) => {
+    const trackHint = classifyPostingTrack(p)
+    counts.set(trackHint, (counts.get(trackHint) ?? 0) + 1)
+  })
+  let best: RoadmapTrackHintId = 'backend'
+  let bestCount = -1
+  for (const trackHint of TRACK_PRIORITY) {
+    const count = counts.get(trackHint) ?? 0
+    if (count > bestCount) {
+      bestCount = count
+      best = trackHint
+    }
+  }
+  return best
+}
+
 export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
   const canvasHeight = canvasHeightFor(size)
   const { activeResume } = useResumesState()
@@ -211,10 +324,31 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
       setPostings([])
       return
     }
+    // placeholders.tsx(DesktopMy)와 같은 패턴: careerData.json(추천 공고 모달의 데모
+    // 공고)에 이미 있는 id는 API를 부르지 않고 CAREER_DATA_POSTINGS_BY_ID에서 바로
+    // 채운다. 그 id가 아닌 것만(실제 백엔드 공고) jobsApi.detail로 계속 불러온다.
+    const idsNeedingDetail = bookmarkIds.filter((id) => !CAREER_DATA_POSTINGS_BY_ID.has(id))
+    if (idsNeedingDetail.length === 0) {
+      setPostingsLoading(false)
+      setPostings(bookmarkIds.flatMap((id) => {
+        const careerPosting = CAREER_DATA_POSTINGS_BY_ID.get(id)
+        return careerPosting ? [careerPosting] : []
+      }))
+      return
+    }
     let cancelled = false
     setPostingsLoading(true)
-    loadBookmarkDetails(bookmarkIds, (id) => jobsApi.detail(id))
-      .then((items) => { if (!cancelled) setPostings(items) })
+    loadBookmarkDetails(idsNeedingDetail, (id) => jobsApi.detail(id))
+      .then((items) => {
+        if (cancelled) return
+        const detailsById = new Map(items.map((item) => [String(item.id), item]))
+        setPostings(bookmarkIds.flatMap((id) => {
+          const careerPosting = CAREER_DATA_POSTINGS_BY_ID.get(id)
+          if (careerPosting) return [careerPosting]
+          const detail = detailsById.get(id)
+          return detail ? [detail] : []
+        }))
+      })
       .finally(() => { if (!cancelled) setPostingsLoading(false) })
     return () => { cancelled = true }
   }, [bookmarkIds])
@@ -264,6 +398,12 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
     return set
   }, [selectedPostings, ownedSet])
   const targetSkillsArray = useMemo(() => [...targetSet], [targetSet])
+
+  // G: 선택된 목표들의 직군을 추론해 로드맵 백본 트랙을 그 직군으로 유동적으로
+  // 바꾼다 — 예전엔 항상 backend 트랙이 고정이라 목표를 바꿔도 백본이 그대로였다.
+  // targetSkills/targetConcepts 강조는 그대로 유지되고(아래 RoadmapView에 계속
+  // 넘긴다), 바뀌는 건 오직 어떤 트랙 JSON을 백본으로 그릴지 뿐이다.
+  const inferredTrackId = useMemo(() => inferRoadmapTrackId(selectedPostings), [selectedPostings])
 
   // 자격증 트랙 — 보유/목표 두 집합만 뽑는다. RoadmapView에는 ownedCerts만 넘기고,
   // targetCerts는 AI 보강 요청 payload에 쓴다.
@@ -583,6 +723,7 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
               ownedCerts={ownedCerts}
               targetSkills={targetSkillsArray}
               targetConcepts={targetConcepts}
+              trackId={inferredTrackId}
               height={canvasHeight}
             />
           </div>
@@ -612,6 +753,7 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
                 ownedCerts={ownedCerts}
                 targetSkills={targetSkillsArray}
                 targetConcepts={targetConcepts}
+                trackId={inferredTrackId}
                 height={640}
               />
             </div>
