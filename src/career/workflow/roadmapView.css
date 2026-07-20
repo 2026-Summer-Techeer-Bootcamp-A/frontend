@@ -1,8 +1,10 @@
-/* 로드맵 백본 뷰(RoadmapView.tsx) — roadmap.sh 스타일: 중앙 척추에 섹션 마일스톤,
-   그 아래 점선 커넥터로 가지 노드. 색은 근본적으로 모노크롬(near-black) + 그린
-   #1f9d57 하나만 액센트로 쓰고, 노드 타입 3색(기술 그린/자격증 퍼플/개념 앰버)은
-   workflowMap.css의 wfs-type 계열 팔레트를 그대로 재사용해 스테이지 뷰와 색 언어를
-   통일한다. rmv 프리픽스로 wfm/wfs 클래스들과 완전히 분리해 서로 간섭하지 않는다. */
+/* 로드맵 백본 뷰(RoadmapView.tsx) — roadmap.sh 스타일: 중앙 척추에 마일스톤(추천순
+   뷰는 섹션, 난이도순 뷰는 난이도 티어), 그 아래 점선 커넥터로 가지 노드. 색은
+   근본적으로 모노크롬(near-black) + 그린 #1f9d57 하나만 액센트로 쓴다. 노드는
+   좌측 컬러 바 대신 원형 메달리온(상태를 색+글리프로 표현)이고, 타입(기술/자격증/
+   개념)은 라벨 아래 뮤트 텍스트 태그로만 조용히 드러난다 — 카드 테두리와 좌측 바는
+   항상 중립 var(--line) 하나로 고정. rmv 프리픽스로 wfm/wfs 클래스들과 완전히
+   분리해 서로 간섭하지 않는다. */
 
 .rmv-root {
   display: flex;
@@ -29,6 +31,13 @@
 }
 .rmv-tracks__btn:hover { color: var(--c-ink, #18181b); }
 .rmv-tracks__btn.is-active { background: var(--c-ink, #18181b); color: #fff; }
+
+/* 뷰 세그먼트(추천순/난이도순) — kit.tsx의 SegmentedControl(kit-segctl)을 그대로
+   재사용해 앱 전역 토글과 같은 촉감을 낸다. rmv-root의 flex column 안에서 왼쪽
+   정렬만 맞춘다. */
+.rmv-viewswitch {
+  align-self: flex-start;
+}
 
 /* 게임 성취 레이어 상단 — 진척 게이지. 캔버스 스크롤과 무관하게 항상 보이는
    고정 헤더다(캔버스 안에 넣지 않는다). */
@@ -184,6 +193,15 @@
 }
 .rmv-milestone.is-achieved .rmv-milestone__star { color: #1f9d57; }
 
+/* 난이도순 뷰의 티어 마일스톤 — 섹션 마일스톤과 같은 pill이지만 인덱스 원의 배경만
+   입문(그린)에서 고급(붉은 계열)으로 옮겨가는 절제된 색으로 구분한다. 완주(is-achieved)
+   상태는 명시도가 더 높은 선택자라 티어 색 위에 늘 초록으로 덮인다(달성=초록이라는
+   언어를 티어와 무관하게 통일). */
+.rmv-tier-milestone--intro .rmv-milestone__index { background: #1f9d57; }
+.rmv-tier-milestone--basic .rmv-milestone__index { background: #5c8a37; }
+.rmv-tier-milestone--intermediate .rmv-milestone__index { background: #b9791f; }
+.rmv-tier-milestone--advanced .rmv-milestone__index { background: #b3492f; }
+
 /* 가지 노드 행 — 마일스톤 아래로 점선 커넥터를 통해 매달린 것처럼 보이게, 각 노드
    위에 짧은 점선을 세로로 그어 위쪽 가상의 가로 줄기에 닿는 느낌을 준다. */
 .rmv-branches {
@@ -213,14 +231,21 @@
   transform: translateX(-50%);
 }
 
+/* 노드 카드 — 도전과제 메달리온(좌) + 라벨/태그(우) 가로 배치. 예전엔 좌측 4px
+   컬러 바로 타입을 표시했지만(rmv-type--* border-left-color), AI 티가 난다는
+   피드백으로 전부 없앴다 — 이제 타입은 라벨 아래 뮤트 텍스트 태그로만, 상태는
+   메달리온의 색+글리프로만 표현한다. 카드 테두리는 어떤 상태든 얇은 중립
+   var(--line) 하나로 고정. */
 .rmv-node {
   box-sizing: border-box;
-  width: 168px;
+  width: 186px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
   border-radius: 12px;
-  padding: 9px 12px;
+  padding: 10px 12px;
   background: #fff;
   border: 1.4px solid var(--line, #e6e9ef);
-  border-left-width: 4px;
   cursor: pointer;
   transition: opacity 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease;
 }
@@ -239,12 +264,8 @@
 .rmv-marker--alternative { border-style: dashed; }
 .rmv-marker--optional { border-style: dotted; opacity: 0.92; }
 
-/* 타입 좌측 테두리 3색 — 스테이지 뷰(workflowMap.css의 wfs-type--*)와 동일한 팔레트. */
-.rmv-type--skill { border-left-color: #1f9d57; }
-.rmv-type--cert { border-left-color: #8a6fc4; }
-.rmv-type--concept { border-left-color: #b8892b; }
-
-/* 상태 — 보유(그린 배경 틴트) / 지금 해금 가능(테두리 강조 링) / 잠김(흐림+그레이스케일). */
+/* 상태 — 보유(그린 배경 틴트) / 지금 해금 가능(테두리 강조 링) / 잠김(흐림+그레이스케일).
+   좌측 바 대신 이 상태들이 메달리온 색으로도 한 번 더 표현된다(아래 rmv-medallion--*). */
 .rmv-status--owned {
   background: #f6fbf8;
 }
@@ -254,6 +275,9 @@
 .rmv-status--locked {
   opacity: 0.48;
   filter: grayscale(0.5);
+}
+.rmv-status--locked .rmv-node__label {
+  color: var(--c-muted, #9a9ca3);
 }
 
 /* 목표 강조 — 선택된 목표 공고가 요구하는 노드. 상태 색과 겹쳐도 구분되도록 바깥
@@ -265,13 +289,52 @@
   box-shadow: 0 0 0 2px #fff, 0 0 0 3.4px #8a6fc4, 0 0 0 5.4px rgba(31, 157, 87, 0.22);
 }
 
-.rmv-node__head {
+/* 메달리온 — 게임 실적 배지 스타일 원형. 상태별 색+글리프(RoadmapView.tsx)만 바뀌고
+   테두리 링/그라데이션은 난이도순 뷰에서 --tier-* 커스텀 프로퍼티로 은은하게
+   갈아 끼워진다(기본값은 항상 그린 팔레트라 추천순 뷰에서는 지금까지와 같은 색으로
+   보인다). box-shadow가 카드(.rmv-status--unlockable/.rmv-highlighted)와 별개
+   레이어라 서로 덮어쓸 걱정이 없다. */
+.rmv-medallion {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+}
+.rmv-medallion--owned {
+  background: radial-gradient(circle at 32% 28%, var(--tier-light, #3fc47e), var(--tier-solid, #178a49));
+  color: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+.rmv-medallion--milestone {
+  background: radial-gradient(circle at 32% 28%, #f4d488, #c99a34);
+  color: #fff;
+  border: 1px solid rgba(180, 138, 40, 0.5);
+  box-shadow: 0 0 0 3px rgba(201, 154, 52, 0.18);
+}
+.rmv-medallion--unlockable {
+  background: #fff;
+  border: 2px solid var(--tier-solid, #1f9d57);
+  color: var(--tier-solid, #1f9d57);
+  box-shadow: 0 0 0 4px var(--tier-ring, rgba(31, 157, 87, 0.14)), 0 0 8px var(--tier-glow, rgba(31, 157, 87, 0.3));
+}
+.rmv-medallion--locked {
+  background: #eceef1;
+  border: 1.6px solid #d4d6db;
+  color: #9a9ca3;
+}
+
+.rmv-node__body {
+  min-width: 0;
+  flex: 1 1 auto;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
   gap: 6px;
 }
 .rmv-node__label {
+  display: block;
   min-width: 0;
   font-size: 12px;
   font-weight: 750;
@@ -280,18 +343,18 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.rmv-node__statusicon { flex: none; }
-.rmv-status--owned .rmv-node__statusicon { color: #1f9d57; }
-.rmv-status--locked .rmv-node__statusicon { color: var(--c-muted, #9a9ca3); }
 
 .rmv-node__meta {
-  margin-top: 6px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 4px;
 }
-.rmv-node__typebadge {
+/* 타입 태그 — 라벨 아래 조용한 뮤트 텍스트. 배경은 모든 타입이 같은 중립 회색이고,
+   타입 색을 쓰더라도 이 텍스트 색 정도로만 절제한다(카드 테두리/좌측 바에는 절대
+   쓰지 않는다). */
+.rmv-node__typebadge,
+.rmv-node__typetag {
   display: inline-flex;
   align-items: center;
   gap: 2px;
@@ -302,6 +365,9 @@
   background: #f2f3f5;
   color: var(--c-muted, #6b6f78);
 }
+.rmv-node__typetag--skill { color: #1f7a44; }
+.rmv-node__typetag--cert { color: #6d4fb0; }
+.rmv-node__typetag--concept { color: #93701f; }
 .rmv-node__markerbadge {
   font-size: 9px;
   font-weight: 700;
@@ -309,6 +375,33 @@
   border-radius: 999px;
   background: #f2f3f5;
   color: var(--c-muted, #6b6f78);
+}
+/* 난이도 뱃지 + 선행 개수 — 난이도순 뷰에서만 노출(RoadmapView.tsx의 showDifficulty). */
+.rmv-node__tierbadge {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+.rmv-node__tierbadge--intro { background: rgba(31, 157, 87, 0.12); color: #1f9d57; }
+.rmv-node__tierbadge--basic { background: rgba(92, 138, 55, 0.14); color: #5c8a37; }
+.rmv-node__tierbadge--intermediate { background: rgba(185, 121, 31, 0.14); color: #b9791f; }
+.rmv-node__tierbadge--advanced { background: rgba(179, 73, 47, 0.14); color: #b3492f; }
+.rmv-node__prereqbadge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #f2f3f5;
+  color: var(--c-muted, #6b6f78);
+}
+/* 난이도 객관 근거 — 백엔드가 매긴 티어의 근거 문장(공고 평균 요구 경력 + 수요).
+   뱃지 바로 아래 카드 안에서 조용히 한두 줄로만 보인다(prereqbadge와 같은 톤). */
+.rmv-node__basis {
+  margin: 0;
+  font-size: 9.5px;
+  line-height: 1.4;
+  color: var(--c-muted, #7c7f88);
 }
 .rmv-node__targetbadge {
   display: inline-flex;

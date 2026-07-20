@@ -1,7 +1,7 @@
 // @ts-nocheck -- Node's built-in test types are not part of the app tsconfig (relations.test.ts와 동일한 실행 방식).
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { buildRoadmapOverlay, effectiveOwnedSkills } from './roadmapOverlay.ts'
+import { buildRoadmapOverlay, effectiveOwnedSkills, computeNodeDepths, computeNodeDifficulty, difficultyTierFromDepth } from './roadmapOverlay.ts'
 import { loadRoadmapTrack } from '../../data/roadmaps/registry.ts'
 
 const track = loadRoadmapTrack('backend')
@@ -132,4 +132,40 @@ test('빈 이력서는 careerData.json 목 스킬로 폴백된다', () => {
 test('게스트(빈 ownedSkills)로도 일부 노드가 owned로 계산된다', () => {
   const overlay = buildRoadmapOverlay(track, [], [])
   assert.ok(overlay.progress.owned > 0, '게스트 폴백이 적용되면 owned가 0보다 커야 한다')
+})
+
+// (13) 난이도 계산 — prereqDepth(node) = 선행이 없으면 0, 있으면 1 + max(prereq들의
+// prereqDepth)를 재귀로 검증한다. internet/sql/git은 prereq가 없는 루트라 depth 0,
+// http/python은 루트에 1단만 얹힌 depth 1, django/spring/docker/rest-api는 그 위에
+// 한 단 더 쌓인 depth 2다.
+test('prereqDepth는 선행 없는 루트가 0이고 선행 체인 깊이만큼 재귀로 쌓인다', () => {
+  const depths = computeNodeDepths(track.nodes)
+  assert.equal(depths.get('internet'), 0, 'internet은 prereq가 없는 루트다')
+  assert.equal(depths.get('sql'), 0, 'sql은 prereq가 없는 루트다')
+  assert.equal(depths.get('git'), 0, 'git은 prereq가 없는 루트다')
+  assert.equal(depths.get('http'), 1, 'http는 internet 하나만 선행이라 depth 1이다')
+  assert.equal(depths.get('python'), 1, 'python은 terminal-basics 하나만 선행이라 depth 1이다')
+  assert.equal(depths.get('django'), 2, 'django는 python(depth 1) 위라 depth 2다')
+  assert.equal(depths.get('rest-api'), 2, 'rest-api는 http/sql 중 더 깊은 것 위라 depth 2다')
+})
+
+// (14) 4단계 티어 버킷 — depth 0=입문, 1=초급, 2=중급, 3 이상=고급.
+test('difficultyTierFromDepth는 depth를 입문/초급/중급/고급 4단계로 버킷한다', () => {
+  assert.equal(difficultyTierFromDepth(0), 'intro')
+  assert.equal(difficultyTierFromDepth(1), 'basic')
+  assert.equal(difficultyTierFromDepth(2), 'intermediate')
+  assert.equal(difficultyTierFromDepth(3), 'advanced')
+  assert.equal(difficultyTierFromDepth(5), 'advanced', 'depth 3 이상은 전부 고급으로 뭉친다')
+})
+
+// (15) computeNodeDifficulty는 실제 backend 트랙 노드에서 depth와 tier가 일치하고,
+// prereqCount가 그 노드의 prereqs.length와 같아야 한다.
+test('computeNodeDifficulty는 backend 트랙에서 depth/tier/prereqCount가 실데이터와 일치한다', () => {
+  const difficulty = computeNodeDifficulty(track.nodes)
+  assert.deepEqual(difficulty.get('internet'), { depth: 0, tier: 'intro', prereqCount: 0 })
+  assert.deepEqual(difficulty.get('http'), { depth: 1, tier: 'basic', prereqCount: 1 })
+  assert.deepEqual(difficulty.get('django'), { depth: 2, tier: 'intermediate', prereqCount: 1 })
+  const msa = difficulty.get('msa')
+  assert.ok(msa, 'msa 노드가 존재해야 한다')
+  assert.equal(msa?.tier, 'advanced', 'msa는 depth 3이라 고급이어야 한다')
 })

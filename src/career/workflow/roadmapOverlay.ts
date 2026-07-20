@@ -21,11 +21,147 @@ export function effectiveOwnedSkills(ownedSkills: string[]): string[] {
 
 export type NodeStatus = 'owned' | 'unlockable' | 'locked'
 
+// 난이도 티어 — prereqDepth를 4단계로 버킷한다. LLM 없이 결정적으로 계산되고,
+// 백본 데이터의 prereqs만 보고 정해지므로 로그인/보유 스킬 여부와 무관하게 항상
+// 같은 값이 나온다(오버레이의 status와 달리 "그 사람이 뭘 아는지"가 아니라
+// "그 개념이 얼마나 깊이 쌓여야 나오는지"를 잰다).
+export type DifficultyTier = 'intro' | 'basic' | 'intermediate' | 'advanced'
+export const TIER_ORDER: DifficultyTier[] = ['intro', 'basic', 'intermediate', 'advanced']
+export const TIER_LABEL: Record<DifficultyTier, string> = {
+  intro: '입문',
+  basic: '초급',
+  intermediate: '중급',
+  advanced: '고급',
+}
+
+export function difficultyTierFromDepth(depth: number): DifficultyTier {
+  if (depth <= 0) return 'intro'
+  if (depth === 1) return 'basic'
+  if (depth === 2) return 'intermediate'
+  return 'advanced'
+}
+
+// prereqDepth(node) — 선행이 없으면 0, 있으면 1 + max(prereq들의 prereqDepth). 백본
+// 데이터 규칙(prereq는 같거나 더 앞선 섹션만 가리킨다)상 순환이 없다고 보장되지만,
+// 데이터 오류로 순환이 생기는 방어적인 경우를 위해 buildStatus의 cleared()와 같은
+// visiting 가드를 둔다(순환이면 그 지점의 depth를 0으로 끊어 무한 재귀를 막는다).
+export function computeNodeDepths(nodes: RoadmapNode[]): Map<string, number> {
+  const byId = new Map(nodes.map((n) => [n.id, n]))
+  const cache = new Map<string, number>()
+  const visiting = new Set<string>()
+
+  function depth(id: string): number {
+    const cached = cache.get(id)
+    if (cached !== undefined) return cached
+    if (visiting.has(id)) return 0
+    const node = byId.get(id)
+    if (!node || node.prereqs.length === 0) {
+      cache.set(id, 0)
+      return 0
+    }
+    visiting.add(id)
+    const d = 1 + Math.max(...node.prereqs.map(depth))
+    visiting.delete(id)
+    cache.set(id, d)
+    return d
+  }
+
+  nodes.forEach((n) => depth(n.id))
+  return cache
+}
+
+export type NodeDifficulty = {
+  depth: number
+  tier: DifficultyTier
+  prereqCount: number
+  // 아래 세 필드는 백엔드 객관 보정(POST /match/roadmap/difficulty) 응답이 도착했을
+  // 때만 mergeBackendDifficulty가 덧붙인다. 기존 computeNodeDifficulty는 이 필드를
+  // 절대 채우지 않는다(roadmapOverlay.test.ts가 { depth, tier, prereqCount } 세
+  // 필드만 있는 정확한 shape을 deepEqual로 검증하므로, 이 함수 자체는 손대지 않는다).
+  objective?: boolean
+  avgCareer?: number | null
+  demand?: number
+  basis?: string
+}
+
+export function computeNodeDifficulty(nodes: RoadmapNode[]): Map<string, NodeDifficulty> {
+  const depths = computeNodeDepths(nodes)
+  const result = new Map<string, NodeDifficulty>()
+  nodes.forEach((n) => {
+    const depth = depths.get(n.id) ?? 0
+    result.set(n.id, { depth, tier: difficultyTierFromDepth(depth), prereqCount: n.prereqs.length })
+  })
+  return result
+}
+
+// 백엔드 티어 라벨(한글) -> 내부 DifficultyTier 키. 모르는 라벨이 오면(백엔드 스펙
+// 변경 등 방어적 상황) 입문으로 떨어뜨려 화면이 깨지지 않게 한다.
+const BACKEND_TIER_LABEL_TO_KEY: Record<string, DifficultyTier> = {
+  입문: 'intro',
+  초급: 'basic',
+  중급: 'intermediate',
+  고급: 'advanced',
+}
+
+export function difficultyTierFromBackendLabel(label: string): DifficultyTier {
+  return BACKEND_TIER_LABEL_TO_KEY[label] ?? 'intro'
+}
+
+export type RoadmapDifficultyBackendItem = {
+  node_id: string
+  tier: string
+  avg_career: number | null
+  demand: number
+  basis: string
+}
+
+// 선행 깊이 기반 폴백 맵(base) 위에 백엔드 객관 보정 응답(items)을 노드 단위로
+// 덧씌운다. 응답에 없는 노드(부분 실패, 신규 노드 등)는 base의 깊이 기반 티어를
+// 그대로 유지한다 — 이 함수 자체도 순수 함수라 fetch나 상태를 모른다(호출부인
+// RoadmapView.tsx가 요청/폴백/로딩을 책임진다).
+export function mergeBackendDifficulty(
+  base: Map<string, NodeDifficulty>,
+  items: RoadmapDifficultyBackendItem[],
+): Map<string, NodeDifficulty> {
+  const merged = new Map(base)
+  items.forEach((item) => {
+    const prior = merged.get(item.node_id)
+    if (!prior) return
+    merged.set(item.node_id, {
+      ...prior,
+      tier: difficultyTierFromBackendLabel(item.tier),
+      objective: true,
+      avgCareer: item.avg_career,
+      demand: item.demand,
+      basis: item.basis,
+    })
+  })
+  return merged
+}
+
+// 마일스톤/도전과제 노드 — 섹션의 첫 노드(그 섹션에 들어서는 대표 관문)이거나 개념
+// 타입(핵심 개념) 노드. 이 두 부류만 "보유"했을 때 일반 초록 체크 대신 금색
+// 메달리온(별)로 표시해 게임의 업적 배지 같은 특별함을 준다 — 나머지 보유 노드는
+// 여전히 평범한 초록 owned로 남는다.
+export function buildMilestoneEligibleIds(nodes: RoadmapNode[]): Set<string> {
+  const firstBySectionOrder = new Map<string, RoadmapNode>()
+  nodes.forEach((n) => {
+    const current = firstBySectionOrder.get(n.section)
+    if (!current || n.order < current.order) firstBySectionOrder.set(n.section, n)
+  })
+  const ids = new Set<string>()
+  firstBySectionOrder.forEach((n) => ids.add(n.id))
+  nodes.forEach((n) => { if (n.type === 'concept') ids.add(n.id) })
+  return ids
+}
+
 export type RoadmapOverlay = {
   statusById: Map<string, NodeStatus>
   highlightedIds: Set<string>
   progress: { owned: number; total: number; pct: number }
   sectionProgress: Map<string, { owned: number; total: number; achieved: boolean }>
+  difficultyById: Map<string, NodeDifficulty>
+  milestoneEligibleIds: Set<string>
 }
 
 // cleared(node) — 그 노드의 prereqs가 전부 "충족"됐는지. skill/cert 타입 prereq는
@@ -129,5 +265,8 @@ export function buildRoadmapOverlay(
     sectionProgress.set(s.id, { owned, total: sectionNodes.length, achieved })
   })
 
-  return { statusById, highlightedIds, progress, sectionProgress }
+  const difficultyById = computeNodeDifficulty(track.nodes)
+  const milestoneEligibleIds = buildMilestoneEligibleIds(track.nodes)
+
+  return { statusById, highlightedIds, progress, sectionProgress, difficultyById, milestoneEligibleIds }
 }
