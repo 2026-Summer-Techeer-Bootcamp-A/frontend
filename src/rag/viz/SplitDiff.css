@@ -242,15 +242,21 @@
 .rv__sd-icon--gap { background: var(--sd-gap); }
 
 /* ---------- 툴팁 — 담백한 카드. 기본은 시각적으로 숨겨두고(DOM에는 남겨 aria-describedby로
-   스크린리더가 읽게 함) 호버·포커스 시 보인다.
+   스크린리더가 읽게 함) 열렸을 때(.rv__sd-tooltip--open)만 보인다.
+
+   표시를 CSS :hover/:focus 의사 클래스가 아니라 React 상태(hovering/focused → isOpen)로
+   직접 켠다. 예전에는 :hover가 브라우저에서 즉시 켜지는 동시에 JS가 mouseenter에서 좌표를
+   다시 재는 구조라, 표시 타이밍과 좌표 계산 사이 레이스로 잘못된 위치에서 잠깐 나왔다
+   사라지거나 깜빡이는 문제가 있었다. 이제는 open 클래스와 좌표(top/left)가 SplitDiff.tsx의
+   useLayoutEffect에서 같은 커밋으로 함께 반영되므로 그 중간 상태가 화면에 그려지지 않는다.
 
    position: fixed + 뷰포트 좌표(top/left)는 SplitDiff.tsx가 getBoundingClientRect로 계산해
    인라인 style로 얹는다 — 채팅 스크롤 패널(rc__body)이나 상태 갤러리 데모 프레임
    (ss-demoframe) 같은 조상의 overflow: hidden/auto에 잘리지 않기 위해서다(그 조상들에는
    fixed의 컨테이닝 블록을 새로 만드는 transform/filter/perspective/contain이 없음을
-   확인했다). top/left 기본값 0은 JS가 아직 계산하기 전(hover/focus 전, 숨겨진 상태)의
-   자리표시자일 뿐이며 화면에 보이지 않는다. z-index 400은 이 화면 내부 요소들과 사이드
-   시트류(z-index 200대)보다는 높고, 실제 모달(500 이상)보다는 낮게 둔다. */
+   확인했다). top/left 기본값 0은 아직 한 번도 열린 적 없을 때(숨겨진 상태)의 자리표시자일
+   뿐이며 화면에 보이지 않는다. z-index 400은 이 화면 내부 요소들과 사이드 시트류
+   (z-index 200대)보다는 높고, 실제 모달(500 이상)보다는 낮게 둔다. */
 .rv__sd-tooltip {
   position: fixed;
   z-index: 400;
@@ -273,11 +279,12 @@
   pointer-events: none;
   transition: opacity 0.12s ease;
 }
-.rv__sd-hl:hover .rv__sd-tooltip,
-.rv__sd-hl:focus .rv__sd-tooltip,
-.rv__sd-hl:focus-visible .rv__sd-tooltip {
+/* 마우스가 형광펜 구절에서 툴팁 쪽으로 넘어가도(둘 다 hovering 플래그를 공유) 열린 채로
+   유지되도록, 열려 있는 동안은 포인터 이벤트를 받는다. */
+.rv__sd-tooltip--open {
   visibility: visible;
   opacity: 1;
+  pointer-events: auto;
 }
 .rv__sd-tooltip-head { display: flex; align-items: center; gap: 6px; }
 .rv__sd-tooltip-verdict {
