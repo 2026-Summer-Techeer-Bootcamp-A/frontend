@@ -20,7 +20,7 @@ import { selectDisplayedCoverage } from '../../career/coverageScore'
 import { useDashboardConfig, isWidgetHidden, getWidgetSize } from '../../career/dashboardConfig'
 import { DASHBOARD_WIDGETS } from '../../career/widgetCatalog'
 import { useBookmarks } from '../../career/bookmarkStore'
-import { GrowthSnapshot, type GrowthCategoryCount } from './dashboard/GrowthSnapshot'
+import { GrowthSnapshot, type GrowthCategoryCount, type SkillTrendItem } from './dashboard/GrowthSnapshot'
 import { PresentationTour, type TourZone } from './dashboard/PresentationTour'
 import data from '../../data/careerData.json'
 import './DesktopOverview.css'
@@ -30,6 +30,9 @@ const asOf = data.meta.asOf
 const TOTAL = data.meta.totalPostings
 const RECENT_DAYS = 90
 const DEADLINE_SOON_DAYS = 7
+// A-3: "요즘 뜨는 내 기술" 최소 건수 컷 — 직전 90일 요구 건수가 이 값 미만인 기술은
+// 표본이 얕아 증감률이 튀기 쉬우므로 노출에서 제외한다.
+const TREND_MIN_PRIOR_COUNT = 5
 
 /** asOf 기준 며칠 전에 올라온 공고인지. 날짜가 없거나 미래면 null. */
 function daysSince(dateStr: string, ref: string) {
@@ -240,8 +243,9 @@ function LiveCoverageHistogram({
   )
 }
 
-/** 데스크톱 대시보드 — 검정 히어로 카드 1개(좌: 커리어 점수, 우: KPI 2x2) + 라벨 섹션 2개(내 시장 진단 ·
- * 무엇을 배울까)로 구성한 위계형 커맨드센터. 공고 목록은 우측 레일의 최신 공고 타임라인 탭으로 통합됐다. */
+/** 데스크톱 대시보드 — 검정 히어로 카드 1개(좌: 커리어 점수, 우: KPI 2x2) + 라벨 없는 섹션 2개(업종 적합도·
+ * 커버리지 분포 / 워크플로우 맵)로 구성한 위계형 커맨드센터. 공고 목록은 우측 레일의 최신 공고 타임라인
+ * 탭으로 통합됐다. */
 export default function DesktopOverview() {
   const navigate = useNavigate()
   useDashboardConfig() // 위젯 표시/숨김·크기 변경 시 리렌더 트리거
@@ -366,11 +370,10 @@ export default function DesktopOverview() {
     return getWidgetSize('dashboard', id, item.defaultSize)
   }
 
-  // 2번 작업 — "오늘 브리핑"(텍스트 액션 큐) 자리를 대신하는 "요즘 내 성장" 시각화 위젯의
-  // 데이터. 시계열 히스토리(스킬을 언제 배웠는지 등)가 없어 추이는 만들지 않고, activeResume가
-  // 이미 갖고 있는 skillCategories(스킬→카테고리)로 "지금" 보유 기술의 카테고리별 분포만
+  // A-3용 카테고리 분포 폴백 — 아래 skillTrend가 표본 부족으로 비어 있을 때 GrowthSnapshot이
+  // 대신 보여줄 "지금" 보유 기술의 카테고리별 분포. activeResume의 skillCategories(스킬→카테고리)를
   // 집계한다. 분류 사전에 없는 스킬은 세지 않으므로(state.ts 주석 참고) 합이 skills.length보다
-  // 작을 수 있다 — GrowthSnapshot이 그 경우 "분류 가능한 기술 기준"이라고 표시한다.
+  // 작을 수 있다.
   const skillCategoryCounts = useMemo<GrowthCategoryCount[]>(() => {
     const counts = new Map<string, number>()
     Object.values(activeResume?.skillCategories ?? {}).forEach((cat) => counts.set(cat, (counts.get(cat) ?? 0) + 1))
@@ -378,6 +381,34 @@ export default function DesktopOverview() {
       .map(([key, count]) => ({ key, count, label: NETWORK_CATEGORY_LABEL[key] ?? key, color: NETWORK_CATEGORY_COLOR[key] ?? '#a1a1aa' }))
       .sort((a, b) => b.count - a.count)
   }, [activeResume])
+
+  // A-3: "요즘 뜨는 내 기술" — 최근 90일 신규 공고와 직전 90일(90~180일 전) 공고에서
+  // 내 보유 기술 각각이 몇 건에 요구됐는지 세어 증감률을 낸다. postDate가 있는 국내 공고만
+  // 대상으로 하고(다른 KPI들과 동일하게 domestic 기준), 직전 기간 요구 건수가
+  // TREND_MIN_PRIOR_COUNT 미만인 기술은 증감률이 튀기 쉬워 제외한다. 상위 3개를
+  // 증감률 내림차순으로 반환하고, 하나도 없으면 GrowthSnapshot이 카테고리 분포로 폴백한다.
+  const skillTrend = useMemo<SkillTrendItem[]>(() => {
+    const recentByTech = new Map<string, number>()
+    const priorByTech = new Map<string, number>()
+    domestic.forEach((p) => {
+      const d = daysSince((p as { postDate?: string }).postDate ?? '', asOf)
+      if (d == null) return
+      if (d <= RECENT_DAYS) {
+        p.techs.forEach((t) => { if (skills.includes(t)) recentByTech.set(t, (recentByTech.get(t) ?? 0) + 1) })
+      } else if (d <= RECENT_DAYS * 2) {
+        p.techs.forEach((t) => { if (skills.includes(t)) priorByTech.set(t, (priorByTech.get(t) ?? 0) + 1) })
+      }
+    })
+    const items: SkillTrendItem[] = []
+    skills.forEach((skill) => {
+      const priorCount = priorByTech.get(skill) ?? 0
+      if (priorCount < TREND_MIN_PRIOR_COUNT) return
+      const recentCount = recentByTech.get(skill) ?? 0
+      const changePct = Math.round(((recentCount - priorCount) / priorCount) * 100)
+      items.push({ skill, recentCount, priorCount, changePct })
+    })
+    return items.sort((a, b) => b.changePct - a.changePct).slice(0, 3)
+  }, [domestic, skills])
 
   // 라벨 섹션 표시 여부 — 섹션 내 위젯이 전부 숨겨지면 섹션 헤더째로 렌더하지 않는다.
   const secMarketVisible = !isWidgetHidden('dashboard', 'industry-fit')
@@ -470,7 +501,9 @@ export default function DesktopOverview() {
             <div
               ref={heroZoneRef}
               className="dov__hero-card"
-              style={{ gridTemplateColumns: heroScoreVisible && kpiTiles.length > 0 ? 'minmax(260px, 1fr) minmax(300px, 1fr)' : '1fr' }}
+              /* 우측 레일이 460px에서 508px로 넓어진 만큼(-48px) 좌측 인사이트열이 좁아져,
+                 히어로 내부 2열의 하한도 같은 비율로 줄여 이전과 동일한 여유폭을 유지한다. */
+              style={{ gridTemplateColumns: heroScoreVisible && kpiTiles.length > 0 ? 'minmax(236px, 1fr) minmax(272px, 1fr)' : '1fr' }}
             >
               {heroScoreVisible && (
                 <div className="dov__hero-left">
@@ -546,7 +579,6 @@ export default function DesktopOverview() {
           {/* Zone 2 — 내 시장 진단: 업종 적합도 · 커버리지 분포 · 지금 지원할 만한 공고 */}
           {secMarketVisible && (
             <section className="dov__sec" ref={marketZoneRef}>
-              <h2 className="dov__sec-title">내 시장 진단</h2>
               <div className="dov__sec-grid dov__sec-grid--2">
                 {!isWidgetHidden('dashboard', 'industry-fit') && (
                   <div className="dov__card-item">
@@ -601,7 +633,6 @@ export default function DesktopOverview() {
               전체 폭을 쓴다. */}
           {secLearnVisible && (
             <section className="dov__sec" ref={learnSectionRef}>
-              <h2 className="dov__sec-title">무엇을 배울까</h2>
               <div className="dov__sec-grid dov__sec-grid--1">
                 {!isWidgetHidden('dashboard', 'workflow-map') && (
                   <div className="dov__card-item">
@@ -617,12 +648,11 @@ export default function DesktopOverview() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minHeight: 0 }}>
             {!isWidgetHidden('dashboard', 'brief') && (
               <section className="dcard" style={{ flex: 'none' }}>
-                <span className="dov__card-eyebrow"><Sparkles size={14} /> 요즘 내 성장</span>
+                <span className="dov__card-eyebrow"><Sparkles size={14} /> 요즘 뜨는 내 기술</span>
                 <GrowthSnapshot
                   hasResume={hasResume}
-                  coveragePct={shownCoverage}
-                  skillCount={skills.length}
-                  applicableCount={shownApplicable}
+                  trending={skillTrend}
+                  recentTotal={recentCount}
                   categories={skillCategoryCounts}
                   onRegister={() => navigate('/resume/submit')}
                 />
