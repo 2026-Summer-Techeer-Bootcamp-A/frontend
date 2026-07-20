@@ -259,6 +259,37 @@ export type WhatIfData = {
   add: string; matched_before: number; matched_after: number; delta: number
   as_of: string; sample_size: number; sample_warning?: boolean
 }
+
+// F-2: AI 로드맵 보강 — 별도 에이전트가 백엔드에 붙이는 중인 엔드포인트. 경로가
+// 백엔드가 match 라우터에 붙여 확정된 경로. request가 /api/v1을 붙이므로 여기선 그 뒤만 둔다.
+// 실제 호출은 /api/v1/match/roadmap/enrich 가 된다.
+export const ROADMAP_ENRICH_PATH = '/match/roadmap/enrich'
+
+export type RoadmapEnrichRequest = {
+  goal_company: string
+  goal_title: string
+  owned_skills: string[]
+  missing_skills: string[]
+  concepts: string[]
+  certs: string[]
+  career_required: number | null
+  career_mine: number | null
+}
+export type RoadmapEnrichStep = {
+  order: number
+  label: string
+  type: 'skill' | 'concept' | 'cert' | 'career'
+  effort: string
+  priority: 'high' | 'medium' | 'low'
+  reason: string
+  project: string
+}
+export type RoadmapEnrichResponse = {
+  headline: string
+  summary: string
+  quick_win: string
+  steps: RoadmapEnrichStep[]
+}
 export const dashboardApi = {
   coverage: (id: Identity, position?: string) =>
     request<CoverageData>(path('/match/coverage', personal(id, position)), auth(id.token)),
@@ -286,6 +317,15 @@ export const dashboardApi = {
   // B-1: 커버리지 what-if — 기술 하나를 더 배웠다고 가정했을 때 매칭 공고 수 변화.
   whatIf: (id: Identity, add: string) =>
     request<WhatIfData>(path('/match/what-if', { ...personal(id), add }), auth(id.token)),
+  // F-2: AI 로드맵 보강 — 인증 여부와 무관하게(비로그인 프리뷰에서도 데모로 눌러볼 수
+  // 있어야 한다) 호출한다. Identity가 없으면 헤더 없이 그냥 보낸다(WorkflowMap.tsx가
+  // 실패 시 준비된 폴백으로 이어받는다).
+  roadmapEnrich: (body: RoadmapEnrichRequest, token?: string | null) =>
+    request<RoadmapEnrichResponse>(ROADMAP_ENRICH_PATH, {
+      method: 'POST',
+      body: JSON.stringify(body),
+      ...(token ? auth(token) : {}),
+    }),
 }
 
 export type ParsedSkillDto = { canonical: string; category: string; in_dict: boolean }
