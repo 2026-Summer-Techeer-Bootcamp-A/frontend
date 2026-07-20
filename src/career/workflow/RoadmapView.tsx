@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent } from 'react'
 import { Award, Check, Flag, Lock, Plus, Star, Target, X } from 'lucide-react'
 import { loadRoadmapTrack, ROADMAP_TRACK_LIST, DEFAULT_ROADMAP_TRACK_ID } from '../../data/roadmaps/registry'
 import type { RoadmapNode } from '../../data/roadmaps/types'
@@ -386,6 +386,11 @@ export function RoadmapView({
     return (
       <div key={node.id} className="rmv-branch">
         <div
+          ref={(el) => {
+            if (el) nodeRefs.current.set(node.id, el)
+            else nodeRefs.current.delete(node.id)
+          }}
+          data-node-id={node.id}
           className={`rmv-node rmv-marker--${node.marker} rmv-status--${status}${isMilestoneGoal ? ' rmv-node--milestone' : ''}${highlighted ? ' rmv-highlighted' : ''}${dock?.node.id === node.id ? ' rmv-node--active' : ''}`}
           title={node.note}
           role="button"
@@ -453,6 +458,75 @@ export function RoadmapView({
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [dock])
 
+  // 선행 관계 연결선 오버레이 — 노드 카드는 여전히 순수 CSS flex 레이아웃(섹션/티어
+  // 마일스톤 아래 가지)으로 배치되지만, 그 카드들 사이의 prereq 관계는 CSS만으로
+  // 그릴 수 없어 DOM 측정 기반 SVG 곡선을 그 위에 얹는다. graphRef가 곡선의 좌표
+  // 기준(원점)이고, nodeRefs는 각 노드 카드 엘리먼트를 id로 찾기 위한 맵이다 —
+  // getBoundingClientRect는 스크롤 여부와 무관하게 뷰포트 좌표를 주므로, 노드 rect와
+  // graphRef rect를 같은 시점에 빼면 스크롤 위치와 무관한 콘텐츠 내부 상대 좌표가
+  // 나온다(캔버스를 스크롤해도 둘 다 같은 양만큼 움직이므로 차이는 그대로다).
+  const graphRef = useRef<HTMLDivElement | null>(null)
+  const nodeRefs = useRef<Map<string, HTMLDivElement>>(new Map())
+  const [prereqEdges, setPrereqEdges] = useState<{ key: string; d: string; toOwned: boolean }[]>([])
+
+  const recomputePrereqEdges = useCallback(() => {
+    const wrapper = graphRef.current
+    if (!wrapper) return
+    const wrapperRect = wrapper.getBoundingClientRect()
+    const centers = new Map<string, { x: number; y: number }>()
+    nodeRefs.current.forEach((el, id) => {
+      const rect = el.getBoundingClientRect()
+      centers.set(id, {
+        x: rect.left + rect.width / 2 - wrapperRect.left,
+        y: rect.top + rect.height / 2 - wrapperRect.top,
+      })
+    })
+    const next: { key: string; d: string; toOwned: boolean }[] = []
+    track.nodes.forEach((node) => {
+      const to = centers.get(node.id)
+      if (!to) return
+      node.prereqs.forEach((prereqId) => {
+        const from = centers.get(prereqId)
+        if (!from) return
+        // 완만한 S자 곡선 — 세로로 흐르는 척추 레이아웃에 맞춰 y축 중간 지점에서
+        // 꺾이도록 제어점을 둔다. 가로로도 살짝 벌어지게 해서 직선이 겹치는 걸 줄인다.
+        const dx = to.x - from.x
+        const dy = to.y - from.y
+        const c1x = from.x + dx * 0.25
+        const c1y = from.y + dy * 0.5
+        const c2x = from.x + dx * 0.75
+        const c2y = from.y + dy * 0.5
+        next.push({
+          key: `${prereqId}->${node.id}`,
+          d: `M ${from.x} ${from.y} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${to.x} ${to.y}`,
+          // 이미 보유 완료된 노드로 향하는 선은 더 옅게 — "이미 지나온 길"이라
+          // 지금 당장 필요한 선행 관계보다 시선을 덜 끌어도 된다.
+          toOwned: overlay.statusById.get(node.id) === 'owned',
+        })
+      })
+    })
+    setPrereqEdges(next)
+  }, [track, overlay])
+
+  // 재계산 트리거 — 뷰 전환(추천순/난이도순), 트랙 변경(track이 바뀌면 recompute
+  // 함수 자체가 새로 만들어짐), 도크 열림/닫힘(캔버스 폭이 줄어 카드가 다시
+  // 줄바꿈된다), 난이도 객관 보정 도착(난이도순 뷰에서 노드가 티어 사이를 이동할 수
+  // 있다) 이후 레이아웃이 확정된 다음 좌표를 다시 잰다.
+  useLayoutEffect(() => {
+    recomputePrereqEdges()
+  }, [recomputePrereqEdges, viewMode, dock, effectiveDifficultyById])
+
+  // 그 외(윈도우 리사이즈, 폰트 로드 등으로 카드 줄바꿈이 바뀌는 경우)를 잡기 위한
+  // 안전망 — graphRef 엘리먼트 자체의 크기 변화를 관찰한다(도크로 캔버스 폭이 줄어도
+  // graphRef가 그 안에서 폭 100%이므로 이 하나만 관찰하면 충분하다).
+  useEffect(() => {
+    const wrapper = graphRef.current
+    if (!wrapper || typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(() => recomputePrereqEdges())
+    observer.observe(wrapper)
+    return () => observer.disconnect()
+  }, [recomputePrereqEdges])
+
   return (
     <div className="rmv-root">
       {ROADMAP_TRACK_LIST.length > 1 && (
@@ -503,6 +577,19 @@ export function RoadmapView({
         onMouseUp={pan.onMouseUp}
         onMouseLeave={pan.onMouseLeave}
       >
+        <div className="rmv-graph" ref={graphRef}>
+        {/* 선행 관계 오버레이 — pointer-events:none이라 클릭/포커스는 전부 노드 카드를
+            그대로 통과한다. DOM 순서상 rmv-spine보다 앞서 그려지고(z-index도
+            명시적으로 낮춰) 카드/메달리온/텍스트를 절대 가리지 않는다. */}
+        <svg className="rmv-graph__edges" aria-hidden="true">
+          {prereqEdges.map((edge) => (
+            <path
+              key={edge.key}
+              d={edge.d}
+              className={`rmv-graph__edge${edge.toOwned ? ' rmv-graph__edge--done' : ''}`}
+            />
+          ))}
+        </svg>
         {viewMode === 'recommended' ? (
           <div className="rmv-spine">
             {sortedSections.map((section) => {
@@ -545,6 +632,7 @@ export function RoadmapView({
             })}
           </div>
         )}
+        </div>
       </div>
 
       {dock && (
