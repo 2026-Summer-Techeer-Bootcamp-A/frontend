@@ -123,6 +123,13 @@ export interface SplitDiffPayload {
   summary: string
   requirements: SplitDiffRequirement[]
   degraded: boolean
+  // 기준 문서(공고) 원문 전체. 백엔드가 아직 안 내려주는 옵셔널 필드다(compare_tool.py는
+  // 지금 base_role/base_title 등 요약 필드만 조립하고 원문 description은 프론트로 넘기지
+  // 않는다) — 나중에 붙을 것을 대비한 잠정 계약. 값이 오면 SplitDiff가 원문 그대로를 렌더하며
+  // 그 안에서 각 requirement의 source_quote 구간을 찾아 하이라이트하고, 없거나 매칭이
+  // 불안정하면(구절을 원문에서 못 찾거나 겹치면) source_quote들을 문단 흐름으로 나열하는
+  // 폴백으로 안전하게 내려간다.
+  base_description?: string
 }
 
 export interface ToolResult {
