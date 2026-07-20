@@ -250,13 +250,18 @@
    사라지거나 깜빡이는 문제가 있었다. 이제는 open 클래스와 좌표(top/left)가 SplitDiff.tsx의
    useLayoutEffect에서 같은 커밋으로 함께 반영되므로 그 중간 상태가 화면에 그려지지 않는다.
 
-   position: fixed + 뷰포트 좌표(top/left)는 SplitDiff.tsx가 getBoundingClientRect로 계산해
-   인라인 style로 얹는다 — 채팅 스크롤 패널(rc__body)이나 상태 갤러리 데모 프레임
-   (ss-demoframe) 같은 조상의 overflow: hidden/auto에 잘리지 않기 위해서다(그 조상들에는
-   fixed의 컨테이닝 블록을 새로 만드는 transform/filter/perspective/contain이 없음을
-   확인했다). top/left 기본값 0은 아직 한 번도 열린 적 없을 때(숨겨진 상태)의 자리표시자일
-   뿐이며 화면에 보이지 않는다. z-index 400은 이 화면 내부 요소들과 사이드 시트류
-   (z-index 200대)보다는 높고, 실제 모달(500 이상)보다는 낮게 둔다. */
+   SplitDiff.tsx가 이 요소를 React.createPortal로 document.body에 직접 렌더한다(형광펜
+   span의 자식이 아니다 — id/aria-describedby로만 연결). position: fixed + 뷰포트
+   좌표(top/left)는 getBoundingClientRect로 계산해 인라인 style로 얹는다. 처음엔
+   position: fixed만으로 채팅 스크롤 패널(rc__body)이나 상태 갤러리 데모 프레임
+   (ss-demoframe)의 overflow: hidden/auto는 피했지만, 실제 어시스턴트 워크스페이스
+   라우트에서는 desktop/DesktopShell.css의 `.dshell__content:has(.aw) { overflow: hidden }`
+   과 career/kit.css의 페이지 전환 애니메이션 `.kit-trans--tab`/`--push`(진입 중 transform
+   값 유지)가 fixed의 컨테이닝 블록을 뷰포트가 아닌 자기 자신으로 새로 만들어 툴팁이 화면
+   밖으로 밀려나 안 보였다 — 그래서 포탈로 조상 자체를 벗어난다. top/left 기본값 0은 아직
+   한 번도 열린 적 없을 때(숨겨진 상태)의 자리표시자일 뿐이며 화면에 보이지 않는다.
+   z-index 400은 이 화면 내부 요소들과 사이드 시트류(z-index 200대)보다는 높고, 실제
+   모달(500 이상)보다는 낮게 둔다. */
 .rv__sd-tooltip {
   position: fixed;
   z-index: 400;
