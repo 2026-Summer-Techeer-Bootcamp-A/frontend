@@ -16,6 +16,8 @@ import { getDemoRecommendations } from '../../data/demoRecommend'
 import CompanyLogo from '../CompanyLogo'
 import { avatarColor, matchPctFor, yearBadgeFor, type PostingDetailWithConcepts } from './workflowShared'
 import { RoadmapView } from './RoadmapView'
+import { loadRoadmapTrack, DEFAULT_ROADMAP_TRACK_ID } from '../../data/roadmaps/registry'
+import { buildRoadmapOverlay, type NodeStatus } from './roadmapOverlay'
 import './workflowMap.css'
 
 // 데모용 추천 공고 — careerData.json 실제 공고를 직무 8개로 미리 분류·큐레이션해둔
@@ -70,9 +72,14 @@ const ENRICH_PRIORITY_LABEL: Record<RoadmapEnrichStep['priority'], string> = {
 // 아니라 "그럴듯한 우선순위 순서"일 뿐이라는 걸 명확히 하려고 굳이 화려한 문구를
 // 쓰지 않는다 — 실패했다는 사실은 콘솔에만 남기고(WorkflowMap 본문), 화면은 정상
 // 보강 뷰와 동일한 컴포넌트로 그대로 렌더된다.
-function buildFallbackEnrichment(req: RoadmapEnrichRequest): RoadmapEnrichResponse {
+//
+// hasGoal: 목표(북마크 선택)가 있는 요청인지, 아니면 로드맵 미보유 노드로 만든
+// 요청(buildRoadmapGap)인지. 데이터 자체(req)는 두 경우 모두 같은 shape이라 이
+// 플래그 없이는 구분할 방법이 없는데, 문구가 "OO 공고가 요구하는 기술" 처럼 실제
+// 공고를 전제하면 목표가 없을 때는 어색해진다 — 그래서 문구 분기에만 쓴다.
+function buildFallbackEnrichment(req: RoadmapEnrichRequest, hasGoal: boolean): RoadmapEnrichResponse {
   const company = req.goal_company || '목표 기업'
-  const title = req.goal_title || '목표 공고'
+  const title = req.goal_title || (hasGoal ? '목표 공고' : '로드맵')
   const steps: RoadmapEnrichStep[] = []
   let order = 1
 
@@ -83,7 +90,9 @@ function buildFallbackEnrichment(req: RoadmapEnrichRequest): RoadmapEnrichRespon
       type: 'skill',
       effort: i === 0 ? '1~2주' : '2~4주',
       priority: i === 0 ? 'high' : i < 2 ? 'medium' : 'low',
-      reason: `${company} ${title} 공고가 요구하는 기술이에요.`,
+      reason: hasGoal
+        ? `${company} ${title} 공고가 요구하는 기술이에요.`
+        : `${title}에서 다음으로 추천하는 기술이에요.`,
       project: `${skill}로 작은 프로젝트를 하나 만들어 포트폴리오에 올려보세요.`,
     })
   })
@@ -94,7 +103,9 @@ function buildFallbackEnrichment(req: RoadmapEnrichRequest): RoadmapEnrichRespon
       type: 'concept',
       effort: '2~3주',
       priority: 'medium',
-      reason: `${title} 직무에서 자주 요구하는 개념이에요.`,
+      reason: hasGoal
+        ? `${title} 직무에서 자주 요구하는 개념이에요.`
+        : `${title}에서 자주 나오는 핵심 개념이에요.`,
       project: `${concept}을 정리한 글을 써보고 관련 사례를 하나 분석해보세요.`,
     })
   })
@@ -109,7 +120,7 @@ function buildFallbackEnrichment(req: RoadmapEnrichRequest): RoadmapEnrichRespon
       project: `${cert} 취득 일정을 잡고 준비를 시작해보세요.`,
     })
   })
-  if (req.career_required != null && req.career_required > 0 && (req.career_mine ?? 0) < req.career_required) {
+  if (hasGoal && req.career_required != null && req.career_required > 0 && (req.career_mine ?? 0) < req.career_required) {
     steps.push({
       order: order++,
       label: `경력 ${req.career_required}년+`,
@@ -122,12 +133,53 @@ function buildFallbackEnrichment(req: RoadmapEnrichRequest): RoadmapEnrichRespon
   }
 
   return {
-    headline: `${company} ${title}까지 남은 것`,
+    headline: hasGoal ? `${company} ${title}까지 남은 것` : `${title}에서 다음으로 채우면 좋은 것`,
     summary: steps.length > 0
-      ? `${title} 목표까지 ${steps.length}가지를 준비하면 좋아요. 급한 순서로 정리했어요.`
-      : '지금 보유한 기술만으로도 이 목표에 이미 잘 맞고 있어요.',
+      ? (hasGoal
+        ? `${title} 목표까지 ${steps.length}가지를 준비하면 좋아요. 급한 순서로 정리했어요.`
+        : `${title} 기준으로 아직 채우지 못한 핵심 항목 ${steps.length}가지를 정리했어요. 급한 순서로 나열했어요.`)
+      : (hasGoal
+        ? '지금 보유한 기술만으로도 이 목표에 이미 잘 맞고 있어요.'
+        : '이미 로드맵의 핵심 항목을 대부분 채웠어요.'),
     quick_win: steps[0] ? `${steps[0].label}부터 시작해보세요` : '보유 기술을 하나씩 늘려가 보세요',
     steps,
+  }
+}
+
+// F-2 확장: 목표(북마크 선택)가 하나도 없어도 AI 보강 버튼이 항상 작동해야 한다는
+// 데모 요구로, 로드맵 정본 백본(backend.json)에서 아직 보유하지 못한 노드들을
+// 뽑아 보강 요청의 재료로 삼는다 — RoadmapView.tsx와 완전히 같은 오버레이 계산
+// (buildRoadmapOverlay)을 재사용해 "화면에 실제로 잠겨/해금 가능으로 보이는 노드"와
+// 정확히 같은 기준으로 갭을 판정한다. 정렬은 지금 당장 시작할 수 있는(unlockable)
+// 노드를 먼저, 그다음 아직 잠긴(locked) 노드를 로드맵 진행 순서(섹션 순서 -> 노드
+// 순서)대로 둬서 "다음에 뭘 해야 하는지"가 자연스럽게 읽히게 한다.
+const ROADMAP_GAP_SKILL_LIMIT = 6
+const ROADMAP_GAP_CONCEPT_LIMIT = 3
+const ROADMAP_GAP_CERT_LIMIT = 2
+const GAP_STATUS_RANK: Record<NodeStatus, number> = { unlockable: 0, locked: 1, owned: 2 }
+
+function buildRoadmapGap(ownedSkills: string[], ownedCerts: string[]) {
+  const track = loadRoadmapTrack(DEFAULT_ROADMAP_TRACK_ID)
+  const overlay = buildRoadmapOverlay(track, ownedSkills, ownedCerts)
+  const sectionOrderById = new Map(track.sections.map((s) => [s.id, s.order]))
+
+  const gapNodes = track.nodes
+    .filter((n) => overlay.statusById.get(n.id) !== 'owned')
+    .sort((a, b) => {
+      const ra = GAP_STATUS_RANK[overlay.statusById.get(a.id) ?? 'locked']
+      const rb = GAP_STATUS_RANK[overlay.statusById.get(b.id) ?? 'locked']
+      if (ra !== rb) return ra - rb
+      const sa = sectionOrderById.get(a.section) ?? 0
+      const sb = sectionOrderById.get(b.section) ?? 0
+      if (sa !== sb) return sa - sb
+      return a.order - b.order
+    })
+
+  return {
+    trackLabel: track.label,
+    missingSkills: gapNodes.filter((n) => n.type === 'skill').map((n) => n.label).slice(0, ROADMAP_GAP_SKILL_LIMIT),
+    concepts: gapNodes.filter((n) => n.type === 'concept').map((n) => n.label).slice(0, ROADMAP_GAP_CONCEPT_LIMIT),
+    certs: gapNodes.filter((n) => n.type === 'cert').map((n) => n.label).slice(0, ROADMAP_GAP_CERT_LIMIT),
   }
 }
 
@@ -292,27 +344,46 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [recommendModalOpen])
 
+  // F-2: 목표 미선택 시 AI 보강 payload의 재료 — 로드맵 정본에서 아직 보유하지 못한
+  // 노드들(buildRoadmapGap)을 이력서 보유 스킬/자격증이 바뀔 때만 다시 계산한다.
+  // 목표가 선택된 경우엔 아래 handleEnrichClick이 이 값을 참조하지 않는다.
+  const roadmapGap = useMemo(() => buildRoadmapGap(ownedSkills, ownedCerts), [ownedSkills, ownedCerts])
+
   // F-2: AI 로드맵 보강 — 별 아이콘 버튼(WandSparkles). 위 Sparkles 추천 버튼과 헷갈리지
   // 않도록 아이콘·툴팁을 다르게 둔다(추천 = 새 목표 후보 찾기, 보강 = 이미 고른 목표의
-  // 학습 순서를 LLM이 다시 짜준다). 선택된 목표가 하나도 없으면 payload를 만들 수 없어
-  // 버튼을 비활성화한다.
+  // 학습 순서를 LLM이 다시 짜준다). 데모 요구: 목표를 하나도 안 골라도 버튼이 항상
+  // 작동해야 하므로(선택 0개가 "비활성"으로 보이면 안 된다), 선택된 목표가 있으면
+  // 그걸 우선 쓰고 없으면 로드맵의 미보유 핵심 노드(buildRoadmapGap)로 payload를
+  // 채운다 — 그래서 이 버튼은 더 이상 selectedPostings 유무로 비활성화되지 않는다.
   const [enrichModalOpen, setEnrichModalOpen] = useState(false)
   const [enrichLoading, setEnrichLoading] = useState(false)
   const [enrichData, setEnrichData] = useState<RoadmapEnrichResponse | null>(null)
 
   const handleEnrichClick = async () => {
-    if (enrichLoading || selectedPostings.length === 0) return
+    if (enrichLoading) return
+    const hasGoal = selectedPostings.length > 0
     const primary = selectedPostings[0]
-    const payload: RoadmapEnrichRequest = {
-      goal_company: primary.company ?? '목표 기업',
-      goal_title: primary.title,
-      owned_skills: ownedSkills,
-      missing_skills: targetSkillsArray,
-      concepts: targetConcepts,
-      certs: targetCerts,
-      career_required: careerGoalMin,
-      career_mine: resumeCareerMax,
-    }
+    const payload: RoadmapEnrichRequest = hasGoal
+      ? {
+        goal_company: primary.company ?? '목표 기업',
+        goal_title: primary.title,
+        owned_skills: ownedSkills,
+        missing_skills: targetSkillsArray,
+        concepts: targetConcepts,
+        certs: targetCerts,
+        career_required: careerGoalMin,
+        career_mine: resumeCareerMax,
+      }
+      : {
+        goal_company: '',
+        goal_title: `${roadmapGap.trackLabel} 로드맵`,
+        owned_skills: ownedSkills,
+        missing_skills: roadmapGap.missingSkills,
+        concepts: roadmapGap.concepts,
+        certs: roadmapGap.certs,
+        career_required: null,
+        career_mine: resumeCareerMax,
+      }
     setEnrichModalOpen(true)
     setEnrichLoading(true)
     setEnrichData(null)
@@ -323,7 +394,7 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
       // 12: 엔드포인트가 아직 없거나 요청이 실패해도 데모가 끊기면 안 된다 — 폴백으로
       // 조용히 이어간다(실패했다는 사실만 콘솔에 남긴다).
       console.info('[workflow] AI 보강 응답 실패, 준비된 폴백으로 대체해요', err)
-      setEnrichData(buildFallbackEnrichment(payload))
+      setEnrichData(buildFallbackEnrichment(payload, hasGoal))
     } finally {
       setEnrichLoading(false)
     }
@@ -394,18 +465,19 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
           right={(
             <div className="wfm-header-actions">
               {!showNoBookmarks && !identity && <PreviewBadge />}
-              {!showNoBookmarks && (
-                <button
-                  type="button"
-                  className={`wfm-expand-btn wfm-enrich-btn${enrichLoading ? ' is-loading' : ''}`}
-                  onClick={handleEnrichClick}
-                  disabled={enrichLoading || selectedPostings.length === 0}
-                  aria-label="AI로 로드맵 보강"
-                  title="AI로 로드맵 보강"
-                >
-                  <WandSparkles size={14} />
-                </button>
-              )}
+              {/* F-2: 이제 북마크/목표 선택 여부와 무관하게 항상 렌더되고 항상 눌려야
+                  한다 — 목표가 없으면 handleEnrichClick이 로드맵 갭 기반 payload로
+                  대신 채운다. 로딩 중에만 잠깐 비활성화한다. */}
+              <button
+                type="button"
+                className={`wfm-expand-btn wfm-enrich-btn${enrichLoading ? ' is-loading' : ''}`}
+                onClick={handleEnrichClick}
+                disabled={enrichLoading}
+                aria-label="AI로 로드맵 보강"
+                title="AI로 로드맵 보강"
+              >
+                <WandSparkles size={14} />
+              </button>
               <div className="wfm-recommend-wrap">
                 <button
                   type="button"
