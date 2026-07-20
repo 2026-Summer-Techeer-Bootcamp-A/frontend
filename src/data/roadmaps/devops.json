@@ -1,0 +1,59 @@
+{
+  "_meta": {
+    "version": "v1",
+    "curated_by": "fable",
+    "date": "2026-07-20",
+    "description": "데브옵스 직군 로드맵 정본. backend.json과 같은 스키마로 작성했다. 스킬 명칭은 skillRelations.json의 실제 이름(Docker, Kubernetes, Terraform, Ansible, Helm, ArgoCD, Jenkins, GitHub Actions, AWS, GCP, Azure)과 cert_path의 자격증명(CKA, CKS, AWS Certified)을, 개념 명칭은 concepts_taxonomy.json의 아키텍처·확장성/개발문화·방법론/보안·컴플라이언스 카테고리(클라우드 네이티브, CI/CD·자동화, DevOps·인프라자동화, 모니터링·옵저버빌리티, 정보보안)를 그대로 썼다.",
+    "prereq_rule": "모든 prereqs는 자기 자신과 같은 섹션이거나 더 앞선 섹션의 노드만 가리킨다(RoadmapNode.prereqs 주석 참고)."
+  },
+  "id": "devops",
+  "label": "데브옵스",
+  "sections": [
+    { "id": "foundations", "title": "기초", "order": 1 },
+    { "id": "containers", "title": "컨테이너", "order": 2 },
+    { "id": "orchestration", "title": "오케스트레이션", "order": 3 },
+    { "id": "iac", "title": "IaC", "order": 4 },
+    { "id": "cicd", "title": "CI/CD", "order": 5 },
+    { "id": "monitoring", "title": "모니터링/관측성", "order": 6 },
+    { "id": "cloud", "title": "클라우드", "order": 7 },
+    { "id": "security", "title": "보안", "order": 8 }
+  ],
+  "nodes": [
+    { "id": "linux", "label": "Linux", "type": "skill", "section": "foundations", "order": 1, "marker": "recommended", "prereqs": [], "note": "대부분의 서버가 리눅스 위에서 돈다." },
+    { "id": "networking-basics", "label": "네트워크 기초", "type": "concept", "section": "foundations", "order": 2, "marker": "recommended", "prereqs": [], "note": "IP, 포트, DNS처럼 서버 간 통신의 기본 개념이다." },
+    { "id": "git", "label": "Git", "type": "skill", "section": "foundations", "order": 3, "marker": "recommended", "prereqs": [], "note": "인프라 코드와 배포 이력을 관리하는 기본 도구다." },
+    { "id": "shell-scripting", "label": "쉘 스크립팅", "type": "skill", "section": "foundations", "order": 4, "marker": "optional", "prereqs": ["linux"], "note": "반복 작업을 자동화하는 리눅스 커맨드라인 스크립트 작성 능력이다." },
+
+    { "id": "docker", "label": "Docker", "type": "skill", "section": "containers", "order": 5, "marker": "recommended", "prereqs": ["linux"], "note": "애플리케이션과 실행 환경을 통째로 묶어 어디서나 같게 실행한다." },
+    { "id": "docker-compose", "label": "Docker Compose", "type": "skill", "section": "containers", "order": 6, "marker": "recommended", "prereqs": ["docker"], "note": "여러 컨테이너를 하나의 설정으로 함께 띄우는 도구다." },
+    { "id": "container-concept", "label": "컨테이너화", "type": "concept", "section": "containers", "order": 7, "marker": "optional", "prereqs": ["docker"], "note": "애플리케이션을 격리된 단위로 패키징해 배포 환경 차이를 없애는 접근이다." },
+
+    { "id": "kubernetes", "label": "Kubernetes", "type": "skill", "section": "orchestration", "order": 8, "marker": "recommended", "prereqs": ["docker"], "note": "여러 컨테이너를 묶어 자동으로 배포하고 복구하는 오케스트레이션 도구다." },
+    { "id": "helm", "label": "Helm", "type": "skill", "section": "orchestration", "order": 9, "marker": "optional", "prereqs": ["kubernetes"], "note": "쿠버네티스 배포 설정을 패키지로 관리하는 도구다." },
+    { "id": "argocd", "label": "ArgoCD", "type": "skill", "section": "orchestration", "order": 10, "marker": "alternative", "prereqs": ["kubernetes"], "note": "Git 저장소 상태를 그대로 클러스터에 반영하는 배포 도구다." },
+    { "id": "cka-cert", "label": "CKA", "type": "cert", "section": "orchestration", "order": 11, "marker": "optional", "prereqs": ["kubernetes"], "note": "쿠버네티스 운영 능력을 검증하는 자격증이다." },
+
+    { "id": "terraform", "label": "Terraform", "type": "skill", "section": "iac", "order": 12, "marker": "recommended", "prereqs": ["linux"], "note": "인프라 구성을 코드로 작성해 재현 가능하게 만드는 도구다." },
+    { "id": "ansible", "label": "Ansible", "type": "skill", "section": "iac", "order": 13, "marker": "alternative", "prereqs": ["linux"], "note": "서버 설정을 코드로 정의해 일괄 적용하는 구성 관리 도구다." },
+    { "id": "iac-concept", "label": "Infrastructure as Code", "type": "concept", "section": "iac", "order": 14, "marker": "recommended", "prereqs": ["terraform"], "note": "서버와 네트워크 구성을 수동 작업 대신 코드로 관리하는 원칙이다." },
+
+    { "id": "github-actions", "label": "GitHub Actions", "type": "skill", "section": "cicd", "order": 15, "marker": "recommended", "prereqs": ["git"], "note": "코드 저장소 이벤트에 맞춰 빌드와 배포를 자동으로 실행하는 도구다." },
+    { "id": "jenkins", "label": "Jenkins", "type": "skill", "section": "cicd", "order": 16, "marker": "alternative", "prereqs": ["git"], "note": "파이프라인을 자유롭게 구성할 수 있는 전통적인 CI/CD 도구다." },
+    { "id": "cicd-concept", "label": "CI/CD·자동화", "type": "concept", "section": "cicd", "order": 17, "marker": "recommended", "prereqs": ["github-actions", "docker"], "note": "코드 변경을 테스트하고 배포까지 자동으로 이어지게 만드는 파이프라인이다." },
+
+    { "id": "prometheus", "label": "Prometheus", "type": "skill", "section": "monitoring", "order": 18, "marker": "recommended", "prereqs": ["kubernetes"], "note": "시계열로 지표를 수집하는 모니터링 도구다." },
+    { "id": "grafana", "label": "Grafana", "type": "skill", "section": "monitoring", "order": 19, "marker": "recommended", "prereqs": ["prometheus"], "note": "수집된 지표를 대시보드로 시각화하는 도구다." },
+    { "id": "observability-concept", "label": "모니터링·옵저버빌리티", "type": "concept", "section": "monitoring", "order": 20, "marker": "recommended", "prereqs": ["grafana"], "note": "지표, 로그, 트레이스를 함께 봐야 장애 원인을 빠르게 좁힐 수 있다." },
+    { "id": "logging", "label": "로그 수집·분석", "type": "concept", "section": "monitoring", "order": 21, "marker": "optional", "prereqs": ["observability-concept"], "note": "여러 서비스의 로그를 한곳에 모아 검색 가능한 형태로 남기는 작업이다." },
+
+    { "id": "aws", "label": "AWS", "type": "skill", "section": "cloud", "order": 22, "marker": "recommended", "prereqs": ["linux"], "note": "가장 널리 쓰이는 퍼블릭 클라우드 플랫폼이다." },
+    { "id": "gcp", "label": "GCP", "type": "skill", "section": "cloud", "order": 23, "marker": "alternative", "prereqs": ["linux"], "note": "구글이 제공하는 퍼블릭 클라우드 플랫폼이다." },
+    { "id": "azure", "label": "Azure", "type": "skill", "section": "cloud", "order": 24, "marker": "alternative", "prereqs": ["linux"], "note": "마이크로소프트가 제공하는 퍼블릭 클라우드 플랫폼이다." },
+    { "id": "aws-cert", "label": "AWS Certified", "type": "cert", "section": "cloud", "order": 25, "marker": "optional", "prereqs": ["aws"], "note": "AWS 클라우드 서비스 활용 능력을 검증하는 자격증이다." },
+    { "id": "cloud-native", "label": "클라우드 네이티브", "type": "concept", "section": "cloud", "order": 26, "marker": "optional", "prereqs": ["kubernetes"], "note": "쿠버네티스와 서비스 분리 구조 위에서 클라우드 운영 방식을 최대로 활용하는 접근이다." },
+
+    { "id": "info-security", "label": "정보보안", "type": "concept", "section": "security", "order": 27, "marker": "recommended", "prereqs": ["linux"], "note": "입력 검증, 암호화, 취약점 대응처럼 인프라 전반에서 계속 신경 써야 하는 영역이다." },
+    { "id": "secrets-management", "label": "시크릿 관리", "type": "concept", "section": "security", "order": 28, "marker": "recommended", "prereqs": ["info-security"], "note": "API 키와 비밀번호 같은 민감정보를 코드 밖에서 안전하게 관리하는 방식이다." },
+    { "id": "cks-cert", "label": "CKS", "type": "cert", "section": "security", "order": 29, "marker": "optional", "prereqs": ["cka-cert"], "note": "쿠버네티스 보안 운영 능력을 검증하는 자격증이며 CKA 합격이 응시 조건이다." }
+  ]
+}

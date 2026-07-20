@@ -504,6 +504,22 @@ export function RoadmapView({
     closeDock()
   }
 
+  // G: 부모(WorkflowMap)가 선택된 목표 공고들로 추론한 trackId를 내려주면, 그 값이
+  // 바뀔 때마다 백본 트랙을 그 직군으로 전환한다 — 목표를 바꾸면 로드맵 전체 백본이
+  // 그 직군으로 유동적으로 바뀌는 배선이다. activeTrackId를 의존성 배열에 일부러
+  // 넣지 않는다 — 아래 rmv-tracks 탭으로 사용자가 다른 트랙을 수동으로 잠깐 둘러볼
+  // 수도 있어야 하는데, activeTrackId까지 감시하면 탭을 누르는 순간 이 effect가
+  // 다시 걸려 곧바로 trackId로 되돌려버려 탭이 무력화된다. 그래서 "목표(trackId
+  // prop)가 실제로 바뀔 때만" 되돌리고, 그 사이 수동 선택은 그대로 존중한다 — 목표가
+  // 트랙을 결정하되 탭으로 수동 전환도 가능하다는 절충이다.
+  useEffect(() => {
+    if (trackId != null && trackId !== activeTrackId) {
+      setActiveTrackId(trackId)
+      closeDock()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trackId])
+
   useEffect(() => {
     if (!dock) return
     const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') closeDock() }
