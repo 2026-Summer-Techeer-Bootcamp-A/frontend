@@ -391,7 +391,8 @@ export function RoadmapView({
             else nodeRefs.current.delete(node.id)
           }}
           data-node-id={node.id}
-          className={`rmv-node rmv-marker--${node.marker} rmv-status--${status}${isMilestoneGoal ? ' rmv-node--milestone' : ''}${highlighted ? ' rmv-highlighted' : ''}${dock?.node.id === node.id ? ' rmv-node--active' : ''}${activeNodeId === node.id ? ' rmv-node--edgesource' : edgeLinkedNodeIds.has(node.id) ? ' rmv-node--edgelinked' : ''}`}
+          data-type={node.type}
+          className={`rmv-node rmv-node--type-${node.type} rmv-marker--${node.marker} rmv-status--${status}${isMilestoneGoal ? ' rmv-node--milestone' : ''}${highlighted ? ' rmv-highlighted' : ''}${dock?.node.id === node.id ? ' rmv-node--active' : ''}${activeNodeId === node.id ? ' rmv-node--edgesource' : edgeLinkedNodeIds.has(node.id) ? ' rmv-node--edgelinked' : ''}`}
           title={node.note}
           role="button"
           tabIndex={0}
@@ -425,6 +426,10 @@ export function RoadmapView({
               )}
               {showDifficulty && difficulty && (
                 <>
+                  {/* 난이도 객관 근거(basis, "공고 평균 요구 경력 X년, 수요 N건")는
+                      카드에 상시 노출하지 않고 이 뱃지의 title 툴팁으로만 옮겼다 —
+                      호버해야만 보이는 출처 통계고, 카드 본문은 note(설명)가 대신
+                      채운다. */}
                   <span
                     className={`rmv-node__tierbadge rmv-node__tierbadge--${difficulty.tier}`}
                     title={difficulty.basis}
@@ -435,15 +440,14 @@ export function RoadmapView({
                 </>
               )}
             </div>
+            {/* 노드 설명 — 출처 통계(basis) 대신 note 한 줄을 카드 본문에 콤팩트하게
+                보여준다. 길어도 카드가 늘어나지 않도록 한 줄 말줄임(CSS)이고, note가
+                없는 노드는 아무 것도 렌더하지 않는다. 추천순/난이도순 양쪽에 동일하게
+                적용된다(showDifficulty와 무관). */}
+            {node.note && <p className="rmv-node__note">{node.note}</p>}
             {/* 잠긴 노드가 왜 잠겼는지 — 직접 선행 중 미충족인 것들의 라벨을 담백하게
                 한 줄로 보여준다. 자물쇠/깃발과 같은 회색 계열로 절제한다. */}
             {prereqHint && <p className="rmv-node__prereqhint">{prereqHint}</p>}
-            {/* 난이도 객관 근거 — 백엔드 응답이 도착한 노드만 basis가 채워진다(선행
-                깊이 폴백 중에는 없음). "공고 평균 요구 경력 3.2년, 수요 1,240건." 같은
-                객관 문장이라 사용자가 이 티어에 동의할 근거가 된다. */}
-            {showDifficulty && difficulty?.basis && (
-              <p className="rmv-node__basis">{difficulty.basis}</p>
-            )}
           </div>
         </div>
       </div>
