@@ -13,7 +13,7 @@ import { dashboardApi, jobsApi, type Identity, type PostingCard, type PostingDet
 import { useWidgetData } from '../useWidgetData'
 import type { WidgetSize } from '../dashboardConfig'
 import dreamCompanies from '../../data/dreamCompanies.json'
-import { avatarColor, matchPctFor, yearBadgeFor, minPairwiseJaccard } from './workflowShared'
+import { avatarColor, matchPctFor, yearBadgeFor, minPairwiseJaccard, type PostingDetailWithConcepts } from './workflowShared'
 import { WorkflowList } from './WorkflowList'
 import { WorkflowStages } from './WorkflowStages'
 import './workflowMap.css'
@@ -132,6 +132,28 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
     return [...set]
   }, [selectedPostings, ownedCertSet])
   const hasCertLane = ownedCerts.length > 0 || targetCerts.length > 0
+
+  // F: 개념 트랙 — 공고 상세가 concepts를 옵셔널로 내려주면(다른 에이전트가 백엔드에 추가
+  // 중이라 아직 없을 수 있다) 목표로 선택된 공고들의 개념명만 모은다. 이력서엔 "보유 개념"
+  // 개념 자체가 없으므로(개념은 공고 요구사항일 뿐 사람이 소유하는 게 아니다) owned 집합은
+  // 두지 않는다. 필드가 없는 공고는 조용히 건너뛴다(크래시 없음).
+  const targetConcepts = useMemo(() => {
+    const set = new Set<string>()
+    selectedPostings.forEach((p) => {
+      const list = (p as PostingDetailWithConcepts).concepts ?? []
+      list.forEach((c) => { if (c?.name) set.add(c.name) })
+    })
+    return [...set]
+  }, [selectedPostings])
+
+  // F: 연차 게이트 — 선택된 목표 공고들 중 career_min이 있는 것들의 최댓값을 "이 목표
+  // 묶음을 지원하려면 필요한 경력"으로 삼는다(여러 공고 중 가장 까다로운 기준). 하나도
+  // career_min이 없으면(전부 신입·무관) 게이트 자체를 렌더하지 않는다.
+  const careerGoalMin = useMemo(() => {
+    const mins = selectedPostings.map((p) => p.career_min).filter((v): v is number => v != null && v > 0)
+    return mins.length > 0 ? Math.max(...mins) : null
+  }, [selectedPostings])
+  const resumeCareerMax = activeResume?.careerMax ?? null
 
   const roadmapKey = identity && postingIds.length ? `${resumeId}:${postingIds.slice().sort().join(',')}` : 'idle'
   const roadmap = useWidgetData<ScopedRoadmapData>(
@@ -302,6 +324,11 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
         <i className="wfm-legend__box" aria-hidden="true" />
         점선 박스 = 같이 배우기
       </span>
+      {/* F: 4타입 노드(스킬/자격증/개념/연차)는 좌측 테두리 색 3그룹으로만 구분한다 —
+          범례에도 같은 3색을 그대로 노출해 카드 배열이 무슨 뜻인지 바로 읽히게 한다. */}
+      <span className="wfm-legend__item"><i className="wfm-legend__bar" style={{ background: '#1f9d57' }} />기술</span>
+      <span className="wfm-legend__item"><i className="wfm-legend__bar" style={{ background: '#8a6fc4' }} />자격증</span>
+      <span className="wfm-legend__item"><i className="wfm-legend__bar" style={{ background: '#b8892b' }} />개념 · 연차</span>
     </div>
   )
 
@@ -552,6 +579,9 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
                       targetSkills={targetSkillsArray}
                       targetCerts={targetCerts}
                       ownedCerts={ownedCerts}
+                      targetConcepts={targetConcepts}
+                      careerGoalMin={careerGoalMin}
+                      resumeCareerMax={resumeCareerMax}
                       liveSteps={roadmap.value.steps}
                     />
                   </div>
@@ -601,6 +631,9 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
                     targetSkills={targetSkillsArray}
                     targetCerts={targetCerts}
                     ownedCerts={ownedCerts}
+                    targetConcepts={targetConcepts}
+                    careerGoalMin={careerGoalMin}
+                    resumeCareerMax={resumeCareerMax}
                     liveSteps={roadmap.value.steps}
                     wide
                   />

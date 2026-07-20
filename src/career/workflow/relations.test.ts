@@ -99,3 +99,68 @@ test('inferPrereqs는 mode all에서 미보유 선행 전부를 반환한다', (
   assert.deepEqual(inferPrereqs('NestJS', new Set([])).sort(), ['Node.js', 'TypeScript'])
   assert.deepEqual(inferPrereqs('NestJS', new Set(['Node.js'])), ['TypeScript'])
 })
+
+// concept_path 확장 — (7) Docker 미보유 + MSA·마이크로서비스 목표. Docker/Spring이
+// 경유 스킬로 삽입되고, Docker/Spring -> MSA 크로스타입 엣지가 생긴다.
+test('MSA 목표에서 미보유 Docker/Spring이 경유로 삽입되고 개념으로 엣지가 이어진다', () => {
+  const result = buildStages([], [], [], [], ['MSA·마이크로서비스'])
+
+  const dockerVia = result.viaSkills.find((v) => v.skill === 'Docker')
+  assert.ok(dockerVia, 'Docker가 경유 스킬로 삽입돼야 한다')
+  assert.deepEqual(dockerVia.neededFor, ['MSA·마이크로서비스'])
+
+  const dockerToMsa = result.edges.find((e) => e.from === 'Docker' && e.to === 'MSA·마이크로서비스')
+  assert.ok(dockerToMsa, 'Docker -> MSA 엣지가 있어야 한다')
+  const springToMsa = result.edges.find((e) => e.from === 'Spring' && e.to === 'MSA·마이크로서비스')
+  assert.ok(springToMsa, 'Spring -> MSA 엣지가 있어야 한다')
+
+  const msaNode = result.concepts.find((c) => c.concept === 'MSA·마이크로서비스')
+  assert.ok(msaNode, 'MSA가 concepts에 포함돼야 한다')
+  // MSA의 prereq_skills(Spring, Docker) 각각이 자기 자신의 미보유 선행(Java, Linux)까지
+  // 경유로 끌고 오므로 depth는 1단이 아니라 "Java/Linux(1) -> Spring/Docker(2) -> MSA(3)"
+  // 3단으로 쌓인다 — 크로스타입 엣지가 스킬 쪽 기존 재귀 depth 계산을 그대로 흡수한다.
+  assert.equal(msaNode.depth, 3)
+})
+
+// (8) 개념끼리도 선후 사슬을 이룬다 — 대규모 트래픽은 MSA·마이크로서비스를 prereq_concepts로
+// 가리키므로, 둘 다 목표로 잡으면 MSA -> 대규모 트래픽 엣지가 생기고 대규모 트래픽의
+// depth가 MSA보다 깊어야 한다. Java/Linux를 보유시켜 Spring/Docker depth를 1로 낮춰두면
+// MAX_DEPTH(3) 캡에 걸리지 않고 순수하게 depth 순서만 검증할 수 있다.
+test('개념끼리 선후 사슬이 있으면 depth가 쌓이고 개념 간 엣지가 생긴다', () => {
+  const result = buildStages(['Java', 'Linux'], [], [], [], ['MSA·마이크로서비스', '대규모 트래픽'])
+
+  const msaToTraffic = result.edges.find((e) => e.from === 'MSA·마이크로서비스' && e.to === '대규모 트래픽')
+  assert.ok(msaToTraffic, 'MSA -> 대규모 트래픽 엣지가 있어야 한다')
+
+  const msaDepth = result.concepts.find((c) => c.concept === 'MSA·마이크로서비스')?.depth ?? 0
+  const trafficDepth = result.concepts.find((c) => c.concept === '대규모 트래픽')?.depth ?? 0
+  assert.ok(trafficDepth > msaDepth, '대규모 트래픽 depth가 MSA depth보다 깊어야 한다')
+})
+
+// (9) 큐레이션 없는 목표 개념은 depth 1, 엣지 없이 그냥 렌더된다(graceful degrade) —
+// concept_path에 없는 이름이어도 크래시 없이 concepts 배열에 나타나야 한다.
+test('concept_path에 없는 개념은 depth 1로 그레이스풀 디그레이드된다', () => {
+  const result = buildStages([], [], [], [], ['존재하지 않는 개념'])
+  const node = result.concepts.find((c) => c.concept === '존재하지 않는 개념')
+  assert.ok(node)
+  assert.equal(node.depth, 1)
+  assert.equal(node.category, undefined)
+  assert.equal(result.edges.some((e) => e.to === '존재하지 않는 개념'), false)
+})
+
+// (10) 자격증 선행이 이미 보유한 자격증을 가리키면(CKS 목표 + CKA 보유) ownedCertPrereqs에
+// 잡히고, CKA -> CKS 엣지가 생겨야 한다(허공에서 시작하는 화살표 방지).
+test('목표 자격증이 보유 자격증을 선행으로 가리키면 ownedCertPrereqs와 엣지가 생긴다', () => {
+  const result = buildStages(['Kubernetes'], [], ['CKS'], ['CKA'])
+  assert.deepEqual(result.ownedCertPrereqs, ['CKA'])
+  const edge = result.edges.find((e) => e.from === 'CKA' && e.to === 'CKS')
+  assert.ok(edge, 'CKA -> CKS 엣지가 있어야 한다')
+})
+
+// (11) 기존 스킬-only 호출(5번째 인자 생략)은 예전과 동일하게 동작해야 한다 — 순수 확장
+// 계약 확인.
+test('targetConcepts를 생략해도 기존 스킬-only 동작은 그대로다', () => {
+  const result = buildStages(['JavaScript'], ['React'], [], [])
+  assert.equal(result.depthBySkill.get('React'), 1)
+  assert.deepEqual(result.concepts, [])
+})

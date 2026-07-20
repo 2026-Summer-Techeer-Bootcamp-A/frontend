@@ -177,3 +177,24 @@ export function minPairwiseJaccard(sets: Set<string>[]): number {
   }
   return min
 }
+
+// F: 4타입 확장 — 개념(concept)·연차 게이트(career). 백엔드가 공고 상세에 concepts를
+// 아직 안 내려줄 수 있어 PostingDetail 자체(api.ts, 다른 에이전트가 손대는 중)는 건드리지
+// 않고, 여기서 옵셔널 확장 타입만 얹는다. concepts가 undefined면 그 타입 노드는 그냥 렌더
+// 안 한다(그레이스풀 디그레이드) — 크래시 없음.
+export type ConceptRef = { name: string; category?: string }
+export type PostingDetailWithConcepts = PostingDetail & { concepts?: ConceptRef[] }
+
+// 연차 게이트 라벨 — JobSheet.tsx/CareerDashboard.tsx의 careerText/careerLabel과 같은
+// 표기(신입·무관 / 경력 N년+)를 재사용한다(새 문구 체계를 만들지 않는다).
+export function careerGateLabel(goalMin: number | null): string {
+  if (!goalMin || goalMin <= 0) return '경력 무관'
+  return `경력 ${goalMin}년+`
+}
+
+// 충족 판정 — CareerDashboard.tsx의 기존 규칙(공고의 최소 경력이 내 이력서 경력 상한을
+// 넘지 않아야 지원 가능)을 그대로 재사용한다. 목표 경력이 없으면(신입·무관) 항상 충족.
+export function isCareerGateFulfilled(goalMin: number | null, resumeCareerMax: number | null): boolean {
+  if (!goalMin || goalMin <= 0) return true
+  return resumeCareerMax != null && goalMin <= resumeCareerMax
+}
