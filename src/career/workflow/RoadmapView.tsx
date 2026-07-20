@@ -2,7 +2,16 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type Keyboard
 import { Award, Check, Lock, Plus, Star, Target, X } from 'lucide-react'
 import { loadRoadmapTrack, ROADMAP_TRACK_LIST, DEFAULT_ROADMAP_TRACK_ID } from '../../data/roadmaps/registry'
 import type { RoadmapNode } from '../../data/roadmaps/types'
-import { buildRoadmapOverlay, TIER_LABEL, TIER_ORDER, type DifficultyTier, type NodeStatus } from './roadmapOverlay'
+import {
+  buildRoadmapOverlay,
+  computeNodeDifficulty,
+  mergeBackendDifficulty,
+  TIER_LABEL,
+  TIER_ORDER,
+  type DifficultyTier,
+  type NodeDifficulty,
+  type NodeStatus,
+} from './roadmapOverlay'
 import { dashboardApi } from '../api'
 import type { RoadmapNodeContentResponse } from '../api'
 import { getAuthToken } from '../authStore'
@@ -63,6 +72,9 @@ type DockState = {
   status: NodeStatus
   content: RoadmapNodeContentResponse
   loading: boolean
+  // 그 노드의 난이도(백엔드 객관 보정이 도착했으면 그 값, 아니면 선행 깊이 폴백).
+  // basis가 있을 때만(난이도순 뷰에서만) 도크에 근거 문장을 보여준다.
+  difficulty?: NodeDifficulty
 }
 
 // 학습함 체크 — 트랙/세션을 넘나들며 남는 소소한 진행 표시라 localStorage에 직접
@@ -147,6 +159,54 @@ export function RoadmapView({
   const pan = usePanScroll<HTMLDivElement>()
   const usingGuestFallback = ownedSkills.length === 0
 
+  // 로드맵 난이도 객관 보정(F-3) — 난이도순 뷰의 티어를 우리 주관(선행 깊이)이 아니라
+  // 백엔드가 공고 평균 요구 경력 + 수요로 매긴 티어로 대체한다. 로드맵이 로드되거나
+  // 트랙을 바꿀 때마다 트랙 전체 노드를 한 번에 배치로 보낸다 — 난이도순 뷰로 전환할
+  // 때 다시 요청하지 않아도 되게 미리 받아 둔다. 게스트(토큰 없음)면 애초에 호출하지
+  // 않고 선행 깊이 티어를 그대로 쓴다. 요청 실패/엔드포인트 미배선일 때도 마찬가지로
+  // 콘솔에만 로그를 남기고 backendDifficulty는 null로 남아 화면은 항상 선행 깊이
+  // 폴백(overlay.difficultyById)으로 정상 표시된다 — 절대 크래시하지 않는다.
+  const [backendDifficulty, setBackendDifficulty] = useState<Map<string, NodeDifficulty> | null>(null)
+  const difficultySeqRef = useRef(0)
+  useEffect(() => {
+    let cancelled = false
+    setBackendDifficulty(null)
+    const token = getAuthToken()
+    if (!token) {
+      console.info('[roadmap] 게스트 상태라 난이도 객관 보정을 요청하지 않고 선행 깊이 티어로 보여줘요')
+      return
+    }
+    const seq = ++difficultySeqRef.current
+    // depth는 이력서 보유 스킬과 무관한 순수 구조 값이라(computeNodeDifficulty는
+    // ownedSkills를 보지 않는다) overlay가 아니라 track.nodes에서 직접 계산한다 —
+    // 그래야 이 effect가 [track]에만 반응하고, targetSkills/ownedSkills가 바뀔 때마다
+    // 불필요하게 재요청을 보내지 않는다.
+    const depthDifficulty = computeNodeDifficulty(track.nodes)
+    const nodes = track.nodes.map((n) => ({
+      node_id: n.id,
+      label: n.label,
+      type: n.type,
+      prereq_depth: depthDifficulty.get(n.id)?.depth ?? 0,
+    }))
+    dashboardApi
+      .roadmapDifficulty({ nodes }, token)
+      .then((res) => {
+        if (cancelled || difficultySeqRef.current !== seq) return
+        setBackendDifficulty(mergeBackendDifficulty(depthDifficulty, res.items))
+      })
+      .catch((err) => {
+        console.info('[roadmap] 난이도 객관 보정 요청 실패, 선행 깊이 기반 티어로 대신 보여줘요', err)
+      })
+    return () => { cancelled = true }
+  }, [track])
+
+  // 난이도순 뷰/뱃지/도크가 실제로 참조하는 맵 — 백엔드 응답이 도착했으면 그 값,
+  // 아니면(로딩 중/게스트/실패) overlay의 선행 깊이 폴백을 그대로 쓴다.
+  const effectiveDifficultyById = useMemo(
+    () => backendDifficulty ?? overlay.difficultyById,
+    [backendDifficulty, overlay],
+  )
+
   const nodesBySection = useMemo(() => {
     const map = new Map<string, RoadmapNode[]>()
     track.nodes.forEach((n) => {
@@ -168,29 +228,29 @@ export function RoadmapView({
     const map = new Map<DifficultyTier, RoadmapNode[]>()
     TIER_ORDER.forEach((t) => map.set(t, []))
     track.nodes.forEach((node) => {
-      const tier = overlay.difficultyById.get(node.id)?.tier ?? 'intro'
+      const tier = effectiveDifficultyById.get(node.id)?.tier ?? 'intro'
       map.get(tier)!.push(node)
     })
     map.forEach((list) => list.sort((a, b) => {
-      const da = overlay.difficultyById.get(a.id)?.depth ?? 0
-      const db = overlay.difficultyById.get(b.id)?.depth ?? 0
+      const da = effectiveDifficultyById.get(a.id)?.depth ?? 0
+      const db = effectiveDifficultyById.get(b.id)?.depth ?? 0
       if (da !== db) return da - db
       return a.order - b.order
     }))
     return map
-  }, [track, overlay])
+  }, [track, effectiveDifficultyById])
 
   const tierProgress = useMemo(() => {
     const map = new Map<DifficultyTier, { owned: number; total: number }>()
     TIER_ORDER.forEach((t) => map.set(t, { owned: 0, total: 0 }))
     track.nodes.forEach((node) => {
-      const tier = overlay.difficultyById.get(node.id)?.tier ?? 'intro'
+      const tier = effectiveDifficultyById.get(node.id)?.tier ?? 'intro'
       const entry = map.get(tier)!
       entry.total += 1
       if (overlay.statusById.get(node.id) === 'owned') entry.owned += 1
     })
     return map
-  }, [track, overlay])
+  }, [track, overlay, effectiveDifficultyById])
 
   // 노드 상세 도크 상태 — 클릭한 노드, 그 노드의 콘텐츠(처음엔 정적 note 폴백, 응답
   // 도착 시 교체), 로딩 여부. fetchSeqRef로 노드를 빠르게 갈아타도 낡은 응답이 최신
@@ -223,7 +283,10 @@ export function RoadmapView({
 
   const openNodeDock = (node: RoadmapNode, status: NodeStatus) => {
     const seq = ++fetchSeqRef.current
-    setDock({ node, status, content: buildFallbackNodeContent(node), loading: true })
+    // 난이도(백엔드 객관 보정 또는 선행 깊이 폴백)를 도크에도 실어 basis 근거 문장을
+    // 함께 보여준다 — effectiveDifficultyById는 이미 두 경우를 알아서 갈라 준다.
+    const difficulty = effectiveDifficultyById.get(node.id)
+    setDock({ node, status, content: buildFallbackNodeContent(node), loading: true, difficulty })
 
     // 이 요청이 여전히 "최신"인지(컴포넌트가 살아있고, 그 사이 다른 노드를 클릭해
     // fetchSeqRef가 앞서가지 않았는지) — 성공/실패 두 경로와 finally가 모두 이 한
@@ -237,7 +300,7 @@ export function RoadmapView({
       )
       .then((res) => {
         if (isStale()) return
-        setDock({ node, status, content: res, loading: false })
+        setDock({ node, status, content: res, loading: false, difficulty })
       })
       .catch((err) => {
         // 엔드포인트가 아직 없거나 요청이 404/에러로 실패해도 데모가 끊기면 안 된다 —
@@ -279,7 +342,7 @@ export function RoadmapView({
     const highlighted = overlay.highlightedIds.has(node.id)
     const isMilestone = overlay.milestoneEligibleIds.has(node.id) && status === 'owned'
     const medallionState: NodeStatus | 'milestone' = isMilestone ? 'milestone' : status
-    const difficulty = overlay.difficultyById.get(node.id)
+    const difficulty = effectiveDifficultyById.get(node.id)
 
     const tierVars = showDifficulty && difficulty && (medallionState === 'owned' || medallionState === 'unlockable')
       ? ({
@@ -323,11 +386,22 @@ export function RoadmapView({
               )}
               {showDifficulty && difficulty && (
                 <>
-                  <span className={`rmv-node__tierbadge rmv-node__tierbadge--${difficulty.tier}`}>{TIER_LABEL[difficulty.tier]}</span>
+                  <span
+                    className={`rmv-node__tierbadge rmv-node__tierbadge--${difficulty.tier}`}
+                    title={difficulty.basis}
+                  >
+                    {TIER_LABEL[difficulty.tier]}
+                  </span>
                   <span className="rmv-node__prereqbadge">선행 {difficulty.prereqCount}</span>
                 </>
               )}
             </div>
+            {/* 난이도 객관 근거 — 백엔드 응답이 도착한 노드만 basis가 채워진다(선행
+                깊이 폴백 중에는 없음). "공고 평균 요구 경력 3.2년, 수요 1,240건." 같은
+                객관 문장이라 사용자가 이 티어에 동의할 근거가 된다. */}
+            {showDifficulty && difficulty?.basis && (
+              <p className="rmv-node__basis">{difficulty.basis}</p>
+            )}
           </div>
         </div>
       </div>
@@ -467,6 +541,15 @@ export function RoadmapView({
           {dock.loading && <div className="rmv-dock__loading">학습 콘텐츠를 불러오는 중이에요…</div>}
 
           <div className="rmv-dock__body">
+            {/* 난이도 근거 — 난이도순 뷰에서 이 노드가 백엔드 객관 보정 응답을 받았을
+                때만(basis 존재) 보여준다. 추천순 뷰에서는 난이도 뱃지 자체가 안 보이니
+                도크에서도 굳이 노출하지 않는다. */}
+            {viewMode === 'difficulty' && dock.difficulty?.basis && (
+              <section className="rmv-dock__section">
+                <h4 className="rmv-dock__sectiontitle">{TIER_LABEL[dock.difficulty.tier]} 난이도 근거</h4>
+                <p className="rmv-dock__text">{dock.difficulty.basis}</p>
+              </section>
+            )}
             {dock.content.why && (
               <section className="rmv-dock__section">
                 <h4 className="rmv-dock__sectiontitle">왜 배우나</h4>

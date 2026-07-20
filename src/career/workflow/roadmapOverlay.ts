@@ -70,7 +70,19 @@ export function computeNodeDepths(nodes: RoadmapNode[]): Map<string, number> {
   return cache
 }
 
-export type NodeDifficulty = { depth: number; tier: DifficultyTier; prereqCount: number }
+export type NodeDifficulty = {
+  depth: number
+  tier: DifficultyTier
+  prereqCount: number
+  // 아래 세 필드는 백엔드 객관 보정(POST /match/roadmap/difficulty) 응답이 도착했을
+  // 때만 mergeBackendDifficulty가 덧붙인다. 기존 computeNodeDifficulty는 이 필드를
+  // 절대 채우지 않는다(roadmapOverlay.test.ts가 { depth, tier, prereqCount } 세
+  // 필드만 있는 정확한 shape을 deepEqual로 검증하므로, 이 함수 자체는 손대지 않는다).
+  objective?: boolean
+  avgCareer?: number | null
+  demand?: number
+  basis?: string
+}
 
 export function computeNodeDifficulty(nodes: RoadmapNode[]): Map<string, NodeDifficulty> {
   const depths = computeNodeDepths(nodes)
@@ -80,6 +92,51 @@ export function computeNodeDifficulty(nodes: RoadmapNode[]): Map<string, NodeDif
     result.set(n.id, { depth, tier: difficultyTierFromDepth(depth), prereqCount: n.prereqs.length })
   })
   return result
+}
+
+// 백엔드 티어 라벨(한글) -> 내부 DifficultyTier 키. 모르는 라벨이 오면(백엔드 스펙
+// 변경 등 방어적 상황) 입문으로 떨어뜨려 화면이 깨지지 않게 한다.
+const BACKEND_TIER_LABEL_TO_KEY: Record<string, DifficultyTier> = {
+  입문: 'intro',
+  초급: 'basic',
+  중급: 'intermediate',
+  고급: 'advanced',
+}
+
+export function difficultyTierFromBackendLabel(label: string): DifficultyTier {
+  return BACKEND_TIER_LABEL_TO_KEY[label] ?? 'intro'
+}
+
+export type RoadmapDifficultyBackendItem = {
+  node_id: string
+  tier: string
+  avg_career: number | null
+  demand: number
+  basis: string
+}
+
+// 선행 깊이 기반 폴백 맵(base) 위에 백엔드 객관 보정 응답(items)을 노드 단위로
+// 덧씌운다. 응답에 없는 노드(부분 실패, 신규 노드 등)는 base의 깊이 기반 티어를
+// 그대로 유지한다 — 이 함수 자체도 순수 함수라 fetch나 상태를 모른다(호출부인
+// RoadmapView.tsx가 요청/폴백/로딩을 책임진다).
+export function mergeBackendDifficulty(
+  base: Map<string, NodeDifficulty>,
+  items: RoadmapDifficultyBackendItem[],
+): Map<string, NodeDifficulty> {
+  const merged = new Map(base)
+  items.forEach((item) => {
+    const prior = merged.get(item.node_id)
+    if (!prior) return
+    merged.set(item.node_id, {
+      ...prior,
+      tier: difficultyTierFromBackendLabel(item.tier),
+      objective: true,
+      avgCareer: item.avg_career,
+      demand: item.demand,
+      basis: item.basis,
+    })
+  })
+  return merged
 }
 
 // 마일스톤/도전과제 노드 — 섹션의 첫 노드(그 섹션에 들어서는 대표 관문)이거나 개념
