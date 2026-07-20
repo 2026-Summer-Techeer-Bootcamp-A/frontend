@@ -107,6 +107,7 @@ const WidgetY4 = lazy(() => import('./pages/widgets/WidgetY4'))
 const WidgetX = lazy(() => import('./pages/widgets/WidgetX'))
 
 const RagDocs = lazy(() => import('./rag/RagDocs'))
+const PptVisualMaker = lazy(() => import('./ppt/PptVisualMaker'))
 
 export default function App() {
   return (
@@ -154,6 +155,7 @@ export default function App() {
             실험실(Lab) — 데모 · 디자인시스템 · 위젯 · RAG 문서. 제품 IA가 아님.
             ───────────────────────────────────────────────────────────── */}
         <Route path="/rag-docs" element={<RagDocs />} />
+        <Route path="/ppt-visual-maker" element={<PptVisualMaker />} />
         <Route path="/gallery" element={<Gallery />} />
         <Route path="/design-system" element={<DesignSystemLayout />}>
           <Route index element={<Navigate to="guide" replace />} />
