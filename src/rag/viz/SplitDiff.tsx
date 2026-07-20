@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { RefObject } from 'react'
+import { createPortal } from 'react-dom'
 import type { RequirementKind, RequirementVerdict, SplitDiffPayload, SplitDiffRequirement } from '../chatContract'
 import './SplitDiff.css'
 
@@ -202,12 +203,20 @@ function RequirementCanvas({
 // 리더가 aria-describedby로 읽을 수 있게) CSS로 시각적으로만 숨겼다가 열렸을 때만 보인다.
 //
 // 툴팁은 채팅 스크롤 패널(rc__body)이나 상태 갤러리 데모 프레임(ss-demoframe) 같은 조상의
-// overflow: hidden/auto에 위쪽이 잘리곤 했다. 포탈로 body에 옮기면 클리핑은 완전히 피하지만
-// DOM상 형광펜 구절의 자식이 아니게 되어 aria-describedby 접근성 연결과 기존 vitest(within(hl)
-// 로 툴팁을 찾는 테스트들)가 깨진다. 그래서 툴팁 DOM 위치는 그대로 두고(포탈 없음), position:
-// fixed + JS로 계산한 뷰포트 좌표만 얹는다 — fixed 포지셔닝은 조상에 transform/filter/
-// perspective/contain 같은 새 컨테이닝 블록이 없는 한 overflow 클리핑을 그대로 피한다(이
-// 화면의 조상 체인에는 그런 속성이 없음을 확인했다).
+// overflow: hidden/auto에 위쪽이 잘리는 문제가 있었다. position: fixed만으로는(포탈 없이)
+// 못 피하는 조상이 실제로 있다 — 어시스턴트 워크스페이스 라우트에서는
+// desktop/DesktopShell.css의 `.dshell__content:has(.aw) { overflow: hidden; }`가 콘텐츠
+// 카드를 자르고, 페이지 전환 래퍼 career/kit.css의 `.kit-trans--tab`/`--push`가 진입
+// 애니메이션(kit-tab-in/kit-push-in, 0.34~0.4s) 동안 transform 값을 유지해 그 시간 동안
+// position: fixed의 컨테이닝 블록을 뷰포트가 아니라 자기 자신으로 새로 만든다 — 그 결과
+// 뷰포트 좌표로 계산한 fixed 툴팁이 엉뚱한 위치(화면 밖)로 밀려나 아예 안 보였다. 이런
+// transform 컨테이닝 블록은 모션이 있는 화면일수록 흔해 예측하기 어려우므로, fixed만으로는
+// 근본적으로 못 피한다.
+//
+// 그래서 툴팁을 React.createPortal로 document.body에 직접 렌더한다 — 모든 조상의
+// overflow/stacking/transform 컨테이닝 블록을 완전히 벗어나므로 뷰포트 좌표가 항상
+// 정확하다. DOM상 더 이상 형광펜 span의 자식이 아니지만, id/aria-describedby로 접근성
+// 연결은 그대로 유지한다(스크린 리더는 DOM 트리 위치가 아니라 id 참조로 연결을 읽는다).
 //
 // 표시 여부는 CSS :hover/:focus에 맡기지 않고 React 상태(hovering/focused)로 직접 켠다.
 // CSS 의사 클래스로 표시를 켜면서 동시에 JS가 mouseenter 시점에 좌표를 다시 재는 구조였을 때,
@@ -333,7 +342,10 @@ function RequirementTooltip({
   onMouseLeave: () => void
 }) {
   const kind = requirementKindOf(req)
-  return (
+  // document.body로 포탈한다 — 조상 overflow/transform 컨테이닝 블록을 완전히 벗어나야
+  // 뷰포트 좌표(top/left)가 항상 정확하다. id/aria-describedby로 트리거 span과의 접근성
+  // 연결은 DOM 트리 위치와 무관하게 유지된다.
+  return createPortal(
     <span
       className={`rv__sd-tooltip${isOpen ? ' rv__sd-tooltip--open' : ''}`}
       role="tooltip"
@@ -366,7 +378,8 @@ function RequirementTooltip({
           <span className="rv__sd-tooltip-nextstep">{req.next_step}</span>
         </span>
       )}
-    </span>
+    </span>,
+    document.body,
   )
 }
 
