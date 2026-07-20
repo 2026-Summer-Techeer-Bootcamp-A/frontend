@@ -383,6 +383,25 @@ export function WorkflowStages({
     }
   }, [layout, edgeMeta, nodeWidth])
 
+  // "지금 보유" 그룹 배경 패널의 bounding box — 요약 카드(SUMMARY_NODE_ID)부터 그
+  // 아래 쌓인 보유 스킬 칩들(ownedEdgeSources)까지 전부를 감싸는 사각형을 구해,
+  // 시작 컬럼 전체가 하나의 덩어리로 보이게 하는 배경 패널(.wfs-start-group)을
+  // 그린다. 순수하게 시각적인 오버레이라 layoutStages가 계산한 실제 노드 좌표는
+  // 건드리지 않는다.
+  const startGroupRect = useMemo(() => {
+    const summaryRect = renderLayout.rectOf(SUMMARY_NODE_ID)
+    if (!summaryRect) return null
+    const startCol = columnPosition.get('start') ?? 0
+    const box = renderLayout.columnBox(startCol)
+    let bottom = summaryRect.y + summaryRect.height
+    ownedEdgeSources.forEach((skill) => {
+      const r = renderLayout.rectOf(skill)
+      if (r) bottom = Math.max(bottom, r.y + r.height)
+    })
+    const pad = 12
+    return { x: box.x - pad, y: summaryRect.y - pad, width: box.width + pad * 2, height: bottom - summaryRect.y + pad * 2 }
+  }, [renderLayout, columnPosition, ownedEdgeSources])
+
   // 컬럼 안 넘친(overflow) 항목 배지의 위치 — 그 컬럼에서 실제 렌더된 항목들 중 가장
   // 아래에 있는 것 바로 밑에 붙인다.
   function overflowPosition(ids: string[]): { x: number; y: number; width: number } {
@@ -564,6 +583,16 @@ export function WorkflowStages({
                 )
               })}
             </svg>
+
+            {/* "지금 보유" 그룹 배경 — 요약 카드와 그 아래 보유 스킬 칩들을 하나의
+                덩어리로 묶어 보이게 한다(startGroupRect 계산 참고). 카드/칩보다 먼저
+                그려야 그 뒤(아래)로 깔린다. */}
+            {startGroupRect && (
+              <div
+                className="wfs-start-group"
+                style={{ position: 'absolute', left: startGroupRect.x, top: startGroupRect.y, width: startGroupRect.width, height: startGroupRect.height }}
+              />
+            )}
 
             {(() => {
               const rect = renderLayout.rectOf(SUMMARY_NODE_ID)
