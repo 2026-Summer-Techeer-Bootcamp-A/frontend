@@ -2,8 +2,8 @@ import { useMemo, useState } from 'react'
 import { Award, Check, CheckCircle2, AlertCircle } from 'lucide-react'
 import type { PostingDetail, ScopedRoadmapStep } from '../api'
 import {
-  classifySkill, avatarColor, requiredByFor, careerGateLabel, isCareerGateFulfilled,
-  type SkillGroupName, type PostingDetailWithConcepts,
+  categoryBadgeLabel, avatarColor, requiredByFor, careerGateLabel, isCareerGateFulfilled,
+  type PostingDetailWithConcepts,
 } from './workflowShared'
 import { buildStages, type Bundle, type ConceptNode } from './relations'
 import {
@@ -36,7 +36,13 @@ const SUMMARY_NODE_ID = '__wfs_summary__'
 // 안 건드리는 순수 확장이라, 이 노드도 그 엔진이 이미 지원하는 "고정 크기 노드 하나"
 // 계약만 쓴다).
 const CAREER_GATE_ID = '__wfs_career_gate__'
-const CAREER_GATE_HEIGHT = 64
+const CAREER_GATE_HEIGHT = 56
+
+// 5: 대안(alternative)을 이미 보유한 목표 스킬은 "당장 급하지 않다"는 신호라 정렬에서
+// 뒤로 민다. 라이브 로드맵 순서(hasOrder일 때 liveOrder)나 요구 건수(-count) 기반
+// 1차 키에 이 페널티를 더해, 같은 1차 기준 그룹 안에서는 순서를 보존하면서 대안 보유
+// 스킬만 항상 그 뒤로 밀리게 한다.
+const ALT_PRIORITY_PENALTY = 1_000_000
 
 type ColumnKey = 'start' | 1 | 2 | 3 | 'cert'
 
@@ -58,7 +64,11 @@ type DrawnPath = { key: string; from: string; to: string; d: string; evidencePhr
 
 export function WorkflowStages({
   ownedSkills,
-  ownedSkillCategories,
+  // 3: 카운트 3줄 요약(언어/프레임워크/기타)을 매칭 보유 스킬 pill로 바꾸면서 이
+  // 컴포넌트 안에서는 더 이상 쓰이지 않는다 — WorkflowMap.tsx가 여전히 넘겨주는
+  // 프롭이라 시그니처엔 남기고 밑줄 프리픽스로 미사용 처리한다(list 뷰
+  // WorkflowList.tsx는 이 프롭을 그대로 쓴다).
+  ownedSkillCategories: _ownedSkillCategories,
   selectedPostings,
   targetSkills,
   targetCerts,
@@ -85,6 +95,9 @@ export function WorkflowStages({
 }) {
   const ownedSet = useMemo(() => new Set(ownedSkills), [ownedSkills])
   const nodeWidth = wide ? NODE_WIDTH_WIDE : NODE_WIDTH
+  // N: 목표가 1건뿐이면 모든 카드의 "N개 공고 요구"가 항상 1이라 정보량이 0이다 — 그
+  // 줄과 회사 아바타 칩을 카드에서 아예 뺀다(여러 목표를 골랐을 때는 기존 동작 그대로).
+  const singleGoal = selectedPostings.length === 1
 
   const stages = useMemo(
     () => buildStages(ownedSkills, targetSkills, targetCerts, ownedCerts, targetConcepts),
@@ -131,13 +144,19 @@ export function WorkflowStages({
     return map
   }, [liveSteps])
 
-  // 보유 요약 카드 — 총 개수 + 언어/프레임워크/기타 카운트. classifySkill을 재사용해
-  // list 뷰·flow 뷰와 같은 분류 기준을 그대로 쓴다.
-  const ownedGroupCounts = useMemo(() => {
-    const counts: Record<SkillGroupName, number> = { 언어: 0, 프레임워크: 0, 기타: 0 }
-    ownedSkills.forEach((s) => { counts[classifySkill(s, ownedSkillCategories[s])] += 1 })
-    return counts
-  }, [ownedSkills, ownedSkillCategories])
+  // 3: 보유 요약 카드 — 예전엔 "28개, 언어4/프레임워크8/기타16" 카운트 3줄만 보여줬는데,
+  // 목표 공고가 실제로 요구하는 것 중 내가 이미 가진 스킬이 뭔지는 안 보였다. 선택된
+  // 목표 공고들이 요구하는 스킬 중 보유한 것만 모아, 그 스킬을 요구하는 공고 수 내림차순
+  // (여러 목표에서 겹치는 스킬을 우선)으로 정렬한다 — 카드엔 최대 4개만 이름으로 pill
+  // 노출하고, 나머지는 renderColumnItem 아래 총 개수 캡션으로만 남는다.
+  const matchedOwnedSkills = useMemo(() => {
+    const counts = new Map<string, number>()
+    selectedPostings.forEach((p) => {
+      p.skills.forEach((s) => { if (ownedSet.has(s)) counts.set(s, (counts.get(s) ?? 0) + 1) })
+    })
+    return [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([s]) => s)
+  }, [selectedPostings, ownedSet])
+  const shownOwnedPills = matchedOwnedSkills.slice(0, 4)
 
   const totalOwned = ownedSkills.length
 
@@ -178,11 +197,12 @@ export function WorkflowStages({
   const hasOrder = liveSteps.length > 0
   const liveOrder = useMemo(() => new Map(liveSteps.map((s, i) => [s.canonical, i])), [liveSteps])
   const primaryKeyFor = (skill: string): number => {
-    if (hasOrder) {
-      const idx = liveOrder.get(skill)
-      return idx !== undefined ? idx : Number.MAX_SAFE_INTEGER
-    }
-    return -countFor(skill, selectedPostings)
+    const base = hasOrder
+      ? (liveOrder.get(skill) ?? Number.MAX_SAFE_INTEGER)
+      : -countFor(skill, selectedPostings)
+    // 5: 대안을 이미 보유했으면(altBadgeBySkill) 1차 기준 순위는 그대로 두되 큰 페널티를
+    // 더해 항상 대안 없는 스킬들 뒤로 민다 — "지금 시작 가능"이 정말 급한 것부터 읽히게.
+    return altBadgeBySkill.has(skill) ? base + ALT_PRIORITY_PENALTY : base
   }
 
   const skillsByColumn = useMemo(() => {
@@ -244,6 +264,21 @@ export function WorkflowStages({
     // 아래 값들이 바뀔 때만 실제 출력이 바뀐다.
   }, [skillsByColumn, bundlesByColumn, conceptsByColumn, depthBySkill, hasOrder, liveOrder, selectedPostings])
 
+  // 5: "먼저" 배지 — 정렬된 1단계(없으면 그다음 단계) 첫 항목이 "지금 당장 할 한 수"다.
+  // 번들은 여러 스킬 묶음이라 "이거 하나"라는 신호가 약해 배지 대상에서 뺀다(스킬/개념
+  // 카드에만 붙인다).
+  const firstPriorityId = useMemo(() => {
+    for (const d of [1, 2, 3] as const) {
+      const { items } = stageItemsByColumn.get(d) ?? { items: [] }
+      if (items.length === 0) continue
+      const first = items[0]
+      if (first.kind === 'skill') return first.skill
+      if (first.kind === 'concept') return first.node.concept
+      return null
+    }
+    return null
+  }, [stageItemsByColumn])
+
   const renderedColumnKeys = useMemo(() => {
     const keys: ColumnKey[] = ['start']
     ;([1, 2, 3] as const).forEach((d) => {
@@ -285,7 +320,7 @@ export function WorkflowStages({
     const specs: LayoutNode[] = []
     const startCol = columnPosition.get('start') ?? 0
 
-    specs.push({ id: SUMMARY_NODE_ID, column: startCol, width: nodeWidth, height: estimateStartSummaryHeight(totalOwned) })
+    specs.push({ id: SUMMARY_NODE_ID, column: startCol, width: nodeWidth, height: estimateStartSummaryHeight(totalOwned, shownOwnedPills.length) })
     ownedEdgeSources.forEach((skill) => {
       specs.push({ id: skill, column: startCol, width: estimateChipWidth(skill), height: CHIP_HEIGHT })
     })
@@ -300,7 +335,7 @@ export function WorkflowStages({
           const hasReason = viaReasonBySkill.has(skill)
           const hasPayoff = (deltaBySkill.get(skill) ?? 0) > 0
           const hasAlt = altBadgeBySkill.has(skill)
-          specs.push({ id: skill, column: col, width: nodeWidth, height: estimateSkillCardHeight({ hasReason, hasPayoff, hasAlt }) })
+          specs.push({ id: skill, column: col, width: nodeWidth, height: estimateSkillCardHeight({ hasReason, hasPayoff, hasAlt, hasDemand: !singleGoal }) })
         } else if (item.kind === 'bundle') {
           specs.push({
             id: bundleNodeId(item.bundle),
@@ -309,10 +344,10 @@ export function WorkflowStages({
             height: estimateBundleHeight(item.bundle.skills.length, !!item.bundle.note),
           })
         } else {
-          // F: 개념 카드는 별도 estimate 함수를 새로 만들지 않고(workflowLayout.ts는 이
-          // 작업 범위 밖) 스킬 카드와 같은 높이 추정을 재사용한다 — note 유무만 "이유"
-          // 슬롯 유무로 취급한다(개념엔 payoff/대안 배지가 없다).
-          specs.push({ id: item.node.concept, column: col, width: nodeWidth, height: estimateSkillCardHeight({ hasReason: !!item.node.note, hasPayoff: false, hasAlt: false }) })
+          // 개념 카드는 별도 estimate 함수를 새로 만들지 않고 스킬 카드와 같은 높이
+          // 추정을 재사용한다 — note 유무만 "이유" 슬롯 유무로 취급한다(개념엔 수요줄/
+          // payoff/대안 배지가 없으니 hasDemand는 항상 false다).
+          specs.push({ id: item.node.concept, column: col, width: nodeWidth, height: estimateSkillCardHeight({ hasReason: !!item.node.note, hasPayoff: false, hasAlt: false, hasDemand: false }) })
         }
       })
     })
@@ -339,7 +374,7 @@ export function WorkflowStages({
       specs.push({ id: CAREER_GATE_ID, column: lastCol, width: nodeWidth, height: CAREER_GATE_HEIGHT })
     }
     return specs
-  }, [columnPosition, nodeWidth, totalOwned, ownedEdgeSources, stageItemsByColumn, viaReasonBySkill, deltaBySkill, altBadgeBySkill, certColumn, ownedCertPrereqs, careerGoalMin, renderedColumnKeys])
+  }, [columnPosition, nodeWidth, totalOwned, shownOwnedPills, ownedEdgeSources, stageItemsByColumn, viaReasonBySkill, deltaBySkill, altBadgeBySkill, certColumn, ownedCertPrereqs, careerGoalMin, renderedColumnKeys, singleGoal])
 
   // layoutStages에 넘길 엣지 목록 — 번들 멤버를 가리키는 엣지는 번들 박스로
   // 리다이렉트한다. 양 끝이 같은 박스로 접히면(같은 번들 안 두 멤버 사이 엣지) 자기
@@ -418,7 +453,11 @@ export function WorkflowStages({
     return { x, y: bottom + 8, width }
   }
 
+  // N: 목표가 1건뿐이면(singleGoal) 모든 카드가 항상 "1개 공고 요구"만 반복해 정보량이
+  // 0이라 이 블록 전체를 그리지 않는다 — nodeSpecs가 hasDemand: !singleGoal로 넘긴 높이
+  // 추정과 반드시 짝을 맞춘다.
   const renderBadges = (skill: string) => {
+    if (singleGoal) return null
     const count = countFor(skill, selectedPostings)
     const requiredBy = requiredByFor(skill, selectedPostings)
     return (
@@ -438,37 +477,42 @@ export function WorkflowStages({
     )
   }
 
-  // 시안 3: 스킬명 -> 카테고리 -> 수요(공고 수 + 회사 아바타) -> (있으면) payoff 순으로
-  // 여백 있게 배치한다. 카드 높이는 이 구성요소 유무만으로 미리 정확히 추정되므로(
-  // workflowLayout.ts의 estimateSkillCardHeight) DOM에서 실제로 렌더되는 내용과
-  // 어긋나지 않게, 각 블록은 항상 estimateSkillCardHeight가 가정한 것과 동일한 조건
-  // (hasReason/hasPayoff/hasAlt)으로만 나타난다.
+  // 시안 3: 스킬명 -> 카테고리 -> (있으면 대안 배지) -> 이유 -> 수요(공고 수 + 회사
+  // 아바타) -> (있으면) payoff 순으로 배치한다. 카드 높이는 이 구성요소 유무만으로
+  // 미리 정확히 추정되므로(workflowLayout.ts의 estimateSkillCardHeight) DOM에서 실제로
+  // 렌더되는 내용과 어긋나지 않게, 각 블록은 항상 estimateSkillCardHeight가 가정한 것과
+  // 동일한 조건(hasReason/hasPayoff/hasAlt/hasDemand)으로만 나타난다.
   const renderSkillCard = (skill: string) => {
     const rect = renderLayout?.rectOf(skill)
     if (!rect) return null
     const isTarget = !viaReasonBySkill.has(skill)
-    const category = classifySkill(skill)
+    const category = categoryBadgeLabel(skill)
     const reason = viaReasonBySkill.get(skill)
     const altBadge = altBadgeBySkill.get(skill)
     const payoff = deltaBySkill.get(skill)
+    const isFirst = skill === firstPriorityId
     return (
       <div
         key={skill}
         style={{ position: 'absolute', left: rect.x, top: rect.y, width: rect.width, height: rect.height }}
-        className={`wfs-scard wfs-type--skill${isTarget ? ' wfs-scard--goal' : ' wfs-scard--via'}${isDimmed(skill) ? ' wfs-dim' : ''}`}
+        className={`wfs-scard wfs-type--skill${isTarget ? ' wfs-scard--goal' : ' wfs-scard--via'}${isFirst ? ' wfs-scard--first' : ''}${isDimmed(skill) ? ' wfs-dim' : ''}`}
         onMouseEnter={() => setHoveredId(skill)}
         onMouseLeave={() => setHoveredId(null)}
       >
+        {isFirst && <span className="wfs-first-badge">먼저</span>}
         <div className="wfs-scard__head">
           <span className="wfs-scard__name" title={skill}>{skill}</span>
           <span className="wfs-chip-cat">{category}</span>
         </div>
+        {/* 4: 대안(alternative)을 이미 보유했다는 신호는 카드 아래 묻히면 안 보이니
+            헤더 바로 아래로 올려 눈에 띄게 한다(정렬에서도 뒤로 밀리지만, 카드 자체는
+            눈에 잘 띄어야 "왜 뒤에 있는지" 이해가 된다). */}
+        {altBadge && <div className="wfs-scard__altbadge"><Check size={10} />{altBadge}</div>}
         {reason && <div className="wfs-scard__reason">{reason}</div>}
         {renderBadges(skill)}
         {payoff !== undefined && payoff > 0 && (
           <div className="wfs-scard__payoff">배우면 <b>+{payoff}건</b> 더 지원 가능</div>
         )}
-        {altBadge && <div className="wfs-scard__alt">{altBadge}</div>}
       </div>
     )
   }
@@ -481,14 +525,16 @@ export function WorkflowStages({
     const rect = renderLayout?.rectOf(node.concept)
     if (!rect) return null
     const category = node.category ?? conceptCategoryFromPostings.get(node.concept)
+    const isFirst = node.concept === firstPriorityId
     return (
       <div
         key={node.concept}
         style={{ position: 'absolute', left: rect.x, top: rect.y, width: rect.width, height: rect.height }}
-        className={`wfs-scard wfs-scard--goal wfs-type--concept${isDimmed(node.concept) ? ' wfs-dim' : ''}`}
+        className={`wfs-scard wfs-scard--goal wfs-type--concept${isFirst ? ' wfs-scard--first' : ''}${isDimmed(node.concept) ? ' wfs-dim' : ''}`}
         onMouseEnter={() => setHoveredId(node.concept)}
         onMouseLeave={() => setHoveredId(null)}
       >
+        {isFirst && <span className="wfs-first-badge">먼저</span>}
         <div className="wfs-scard__head">
           <span className="wfs-scard__name" title={node.concept}>{node.concept}</span>
           {category && <span className="wfs-chip-cat">{category}</span>}
@@ -510,8 +556,9 @@ export function WorkflowStages({
       >
         <span className="wfs-bundle__label">{bundle.label}</span>
         {bundle.skills.map((skill) => {
-          const count = countFor(skill, selectedPostings)
-          const requiredBy = requiredByFor(skill, selectedPostings)
+          // N: 목표 1건일 때는 스킬 카드와 마찬가지로 "1개 공고" 반복을 뺀다.
+          const count = singleGoal ? 0 : countFor(skill, selectedPostings)
+          const requiredBy = singleGoal ? [] : requiredByFor(skill, selectedPostings)
           return (
             <div
               key={skill}
@@ -603,13 +650,17 @@ export function WorkflowStages({
                     <div className="wfs-empty-note">아직 등록된 보유 기술이 없어요.</div>
                   ) : (
                     <>
-                      <div className="wfs-summary__big">{totalOwned}개</div>
-                      <div className="wfs-summary__sub">비교 기준 스택</div>
-                      <div className="wfs-summary__lines">
-                        <div><span>언어</span><b>{ownedGroupCounts.언어}</b></div>
-                        <div><span>프레임워크</span><b>{ownedGroupCounts.프레임워크}</b></div>
-                        <div><span>기타</span><b>{ownedGroupCounts.기타}</b></div>
-                      </div>
+                      {/* 3: "28개, 언어4/프레임워크8/기타16" 카운트 요약 대신, 목표 공고가
+                          요구하는 것 중 이미 가진 실제 스킬을 이름으로 보여준다 — 카운트는
+                          "보유 기술 N개"라는 평범한 캡션으로만 내린다. */}
+                      <div className="wfs-summary__caption">보유 기술 {totalOwned}개</div>
+                      {shownOwnedPills.length > 0 ? (
+                        <div className="wfs-summary__pills">
+                          {shownOwnedPills.map((s) => <span key={s} className="wfs-summary__pill">{s}</span>)}
+                        </div>
+                      ) : (
+                        <div className="wfs-summary__note">목표와 겹치는 보유 기술은 아직 없어요.</div>
+                      )}
                     </>
                   )}
                 </div>

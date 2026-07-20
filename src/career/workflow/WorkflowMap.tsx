@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Award, List, Maximize2, Plus, Sparkles, Workflow, X } from 'lucide-react'
+import { Award, Check, List, Maximize2, Plus, Sparkles, WandSparkles, Workflow, X } from 'lucide-react'
 import { SectionHeader, PreviewBadge } from '../kit'
 import { AsOf } from '../charts'
 import { useResumesState } from '../state'
@@ -9,7 +9,10 @@ import {
   useSelectedGoalIds, useGoalSelectionTouched, toggleGoalId,
   getSelectedGoalIds, isGoalSelectionTouched, setSelectedGoalIds,
 } from '../goalSelectionStore'
-import { dashboardApi, jobsApi, type Identity, type PostingCard, type PostingDetail, type ScopedRoadmapData } from '../api'
+import {
+  dashboardApi, jobsApi, type Identity, type PostingCard, type PostingDetail, type ScopedRoadmapData,
+  type RoadmapEnrichRequest, type RoadmapEnrichResponse, type RoadmapEnrichStep,
+} from '../api'
 import { useWidgetData } from '../useWidgetData'
 import type { WidgetSize } from '../dashboardConfig'
 import dreamCompanies from '../../data/dreamCompanies.json'
@@ -40,6 +43,81 @@ const RECOMMEND_CHUNK_SIZE = 4
 // 유지한다 — list 뷰가 여전히 그 헬퍼들을 쓴다.
 
 const MOCK_ROADMAP: ScopedRoadmapData = { start_matched: 0, total: 0, as_of: '', steps: [] }
+
+// F-2: AI 보강 우선순위 라벨 — RoadmapEnrichStep.priority(high/medium/low)를 한글
+// 배지 문구로 옮긴다.
+const ENRICH_PRIORITY_LABEL: Record<RoadmapEnrichStep['priority'], string> = {
+  high: '우선',
+  medium: '보통',
+  low: '여유',
+}
+
+// F-2: 폴백 보강 — 보강 엔드포인트가 아직 없거나(다른 에이전트가 백엔드에 붙이는 중)
+// 요청이 실패해도 데모가 끊기면 안 된다는 요구로, 현재 화면에 이미 있는 목표/미보유
+// 기술 정보만으로 결정적으로(랜덤 없이) 같은 형태의 응답을 만든다. 실제 LLM 판단이
+// 아니라 "그럴듯한 우선순위 순서"일 뿐이라는 걸 명확히 하려고 굳이 화려한 문구를
+// 쓰지 않는다 — 실패했다는 사실은 콘솔에만 남기고(WorkflowMap 본문), 화면은 정상
+// 보강 뷰와 동일한 컴포넌트로 그대로 렌더된다.
+function buildFallbackEnrichment(req: RoadmapEnrichRequest): RoadmapEnrichResponse {
+  const company = req.goal_company || '목표 기업'
+  const title = req.goal_title || '목표 공고'
+  const steps: RoadmapEnrichStep[] = []
+  let order = 1
+
+  req.missing_skills.slice(0, 4).forEach((skill, i) => {
+    steps.push({
+      order: order++,
+      label: skill,
+      type: 'skill',
+      effort: i === 0 ? '1~2주' : '2~4주',
+      priority: i === 0 ? 'high' : i < 2 ? 'medium' : 'low',
+      reason: `${company} ${title} 공고가 요구하는 기술이에요.`,
+      project: `${skill}로 작은 프로젝트를 하나 만들어 포트폴리오에 올려보세요.`,
+    })
+  })
+  req.concepts.slice(0, 2).forEach((concept) => {
+    steps.push({
+      order: order++,
+      label: concept,
+      type: 'concept',
+      effort: '2~3주',
+      priority: 'medium',
+      reason: `${title} 직무에서 자주 요구하는 개념이에요.`,
+      project: `${concept}을 정리한 글을 써보고 관련 사례를 하나 분석해보세요.`,
+    })
+  })
+  req.certs.slice(0, 2).forEach((cert) => {
+    steps.push({
+      order: order++,
+      label: cert,
+      type: 'cert',
+      effort: '4~8주',
+      priority: 'low',
+      reason: '보유하면 서류에서 눈에 띄는 자격증이에요.',
+      project: `${cert} 취득 일정을 잡고 준비를 시작해보세요.`,
+    })
+  })
+  if (req.career_required != null && req.career_required > 0 && (req.career_mine ?? 0) < req.career_required) {
+    steps.push({
+      order: order++,
+      label: `경력 ${req.career_required}년+`,
+      type: 'career',
+      effort: '장기',
+      priority: 'medium',
+      reason: '이 목표가 요구하는 최소 경력이에요.',
+      project: '관련 프로젝트·인턴 경험을 이력서에 꾸준히 쌓아가세요.',
+    })
+  }
+
+  return {
+    headline: `${company} ${title}까지 남은 것`,
+    summary: steps.length > 0
+      ? `${title} 목표까지 ${steps.length}가지를 준비하면 좋아요. 급한 순서로 정리했어요.`
+      : '지금 보유한 기술만으로도 이 목표에 이미 잘 맞고 있어요.',
+    quick_win: steps[0] ? `${steps[0].label}부터 시작해보세요` : '보유 기술을 하나씩 늘려가 보세요',
+    steps,
+  }
+}
 
 // 2단계: stages/list 보기 선택 저장 키 — dashboardConfig.ts의 STORAGE_KEY_DASHBOARD_CONFIG와
 // 같은 techeer_ 프리픽스 네이밍을 따른다.
@@ -296,6 +374,50 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [recommendModalOpen])
 
+  // F-2: AI 로드맵 보강 — 별 아이콘 버튼(WandSparkles). 위 Sparkles 추천 버튼과 헷갈리지
+  // 않도록 아이콘·툴팁을 다르게 둔다(추천 = 새 목표 후보 찾기, 보강 = 이미 고른 목표의
+  // 학습 순서를 LLM이 다시 짜준다). 선택된 목표가 하나도 없으면 payload를 만들 수 없어
+  // 버튼을 비활성화한다.
+  const [enrichModalOpen, setEnrichModalOpen] = useState(false)
+  const [enrichLoading, setEnrichLoading] = useState(false)
+  const [enrichData, setEnrichData] = useState<RoadmapEnrichResponse | null>(null)
+
+  const handleEnrichClick = async () => {
+    if (enrichLoading || selectedPostings.length === 0) return
+    const primary = selectedPostings[0]
+    const payload: RoadmapEnrichRequest = {
+      goal_company: primary.company ?? '목표 기업',
+      goal_title: primary.title,
+      owned_skills: ownedSkills,
+      missing_skills: targetSkillsArray,
+      concepts: targetConcepts,
+      certs: targetCerts,
+      career_required: careerGoalMin,
+      career_mine: resumeCareerMax,
+    }
+    setEnrichModalOpen(true)
+    setEnrichLoading(true)
+    setEnrichData(null)
+    try {
+      const res = await dashboardApi.roadmapEnrich(payload, token)
+      setEnrichData(res)
+    } catch (err) {
+      // 12: 엔드포인트가 아직 없거나 요청이 실패해도 데모가 끊기면 안 된다 — 폴백으로
+      // 조용히 이어간다(실패했다는 사실만 콘솔에 남긴다).
+      console.info('[workflow] AI 보강 응답 실패, 준비된 폴백으로 대체해요', err)
+      setEnrichData(buildFallbackEnrichment(payload))
+    } finally {
+      setEnrichLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!enrichModalOpen) return
+    const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') setEnrichModalOpen(false) }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [enrichModalOpen])
+
   // 2a: 크게 보기 — 더 넓은 영역에 스테이지 뷰(또는 리스트 뷰)를 그리는 오버레이 모달.
   // Escape·백드롭 클릭으로 닫는다.
   const [expanded, setExpanded] = useState(false)
@@ -428,6 +550,18 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
                     <List size={13} />
                   </button>
                 </div>
+              )}
+              {!showNoBookmarks && (
+                <button
+                  type="button"
+                  className={`wfm-expand-btn wfm-enrich-btn${enrichLoading ? ' is-loading' : ''}`}
+                  onClick={handleEnrichClick}
+                  disabled={enrichLoading || selectedPostings.length === 0}
+                  aria-label="AI로 로드맵 보강"
+                  title="AI로 로드맵 보강"
+                >
+                  <WandSparkles size={14} />
+                </button>
               )}
               <div className="wfm-recommend-wrap">
                 <button
@@ -699,6 +833,62 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
                 )
               })}
             </ul>
+          </div>
+        </div>
+      )}
+
+      {enrichModalOpen && (
+        <div className="wfm-modal__backdrop" onClick={() => setEnrichModalOpen(false)}>
+          <div
+            className="wfm-modal__card wfm-enrich-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="AI 로드맵 보강"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="wfm-modal__titlebar">
+              <span className="wfm-modal__title">AI 로드맵 보강</span>
+              <button type="button" className="wfm-modal__close" onClick={() => setEnrichModalOpen(false)} aria-label="닫기">
+                <X size={16} />
+              </button>
+            </div>
+            {enrichLoading ? (
+              <div className="wfm-loading" role="status" aria-live="polite">AI가 로드맵을 보강하는 중이에요.</div>
+            ) : enrichData ? (
+              <div className="wfm-enrich-body">
+                <div className="wfm-enrich-headline">{enrichData.headline}</div>
+                {enrichData.summary && <p className="wfm-enrich-summary">{enrichData.summary}</p>}
+                {enrichData.quick_win && (
+                  <div className="wfm-enrich-quickwin">
+                    <span className="wfm-enrich-quickwin__label">지금 바로</span>
+                    <span className="wfm-enrich-quickwin__text">{enrichData.quick_win}</span>
+                  </div>
+                )}
+                <ul className="wfm-enrich-steps">
+                  {[...enrichData.steps].sort((a, b) => a.order - b.order).map((step) => (
+                    <li key={`${step.order}-${step.label}`} className={`wfm-enrich-step wfs-type--${step.type}`}>
+                      <div className="wfm-enrich-step__head">
+                        <span className="wfm-enrich-step__order">{step.order}</span>
+                        <span className="wfm-enrich-step__label">{step.label}</span>
+                        <span className={`wfm-enrich-step__priority wfm-enrich-step__priority--${step.priority}`}>
+                          {ENRICH_PRIORITY_LABEL[step.priority] ?? step.priority}
+                        </span>
+                      </div>
+                      <div className="wfm-enrich-step__meta">
+                        <Check size={10} />
+                        <span>{step.effort}</span>
+                      </div>
+                      {step.reason && <p className="wfm-enrich-step__reason">{step.reason}</p>}
+                      {step.project && (
+                        <p className="wfm-enrich-step__project"><b>프로젝트 제안</b> {step.project}</p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <div className="wfm-loading">보강 결과를 불러오지 못했어요.</div>
+            )}
           </div>
         </div>
       )}
