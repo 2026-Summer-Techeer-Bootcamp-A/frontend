@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { RefObject } from 'react'
 import type { RequirementKind, RequirementVerdict, SplitDiffPayload, SplitDiffRequirement } from '../chatContract'
 import './SplitDiff.css'
@@ -199,7 +199,7 @@ function RequirementCanvas({
 
 // 하이라이트 구절 한 단위 — 형광펜 색 + 인라인 상태 아이콘 + 호버/포커스 툴팁.
 // 키보드 포커스로도 툴팁이 뜨도록 tabIndex를 주고, 툴팁 콘텐츠는 항상 DOM에 두되(스크린
-// 리더가 aria-describedby로 읽을 수 있게) CSS로 시각적으로만 숨겼다가 :hover/:focus에서 보인다.
+// 리더가 aria-describedby로 읽을 수 있게) CSS로 시각적으로만 숨겼다가 열렸을 때만 보인다.
 //
 // 툴팁은 채팅 스크롤 패널(rc__body)이나 상태 갤러리 데모 프레임(ss-demoframe) 같은 조상의
 // overflow: hidden/auto에 위쪽이 잘리곤 했다. 포탈로 body에 옮기면 클리핑은 완전히 피하지만
@@ -208,6 +208,14 @@ function RequirementCanvas({
 // fixed + JS로 계산한 뷰포트 좌표만 얹는다 — fixed 포지셔닝은 조상에 transform/filter/
 // perspective/contain 같은 새 컨테이닝 블록이 없는 한 overflow 클리핑을 그대로 피한다(이
 // 화면의 조상 체인에는 그런 속성이 없음을 확인했다).
+//
+// 표시 여부는 CSS :hover/:focus에 맡기지 않고 React 상태(hovering/focused)로 직접 켠다.
+// CSS 의사 클래스로 표시를 켜면서 동시에 JS가 mouseenter 시점에 좌표를 다시 재는 구조였을 때,
+// 화면에 즉시 뜨는 것(브라우저 :hover 재계산)과 좌표 갱신(React state 커밋)의 타이밍이
+// 어긋나 깜빡이거나 잘못된 위치에서 잠깐 보였다 사라지는 문제가 있었다. 이제는 open 상태가
+// true로 바뀔 때만 useLayoutEffect로 위치를 계산해 얹으므로, 브라우저가 페인트하기 전에
+// "열림 + 정확한 좌표"가 같은 커밋에 반영된다(레이아웃 이펙트는 페인트 전에 동기적으로
+// 재실행되므로 중간 상태가 화면에 그려지지 않는다).
 function HighlightUnit({
   text,
   req,
@@ -220,8 +228,12 @@ function HighlightUnit({
   const tooltipId = `sd-tooltip-${req.id}`
   const hlRef = useRef<HTMLSpanElement>(null)
   const tooltipRef = useRef<HTMLSpanElement>(null)
-  const activeRef = useRef(false)
+  const [hovering, setHovering] = useState(false)
+  const [focused, setFocused] = useState(false)
   const [pos, setPos] = useState<TooltipPos | null>(null)
+  // hover(구절 또는 툴팁 자체) 또는 키보드 포커스, 둘 중 하나만 있어도 열린다(기존 CSS의
+  // :hover, :focus, :focus-visible OR 의미를 그대로 유지).
+  const isOpen = hovering || focused
 
   const reposition = useCallback(() => {
     const trigger = hlRef.current
@@ -246,28 +258,24 @@ function HighlightUnit({
     setPos({ top, left })
   }, [])
 
-  const handleActivate = useCallback(() => {
-    activeRef.current = true
+  // 열릴 때(hover/focus로 isOpen이 true가 된 순간)만, 레이아웃이 확정된 뒤(페인트 전) 좌표를
+  // 계산한다 — mouseenter 시점의 숨김 상태 rect를 읽어 오배치되던 레이스를 없앤다.
+  useLayoutEffect(() => {
+    if (!isOpen) return
     reposition()
-  }, [reposition])
+  }, [isOpen, reposition])
 
-  const handleDeactivate = useCallback(() => {
-    activeRef.current = false
-  }, [])
-
-  // 툴팁이 떠 있는 동안 스크롤·리사이즈가 일어나면(fixed는 트리거를 따라가지 않으므로)
-  // 좌표를 다시 계산한다. 뜨지 않은 동안은 activeRef가 false라 사실상 no-op이다.
+  // 열려 있는 동안 스크롤·리사이즈가 일어나면(fixed는 트리거를 따라가지 않으므로) 좌표를
+  // 다시 계산한다. 닫혀 있을 때는 리스너 자체를 달지 않는다.
   useEffect(() => {
-    const onViewportChange = () => {
-      if (activeRef.current) reposition()
-    }
-    window.addEventListener('scroll', onViewportChange, true)
-    window.addEventListener('resize', onViewportChange)
+    if (!isOpen) return
+    window.addEventListener('scroll', reposition, true)
+    window.addEventListener('resize', reposition)
     return () => {
-      window.removeEventListener('scroll', onViewportChange, true)
-      window.removeEventListener('resize', onViewportChange)
+      window.removeEventListener('scroll', reposition, true)
+      window.removeEventListener('resize', reposition)
     }
-  }, [reposition])
+  }, [isOpen, reposition])
 
   return (
     <span
@@ -276,17 +284,26 @@ function HighlightUnit({
       tabIndex={0}
       aria-describedby={tooltipId}
       data-testid={`sd-hl-${req.id}`}
-      onMouseEnter={handleActivate}
-      onMouseLeave={handleDeactivate}
-      onFocus={handleActivate}
-      onBlur={handleDeactivate}
+      onMouseEnter={() => setHovering(true)}
+      onMouseLeave={() => setHovering(false)}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
     >
       {text}
       <span className={`rv__sd-icon rv__sd-icon--${req.verdict}`} aria-hidden="true">
         {VERDICT_ICON[req.verdict]}
       </span>
       <span className="rv__sd-hl-sr">{VERDICT_LABEL[req.verdict]}</span>
-      <RequirementTooltip req={req} targetRole={targetRole} tooltipId={tooltipId} tooltipRef={tooltipRef} pos={pos} />
+      <RequirementTooltip
+        req={req}
+        targetRole={targetRole}
+        tooltipId={tooltipId}
+        tooltipRef={tooltipRef}
+        pos={pos}
+        isOpen={isOpen}
+        onMouseEnter={() => setHovering(true)}
+        onMouseLeave={() => setHovering(false)}
+      />
     </span>
   )
 }
@@ -302,21 +319,29 @@ function RequirementTooltip({
   tooltipId,
   tooltipRef,
   pos,
+  isOpen,
+  onMouseEnter,
+  onMouseLeave,
 }: {
   req: SplitDiffRequirement
   targetRole: string
   tooltipId: string
   tooltipRef: RefObject<HTMLSpanElement>
   pos: TooltipPos | null
+  isOpen: boolean
+  onMouseEnter: () => void
+  onMouseLeave: () => void
 }) {
   const kind = requirementKindOf(req)
   return (
     <span
-      className="rv__sd-tooltip"
+      className={`rv__sd-tooltip${isOpen ? ' rv__sd-tooltip--open' : ''}`}
       role="tooltip"
       id={tooltipId}
       ref={tooltipRef}
       style={pos ? { top: pos.top, left: pos.left } : undefined}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
       <span className="rv__sd-tooltip-head">
         <span className={`rv__sd-tooltip-verdict rv__sd-tooltip-verdict--${req.verdict}`}>
