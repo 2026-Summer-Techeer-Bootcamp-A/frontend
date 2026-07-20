@@ -160,6 +160,16 @@ export function WorkflowStages({
 
   const totalOwned = ownedSkills.length
 
+  // 8: 매치 0%(보유와 겹치는 요구가 하나도 없음)여도 목표가 실제로 요구하는 스킬/개념/
+  // 자격증 자체는(0%는 "그중 하나도 안 가졌다"는 뜻일 뿐) buildStages가 이미 전부
+  // 단계 컬럼에 펼친다 — resolve()가 target마다 최소 depth 1을 매겨 depthBySkill에
+  // 넣으므로, 보유 선행 체인이 있어야만 렌더되도록 걸러지는 필터는 애초에 없다(아래
+  // hasAnyTargetData는 그걸 재확인하는 게 아니라, "그 필터링 결과가 우연히 비었다"와
+  // "이 목표 공고 자체가 요구 스킬/개념/자격증을 하나도 추출하지 못했다"를 구분하기
+  // 위한 것이다). 후자(진짜 데이터 공백)일 때만 정직한 안내를 보여준다 — 가짜 스킬을
+  // 지어내 채우지 않는다.
+  const hasAnyTargetData = targetSkills.length > 0 || targetCerts.length > 0 || targetConcepts.length > 0
+
   // 엣지 출발점인 보유 스킬만 시작 컬럼에 칩으로 노출한다(전체 보유 스킬을 다 늘어놓으면
   // 이 카드가 list 뷰와 중복되는 정보가 된다 — 여기선 "무엇에서 시작하는지"만 보여준다).
   const ownedEdgeSources = useMemo(() => {
@@ -482,6 +492,12 @@ export function WorkflowStages({
   // 미리 정확히 추정되므로(workflowLayout.ts의 estimateSkillCardHeight) DOM에서 실제로
   // 렌더되는 내용과 어긋나지 않게, 각 블록은 항상 estimateSkillCardHeight가 가정한 것과
   // 동일한 조건(hasReason/hasPayoff/hasAlt/hasDemand)으로만 나타난다.
+  // 3차: 카드(.wfs-scard)와 "먼저" 배지는 더 이상 한 요소가 아니다 — 배지가
+  // top:-8px로 카드 테두리 위에 살짝 걸치는데, 카드 자신은 내용을 가두려고
+  // overflow:hidden을 쓰므로 배지를 카드 안에 넣으면 그 -8px만큼 잘려 나갔다.
+  // 좌표만 갖는 슬롯(.wfs-node-slot, overflow 없음)을 감싸고 카드와 배지를 그
+  // 슬롯의 형제로 두면, 카드 안쪽 텍스트는 여전히 슬롯 크기를 넘지 않게 잘리되
+  // 배지는 카드 밖으로 걸쳐도 온전히 보인다.
   const renderSkillCard = (skill: string) => {
     const rect = renderLayout?.rectOf(skill)
     if (!rect) return null
@@ -492,27 +508,27 @@ export function WorkflowStages({
     const payoff = deltaBySkill.get(skill)
     const isFirst = skill === firstPriorityId
     return (
-      <div
-        key={skill}
-        style={{ position: 'absolute', left: rect.x, top: rect.y, width: rect.width, height: rect.height }}
-        className={`wfs-scard wfs-type--skill${isTarget ? ' wfs-scard--goal' : ' wfs-scard--via'}${isFirst ? ' wfs-scard--first' : ''}${isDimmed(skill) ? ' wfs-dim' : ''}`}
-        onMouseEnter={() => setHoveredId(skill)}
-        onMouseLeave={() => setHoveredId(null)}
-      >
-        {isFirst && <span className="wfs-first-badge">먼저</span>}
-        <div className="wfs-scard__head">
-          <span className="wfs-scard__name" title={skill}>{skill}</span>
-          <span className="wfs-chip-cat">{category}</span>
+      <div key={skill} className="wfs-node-slot" style={{ left: rect.x, top: rect.y, width: rect.width, height: rect.height }}>
+        <div
+          className={`wfs-scard wfs-type--skill${isTarget ? ' wfs-scard--goal' : ' wfs-scard--via'}${isFirst ? ' wfs-scard--first' : ''}${isDimmed(skill) ? ' wfs-dim' : ''}`}
+          onMouseEnter={() => setHoveredId(skill)}
+          onMouseLeave={() => setHoveredId(null)}
+        >
+          <div className="wfs-scard__head">
+            <span className="wfs-scard__name" title={skill}>{skill}</span>
+            <span className="wfs-chip-cat">{category}</span>
+          </div>
+          {/* 4: 대안(alternative)을 이미 보유했다는 신호는 카드 아래 묻히면 안 보이니
+              헤더 바로 아래로 올려 눈에 띄게 한다(정렬에서도 뒤로 밀리지만, 카드 자체는
+              눈에 잘 띄어야 "왜 뒤에 있는지" 이해가 된다). */}
+          {altBadge && <div className="wfs-scard__altbadge"><Check size={10} /><span className="wfs-scard__altbadge-text">{altBadge}</span></div>}
+          {reason && <div className="wfs-scard__reason">{reason}</div>}
+          {renderBadges(skill)}
+          {payoff !== undefined && payoff > 0 && (
+            <div className="wfs-scard__payoff">배우면 <b>+{payoff}건</b> 더 지원 가능</div>
+          )}
         </div>
-        {/* 4: 대안(alternative)을 이미 보유했다는 신호는 카드 아래 묻히면 안 보이니
-            헤더 바로 아래로 올려 눈에 띄게 한다(정렬에서도 뒤로 밀리지만, 카드 자체는
-            눈에 잘 띄어야 "왜 뒤에 있는지" 이해가 된다). */}
-        {altBadge && <div className="wfs-scard__altbadge"><Check size={10} />{altBadge}</div>}
-        {reason && <div className="wfs-scard__reason">{reason}</div>}
-        {renderBadges(skill)}
-        {payoff !== undefined && payoff > 0 && (
-          <div className="wfs-scard__payoff">배우면 <b>+{payoff}건</b> 더 지원 가능</div>
-        )}
+        {isFirst && <span className="wfs-first-badge">먼저</span>}
       </div>
     )
   }
@@ -527,19 +543,19 @@ export function WorkflowStages({
     const category = node.category ?? conceptCategoryFromPostings.get(node.concept)
     const isFirst = node.concept === firstPriorityId
     return (
-      <div
-        key={node.concept}
-        style={{ position: 'absolute', left: rect.x, top: rect.y, width: rect.width, height: rect.height }}
-        className={`wfs-scard wfs-scard--goal wfs-type--concept${isFirst ? ' wfs-scard--first' : ''}${isDimmed(node.concept) ? ' wfs-dim' : ''}`}
-        onMouseEnter={() => setHoveredId(node.concept)}
-        onMouseLeave={() => setHoveredId(null)}
-      >
-        {isFirst && <span className="wfs-first-badge">먼저</span>}
-        <div className="wfs-scard__head">
-          <span className="wfs-scard__name" title={node.concept}>{node.concept}</span>
-          {category && <span className="wfs-chip-cat">{category}</span>}
+      <div key={node.concept} className="wfs-node-slot" style={{ left: rect.x, top: rect.y, width: rect.width, height: rect.height }}>
+        <div
+          className={`wfs-scard wfs-scard--goal wfs-type--concept${isFirst ? ' wfs-scard--first' : ''}${isDimmed(node.concept) ? ' wfs-dim' : ''}`}
+          onMouseEnter={() => setHoveredId(node.concept)}
+          onMouseLeave={() => setHoveredId(null)}
+        >
+          <div className="wfs-scard__head">
+            <span className="wfs-scard__name" title={node.concept}>{node.concept}</span>
+            {category && <span className="wfs-chip-cat">{category}</span>}
+          </div>
+          {node.note && <div className="wfs-scard__reason">{node.note}</div>}
         </div>
-        {node.note && <div className="wfs-scard__reason">{node.note}</div>}
+        {isFirst && <span className="wfs-first-badge">먼저</span>}
       </div>
     )
   }
@@ -549,34 +565,32 @@ export function WorkflowStages({
     const rect = renderLayout?.rectOf(id)
     if (!rect) return null
     return (
-      <div
-        key={id}
-        style={{ position: 'absolute', left: rect.x, top: rect.y, width: rect.width, height: rect.height }}
-        className="wfs-bundle"
-      >
+      <div key={id} className="wfs-node-slot" style={{ left: rect.x, top: rect.y, width: rect.width, height: rect.height }}>
         <span className="wfs-bundle__label">{bundle.label}</span>
-        {bundle.skills.map((skill) => {
-          // N: 목표 1건일 때는 스킬 카드와 마찬가지로 "1개 공고" 반복을 뺀다.
-          const count = singleGoal ? 0 : countFor(skill, selectedPostings)
-          const requiredBy = singleGoal ? [] : requiredByFor(skill, selectedPostings)
-          return (
-            <div
-              key={skill}
-              className={`wfs-bundle__row${isDimmed(skill) ? ' wfs-dim' : ''}`}
-              onMouseEnter={() => setHoveredId(skill)}
-              onMouseLeave={() => setHoveredId(null)}
-            >
-              <span className="wfs-bundle__row-name">{skill}</span>
-              {count > 0 && <span className="wfs-badge wfs-badge--blue">{count}개 공고</span>}
-              {requiredBy.slice(0, 2).map((r) => (
-                <span key={r.company} className="wfs-avatar wfs-avatar--sm" style={{ background: avatarColor(r.company) }}>
-                  {r.company.slice(0, 1)}
-                </span>
-              ))}
-            </div>
-          )
-        })}
-        {bundle.note && <div className="wfs-bundle__note">{bundle.note}</div>}
+        <div className="wfs-bundle">
+          {bundle.skills.map((skill) => {
+            // N: 목표 1건일 때는 스킬 카드와 마찬가지로 "1개 공고" 반복을 뺀다.
+            const count = singleGoal ? 0 : countFor(skill, selectedPostings)
+            const requiredBy = singleGoal ? [] : requiredByFor(skill, selectedPostings)
+            return (
+              <div
+                key={skill}
+                className={`wfs-bundle__row${isDimmed(skill) ? ' wfs-dim' : ''}`}
+                onMouseEnter={() => setHoveredId(skill)}
+                onMouseLeave={() => setHoveredId(null)}
+              >
+                <span className="wfs-bundle__row-name">{skill}</span>
+                {count > 0 && <span className="wfs-badge wfs-badge--blue">{count}개 공고</span>}
+                {requiredBy.slice(0, 2).map((r) => (
+                  <span key={r.company} className="wfs-avatar wfs-avatar--sm" style={{ background: avatarColor(r.company) }}>
+                    {r.company.slice(0, 1)}
+                  </span>
+                ))}
+              </div>
+            )
+          })}
+          {bundle.note && <div className="wfs-bundle__note">{bundle.note}</div>}
+        </div>
       </div>
     )
   }
@@ -771,6 +785,14 @@ export function WorkflowStages({
               )
             })()}
       </div>
+      {/* 8: 이 목표 공고가 요구 스킬/개념/자격증을 하나도 추출하지 못한, 진짜 데이터
+          공백일 때만 보여주는 정직한 안내 — 요구 데이터가 하나라도 있으면 위 컬럼들이
+          전부 펼쳐지므로 이 블록은 그때는 렌더되지 않는다. */}
+      {!hasAnyTargetData && (
+        <div className="wfs-no-data-note">
+          이 목표는 아직 분석된 요구 기술 데이터가 없어요. 공고에서 요구 스킬을 추출하지 못했어요.
+        </div>
+      )}
     </div>
   )
 }
