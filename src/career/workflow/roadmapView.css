@@ -308,11 +308,14 @@
   color: #fff;
   border: 1px solid rgba(0, 0, 0, 0.08);
 }
+/* milestone(주황 깃발) — "이미 보유함"이 아니라 "아직 안 했지만 해야 할 핵심
+   목표"를 뜻한다(owned면 이 상태 대신 항상 초록 체크). 그린(보유/해금)·앰버(중급
+   난이도)와 헷갈리지 않게 확실히 다른 주황(#e0602e) 계열 하나로 고정한다. */
 .rmv-medallion--milestone {
-  background: radial-gradient(circle at 32% 28%, #f4d488, #c99a34);
+  background: radial-gradient(circle at 32% 28%, #f08a5f, #e0602e);
   color: #fff;
-  border: 1px solid rgba(180, 138, 40, 0.5);
-  box-shadow: 0 0 0 3px rgba(201, 154, 52, 0.18);
+  border: 1px solid rgba(180, 78, 30, 0.5);
+  box-shadow: 0 0 0 3px rgba(224, 96, 46, 0.18);
 }
 .rmv-medallion--unlockable {
   background: #fff;
@@ -402,6 +405,14 @@
   font-size: 9.5px;
   line-height: 1.4;
   color: var(--c-muted, #7c7f88);
+}
+/* 잠긴 노드 힌트 — "이걸 먼저 해야 열린다"를 한 줄로. 자물쇠 메달리온과 같은
+   무채색 회색 톤을 써서 난이도 근거(뮤트 그레이)나 상태 색과 섞이지 않게 절제한다. */
+.rmv-node__prereqhint {
+  margin: 0;
+  font-size: 9.5px;
+  line-height: 1.4;
+  color: #9a9ca3;
 }
 .rmv-node__targetbadge {
   display: inline-flex;
@@ -549,6 +560,13 @@
 .rmv-dock__chip--citation {
   background: #fafafa;
   color: var(--c-muted, #6b6f78);
+}
+/* 먼저 필요한 것 칩 — 자물쇠 메달리온과 같은 무채색 회색으로, 이미 있는 리소스/
+   근거 칩과 형태는 같되 톤만 낮춰 "아직 못 한 것"이라는 느낌을 준다. */
+.rmv-dock__chip--prereq {
+  background: #eceef1;
+  border-color: #d4d6db;
+  color: #7c7f88;
 }
 .rmv-dock__chipkind {
   font-style: normal;

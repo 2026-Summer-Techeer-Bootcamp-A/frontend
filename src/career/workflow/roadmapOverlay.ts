@@ -162,6 +162,11 @@ export type RoadmapOverlay = {
   sectionProgress: Map<string, { owned: number; total: number; achieved: boolean }>
   difficultyById: Map<string, NodeDifficulty>
   milestoneEligibleIds: Set<string>
+  // 잠긴 이유를 사람이 읽을 수 있게 — 노드별 "직접 선행" 중 아직 owned가 아닌
+  // 것들의 라벨만 모은다(체인 전체를 거슬러 올라가지 않는다. 그건 depth가 하는
+  // 일이고, 여긴 "지금 당장 뭘 먼저 해야 하는지"만 보여주면 된다). locked가 아닌
+  // 노드도 계산은 되지만(prereqs가 있으면), 화면에서는 locked일 때만 쓴다.
+  unmetPrereqLabelsById: Map<string, string[]>
 }
 
 // cleared(node) — 그 노드의 prereqs가 전부 "충족"됐는지. skill/cert 타입 prereq는
@@ -226,6 +231,22 @@ function buildStatus(
   return statusById
 }
 
+// 노드별 "직접 선행" 중 아직 owned가 아닌 것들의 라벨만 모은다 — id로는 사용자가
+// 뭘 먼저 해야 하는지 알 수 없으니 라벨로 바꿔야 하는데, 그 매핑은 이 트랙의 노드
+// 목록 하나로 충분하다(다른 트랙 참조 불필요). 참조 무결성이 깨진 방어적 경우
+// (prereq id가 노드 목록에 없음)에는 라벨 대신 id 문자열을 그대로 쓴다.
+function buildUnmetPrereqLabelsById(nodes: RoadmapNode[], statusById: Map<string, NodeStatus>): Map<string, string[]> {
+  const labelById = new Map(nodes.map((n) => [n.id, n.label]))
+  const result = new Map<string, string[]>()
+  nodes.forEach((node) => {
+    const unmet = node.prereqs
+      .filter((prereqId) => statusById.get(prereqId) !== 'owned')
+      .map((prereqId) => labelById.get(prereqId) ?? prereqId)
+    if (unmet.length > 0) result.set(node.id, unmet)
+  })
+  return result
+}
+
 function buildHighlighted(nodes: RoadmapNode[], targetSkills: string[], targetConcepts: string[]): Set<string> {
   const targetSkillSet = new Set(targetSkills)
   const targetConceptSet = new Set(targetConcepts)
@@ -267,6 +288,7 @@ export function buildRoadmapOverlay(
 
   const difficultyById = computeNodeDifficulty(track.nodes)
   const milestoneEligibleIds = buildMilestoneEligibleIds(track.nodes)
+  const unmetPrereqLabelsById = buildUnmetPrereqLabelsById(track.nodes, statusById)
 
-  return { statusById, highlightedIds, progress, sectionProgress, difficultyById, milestoneEligibleIds }
+  return { statusById, highlightedIds, progress, sectionProgress, difficultyById, milestoneEligibleIds, unmetPrereqLabelsById }
 }
