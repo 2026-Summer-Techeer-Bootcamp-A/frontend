@@ -510,8 +510,8 @@
 .rmv-dock {
   box-sizing: border-box;
   flex: none;
-  width: 300px;
-  max-width: 44%;
+  width: 320px;
+  max-width: 46%;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -590,13 +590,23 @@
   padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
+/* 선행/다음 단계/난이도 근거/왜 배우나/개념 요약/리소스/미니 프로젝트/근거까지
+   섹션이 최대 8개로 늘어난 만큼(폴백이 항상 꽉 찬 내용을 채우므로), 섹션 사이에
+   얇은 점선 구분선을 둬서 스크롤 중에도 어디부터 다음 섹션인지 눈에 들어오게
+   한다. 첫 섹션에는 위 여백이 필요 없다. */
 .rmv-dock__section {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line, #e6e9ef);
+}
+.rmv-dock__section:first-child {
+  padding-top: 0;
+  border-top: none;
 }
 .rmv-dock__sectiontitle {
   margin: 0;
@@ -635,12 +645,26 @@
   background: #fafafa;
   color: var(--c-muted, #6b6f78);
 }
-/* 먼저 필요한 것 칩 — 자물쇠 메달리온과 같은 무채색 회색으로, 이미 있는 리소스/
-   근거 칩과 형태는 같되 톤만 낮춰 "아직 못 한 것"이라는 느낌을 준다. */
+/* 선행 칩 — 자물쇠 메달리온과 같은 무채색 회색으로, 이미 있는 리소스/근거 칩과
+   형태는 같되 톤만 낮춰 "아직 못 한 것"이라는 느낌을 준다(met === false). */
 .rmv-dock__chip--prereq {
   background: #eceef1;
   border-color: #d4d6db;
   color: #7c7f88;
+}
+/* 이미 충족된 선행 칩 — 보유 상태 그린 팔레트를 그대로 가져와 "이건 이미 끝냈다"를
+   한눈에 구분한다. */
+.rmv-dock__chip--met {
+  background: rgba(31, 157, 87, 0.1);
+  border-color: rgba(31, 157, 87, 0.3);
+  color: #1f9d57;
+}
+/* 다음 단계 칩 — 캔버스의 주황 선(선행 관계 엣지)과 같은 색 계열로, 이 노드에서
+   나가는 연결이라는 걸 색으로도 짐작할 수 있게 한다. */
+.rmv-dock__chip--next {
+  background: rgba(224, 96, 46, 0.1);
+  border-color: rgba(224, 96, 46, 0.3);
+  color: #b3492f;
 }
 .rmv-dock__chipkind {
   font-style: normal;

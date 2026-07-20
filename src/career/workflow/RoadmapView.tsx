@@ -13,7 +13,7 @@ import {
   type NodeStatus,
 } from './roadmapOverlay'
 import { dashboardApi } from '../api'
-import type { RoadmapNodeContentResponse } from '../api'
+import type { RoadmapNodeContentResource, RoadmapNodeContentResponse } from '../api'
 import { getAuthToken } from '../authStore'
 import { SegmentedControl } from '../kit'
 import './roadmapView.css'
@@ -65,11 +65,64 @@ type RoadmapViewMode = 'recommended' | 'difficulty'
 
 // 노드 상세 도크 — roadmap.sh가 노드 클릭 시 자료를 펼치는 UX를 따라 한다. 콘텐츠는
 // RAG 엔드포인트(dashboardApi.roadmapNodeContent)에서 받아오되, 클릭 즉시는 그 노드의
-// 정적 note로 채운 폴백을 먼저 보여주고 응답이 오면 교체한다 — 요청이 느리거나
-// 실패해도(엔드포인트 미배선 포함) 화면은 항상 뭔가를 보여주고 절대 크래시하지
-// 않는다(콘솔에만 폴백 사유를 남긴다).
-function buildFallbackNodeContent(node: RoadmapNode): RoadmapNodeContentResponse {
-  return { why: node.note, summary: '', resources: [], project: '', citations: [] }
+// 정적 note + 타입/섹션 기반으로 채운 폴백을 먼저 보여주고 응답이 오면 교체한다 —
+// 요청이 느리거나 실패해도(엔드포인트 미배선 포함, 게스트 프리뷰 포함) 도크가 빈
+// 한 줄이 아니라 항상 꽉 찬 내용을 보여주고 절대 크래시하지 않는다(콘솔에만 폴백
+// 사유를 남긴다).
+//
+// 지어낸 과장된 수치나 실제로 확인 안 된 사례는 절대 넣지 않는다 — note와 타입/
+// 섹션이라는 이미 정본 데이터에 있는 사실만 조합해 문장을 채운다. 노드마다 label/
+// note/section이 다르므로 같은 템플릿이어도 결과 문장은 노드마다 실제로 달라진다.
+const TYPE_WHY_TEMPLATE: Record<RoadmapNode['type'], (label: string, sectionTitle: string) => string> = {
+  skill: (label, sectionTitle) =>
+    `${label} 항목은 ${sectionTitle} 단계에서 실무 코드에 바로 적용하는 기술이다. 채용 공고에서 요구 기술로 자주 명시되는 항목이라, 이 로드맵의 다음 단계로 넘어가기 전에 직접 코드를 짜보며 손에 익혀두는 편이 좋다.`,
+  concept: (label, sectionTitle) =>
+    `${label} 항목은 ${sectionTitle} 단계에서 짚고 넘어가야 하는 개념이다. 이력서 스킬 항목으로 바로 드러나지는 않지만, 이 단계 이후 실무 기술을 다룰 때 전제로 요구되는 배경 지식이라 개념 자체를 건너뛰면 다음 항목의 이해가 얕아지기 쉽다.`,
+  cert: (label, sectionTitle) =>
+    `${label} 항목은 ${sectionTitle} 단계에서 실력을 객관적으로 증명하는 자격증이다. 시험 범위가 실무 지식과 겹치는 부분이 많아 이론 정리와 기출 문제 풀이를 함께 진행하면 준비 기간을 줄일 수 있다.`,
+}
+
+const TYPE_SUMMARY_TEMPLATE: Record<RoadmapNode['type'], (label: string) => string> = {
+  skill: (label) =>
+    `${label}의 핵심은 문법 자체보다 어떤 문제를 해결하려고 나온 기술인지를 아는 것이다. 왜 필요한지, 어떤 상황에서 쓰는지를 먼저 이해하면 이후 실습이 훨씬 수월해진다.`,
+  concept: (label) =>
+    `${label}은 특정 기술이 아니라 여러 기술이 공유하는 사고방식이다. 정의를 외우기보다 이 개념이 등장한 배경과 해결하려는 문제를 이해하는 쪽이 오래 남는다.`,
+  cert: (label) =>
+    `${label} 시험은 정해진 범위의 지식을 정해진 기준으로 검증한다. 실무 경험이 있어도 시험에서만 다루는 세부 규정이나 절차는 별도로 정리해야 한다.`,
+}
+
+const TYPE_RESOURCES_TEMPLATE: Record<RoadmapNode['type'], (label: string) => RoadmapNodeContentResource[]> = {
+  skill: (label) => [
+    { label: `${label} 공식 문서`, kind: '문서' },
+    { label: `${label} 핵심 개념 정리`, kind: '요약' },
+    { label: `${label} 실습 튜토리얼`, kind: '튜토리얼' },
+  ],
+  concept: (label) => [
+    { label: `${label} 개념 정리`, kind: '요약' },
+    { label: `${label} 도입 사례 분석`, kind: '사례' },
+  ],
+  cert: (label) => [
+    { label: `${label} 시험 가이드`, kind: '가이드' },
+    { label: `${label} 기출 문제`, kind: '기출' },
+  ],
+}
+
+const TYPE_PROJECT_TEMPLATE: Record<RoadmapNode['type'], (label: string, sectionTitle: string) => string> = {
+  skill: (label, sectionTitle) => `${sectionTitle} 범위 안에서 ${label}만 사용해 동작하는 작은 예제를 직접 만들어본다.`,
+  concept: (label) => `${label} 개념이 실제로 적용된 사례를 하나 골라 어떤 문제를 어떻게 풀었는지 정리해본다.`,
+  cert: (label) => `${label} 기출 문제를 일정 분량 풀어보고 자주 틀리는 영역을 따로 정리해본다.`,
+}
+
+function buildFallbackNodeContent(node: RoadmapNode, sectionTitle: string): RoadmapNodeContentResponse {
+  const note = node.note?.trim()
+  const why = [note, TYPE_WHY_TEMPLATE[node.type](node.label, sectionTitle)].filter(Boolean).join(' ')
+  return {
+    why,
+    summary: TYPE_SUMMARY_TEMPLATE[node.type](node.label),
+    resources: TYPE_RESOURCES_TEMPLATE[node.type](node.label),
+    project: TYPE_PROJECT_TEMPLATE[node.type](node.label, sectionTitle),
+    citations: [],
+  }
 }
 
 // 잠긴 노드 카드에 보여줄 힌트 문구 — 라벨이 많으면 앞 2개만 보이고 나머지는
@@ -90,8 +143,12 @@ type DockState = {
   // 그 노드의 난이도(백엔드 객관 보정이 도착했으면 그 값, 아니면 선행 깊이 폴백).
   // basis가 있을 때만(난이도순 뷰에서만) 도크에 근거 문장을 보여준다.
   difficulty?: NodeDifficulty
-  // 잠긴 노드일 때만 채워지는 미충족 직접 선행 라벨(overlay.unmetPrereqLabelsById).
-  unmetPrereqs?: string[]
+  // 이 노드의 직접 선행 전부(주황 선이 이 노드로 들어오는 쪽) — 도크 "선행" 섹션이
+  // met 여부와 무관하게 전부 칩으로 나열한다(met는 칩 스타일만 구분한다).
+  prereqs: { id: string; label: string; met: boolean }[]
+  // 이 노드를 직접 선행으로 삼는 노드들(주황 선이 이 노드에서 나가는 쪽) — 도크
+  // "다음 단계" 섹션이 칩으로 나열한다.
+  dependents: { id: string; label: string }[]
 }
 
 // 학습함 체크 — 트랙/세션을 넘나들며 남는 소소한 진행 표시라 localStorage에 직접
@@ -236,6 +293,27 @@ export function RoadmapView({
 
   const sortedSections = useMemo(() => [...track.sections].sort((a, b) => a.order - b.order), [track])
 
+  // 섹션 id -> 제목. 도크 폴백 콘텐츠(buildFallbackNodeContent)가 "OO 단계"라는
+  // 문맥을 문장에 넣을 때 쓴다.
+  const sectionTitleById = useMemo(() => new Map(track.sections.map((s) => [s.id, s.title])), [track])
+
+  // 노드 간 연결 관계 인덱스 — 도크의 "선행"/"다음 단계" 섹션이 그리는 것이 바로
+  // 캔버스의 주황 선(prereq 엣지)이 잇는 것들이다. labelById는 id -> 라벨(선행 칩을
+  // 만들 때), dependentsById는 "이 노드를 직접 선행으로 삼는 노드들"(엣지가 이
+  // 노드에서 나가는 쪽, 즉 "다음 단계")을 모은다.
+  const nodeIndex = useMemo(() => {
+    const labelById = new Map(track.nodes.map((n) => [n.id, n.label]))
+    const dependentsById = new Map<string, { id: string; label: string }[]>()
+    track.nodes.forEach((n) => {
+      n.prereqs.forEach((prereqId) => {
+        const list = dependentsById.get(prereqId) ?? []
+        list.push({ id: n.id, label: n.label })
+        dependentsById.set(prereqId, list)
+      })
+    })
+    return { labelById, dependentsById }
+  }, [track])
+
   // 뷰 모드 — 추천순(기본, 섹션 마일스톤)과 난이도순(prereqDepth 티어 마일스톤).
   // 백본 데이터와 노드 콘텐츠는 완전히 같고, 이 상태는 오직 "노드를 어떤 마일스톤
   // 아래로 묶어 어떤 순서로 늘어놓을지"만 바꾼다.
@@ -303,8 +381,17 @@ export function RoadmapView({
     // 난이도(백엔드 객관 보정 또는 선행 깊이 폴백)를 도크에도 실어 basis 근거 문장을
     // 함께 보여준다 — effectiveDifficultyById는 이미 두 경우를 알아서 갈라 준다.
     const difficulty = effectiveDifficultyById.get(node.id)
-    const unmetPrereqs = status === 'locked' ? overlay.unmetPrereqLabelsById.get(node.id) : undefined
-    setDock({ node, status, content: buildFallbackNodeContent(node), loading: true, difficulty, unmetPrereqs })
+    // 이 노드에 걸린 주황 선 관계 — 선행(들어오는 선)과 다음 단계(나가는 선)를
+    // 도크에 그대로 실어 보낸다. nodeIndex는 [track]에만 반응하니 트랙을 바꾸지
+    // 않는 한 재계산되지 않는다.
+    const prereqs = node.prereqs.map((prereqId) => ({
+      id: prereqId,
+      label: nodeIndex.labelById.get(prereqId) ?? prereqId,
+      met: overlay.statusById.get(prereqId) === 'owned',
+    }))
+    const dependents = nodeIndex.dependentsById.get(node.id) ?? []
+    const sectionTitle = sectionTitleById.get(node.section) ?? node.section
+    setDock({ node, status, content: buildFallbackNodeContent(node, sectionTitle), loading: true, difficulty, prereqs, dependents })
 
     // 이 요청이 여전히 "최신"인지(컴포넌트가 살아있고, 그 사이 다른 노드를 클릭해
     // fetchSeqRef가 앞서가지 않았는지) — 성공/실패 두 경로와 finally가 모두 이 한
@@ -318,7 +405,7 @@ export function RoadmapView({
       )
       .then((res) => {
         if (isStale()) return
-        setDock({ node, status, content: res, loading: false, difficulty, unmetPrereqs })
+        setDock({ node, status, content: res, loading: false, difficulty, prereqs, dependents })
       })
       .catch((err) => {
         // 엔드포인트가 아직 없거나 요청이 404/에러로 실패해도 데모가 끊기면 안 된다 —
@@ -701,14 +788,33 @@ export function RoadmapView({
           {dock.loading && <div className="rmv-dock__loading">학습 콘텐츠를 불러오는 중이에요…</div>}
 
           <div className="rmv-dock__body">
-            {/* 먼저 필요한 것 — 잠긴 노드일 때만, 미충족 직접 선행 라벨을 칩으로
-                보여준다. 카드의 한 줄 힌트보다 여기서는 생략 없이 전부 나열한다. */}
-            {dock.status === 'locked' && dock.unmetPrereqs && dock.unmetPrereqs.length > 0 && (
+            {/* 선행/다음 단계 — 캔버스에서 hover해야만 보이는 주황 선(prereq 엣지)이
+                잇는 관계를 도크를 열면 텍스트로도 볼 수 있게 한다. 선행은 이 노드로
+                들어오는 선(node.prereqs) 전부를 met 여부와 무관하게 나열하고, 칩
+                스타일만 충족 여부로 구분한다(met=완료 톤, 미충족=회색 톤 — 카드의
+                "달성 필요" 힌트와 같은 톤). 다음 단계는 이 노드에서 나가는 선(이
+                노드를 직접 선행으로 삼는 노드들)이다. */}
+            {dock.prereqs.length > 0 && (
               <section className="rmv-dock__section">
-                <h4 className="rmv-dock__sectiontitle">먼저 필요한 것</h4>
+                <h4 className="rmv-dock__sectiontitle">선행</h4>
                 <div className="rmv-dock__chips">
-                  {dock.unmetPrereqs.map((label, i) => (
-                    <span key={`${label}-${i}`} className="rmv-dock__chip rmv-dock__chip--prereq">{label}</span>
+                  {dock.prereqs.map((p) => (
+                    <span
+                      key={p.id}
+                      className={`rmv-dock__chip ${p.met ? 'rmv-dock__chip--met' : 'rmv-dock__chip--prereq'}`}
+                    >
+                      {p.label}
+                    </span>
+                  ))}
+                </div>
+              </section>
+            )}
+            {dock.dependents.length > 0 && (
+              <section className="rmv-dock__section">
+                <h4 className="rmv-dock__sectiontitle">다음 단계</h4>
+                <div className="rmv-dock__chips">
+                  {dock.dependents.map((d) => (
+                    <span key={d.id} className="rmv-dock__chip rmv-dock__chip--next">{d.label}</span>
                   ))}
                 </div>
               </section>
