@@ -395,6 +395,14 @@
   background: #f2f3f5;
   color: var(--c-muted, #6b6f78);
 }
+/* 난이도 객관 근거 — 백엔드가 매긴 티어의 근거 문장(공고 평균 요구 경력 + 수요).
+   뱃지 바로 아래 카드 안에서 조용히 한두 줄로만 보인다(prereqbadge와 같은 톤). */
+.rmv-node__basis {
+  margin: 0;
+  font-size: 9.5px;
+  line-height: 1.4;
+  color: var(--c-muted, #7c7f88);
+}
 .rmv-node__targetbadge {
   display: inline-flex;
   align-items: center;
