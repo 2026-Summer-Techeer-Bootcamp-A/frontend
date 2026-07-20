@@ -290,6 +290,30 @@ export type RoadmapEnrichResponse = {
   quick_win: string
   steps: RoadmapEnrichStep[]
 }
+// 로드맵 노드 상세 도크 — 노드 클릭 시 그 노드의 학습 콘텐츠(왜 배우나/개념 요약/
+// 리소스/미니 프로젝트/근거 출처)를 RAG 엔드포인트에서 받는다. request가 /api/v1을
+// 붙이므로 여기선 그 뒤만 둔다. 실제 호출은 /api/v1/match/roadmap/node-content.
+// roadmapEnrich와 같은 이유로 인증 여부와 무관하게(비로그인 프리뷰에서도) 호출하고,
+// 실패/미배선 시 호출부(RoadmapView.tsx)가 노드의 정적 note로 만든 폴백으로 이어받는다.
+export const ROADMAP_NODE_CONTENT_PATH = '/match/roadmap/node-content'
+
+export type RoadmapNodeContentRequest = {
+  node_id: string
+  node_label: string
+  node_type: 'skill' | 'concept' | 'cert'
+  section: string
+  goal_company?: string
+  goal_title?: string
+}
+export type RoadmapNodeContentResource = { label: string; kind: string }
+export type RoadmapNodeContentResponse = {
+  why: string
+  summary: string
+  resources: RoadmapNodeContentResource[]
+  project: string
+  citations: string[]
+}
+
 export const dashboardApi = {
   coverage: (id: Identity, position?: string) =>
     request<CoverageData>(path('/match/coverage', personal(id, position)), auth(id.token)),
@@ -322,6 +346,13 @@ export const dashboardApi = {
   // 실패 시 준비된 폴백으로 이어받는다).
   roadmapEnrich: (body: RoadmapEnrichRequest, token?: string | null) =>
     request<RoadmapEnrichResponse>(ROADMAP_ENRICH_PATH, {
+      method: 'POST',
+      body: JSON.stringify(body),
+      ...(token ? auth(token) : {}),
+    }),
+  // 로드맵 노드 상세 도크 콘텐츠 — 위 ROADMAP_NODE_CONTENT_PATH 참고.
+  roadmapNodeContent: (body: RoadmapNodeContentRequest, token?: string | null) =>
+    request<RoadmapNodeContentResponse>(ROADMAP_NODE_CONTENT_PATH, {
       method: 'POST',
       body: JSON.stringify(body),
       ...(token ? auth(token) : {}),
