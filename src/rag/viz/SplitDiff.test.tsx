@@ -1,6 +1,19 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { SplitDiff } from './SplitDiff'
 
+// 툴팁은 SplitDiff.tsx에서 React.createPortal로 document.body에 직접 렌더된다(어시스턴트
+// 워크스페이스 라우트의 overflow: hidden 조상과, 페이지 전환 애니메이션이 진입 중 만드는
+// position: fixed 컨테이닝 블록을 모두 벗어나기 위해서다). 그래서 더 이상 하이라이트
+// span(hl)의 DOM 자식이 아니고, within(hl)로는 찾을 수 없다 — hl의 aria-describedby가
+// 가리키는 id로 document 전역에서 찾는다(스크린 리더가 연결을 읽는 방식과 동일하다).
+function tooltipFor(hl: HTMLElement): HTMLElement {
+  const id = hl.getAttribute('aria-describedby')
+  if (!id) throw new Error('highlight span is missing aria-describedby')
+  const tooltip = document.getElementById(id)
+  if (!tooltip) throw new Error(`tooltip #${id} not found in document (expected portaled to body)`)
+  return tooltip
+}
+
 const jobVsResumePayload = {
   base_role: '공고',
   base_title: '플랫폼 백엔드',
@@ -110,8 +123,9 @@ test('highlighted phrase is keyboard focusable and shows a tooltip with verdict/
   expect(partialHl).toHaveAttribute('tabIndex', '0')
   fireEvent.focus(partialHl)
 
-  const tooltip = within(partialHl).getByRole('tooltip')
+  const tooltip = tooltipFor(partialHl)
   expect(tooltip).toBeInTheDocument()
+  expect(tooltip).toHaveAttribute('role', 'tooltip')
   expect(within(tooltip).getByText('애매')).toBeInTheDocument()
   expect(within(tooltip).getByText('우대요건')).toBeInTheDocument()
   expect(within(tooltip).getByText('ITIL 프로세스 이해')).toBeInTheDocument()
@@ -126,7 +140,7 @@ test('tooltip honestly shows a red no-evidence message when the target has no ma
   const gapHl = screen.getByTestId('sd-hl-R6')
   fireEvent.focus(gapHl)
 
-  const missing = within(gapHl).getByText('내 이력서에서 근거를 찾지 못했어요')
+  const missing = within(tooltipFor(gapHl)).getByText('내 이력서에서 근거를 찾지 못했어요')
   expect(missing).toBeInTheDocument()
   expect(missing).toHaveClass('rv__sd-tooltip-quote--missing')
 })
@@ -135,7 +149,7 @@ test('tooltip omits the 보완 row when a requirement has no next step', () => {
   render(<SplitDiff payload={jobVsResumePayload as any} />)
   const metHl = screen.getByTestId('sd-hl-R1')
   fireEvent.focus(metHl)
-  expect(within(metHl).queryByText('보완')).not.toBeInTheDocument()
+  expect(within(tooltipFor(metHl)).queryByText('보완')).not.toBeInTheDocument()
 })
 
 test('renders posting vs posting payload through the same component, including degraded note and its own target-role evidence label', () => {
@@ -147,8 +161,9 @@ test('renders posting vs posting payload through the same component, including d
 
   const gapHl = screen.getByTestId('sd-hl-B4')
   fireEvent.focus(gapHl)
-  expect(within(gapHl).getByText('비교 공고 근거')).toBeInTheDocument()
-  expect(within(gapHl).getByText('비교 공고에서 근거를 찾지 못했어요')).toBeInTheDocument()
+  const tooltip = tooltipFor(gapHl)
+  expect(within(tooltip).getByText('비교 공고 근거')).toBeInTheDocument()
+  expect(within(tooltip).getByText('비교 공고에서 근거를 찾지 못했어요')).toBeInTheDocument()
 })
 
 test('renders the full posting description with inline highlights when base_description matches every source_quote', () => {
