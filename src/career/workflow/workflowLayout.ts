@@ -32,6 +32,15 @@ export const ROW_GAP = 14
 // 한 줄만 있는 가장 흔한 카드"가 대략 56~76px 사이에 오는 것이다(56+20(헤더)+8(gap)+
 // 18(수요줄) = 66px). hasDemand가 꺼지면(목표 1건일 때 수요 줄 자체를 안 그린다) 더
 // 낮아질 수 있어 MIN_SKILL_CARD_H를 바닥으로만 둔다.
+//
+// 2026-07-20(3차): 위 압축 이후 실제 렌더에서 카테고리 태그·번들 여러 줄·이유 줄이
+// 잘려 나오는 버그가 있었다. 원인은 이 카드들의 DOM 높이가 CSS로 자연스럽게 정해지는
+// 게 아니라 layoutStages가 계산한 값이 인라인 style(height)로 그대로 강제된다는
+// 점이다(WorkflowStages.tsx가 rect.height를 그대로 꽂는다) — 그 값이 실제 CSS로
+// 렌더될 내용보다 조금이라도 작으면 카드의 overflow:hidden이 나머지를 그냥 잘라
+// 버린다. 아래 블록별 상수는 이제 workflowMap.css가 명시적으로 고정하는 px 값
+// (height/line-height, 줄바꿈 없는 한 줄 텍스트)과 1:1로 맞춘다 — 한쪽만 바뀌면
+// 반드시 잘리거나 빈 공간이 생기므로 두 파일은 항상 같이 고친다.
 export const SKILL_CARD_PAD_V = 20
 export const SKILL_CARD_HEADER_H = 20
 export const SKILL_CARD_GAP = 8
@@ -43,33 +52,44 @@ export const MIN_SKILL_CARD_H = 56
 
 export function estimateSkillCardHeight(opts: { hasReason: boolean; hasPayoff: boolean; hasAlt: boolean; hasDemand?: boolean }): number {
   let h = SKILL_CARD_PAD_V + SKILL_CARD_HEADER_H
+  if (opts.hasAlt) h += SKILL_CARD_GAP + SKILL_CARD_ALT_H
   if (opts.hasReason) h += SKILL_CARD_GAP + SKILL_CARD_REASON_H
   // N: 목표 공고가 1건뿐이면 "1개 공고 요구" 줄 자체가 정보량이 0이라
   // WorkflowStages.tsx가 hasDemand를 false로 넘겨 이 블록을 아예 뺀다(기본값은 true라
   // 기존 다중 목표 동작은 그대로다).
   if (opts.hasDemand ?? true) h += SKILL_CARD_GAP + SKILL_CARD_DEMAND_H
   if (opts.hasPayoff) h += SKILL_CARD_GAP + SKILL_CARD_PAYOFF_H
-  if (opts.hasAlt) h += SKILL_CARD_GAP + SKILL_CARD_ALT_H
   return Math.max(h, MIN_SKILL_CARD_H)
 }
 
 export const BUNDLE_PAD_V = 18
-export const BUNDLE_ROW_H = 22
+// 3차: 22px는 12px 폰트의 브라우저 기본 line-height(폰트마다 1.15~1.3 사이로 들쭉날쭉)
+// 를 가정했는데, workflowMap.css가 이제 줄당 line-height를 16px로 명시 고정하면서
+// 실제 필요한 값(16 + 위아래 padding 4px씩 = 24)보다 작아졌다 — 번들 멤버가 3~4줄만
+// 돼도 마지막 한두 줄이 박스 아래로 밀려 잘렸다.
+export const BUNDLE_ROW_H = 24
+// 3차: note(예: "iOS에 필요해서 추가했어요" 류 한 줄 설명)는 margin-top:4px로 위 행과
+// 떨어지는데, 이 4px 간격이 예전엔 높이 추정에 아예 빠져 있었다 — 노트가 있는 번들마다
+// 4px씩 실제보다 낮게 잡혀 있었다.
+export const BUNDLE_NOTE_GAP = 4
 export const BUNDLE_NOTE_H = 16
 export const MIN_BUNDLE_H = 64
 
 export function estimateBundleHeight(memberCount: number, hasNote: boolean): number {
-  const h = BUNDLE_PAD_V + memberCount * BUNDLE_ROW_H + (hasNote ? BUNDLE_NOTE_H : 0)
+  const h = BUNDLE_PAD_V + memberCount * BUNDLE_ROW_H + (hasNote ? BUNDLE_NOTE_GAP + BUNDLE_NOTE_H : 0)
   return Math.max(h, MIN_BUNDLE_H)
 }
 
 export const CERT_CARD_PAD_V = 16
 export const CERT_CARD_HEADER_H = 18
+// 3차: 번들 노트와 같은 이유로 자격증 카드의 note도 margin-top:4px 간격이 추정에서
+// 빠져 있었다.
+export const CERT_CARD_NOTE_GAP = 4
 export const CERT_CARD_NOTE_H = 16
 export const MIN_CERT_CARD_H = 56
 
 export function estimateCertCardHeight(hasNote: boolean): number {
-  const h = CERT_CARD_PAD_V + CERT_CARD_HEADER_H + (hasNote ? CERT_CARD_NOTE_H : 0)
+  const h = CERT_CARD_PAD_V + CERT_CARD_HEADER_H + (hasNote ? CERT_CARD_NOTE_GAP + CERT_CARD_NOTE_H : 0)
   return Math.max(h, MIN_CERT_CARD_H)
 }
 

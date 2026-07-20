@@ -8,6 +8,17 @@
   min-height: 0;
 }
 
+/* 6: 뷰 토글·AI 보강·추천·크게 보기 버튼을 위젯 헤더 툴바(SectionHeader의 right
+   슬롯) 한 줄에 정렬한다 — 캔버스 위에 떠 있는 별도 컨트롤이 아니라 헤더 소속임을
+   레이아웃으로도 분명히 한다. flex-wrap:nowrap이라 좁아져도 두 줄로 안 깨진다. */
+.wfm-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  flex: none;
+}
+
 /* 시안 1: 목표 선택은 캔버스 위에 겹치는 드로어 대신 위젯 헤더 바로 아래 상시
    노출되는 앵커 바(.wfm-goal-anchorbar) + 옆 팝오버(.wfm-goal-popover)로 옮겼다.
    다이어그램(.wfm-graph-pane)은 그 아래 온전한 영역을 그대로 쓴다.
@@ -743,12 +754,12 @@
    목록이라, 카드 컴팩트 영역에서는 wfm-list-pane이, 크게 보기 모달에서는
    wfm-modal__list가 스크롤 컨테이너를 맡는다. 안쪽 wfm-list-* 클래스는 두 컨테이너
    어디에 들어가든 동일하게 동작한다. */
+/* 5: 스테이지 pane과 같은 이유로 자체 테두리·배경을 없애 바깥 위젯 카드와 하나의
+   면으로 통일한다. */
 .wfm-list-pane {
+  box-sizing: border-box;
   overflow-y: auto;
-  border: 1px solid var(--line, #e6e9ef);
-  border-radius: 12px;
-  background: #fbfbfc;
-  padding: 12px 14px;
+  padding: 4px 0;
 }
 .wfm-modal__list {
   flex: 1;
@@ -995,6 +1006,18 @@
   padding: 8px 2px;
 }
 
+/* 8: 목표 공고가 요구 스킬/개념/자격증을 하나도 추출하지 못한 진짜 데이터 공백일
+   때만 보이는 안내 — wfs-canvas(절대 좌표 카드들) 밖 일반 플로우에 둔다. */
+.wfs-no-data-note {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f7f7f8;
+  border: 1px dashed var(--line, #e6e9ef);
+  font-size: 11.5px;
+  color: var(--c-muted, #6b6f78);
+}
+
 /* 시작 컬럼 — "지금 보유" 그룹. 요약 카드(총 개수 + 언어/프레임워크/기타)와 그 아래
    보유 스킬 칩들이 서로 동떨어져 보이지 않도록, wfs-start-group이 둘을 감싸는 옅은
    배경 패널을 깔아 하나의 덩어리로 읽히게 한다(WorkflowStages.tsx에서 요약 카드~
@@ -1016,6 +1039,8 @@
    내리고, pill은 아래 wfs-chip(선행 보유 칩)과 같은 톤을 재사용해 하나의 덩어리로
    읽히게 한다(위계를 맞춘다). */
 .wfs-summary__caption {
+  height: 14px;
+  line-height: 14px;
   font-size: 10.5px;
   font-weight: 700;
   color: #3f7a5b;
@@ -1026,7 +1051,13 @@
   flex-wrap: wrap;
   gap: 4px;
 }
+/* 3차: workflowLayout.ts의 START_SUMMARY_PILL_ROW_H(22)와 맞춘다. */
 .wfs-summary__pill {
+  box-sizing: border-box;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
   font-size: 10.5px;
   font-weight: 700;
   color: #157a41;
@@ -1035,6 +1066,8 @@
   border-radius: 999px;
   padding: 2px 8px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .wfs-summary__note {
   margin-top: 8px;
@@ -1070,8 +1103,21 @@
    카드고, 타입(기술/자격증/개념·연차)은 wfs-type--*의 좌측 테두리 색 하나로만
    구분한다. 목표 카드는 경유 카드보다 테두리를 진하게(실선·두껍게) 둬서 "이게 실제
    목표"라는 위계만 살린다. */
+/* 3차: 카드 자체(.wfs-scard)의 실제 DOM 크기는 더 이상 style="width/height"로 직접
+   좌표를 받지 않는다 — 그 좌표는 이제 감싸는 슬롯(.wfs-node-slot, WorkflowStages.tsx
+   에서 인라인 style로 rect.x/y/width/height를 그대로 꽂는 컨테이너)이 갖고, 카드는
+   그 슬롯을 100% 채우기만 한다. 이렇게 한 겹을 더 둔 이유는 "먼저" 배지·번들 라벨처럼
+   카드 테두리 위로 살짝 걸치는(top:-8px) 요소가 카드 자신의 overflow:hidden에 잘리는
+   버그가 있었기 때문이다 — 슬롯은 overflow를 두지 않으므로 카드 밖으로 걸치는 배지는
+   그대로 보이고, 카드 안쪽 내용(텍스트 등)만 카드 자신의 overflow:hidden으로 여전히
+   레이아웃 슬롯 경계를 넘지 않게 잡아준다. */
+.wfs-node-slot {
+  position: absolute;
+}
 .wfs-scard {
   box-sizing: border-box;
+  width: 100%;
+  height: 100%;
   border-radius: 12px;
   padding: 10px 14px;
   border: 1px solid var(--line, #e6e9ef);
@@ -1093,7 +1139,9 @@
 }
 
 /* 5: "먼저" 배지 — 정렬 결과 가장 앞선(가장 급한) 카드 한 장에만 붙는다. 링 형태
-   그림자로 카드 자체도 살짝 강조해 목록 훑을 때 바로 눈에 띄게 한다. */
+   그림자로 카드 자체도 살짝 강조해 목록 훑을 때 바로 눈에 띄게 한다. 3차: 이제
+   .wfs-scard가 아니라 .wfs-node-slot의 자식이라 top:-8px로 카드 위로 걸쳐도 잘리지
+   않는다. */
 .wfs-scard--first {
   box-shadow: 0 0 0 2px rgba(24, 24, 27, 0.14);
 }
@@ -1108,9 +1156,14 @@
   border-radius: 999px;
   padding: 2px 8px;
   letter-spacing: 0.02em;
+  pointer-events: none;
 }
 
+/* 3차: workflowLayout.ts의 SKILL_CARD_HEADER_H(20)와 반드시 같은 값 — 이름/카테고리
+   태그는 둘 다 20px보다 낮은 한 줄짜리 요소라 flex 중앙 정렬로 안에서 뜨고, 헤더 행
+   자체의 높이는 내용과 무관하게 20px로 고정해 추정치와 어긋나지 않게 한다. */
 .wfs-scard__head {
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1136,12 +1189,18 @@
   border: 1px solid #e4e6ea;
   border-radius: 999px;
   padding: 1px 7px;
+  white-space: nowrap;
 }
 
 /* 4: 대안(alternative)을 이미 보유했다는 신호 — 예전엔 카드 맨 아래 글자색만 다른
    한 줄이라 눈에 잘 안 띄었다. 헤더 바로 아래로 올리고 배지 모양(배경+테두리)을 줘서
-   "이 카드는 급하지 않다"는 걸 바로 알아보게 한다. */
+   "이 카드는 급하지 않다"는 걸 바로 알아보게 한다. 3차: SKILL_CARD_ALT_H(18)와 맞춰
+   높이를 고정하고, 대안이 여러 개 이어지면(예: "대안 Vue, Svelte 보유") 카드 폭을
+   넘지 않도록 텍스트 자체를 한 줄 말줄임으로 자른다. */
 .wfs-scard__altbadge {
+  box-sizing: border-box;
+  height: 18px;
+  max-width: 100%;
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -1155,36 +1214,60 @@
   padding: 2px 8px;
 }
 .wfs-scard__altbadge svg { flex: none; }
+.wfs-scard__altbadge-text {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
+/* 3차: SKILL_CARD_REASON_H(16)와 맞춰 높이를 고정한다. -webkit-line-clamp는 브라우저
+   별 박스 모델 미세 오차가 있어, 더 예측 가능한 white-space:nowrap 한 줄 말줄임으로
+   바꿨다(카드 높이 추정과 어긋날 여지를 없앤다). */
 .wfs-scard__reason {
+  box-sizing: border-box;
+  height: 16px;
+  line-height: 16px;
   font-size: 10px;
   margin-top: 8px;
   color: #6b6f78;
-  line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+/* 3차: SKILL_CARD_DEMAND_H(18)와 맞춰 높이를 고정한다. flex-wrap을 nowrap으로 바꿔
+   회사 아바타가 여러 개라도 두 번째 줄로 넘어가 높이 추정을 벗어나지 않게 한다(넘치는
+   아바타는 이미 renderBadges가 +N개로 접어서 넘긴다). */
 .wfs-scard__demand {
+  box-sizing: border-box;
+  height: 18px;
   display: flex;
   align-items: center;
   gap: 6px;
   margin-top: 8px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow: hidden;
 }
 .wfs-scard__avatars {
   display: inline-flex;
   align-items: center;
   gap: 3px;
+  flex: none;
 }
 
+/* 3차: SKILL_CARD_PAYOFF_H(16)와 맞춰 높이를 고정한다. */
 .wfs-scard__payoff {
+  box-sizing: border-box;
+  height: 16px;
+  line-height: 16px;
   margin-top: 8px;
   font-size: 10.5px;
   font-weight: 650;
   color: #157a41;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .wfs-scard__payoff b { font-weight: 800; }
 
@@ -1220,13 +1303,17 @@
 }
 
 /* 번들(goes_with) — 점선 박스 안 행 목록. 박스 하나가 layoutStages의 노드 하나다
-   (멤버 각각이 아니라) — 박스를 가리키는 엣지는 박스 테두리에 붙는다. */
+   (멤버 각각이 아니라) — 박스를 가리키는 엣지는 박스 테두리에 붙는다. 3차: 박스 몸통
+   (.wfs-bundle)은 여전히 .wfs-node-slot(overflow 없음)의 자식이고 100% 채우기만
+   하며, 라벨(.wfs-bundle__label)은 박스 밖 슬롯의 형제로 옮겨서 top:-8px가 더 이상
+   박스 자신의 overflow:hidden에 잘리지 않는다. */
 .wfs-bundle {
   box-sizing: border-box;
+  width: 100%;
+  height: 100%;
   border: 1.4px dashed #8b8f98;
   border-radius: 12px;
   padding: 10px 16px 8px;
-  position: relative;
   background: #fff;
   overflow: hidden;
 }
@@ -1239,21 +1326,42 @@
   font-weight: 700;
   background: #fff;
   color: var(--c-muted, #6b6f78);
+  pointer-events: none;
 }
+/* 3차: workflowLayout.ts의 BUNDLE_ROW_H(24) = line-height(16) + padding 4px*2. 이름이
+   길어도 줄바꿈하지 않고 한 줄 말줄임으로 자른다 — 줄바꿈을 허용하면 추정 높이보다
+   실제 렌더가 더 커져서 다음 멤버 행이나 note가 잘리는 원인이 됐다. */
 .wfs-bundle__row {
+  box-sizing: border-box;
+  height: 24px;
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 12px;
+  line-height: 16px;
   color: var(--c-ink, #18181b);
   padding: 4px 0;
   transition: opacity 0.15s ease;
 }
-.wfs-bundle__row-name { flex: 1; min-width: 0; }
+.wfs-bundle__row-name {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* 3차: BUNDLE_NOTE_GAP(4) + BUNDLE_NOTE_H(16)와 맞춘다. 예전엔 이 4px margin이 높이
+   추정에서 빠져 있었고, 줄바꿈 제한도 없어 노트가 길면 박스 아래로 잘렸다. */
 .wfs-bundle__note {
+  box-sizing: border-box;
+  height: 16px;
+  line-height: 16px;
   margin-top: 4px;
   font-size: 10px;
   color: var(--c-muted, #7c7f88);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* 자격증 컬럼 — 몸통은 스킬 카드와 같은 뉴트럴 톤으로 두고(과한 채색 금지), 타입 식별은
@@ -1261,6 +1369,7 @@
 .wfs-need-card {
   box-sizing: border-box;
   width: 100%;
+  height: 100%;
   background: #fff;
   border: 1px solid var(--line, #e6e9ef);
   color: var(--c-ink, #18181b);
@@ -1270,21 +1379,28 @@
   overflow: hidden;
   transition: opacity 0.15s ease;
 }
+/* 3차: workflowLayout.ts의 CERT_CARD_HEADER_H(18)와 맞춘다. */
 .wfs-need-card__name {
+  box-sizing: border-box;
+  height: 18px;
   font-size: 12.5px;
   font-weight: 700;
   display: flex;
   align-items: center;
   gap: 6px;
 }
+/* 3차: CERT_CARD_NOTE_GAP(4) + CERT_CARD_NOTE_H(16)와 맞춘다(예전엔 margin-top 4px가
+   추정에서 빠져 있었다). 한 줄 말줄임으로 고정해 줄바꿈으로 인한 어긋남을 막는다. */
 .wfs-need-card__reason {
+  box-sizing: border-box;
+  height: 16px;
+  line-height: 16px;
   font-size: 10.5px;
   margin-top: 4px;
   color: var(--c-muted, #6b6f78);
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* F: 노드 타입 4종(skill/cert/concept/career) — 좌측 테두리 색만으로 구분한다(요구사항:
@@ -1351,21 +1467,38 @@
 
 /* 컴팩트 카드/크게 보기 모달에서 스테이지 뷰를 감싸는 스크롤 컨테이너 — wfm-canvas와
    달리(React Flow는 내부적으로 pan/zoom을 다루므로 overflow:hidden이었다) 여기는 일반
-   DOM 플로우라 넘치는 컬럼을 가로 스크롤로, 넘치는 카드를 세로 스크롤로 보여줘야 한다. */
+   DOM 플로우라 넘치는 컬럼을 가로 스크롤로, 넘치는 카드를 세로 스크롤로 보여줘야 한다.
+   5: 예전엔 이 pane 자신도 테두리·배경·좌우 패딩을 가진 "박스"라 바깥 위젯 카드
+   (dcard) 안에 또 카드가 있는 것처럼 보였다 — 테두리/배경/좌우 패딩을 없애 바깥
+   위젯과 하나의 면으로 통일하고, 캔버스가 위젯 전체 폭을 끝까지 채우게 한다.
+   4: 높이는 WorkflowMap.tsx가 상태(목표 미선택·로딩·AI 보강 렌더)와 무관하게 항상
+   같은 고정 height를 인라인 style로 넘긴다 — 내용이 그보다 크면 이 안에서만
+   스크롤한다. 7: 빈 캔버스 영역을 마우스로 눌러 끌면 스크롤 위치가 옮겨지는(패닝)
+   보조 조작을 WorkflowMap.tsx의 usePanScroll이 붙인다 — 평소 커서는 grab, 드래그
+   중엔 grabbing(.is-panning)으로 바뀐다. */
 .wfm-stage-pane {
+  box-sizing: border-box;
   width: 100%;
   overflow: auto;
-  border: 1px solid var(--line, #e6e9ef);
-  border-radius: 12px;
-  background: #fbfbfc;
-  padding: 16px 16px 20px;
+  background: transparent;
+  padding: 6px 0 4px;
+  cursor: grab;
+}
+.wfm-stage-pane.is-panning {
+  cursor: grabbing;
+  user-select: none;
 }
 .wfm-modal__stage {
   flex: 1;
   min-height: 0;
   overflow: auto;
-  background: #fbfbfc;
-  padding: 20px 22px 24px;
+  background: transparent;
+  padding: 12px 0 24px;
+  cursor: grab;
+}
+.wfm-modal__stage.is-panning {
+  cursor: grabbing;
+  user-select: none;
 }
 
 .wfm-legend__box {
