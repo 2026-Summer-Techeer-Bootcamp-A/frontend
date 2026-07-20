@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
-import { Award, Check, List, Maximize2, Plus, Sparkles, WandSparkles, Workflow, X } from 'lucide-react'
+import { Award, Check, List, Maximize2, Milestone, Plus, Sparkles, WandSparkles, Workflow, X } from 'lucide-react'
 import { SectionHeader, PreviewBadge } from '../kit'
 import { AsOf } from '../charts'
 import { useResumesState } from '../state'
@@ -19,6 +19,7 @@ import dreamCompanies from '../../data/dreamCompanies.json'
 import { avatarColor, matchPctFor, yearBadgeFor, minPairwiseJaccard, type PostingDetailWithConcepts } from './workflowShared'
 import { WorkflowList } from './WorkflowList'
 import { WorkflowStages } from './WorkflowStages'
+import { RoadmapView } from './RoadmapView'
 import './workflowMap.css'
 
 // 데모용: 클릭 한 번으로 유명 기업 공고를 북마크 + 목표 선택까지 채워 넣어 워크플로우
@@ -78,9 +79,17 @@ function usePanScroll<T extends HTMLElement>() {
 // 공고들의 요구 기술과 이력서 보유 기술을 스테이지 뷰(WorkflowStages)로 이어 "무엇을
 // 어떤 순서로 배우면 좋은가"를 보여준다. 좌표 계산·엣지 라우팅 등은 전부
 // WorkflowStages.tsx(+workflowLayout.ts)로 옮겼다 — 이 파일은 데이터 패칭, 목표 선택,
-// 추천 공고 모달, 크게 보기 모달, 뷰(stages/list) 토글 같은 위젯 셸만 담당한다. list 뷰
-// (WorkflowList)와 workflowShared.ts의 공용 헬퍼(분류·아바타색·매치율 등)는 그대로
-// 유지한다 — list 뷰가 여전히 그 헬퍼들을 쓴다.
+// 추천 공고 모달, 크게 보기 모달, 뷰(roadmap/stages/list) 토글 같은 위젯 셸만 담당한다.
+// list 뷰(WorkflowList)와 workflowShared.ts의 공용 헬퍼(분류·아바타색·매치율 등)는
+// 그대로 유지한다 — list 뷰가 여전히 그 헬퍼들을 쓴다.
+//
+// Phase 1(로드맵 백본 재설계): stages/list는 둘 다 북마크 -> 목표 선택이 있어야만
+// 뭔가 그려지는 "장난감"이라, 게스트가 대시보드를 처음 열면 이 위젯이 통째로 빈
+// 화면이었다. roadmap 뷰(RoadmapView.tsx)는 사람이 큐레이션한 정본 백본
+// (src/data/roadmaps/backend.json)을 북마크·로그인 여부와 무관하게 항상 그리고,
+// 목표 선택은 그 위에 강조만 얹는다 — 그래서 roadmap을 새 기본 뷰로 삼았다(view
+// state 기본값, VIEW_STORAGE_KEY 파싱 참고). stages/list는 여전히 존재하고 여전히
+// 북마크가 있어야 실제 내용이 나온다(canShowGraph 게이트는 그대로).
 
 const MOCK_ROADMAP: ScopedRoadmapData = { start_matched: 0, total: 0, as_of: '', steps: [] }
 
@@ -329,17 +338,25 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
     return selectedIds.map((id) => byId.get(id)).filter((pw): pw is typeof postingsWithMatch[number] => !!pw)
   }, [selectedIds, postingsWithMatch])
 
-  // 2단계: stages/list 보기 전환 — dashboardConfig.ts와 같은 패턴(localStorage가 정본)을
-  // 이 위젯 안에서 useState+localStorage로 간단히 구현한다(별도 스토어 모듈은 과하다).
-  // 마운트 시 1회만 저장된 값을 읽고, 그 뒤엔 토글 버튼으로만 바뀐다.
-  const [view, setViewState] = useState<'stages' | 'list'>(() => {
+  // 2단계: roadmap/stages/list 보기 전환 — dashboardConfig.ts와 같은 패턴(localStorage가
+  // 정본)을 이 위젯 안에서 useState+localStorage로 간단히 구현한다(별도 스토어 모듈은
+  // 과하다). 마운트 시 1회만 저장된 값을 읽고, 그 뒤엔 토글 버튼으로만 바뀐다.
+  // Phase 1(로드맵 백본 재설계): roadmap이 새 기본값이다 — 사람이 큐레이션한 백엔드
+  // 로드맵 백본은 북마크·목표 선택 없이도 항상 그려지므로, 예전처럼 "북마크부터
+  // 채워야 뭔가 보이는" stages/list를 기본으로 둘 이유가 없다.
+  const [view, setViewState] = useState<'roadmap' | 'stages' | 'list'>(() => {
     try {
-      return localStorage.getItem(VIEW_STORAGE_KEY) === 'list' ? 'list' : 'stages'
+      const saved = localStorage.getItem(VIEW_STORAGE_KEY)
+      return saved === 'list' || saved === 'stages' ? saved : 'roadmap'
     } catch {
-      return 'stages'
+      return 'roadmap'
     }
   })
-  const setView = (next: 'stages' | 'list') => {
+  // Phase 1: 로드맵 백본은 북마크·목표 선택과 무관하게 항상 그려지는 정본 데이터라,
+  // "크게 보기"와 그 모달도 roadmap 뷰에서는 canShowGraph(북마크+목표 선택 필요)를
+  // 기다리지 않는다 — stages/list는 여전히 canShowGraph가 있어야 실제 내용이 있다.
+  const canExpand = view === 'roadmap' || canShowGraph
+  const setView = (next: 'roadmap' | 'stages' | 'list') => {
     setViewState(next)
     try {
       localStorage.setItem(VIEW_STORAGE_KEY, next)
@@ -577,34 +594,45 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
       <div className="dcard wfm-card">
         <SectionHeader
           title="목표 · 학습 워크플로우 맵"
-          hint="북마크에서 목표를 선택하면 학습 순서를 보여줘요"
+          hint="백엔드 로드맵을 항상 보여주고, 북마크에서 목표를 고르면 필요한 노드를 강조해요"
           right={(
             <div className="wfm-header-actions">
               {!showNoBookmarks && !identity && <PreviewBadge />}
-              {!showNoBookmarks && (
-                <div className="wfm-view-toggle" role="group" aria-label="보기 방식 전환">
-                  <button
-                    type="button"
-                    className={`wfm-view-toggle__btn${view === 'stages' ? ' is-active' : ''}`}
-                    onClick={() => setView('stages')}
-                    aria-label="단계별 보기"
-                    aria-pressed={view === 'stages'}
-                    title="단계별 보기"
-                  >
-                    <Workflow size={13} />
-                  </button>
-                  <button
-                    type="button"
-                    className={`wfm-view-toggle__btn${view === 'list' ? ' is-active' : ''}`}
-                    onClick={() => setView('list')}
-                    aria-label="리스트 보기"
-                    aria-pressed={view === 'list'}
-                    title="리스트 보기"
-                  >
-                    <List size={13} />
-                  </button>
-                </div>
-              )}
+              {/* Phase 1: 로드맵 백본 뷰는 북마크 없이도 항상 그려지므로, 뷰 토글 자체는
+                  이제 showNoBookmarks와 무관하게 항상 보인다 — stages/list만 여전히
+                  북마크가 있어야 실제로 뭔가 나온다(그 안내는 각 pane 안에서 보여준다). */}
+              <div className="wfm-view-toggle" role="group" aria-label="보기 방식 전환">
+                <button
+                  type="button"
+                  className={`wfm-view-toggle__btn${view === 'roadmap' ? ' is-active' : ''}`}
+                  onClick={() => setView('roadmap')}
+                  aria-label="로드맵 보기"
+                  aria-pressed={view === 'roadmap'}
+                  title="로드맵 보기"
+                >
+                  <Milestone size={13} />
+                </button>
+                <button
+                  type="button"
+                  className={`wfm-view-toggle__btn${view === 'stages' ? ' is-active' : ''}`}
+                  onClick={() => setView('stages')}
+                  aria-label="단계별 보기"
+                  aria-pressed={view === 'stages'}
+                  title="단계별 보기"
+                >
+                  <Workflow size={13} />
+                </button>
+                <button
+                  type="button"
+                  className={`wfm-view-toggle__btn${view === 'list' ? ' is-active' : ''}`}
+                  onClick={() => setView('list')}
+                  aria-label="리스트 보기"
+                  aria-pressed={view === 'list'}
+                  title="리스트 보기"
+                >
+                  <List size={13} />
+                </button>
+              </div>
               {!showNoBookmarks && (
                 <button
                   type="button"
@@ -632,7 +660,7 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
                   <span className="wfm-recommend-msg" role="status" aria-live="polite">{recommendMessage}</span>
                 )}
               </div>
-              {!showNoBookmarks && canShowGraph && (
+              {canExpand && (
                 <button
                   type="button"
                   className="wfm-expand-btn"
@@ -646,25 +674,19 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
             </div>
           )}
         />
-        {showNoBookmarks ? (
-          <div className="wfm-empty">
-            <p className="wfm-empty__lead">북마크한 공고를 목표로 학습 경로를 그려드려요.</p>
-            <span className="wfm-empty__hint">관심 있는 공고를 북마크하면 목표로 고를 수 있어요.</span>
-            {ownedSkills.length > 0 && (
-              <div className="wfm-empty__owned">
-                <span className="wfm-empty__owned-label">지금 보유한 기술</span>
-                <div className="wfm-empty__chips">
-                  {ownedSkills.slice(0, 12).map((s) => <span key={s} className="wfm-chip wfm-chip--owned">{s}</span>)}
-                </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="wfm-body">
-            {/* 시안 1: 선택된 목표는 위젯 헤더 바로 아래 앵커 바에 상시 칩으로 뜬다
-                (매칭 퍼센트 + 삭제(X) 포함). 목표 추가는 옆 팝오버로 열리고, 팝오버는
-                position:absolute라 열려도 이 바 아래 다이어그램 레이아웃을 흔들지
-                않는다(시안 2). */}
+        <div className="wfm-body">
+          {/* Phase 1: 목표 선택 앵커 바는 이제 showNoBookmarks와 무관하게 항상 보인다 —
+              roadmap 뷰도 targetSkills/targetConcepts로 강조를 받으므로 북마크가 없는
+              게스트에게는 "북마크하면 목표를 강조해준다"는 안내로 대신 채운다. 시안 1:
+              선택된 목표는 위젯 헤더 바로 아래 앵커 바에 상시 칩으로 뜬다(매칭 퍼센트 +
+              삭제(X) 포함). 목표 추가는 옆 팝오버로 열리고, 팝오버는 position:absolute라
+              열려도 이 바 아래 다이어그램 레이아웃을 흔들지 않는다(시안 2). */}
+          {showNoBookmarks ? (
+            <div className="wfm-goal-anchorbar">
+              <span className="wfm-goal-anchorbar__label">목표</span>
+              <span className="wfm-goal-anchorbar__empty">관심 있는 공고를 북마크하면 로드맵에서 목표 노드를 강조해줘요</span>
+            </div>
+          ) : (
             <div className="wfm-goal-anchorbar">
               <span className="wfm-goal-anchorbar__label">목표</span>
               <div className="wfm-goal-chips">
@@ -724,12 +746,36 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
                 )}
               </div>
             </div>
-            <div className="wfm-graph-pane">
-              {/* 4: 목표 미선택/로딩/리스트/DAG 네 상태 모두 같은 canvasHeight를 쓴다
-                  (예전엔 각자 다른 높이 정책이라 상태가 바뀔 때마다 위젯 전체 높이가
-                  확 무너져 보였다) — 내용이 그보다 짧으면 안내문이 이 높이 안에서
-                  가운데 정렬되고, 길면 pane 안에서만 스크롤로 흡수한다. */}
-              {showNoSelection ? (
+          )}
+          <div className="wfm-graph-pane">
+            {/* 4: 목표 미선택/로딩/리스트/DAG 네 상태 모두 같은 canvasHeight를 쓴다
+                (예전엔 각자 다른 높이 정책이라 상태가 바뀔 때마다 위젯 전체 높이가
+                확 무너져 보였다) — 내용이 그보다 짧으면 안내문이 이 높이 안에서
+                가운데 정렬되고, 길면 pane 안에서만 스크롤로 흡수한다. roadmap 뷰는 이
+                게이트들(showNoBookmarks/showNoSelection/isLoading)과 무관하게 항상
+                백본을 그린다 — 그게 이 재설계의 핵심 요구다. */}
+            {view === 'roadmap' ? (
+              <RoadmapView
+                ownedSkills={ownedSkills}
+                ownedCerts={ownedCerts}
+                targetSkills={targetSkillsArray}
+                targetConcepts={targetConcepts}
+                height={canvasHeight}
+              />
+            ) : showNoBookmarks ? (
+              <div className="wfm-empty" style={{ height: canvasHeight, flex: 'none' }}>
+                <p className="wfm-empty__lead">북마크한 공고를 목표로 학습 경로를 그려드려요.</p>
+                <span className="wfm-empty__hint">관심 있는 공고를 북마크하면 목표로 고를 수 있어요.</span>
+                {ownedSkills.length > 0 && (
+                  <div className="wfm-empty__owned">
+                    <span className="wfm-empty__owned-label">지금 보유한 기술</span>
+                    <div className="wfm-empty__chips">
+                      {ownedSkills.slice(0, 12).map((s) => <span key={s} className="wfm-chip wfm-chip--owned">{s}</span>)}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : showNoSelection ? (
                 // flex:'none'으로 .wfm-empty 클래스의 flex:1(flex-basis:0%로 인라인
                 // height를 무시할 수 있다)을 이 자리에서만 눌러, canvasHeight가 그대로
                 // 이 블록의 실제 높이가 되게 한다.
@@ -802,10 +848,9 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
               )}
             </div>
           </div>
-        )}
       </div>
 
-      {expanded && canShowGraph && (
+      {expanded && canExpand && (
         <div className="wfm-modal__backdrop" onClick={() => setExpanded(false)}>
           <div
             className="wfm-modal__card"
@@ -820,7 +865,20 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
                 <X size={16} />
               </button>
             </div>
-            {view === 'list' ? (
+            {view === 'roadmap' ? (
+              // Phase 1: 로드맵 백본은 모달에서도 같은 컴포넌트를 더 큰 높이로 그린다 —
+              // 백본 자체는 이미 내부 스크롤(usePanScroll)을 갖고 있어 모달 전용 래퍼가
+              // 따로 필요 없다.
+              <div className="wfm-modal__roadmap">
+                <RoadmapView
+                  ownedSkills={ownedSkills}
+                  ownedCerts={ownedCerts}
+                  targetSkills={targetSkillsArray}
+                  targetConcepts={targetConcepts}
+                  height={640}
+                />
+              </div>
+            ) : view === 'list' ? (
               // 2단계: "크게 보기" 모달도 현재 모드를 따른다 — list 모드면 모달도
               // 리스트를 더 넓은 영역에 그린다(WorkflowList 자체는 캡 없이 전부
               // 보여주므로 컴팩트 카드보다 스크롤 여유만 커지면 충분하다).

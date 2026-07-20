@@ -1,17 +1,17 @@
-import { useId, useState } from 'react'
-import type { RequirementVerdict, SplitDiffPayload, SplitDiffRequirement } from '../chatContract'
+import { useState } from 'react'
+import type { RequirementKind, RequirementVerdict, SplitDiffPayload, SplitDiffRequirement } from '../chatContract'
 import './SplitDiff.css'
 
-// 커리어 적합도 Split Diff(K7) — 태그 교집합이 아니라 기준 문서/판정 대상 문서 원문을 LLM으로
-// 대조해 요구사항별 met/partial/gap을 판정한 결과를 좌(기준 원문 인용)/우(판정 대상 근거 또는
-// 보완 액션)로 보여준다. kind가 resume_posting_llm(이력서 vs 공고)이든 posting_posting_llm(공고
-// vs 공고)이든 이 컴포넌트 하나로 렌더한다 — kind로 분기하지 않고 payload의 base_role/target_role
-// 필드만 보고 그린다(범용성 유지).
+// 커리어 적합도 Split Diff(K7, 확정 레이아웃) — 기준 문서/판정 대상 문서 원문을 LLM으로 대조해
+// 요구사항별 met/partial/gap을 판정한 결과를, 위에서 아래로 (1) 상태 보드 (2) 원문 대조 하이라이트
+// (3) 액션 체크리스트 3단으로 고정 배치한다. kind가 resume_posting_llm(이력서 vs 공고)이든
+// posting_posting_llm(공고 vs 공고)이든 이 컴포넌트 하나로 렌더한다 — kind로 분기하지 않고
+// payload의 base_role/target_role 필드만 보고 그린다(범용성 유지).
 //
-// 시안 원천: /tmp/.../scratchpad/career-diff-redesign-v2.html(01번 확장 스플릿 다이어그램, 확정).
-// diff 마커(+/~/−)와 pair bar, ai-banner, score-strip 레이아웃을 이 시안에서 가져오되, 색은
-// 하드코딩하지 않고 기존 테마 캐스케이드 토큰(var(--c-*), src/design/tokens.ts)에 fallback
-// 리터럴을 붙이는 기존 컨벤션(resume-insight.css, rag-console.css)을 그대로 따른다.
+// 이전 버전(가중 도넛 + 상세/간단 토글)은 라이브 피드백에 따라 걷어냈다. 퍼센트 적합도 수치는
+// 화면 어디에도 없다 — 요구 무게는 자격요건/우대요건 뱃지로만 표시하고, 판정 상태는 색(충족
+// 초록/부분 앰버/공백 빨강)으로만 표시한다. 팔레트는 근흑 모노크롬 + 그린 액센트(#1f9d57, 이
+// 컴포넌트 로컬 변수 --sd-accent) — 상태색과 액센트색은 서로 다른 토큰이라 섞이지 않는다.
 
 export interface SplitDiffProps {
   payload: SplitDiffPayload
@@ -19,50 +19,25 @@ export interface SplitDiffProps {
 
 const VERDICT_LABEL: Record<RequirementVerdict, string> = {
   met: '충족',
-  partial: '부분 · 전이가능',
-  gap: '공백',
-}
-
-// 인라인 배지(vpill)용 짧은 라벨 — 노트 카드의 VERDICT_LABEL과 달리 한 줄에 붙는 배지라 더
-// 짧게 줄인다("부분 · 전이가능"은 인라인에서 너무 길다).
-const VERDICT_PILL_LABEL: Record<RequirementVerdict, string> = {
-  met: '충족',
   partial: '부분',
   gap: '공백',
 }
 
-// diff 라인 마커 — met은 추가(+), partial은 걸침(~), gap은 빠짐(−).
-const VERDICT_MARK: Record<RequirementVerdict, string> = {
-  met: '+',
-  partial: '~',
-  gap: '−',
+const KIND_LABEL: Record<RequirementKind, string> = {
+  must: '자격요건',
+  preferred: '우대요건',
 }
 
-// 요구사항 레이아웃 토글 — 가로 넓은 상세 카드형(detail)과 인라인 배지형(inline) 중 선택.
-// WorkflowMap.tsx의 techeer_workflow_view와 같은 패턴(localStorage가 정본, 마운트 시 1회만 읽고
-// 이후엔 토글 버튼으로만 바뀐다)을 따른다. 예전엔 'margin'(좌우 2열 여백 주석형)이었는데, 라이브
-// 피드백으로 폭 좁은 노트 컬럼을 버리고 전체 폭 카드로 바꾸면서 값 이름도 바꿨다 — 옛 저장값
-// 'margin'은 이제 모르는 값이라 기본값(detail)으로 자연히 폴백된다(마이그레이션 코드 불필요).
-type SplitDiffLayout = 'detail' | 'inline'
-const LAYOUT_STORAGE_KEY = 'techeer_splitdiff_layout'
-
-function readStoredLayout(): SplitDiffLayout {
-  try {
-    return localStorage.getItem(LAYOUT_STORAGE_KEY) === 'inline' ? 'inline' : 'detail'
-  } catch {
-    return 'detail'
-  }
+// requirement_kind가 없는 요구사항은 자격요건으로 기본 처리한다(스펙 결정: 값이 없다고 UI가
+// 빈칸을 보여주거나 데이터를 지어내지 않는다 — 백엔드가 아직 섹션 출처를 안 보내는 동안의
+// 정직한 기본값이다).
+function requirementKindOf(req: SplitDiffRequirement): RequirementKind {
+  return req.requirement_kind === 'preferred' ? 'preferred' : 'must'
 }
 
 // 형광펜을 그을 텍스트 — source_quote가 있으면 그걸, 없으면 요구사항 짧은 제목(text)을 쓴다.
-// 둘 다 동시에 보여주지 않는다(한 항목당 한 줄만, 깔끔함 우선).
 function highlightText(req: SplitDiffRequirement): string {
   return req.source_quote || req.text
-}
-
-function clampPct(v: number): number {
-  if (!Number.isFinite(v)) return 0
-  return Math.max(0, Math.min(100, v))
 }
 
 // 역할 뒤에 제목을 붙이되, 제목이 빈 문자열이면(예: 이력서는 별도 title이 없음) 생략한다.
@@ -71,31 +46,7 @@ function roleLabel(role: string, title: string): string {
 }
 
 export function SplitDiff({ payload }: SplitDiffProps) {
-  const { base_role, base_title, target_role, target_title, score, counts, summary, requirements, degraded } = payload
-  const total = counts.met + counts.partial + counts.gap
-  const roundedScore = Math.round(clampPct(score))
-  const [layout, setLayoutState] = useState<SplitDiffLayout>(readStoredLayout)
-
-  const setLayout = (next: SplitDiffLayout) => {
-    setLayoutState(next)
-    try {
-      localStorage.setItem(LAYOUT_STORAGE_KEY, next)
-    } catch {
-      // localStorage 접근 불가(프라이빗 모드 등)해도 레이아웃 전환 자체는 계속 동작해야 한다.
-    }
-  }
-
-  // 가중 도넛 — met은 온전한 비중, partial은 절반 비중만 채워 "충족 4 + 부분 1×0.5 + 공백 1×0"의
-  // 가중 점수를 시각적으로 그대로 옮긴다(스코어%와 도넛 채움 비율이 항상 일치하는 정직한 도넛).
-  const size = 96
-  const radius = size / 2
-  const strokeWidth = 10
-  const r = radius - strokeWidth / 2 - 1
-  const circumference = 2 * Math.PI * r
-  const metFrac = total > 0 ? counts.met / total : 0
-  const partialFrac = total > 0 ? (counts.partial / total) * 0.5 : 0
-  const metLen = circumference * metFrac
-  const partialLen = circumference * partialFrac
+  const { base_role, base_title, target_role, target_title, summary, requirements, degraded } = payload
 
   return (
     <div className="rv__splitdiff">
@@ -109,23 +60,6 @@ export function SplitDiff({ payload }: SplitDiffProps) {
           <span className="role">판정</span>
           {roleLabel(target_role, target_title)}
         </span>
-
-        <div className="rv__sd-toggle" role="group" aria-label="요구사항 레이아웃 전환">
-          <button
-            type="button"
-            aria-pressed={layout === 'detail'}
-            onClick={() => setLayout('detail')}
-          >
-            상세
-          </button>
-          <button
-            type="button"
-            aria-pressed={layout === 'inline'}
-            onClick={() => setLayout('inline')}
-          >
-            간단
-          </button>
-        </div>
       </div>
 
       <div className="rv__sd-summary">
@@ -138,170 +72,177 @@ export function SplitDiff({ payload }: SplitDiffProps) {
         </div>
       </div>
 
-      <div className="rv__sd-score">
-        <div className="rv__sd-donut">
-          <svg
-            width={size}
-            height={size}
-            viewBox={`0 0 ${size} ${size}`}
-            role="img"
-            aria-label={`가중 적합도 ${roundedScore}퍼센트, 충족 ${counts.met} 부분 ${counts.partial} 공백 ${counts.gap}`}
-          >
-            <circle
-              cx={radius} cy={radius} r={r} fill="none"
-              stroke="color-mix(in srgb, var(--c-gap, #e0453a) 12%, transparent)"
-              strokeWidth={strokeWidth}
-            />
-            {metLen > 0 && (
-              <circle
-                cx={radius} cy={radius} r={r} fill="none"
-                stroke="var(--c-met, #1f7a63)"
-                strokeWidth={strokeWidth}
-                strokeDasharray={`${metLen} ${circumference}`}
-                transform={`rotate(-90 ${radius} ${radius})`}
-              />
+      <StatusBoard requirements={requirements} />
+      <EvidenceCompare requirements={requirements} baseRole={base_role} targetRole={target_role} />
+      <ActionChecklist requirements={requirements} />
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// 1. 상태 보드 — 충족/부분/공백 3열. 각 칩은 요구사항 한 줄 + 자격요건/우대요건 뱃지만 얹는다.
+// 퍼센트는 어디에도 없다. 열 헤더 점(dot)과 칩 왼쪽 여백 색으로만 상태를 구분한다.
+// ---------------------------------------------------------------------------
+
+const BOARD_COLUMNS: { verdict: RequirementVerdict; label: string }[] = [
+  { verdict: 'met', label: '충족' },
+  { verdict: 'partial', label: '부분' },
+  { verdict: 'gap', label: '공백' },
+]
+
+function StatusBoard({ requirements }: { requirements: SplitDiffRequirement[] }) {
+  const groups: Record<RequirementVerdict, SplitDiffRequirement[]> = { met: [], partial: [], gap: [] }
+  for (const req of requirements) groups[req.verdict].push(req)
+
+  return (
+    <section className="rv__sd-section" aria-label="요구사항 상태 보드">
+      <h4 className="rv__sd-section-title">상태 보드</h4>
+      <div className="rv__sd-board">
+        {BOARD_COLUMNS.map(({ verdict, label }) => (
+          <div key={verdict} className={`rv__sd-col rv__sd-col--${verdict}`}>
+            <div className="rv__sd-col-head">
+              <span className="rv__sd-col-dot" aria-hidden="true" />
+              <span className="rv__sd-col-label">{label}</span>
+              <span className="rv__sd-col-count">{groups[verdict].length}</span>
+            </div>
+            {groups[verdict].length === 0 ? (
+              <p className="rv__sd-col-empty">해당 항목 없음</p>
+            ) : (
+              <ul className="rv__sd-col-list">
+                {groups[verdict].map((req) => (
+                  <li key={req.id} className="rv__sd-chip">
+                    <span className="rv__sd-chip-text">{req.text}</span>
+                    <RequirementKindBadge kind={requirementKindOf(req)} />
+                  </li>
+                ))}
+              </ul>
             )}
-            {partialLen > 0 && (
-              <circle
-                cx={radius} cy={radius} r={r} fill="none"
-                stroke="var(--c-partial, #8a6d3b)"
-                strokeWidth={strokeWidth}
-                strokeDasharray={`${partialLen} ${circumference}`}
-                strokeDashoffset={-metLen}
-                transform={`rotate(-90 ${radius} ${radius})`}
-              />
-            )}
-            <text x={radius} y={radius - 2} textAnchor="middle" dominantBaseline="middle" className="rv__ring-num">
-              {roundedScore}%
-            </text>
-            <text x={radius} y={radius + 14} textAnchor="middle" dominantBaseline="middle" className="rv__ring-sub">
-              가중 적합도
-            </text>
-          </svg>
-        </div>
-        <div className="rv__sd-score-meta">
-          <div className="rv__sd-score-head">
-            <span className="t">{total}개 요구 중 {counts.met}개 충족</span>
           </div>
-          <p className="rv__sd-formula">
-            <span className="met">충족 {counts.met}</span> · <span className="par">부분 {counts.partial}</span> · <span className="gap">공백 {counts.gap}</span>
-          </p>
-          <p className="rv__sd-note">LLM이 원문을 읽고 요구마다 매긴 가중 추정치예요. 정확한 매칭 개수는 아니에요.</p>
-          <div className="rv__sd-legend">
-            <span><i className="met" />충족 1점</span>
-            <span><i className="partial" />부분 0.5점</span>
-            <span><i className="gap" />공백 0점</span>
-          </div>
-        </div>
+        ))}
       </div>
-
-      {layout === 'detail' ? (
-        <SplitDiffDetailLayout requirements={requirements} targetRole={target_role} />
-      ) : (
-        <SplitDiffInlineLayout requirements={requirements} targetRole={target_role} />
-      )}
-    </div>
+    </section>
   )
 }
 
-// 형광펜 강조 span — 두 레이아웃이 공유한다. verdict 색은 색각 대응을 위해 항상 옆/아래에 글자
-// 라벨이 같이 붙으므로(노트의 verdict 라벨, 인라인의 vpill), 여기 자체는 색으로만 표시해도 된다.
-function SplitDiffHighlight({ req }: { req: SplitDiffRequirement }) {
-  return <span className={`rv__sd-hl rv__sd-hl--${req.verdict}`}>{highlightText(req)}</span>
+function RequirementKindBadge({ kind }: { kind: RequirementKind }) {
+  return <span className={`rv__sd-kind rv__sd-kind--${kind}`}>{KIND_LABEL[kind]}</span>
 }
 
-// 판정 대상 문서(target)의 원문 근거(quote)를 다시 살리는 자리 — quote가 있을 때만 작은
-// 인용 표식을 두고, 마우스 호버뿐 아니라 키보드 포커스로도 전문을 볼 수 있게 한다. 네이티브
-// title 속성만으론 포커스 시 안 뜨므로, aria-describedby로 이어진 CSS 툴팁(role="tooltip")을
-// 직접 만든다. 트리거는 실제 button(탭 가능)이라 마우스 없이도 Tab만으로 도달·확인된다.
-function QuoteCue({ quote, targetRole }: { quote: string; targetRole: string }) {
-  const tooltipId = useId()
-  if (!quote) return null
-  return (
-    <span className="rv__sd-quotecue">
-      <button type="button" className="rv__sd-quotecue-btn" aria-describedby={tooltipId} aria-label={`${targetRole} 원문 근거 보기`}>
-        <span aria-hidden="true">”</span>
-      </button>
-      <span role="tooltip" id={tooltipId} className="rv__sd-quotecue-tip">
-        <span className="rv__sd-quotecue-tip-role">{targetRole} 원문</span>
-        <span className="rv__sd-quotecue-tip-text">{quote}</span>
-      </span>
-    </span>
-  )
-}
+// ---------------------------------------------------------------------------
+// 2. 원문 대조 하이라이트 — 공고 원문 구절(왼쪽)과 판정 대상 근거 구절(오른쪽)을 verdict 색으로
+// 맞춰 나란히 보여준다. 근거(quote)가 없는 항목은 섞어 넣지 않고 "근거 없음"으로 따로 모아
+// 솔직하게 보여준다 — 있는 척하지 않는다.
+// ---------------------------------------------------------------------------
 
-// 상세 카드형 — 요구사항마다 (a) 공고 문구를 형광펜으로 그은 줄, (b) 그 바로 아래 전체 폭을 쓰는
-// 상세 카드를 세로로 쌓는다. 좌우 2열 + 좁은 노트 컬럼 구조는 버렸다(화면이 넓어도 노트가 좁다는
-// 피드백). 카드 안에서 quote(판정 대상 원문)를 직접 인용하므로 여기선 QuoteCue 툴팁을 쓰지 않는다
-// (같은 정보를 두 번 보여주는 중복이라서). 판정 구분은 뱃지 + 옅은 배경 틴트로만 하고, 어디에도
-// 왼쪽 컬러 테두리(레일)를 두지 않는다 — "AI 클리셰"라는 라이브 피드백으로 명시적으로 제거됨.
-function SplitDiffDetailLayout({ requirements, targetRole }: { requirements: SplitDiffRequirement[]; targetRole: string }) {
-  return (
-    <div className="rv__sd-detail">
-      {requirements.map((req) => (
-        <div key={req.id} className="rv__sd-detail-item">
-          <p className="rv__sd-detail-line">
-            <SplitDiffHighlight req={req} />
-          </p>
-          <SplitDiffDetailCard req={req} targetRole={targetRole} />
-        </div>
-      ))}
-    </div>
-  )
-}
+function EvidenceCompare({
+  requirements,
+  baseRole,
+  targetRole,
+}: {
+  requirements: SplitDiffRequirement[]
+  baseRole: string
+  targetRole: string
+}) {
+  const withEvidence = requirements.filter((req) => req.quote)
+  const noEvidence = requirements.filter((req) => !req.quote)
 
-function SplitDiffDetailCard({ req, targetRole }: { req: SplitDiffRequirement; targetRole: string }) {
-  const { verdict, quote, rationale, next_step } = req
   return (
-    <div className={`rv__sd-detailcard rv__sd-detailcard--${verdict}`}>
-      <span className={`rv__sd-vbadge rv__sd-vbadge--${verdict}`}>{VERDICT_LABEL[verdict]}</span>
-
-      <div className="rv__sd-detailcard-quote">
-        <span className="rv__sd-detailcard-quote-label">{targetRole} 원문</span>
-        {quote ? (
-          <blockquote className="rv__sd-detailcard-quote-text">{quote}</blockquote>
+    <section className="rv__sd-section" aria-label="원문 대조">
+      <h4 className="rv__sd-section-title">원문 대조</h4>
+      <div className="rv__sd-evidence">
+        {withEvidence.length === 0 ? (
+          <p className="rv__sd-evidence-empty">원문끼리 대조할 항목이 없어요.</p>
         ) : (
-          <p className="rv__sd-detailcard-quote-missing">{targetRole}에서 근거를 찾지 못했어요</p>
+          <>
+            <div className="rv__sd-evidence-head" aria-hidden="true">
+              <span>{baseRole} 원문</span>
+              <span>{targetRole} 근거</span>
+            </div>
+            <ul className="rv__sd-evidence-list">
+              {withEvidence.map((req) => (
+                <li key={req.id} className="rv__sd-evidence-row">
+                  <span className={`rv__sd-hl rv__sd-hl--${req.verdict}`}>{highlightText(req)}</span>
+                  <span className="rv__sd-evidence-arrow" aria-hidden="true">↔</span>
+                  <span className={`rv__sd-hl rv__sd-hl--${req.verdict}`}>{req.quote}</span>
+                  <span className="rv__sd-evidence-vlabel">{VERDICT_LABEL[req.verdict]}</span>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+
+        {noEvidence.length > 0 && (
+          <div className="rv__sd-noevidence">
+            <p className="rv__sd-noevidence-label">근거 없음</p>
+            <ul>
+              {noEvidence.map((req) => (
+                <li key={req.id}>
+                  <span className="rv__sd-noevidence-text">{highlightText(req)}</span>
+                  <span className="rv__sd-noevidence-note">{targetRole}에서 근거를 찾지 못했어요</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       </div>
-
-      {rationale && (
-        <p className="rv__sd-detailcard-rationale">
-          <span className="k">판정 근거</span>
-          <span>{rationale}</span>
-        </p>
-      )}
-
-      {next_step && (
-        <div className="rv__sd-detailcard-next">
-          <span className="tag">보완점</span>
-          <span className="step">{next_step}</span>
-        </div>
-      )}
-    </div>
+    </section>
   )
 }
 
-// 시안 3 · 인라인 배지형 — 형광펜 그은 문구 바로 뒤에 verdict pill을 붙인다. 기본은 한 줄이고,
-// gap/partial 항목만 정보 손실 방지를 위해 보조 줄로 next_step을 보여준다(met은 보조 줄 없음).
-function SplitDiffInlineLayout({ requirements, targetRole }: { requirements: SplitDiffRequirement[]; targetRole: string }) {
+// ---------------------------------------------------------------------------
+// 3. 액션 체크리스트 — next_step이 있는 항목(부분·공백 위주)만 행동으로 나열한다. 자격요건을
+// 먼저, 우대요건을 뒤로 정렬한다(같은 등급 안에서는 원래 순서를 지킨다 — Array.sort는 안정 정렬).
+// 체크박스는 로컬 진척 표시용이라 컴포넌트 상태로만 관리한다.
+// ---------------------------------------------------------------------------
+
+function kindOrder(kind: RequirementKind): number {
+  return kind === 'preferred' ? 1 : 0
+}
+
+function ActionChecklist({ requirements }: { requirements: SplitDiffRequirement[] }) {
+  const [checked, setChecked] = useState<Set<string>>(() => new Set())
+  const actionable = requirements
+    .filter((req) => req.next_step)
+    .slice()
+    .sort((a, b) => kindOrder(requirementKindOf(a)) - kindOrder(requirementKindOf(b)))
+
+  const toggle = (id: string) => {
+    setChecked((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
   return (
-    <ul className="rv__sd-inline">
-      {requirements.map((req) => (
-        <li key={req.id}>
-          <div className="rv__sd-inline-row">
-            <SplitDiffHighlight req={req} />
-            <span className={`rv__sd-vpill rv__sd-vpill--${req.verdict}`}>
-              {VERDICT_MARK[req.verdict]} {VERDICT_PILL_LABEL[req.verdict]}
-            </span>
-            <QuoteCue quote={req.quote} targetRole={targetRole} />
-          </div>
-          {req.verdict !== 'met' && req.next_step && (
-            <p className="rv__sd-inline-sub">{req.next_step}</p>
-          )}
-        </li>
-      ))}
-    </ul>
+    <section className="rv__sd-section" aria-label="액션 체크리스트">
+      <h4 className="rv__sd-section-title">액션 체크리스트</h4>
+      {actionable.length === 0 ? (
+        <p className="rv__sd-checklist-empty">지금 더 준비할 액션이 없어요.</p>
+      ) : (
+        <ul className="rv__sd-checklist">
+          {actionable.map((req) => {
+            const inputId = `sd-action-${req.id}`
+            const isChecked = checked.has(req.id)
+            return (
+              <li key={req.id} className="rv__sd-checklist-item">
+                <label className="rv__sd-checklist-row" htmlFor={inputId}>
+                  <input
+                    id={inputId}
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => toggle(req.id)}
+                  />
+                  <span className={`rv__sd-checklist-text${isChecked ? ' is-done' : ''}`}>{req.next_step}</span>
+                  <RequirementKindBadge kind={requirementKindOf(req)} />
+                </label>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </section>
   )
 }
 
