@@ -3,7 +3,7 @@ import { Check, Maximize2, Plus, Sparkles, WandSparkles, X } from 'lucide-react'
 import { SectionHeader, PreviewBadge } from '../kit'
 import { useResumesState } from '../state'
 import { getAuthToken } from '../authStore'
-import { useBookmarks, loadBookmarkDetails } from '../bookmarkStore'
+import { useBookmarks, loadBookmarkDetails, toggleBookmark } from '../bookmarkStore'
 import {
   useSelectedGoalIds, useGoalSelectionTouched, toggleGoalId,
 } from '../goalSelectionStore'
@@ -582,6 +582,19 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
                               <span className="wfm-demo-card__company">{card.company}</span>
                               {card.tier === '대기업' && <span className="wfm-demo-card__tier">대기업</span>}
                               <span className="wfm-demo-card__career">{demoCareerText(card.careerMin, card.careerMax)}</span>
+                              <button
+                                type="button"
+                                className={`wfm-demo-card__add-btn${bookmarkIds.includes(String(card.id)) ? ' is-added' : ''}`}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  toggleBookmark(String(card.id))
+                                  toggleGoalId(String(card.id), selectedIds)
+                                }}
+                                aria-label={`${card.company} ${card.title} 공고 추가`}
+                                title={bookmarkIds.includes(String(card.id)) ? '추가됨' : '추가'}
+                              >
+                                {bookmarkIds.includes(String(card.id)) ? <Check size={14} /> : <Plus size={14} />}
+                              </button>
                             </div>
                             <div className="wfm-demo-card__title" title={card.title}>{card.title}</div>
                             <div className="wfm-demo-card__chips">
