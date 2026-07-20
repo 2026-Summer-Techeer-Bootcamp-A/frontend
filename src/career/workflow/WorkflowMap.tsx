@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
 import { Award, Check, List, Maximize2, Plus, Sparkles, WandSparkles, Workflow, X } from 'lucide-react'
 import { SectionHeader, PreviewBadge } from '../kit'
 import { AsOf } from '../charts'
@@ -28,6 +28,46 @@ const DREAM_COMPANIES = dreamCompanies as DreamCompany[]
 const RECOMMEND_TARGET_NEW = 8
 const RECOMMEND_MAX_COMPANIES = 12
 const RECOMMEND_CHUNK_SIZE = 4
+
+// 7: DAG 캔버스 마우스 드래그 패닝 — 빈 캔버스 영역을 눌러 끌면 scrollLeft/scrollTop이
+// 그만큼 옮겨진다. 버튼·링크 등 인터랙티브 요소 위에서 누르면 패닝을 시작하지 않아
+// 원래 클릭이 그대로 동작한다. 아주 작은 움직임(4px 미만)은 드래그로 치지 않아
+// 손떨림으로 인한 스크롤 튐 없이 일반 클릭/호버도 그대로 살아있다. 휠 스크롤은 이
+// 훅과 무관하게 브라우저 기본 동작 그대로 유지된다.
+const PAN_DRAG_THRESHOLD = 4
+function usePanScroll<T extends HTMLElement>() {
+  const ref = useRef<T | null>(null)
+  const dragRef = useRef<{ startX: number; startY: number; scrollLeft: number; scrollTop: number; dragging: boolean } | null>(null)
+  const [isPanning, setIsPanning] = useState(false)
+
+  const onMouseDown = (e: ReactMouseEvent) => {
+    const target = e.target as HTMLElement
+    if (target.closest('button, a, input, textarea, select, [role="button"]')) return
+    const el = ref.current
+    if (!el) return
+    dragRef.current = { startX: e.clientX, startY: e.clientY, scrollLeft: el.scrollLeft, scrollTop: el.scrollTop, dragging: false }
+  }
+  const onMouseMove = (e: ReactMouseEvent) => {
+    const state = dragRef.current
+    const el = ref.current
+    if (!state || !el) return
+    const dx = e.clientX - state.startX
+    const dy = e.clientY - state.startY
+    if (!state.dragging) {
+      if (Math.hypot(dx, dy) < PAN_DRAG_THRESHOLD) return
+      state.dragging = true
+      setIsPanning(true)
+    }
+    el.scrollLeft = state.scrollLeft - dx
+    el.scrollTop = state.scrollTop - dy
+  }
+  const endPan = () => {
+    dragRef.current = null
+    setIsPanning(false)
+  }
+
+  return { ref, isPanning, onMouseDown, onMouseMove, onMouseUp: endPan, onMouseLeave: endPan }
+}
 
 // A-5: 목표 · 학습 워크플로우 맵 — 북마크한 공고 전부(암묵적 목표) 대신 목표 선택
 // 패널에서 "목표로 삼을 것"을 직접 골라야 한다. 시안 1: 예전엔 이 선택 UI가 다이어그램
@@ -123,7 +163,21 @@ function buildFallbackEnrichment(req: RoadmapEnrichRequest): RoadmapEnrichRespon
 // 같은 techeer_ 프리픽스 네이밍을 따른다.
 const VIEW_STORAGE_KEY = 'techeer_workflow_view'
 
+// 4: 위젯 캔버스 영역의 고정 높이 — 목표 미선택/로딩/AI 보강 렌더 등 어떤 상태에서도
+// 이 값을 그대로 쓴다(예전엔 각 상태 분기가 제각각 maxHeight를 걸어서, 내용이 짧은
+// 상태로 전환될 때마다 위젯 전체 높이가 확 무너져 보였다). 값 자체는 기존에 stage/list
+// pane이 쓰던 maxHeight(2x2=720, 그 외=260)를 그대로 가져온 것이라 화면상 크기는
+// 바뀌지 않는다 — 내용이 이보다 크면 pane 안에서만 스크롤로 흡수한다.
+function canvasHeightFor(size: WidgetSize): number {
+  return size === '2x2' ? 720 : 260
+}
+
 export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
+  const canvasHeight = canvasHeightFor(size)
+  // 7: 컴팩트 카드의 스테이지 뷰와 "크게 보기" 모달의 스테이지 뷰는 서로 다른 스크롤
+  // 컨테이너라 패닝 상태(드래그 중 여부)도 각자 따로 갖는다.
+  const stagePan = usePanScroll<HTMLDivElement>()
+  const modalStagePan = usePanScroll<HTMLDivElement>()
   const { activeResume } = useResumesState()
   const ownedSkills = useMemo(() => activeResume?.skills ?? [], [activeResume])
   // E: 이력서 스킬의 category(백엔드가 이미 내려주는 값)를 classifySkill에 넘겨서
@@ -525,7 +579,7 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
           title="목표 · 학습 워크플로우 맵"
           hint="북마크에서 목표를 선택하면 학습 순서를 보여줘요"
           right={(
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div className="wfm-header-actions">
               {!showNoBookmarks && !identity && <PreviewBadge />}
               {!showNoBookmarks && (
                 <div className="wfm-view-toggle" role="group" aria-label="보기 방식 전환">
@@ -671,22 +725,26 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
               </div>
             </div>
             <div className="wfm-graph-pane">
+              {/* 4: 목표 미선택/로딩/리스트/DAG 네 상태 모두 같은 canvasHeight를 쓴다
+                  (예전엔 각자 다른 높이 정책이라 상태가 바뀔 때마다 위젯 전체 높이가
+                  확 무너져 보였다) — 내용이 그보다 짧으면 안내문이 이 높이 안에서
+                  가운데 정렬되고, 길면 pane 안에서만 스크롤로 흡수한다. */}
               {showNoSelection ? (
-                <div className="wfm-empty wfm-empty--selection">
+                // flex:'none'으로 .wfm-empty 클래스의 flex:1(flex-basis:0%로 인라인
+                // height를 무시할 수 있다)을 이 자리에서만 눌러, canvasHeight가 그대로
+                // 이 블록의 실제 높이가 되게 한다.
+                <div className="wfm-empty wfm-empty--selection" style={{ height: canvasHeight, flex: 'none' }}>
                   <p className="wfm-empty__lead">북마크한 공고 중 목표로 삼을 걸 선택해보세요.</p>
                   <span className="wfm-empty__hint">위의 "목표 추가" 버튼에서 하나 이상 체크하면 학습 순서가 나타나요.</span>
                 </div>
               ) : isLoading ? (
-                <div className="wfm-loading" role="status" aria-live="polite">워크플로우 맵을 그리는 중이에요.</div>
+                <div className="wfm-loading" role="status" aria-live="polite" style={{ height: canvasHeight, flex: 'none' }}>워크플로우 맵을 그리는 중이에요.</div>
               ) : view === 'list' ? (
                 // D: 리스트 뷰 — 보유 밴드 · 공통 코어 · 공고별 트랙을 WorkflowList가
                 // 그린다. 라이브 로드맵은 안 쓰므로 roadmap.loading을 기다리지 않아도
                 // 되지만, 위 isLoading 게이트를 stages 뷰와 공유해 굳이 분기하지 않았다
                 // (실무상 로드맵 응답이 빨라 체감 지연이 거의 없다).
-                // 2026-07-20: 위젯이 대시보드 좌측 인사이트열 안에서 dov__layout 밖
-                // 전체 폭 행으로 옮겨지며 세로 여유가 늘어 상한을 500 -> 720으로
-                // 올렸다(콘텐츠가 그보다 많으면 여전히 이 안에서 스크롤로 흡수한다).
-                <div className="wfm-list-pane" style={{ maxHeight: size === '2x2' ? 720 : 260 }}>
+                <div className="wfm-list-pane" style={{ height: canvasHeight }}>
                   <WorkflowList
                     ownedSkills={ownedSkills}
                     ownedSkillCategories={ownedSkillCategories}
@@ -708,7 +766,18 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
                       </button>
                     </div>
                   )}
-                  <div className="wfm-stage-pane" style={{ maxHeight: size === '2x2' ? 720 : 260 }}>
+                  {/* 7: 빈 캔버스 영역을 마우스로 눌러 끌면 스크롤 위치가 옮겨진다
+                      (usePanScroll) — 카드·버튼 위에서 누르면 패닝 대신 원래 클릭이
+                      그대로 동작한다. */}
+                  <div
+                    ref={stagePan.ref}
+                    className={`wfm-stage-pane${stagePan.isPanning ? ' is-panning' : ''}`}
+                    style={{ height: canvasHeight }}
+                    onMouseDown={stagePan.onMouseDown}
+                    onMouseMove={stagePan.onMouseMove}
+                    onMouseUp={stagePan.onMouseUp}
+                    onMouseLeave={stagePan.onMouseLeave}
+                  >
                     <WorkflowStages
                       ownedSkills={ownedSkills}
                       ownedSkillCategories={ownedSkillCategories}
@@ -765,7 +834,14 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
               </div>
             ) : (
               <>
-                <div className="wfm-modal__stage">
+                <div
+                  ref={modalStagePan.ref}
+                  className={`wfm-modal__stage${modalStagePan.isPanning ? ' is-panning' : ''}`}
+                  onMouseDown={modalStagePan.onMouseDown}
+                  onMouseMove={modalStagePan.onMouseMove}
+                  onMouseUp={modalStagePan.onMouseUp}
+                  onMouseLeave={modalStagePan.onMouseLeave}
+                >
                   <WorkflowStages
                     ownedSkills={ownedSkills}
                     ownedSkillCategories={ownedSkillCategories}
