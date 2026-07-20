@@ -261,9 +261,9 @@ export type WhatIfData = {
 }
 
 // F-2: AI 로드맵 보강 — 별도 에이전트가 백엔드에 붙이는 중인 엔드포인트. 경로가
-// /roadmap/enrich 또는 /match/roadmap-enrich 둘 중 하나로 확정될 수 있어 한 곳(상수)만
-// 바꾸면 되게 뺐다. 기본값은 /roadmap/enrich.
-export const ROADMAP_ENRICH_PATH = '/roadmap/enrich'
+// 백엔드가 match 라우터에 붙여 확정된 경로. request가 /api/v1을 붙이므로 여기선 그 뒤만 둔다.
+// 실제 호출은 /api/v1/match/roadmap/enrich 가 된다.
+export const ROADMAP_ENRICH_PATH = '/match/roadmap/enrich'
 
 export type RoadmapEnrichRequest = {
   goal_company: string
