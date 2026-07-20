@@ -1,0 +1,87 @@
+{
+  "_meta": {
+    "version": "v1",
+    "curated_by": "fable",
+    "date": "2026-07-20",
+    "description": "백엔드 직군 로드맵 정본. roadmap.sh 백엔드 로드맵의 섹션 구조와 순서를 참고하되, 노드 명칭은 skillRelations.json(requires/goes_with/alternative/cert_path/concept_path)과 data-collector-script/concepts_taxonomy.json의 canonical 명에 맞췄다. 로그인·북마크 없이도 항상 그려지는 백본이라 note는 지어낸 통계 없이 담백하게 쓴다.",
+    "prereq_rule": "모든 prereqs는 자기 자신과 같은 섹션이거나 더 앞선 섹션의 노드만 가리킨다(RoadmapNode.prereqs 주석 참고)."
+  },
+  "id": "backend",
+  "label": "백엔드",
+  "sections": [
+    { "id": "foundations", "title": "기초", "order": 1 },
+    { "id": "language-runtime", "title": "언어와 런타임", "order": 2 },
+    { "id": "framework", "title": "프레임워크", "order": 3 },
+    { "id": "database", "title": "관계형 DB", "order": 4 },
+    { "id": "api-design", "title": "API 설계", "order": 5 },
+    { "id": "auth-security", "title": "인증/보안", "order": 6 },
+    { "id": "caching-performance", "title": "캐싱/성능", "order": 7 },
+    { "id": "messaging-async", "title": "메시지 큐/비동기", "order": 8 },
+    { "id": "scale-distributed", "title": "확장/분산", "order": 9 },
+    { "id": "observability", "title": "관측성", "order": 10 },
+    { "id": "containers-deploy", "title": "컨테이너/배포", "order": 11 }
+  ],
+  "nodes": [
+    { "id": "internet", "label": "인터넷 동작 방식", "type": "concept", "section": "foundations", "order": 1, "marker": "recommended", "prereqs": [], "note": "요청이 브라우저에서 서버까지 어떻게 오가는지 아는 게 백엔드 학습의 출발점이다." },
+    { "id": "http", "label": "HTTP", "type": "concept", "section": "foundations", "order": 2, "marker": "recommended", "prereqs": ["internet"], "note": "요청과 응답의 메서드, 상태 코드, 헤더 구조를 이해해야 API를 설계할 수 있다." },
+    { "id": "git", "label": "Git", "type": "skill", "section": "foundations", "order": 3, "marker": "recommended", "prereqs": [], "note": "버전 관리와 협업의 기본 도구다." },
+    { "id": "terminal-basics", "label": "터미널 기초", "type": "skill", "section": "foundations", "order": 4, "marker": "recommended", "prereqs": [], "note": "서버 작업은 대부분 커맨드라인에서 이뤄진다." },
+
+    { "id": "python", "label": "Python", "type": "skill", "section": "language-runtime", "order": 5, "marker": "recommended", "prereqs": ["terminal-basics"], "note": "문법이 간결해 백엔드 입문 언어로 널리 쓰인다." },
+    { "id": "javascript", "label": "JavaScript", "type": "skill", "section": "language-runtime", "order": 6, "marker": "alternative", "prereqs": ["terminal-basics"], "note": "프론트와 백엔드를 같은 언어로 다룰 수 있다." },
+    { "id": "nodejs-runtime", "label": "Node.js", "type": "skill", "section": "language-runtime", "order": 7, "marker": "alternative", "prereqs": ["javascript"], "note": "JavaScript로 서버를 실행하는 런타임이다." },
+    { "id": "java", "label": "Java", "type": "skill", "section": "language-runtime", "order": 8, "marker": "alternative", "prereqs": ["terminal-basics"], "note": "정적 타입과 JVM 생태계를 갖춘 전통적인 백엔드 언어다." },
+    { "id": "kotlin", "label": "Kotlin", "type": "skill", "section": "language-runtime", "order": 9, "marker": "alternative", "prereqs": ["terminal-basics"], "note": "Java와 상호운용되며 문법이 더 간결하다." },
+
+    { "id": "django", "label": "Django", "type": "skill", "section": "framework", "order": 10, "marker": "recommended", "prereqs": ["python"], "note": "ORM과 관리자 화면 등 필요한 걸 대부분 갖춘 풀스택 프레임워크다." },
+    { "id": "fastapi", "label": "FastAPI", "type": "skill", "section": "framework", "order": 11, "marker": "alternative", "prereqs": ["python"], "note": "타입 힌트 기반으로 빠르고 API 문서를 자동 생성한다." },
+    { "id": "flask", "label": "Flask", "type": "skill", "section": "framework", "order": 12, "marker": "alternative", "prereqs": ["python"], "note": "최소 구성으로 시작해 필요한 것만 붙여나가는 마이크로 프레임워크다." },
+    { "id": "spring", "label": "Spring", "type": "skill", "section": "framework", "order": 13, "marker": "alternative", "prereqs": ["java"], "note": "Java·Kotlin 생태계의 표준 백엔드 프레임워크다." },
+    { "id": "express", "label": "Express", "type": "skill", "section": "framework", "order": 14, "marker": "alternative", "prereqs": ["nodejs-runtime"], "note": "Node.js 위에서 가장 널리 쓰이는 가벼운 웹 프레임워크다." },
+    { "id": "nestjs", "label": "NestJS", "type": "skill", "section": "framework", "order": 15, "marker": "optional", "prereqs": ["nodejs-runtime"], "note": "Node.js에 구조화된 아키텍처를 얹은 프레임워크다." },
+
+    { "id": "sql", "label": "SQL", "type": "skill", "section": "database", "order": 16, "marker": "recommended", "prereqs": [], "note": "관계형 DB를 다루는 기본 언어다." },
+    { "id": "postgresql", "label": "PostgreSQL", "type": "skill", "section": "database", "order": 17, "marker": "recommended", "prereqs": ["sql"], "note": "확장성과 표준 준수가 강점인 오픈소스 관계형 DB다." },
+    { "id": "mysql", "label": "MySQL", "type": "skill", "section": "database", "order": 18, "marker": "alternative", "prereqs": ["sql"], "note": "가장 널리 쓰이는 오픈소스 관계형 DB 중 하나다." },
+    { "id": "mariadb", "label": "MariaDB", "type": "skill", "section": "database", "order": 19, "marker": "optional", "prereqs": ["sql"], "note": "MySQL에서 갈라져 나온 호환 DB다." },
+    { "id": "sqld-cert", "label": "SQLD", "type": "cert", "section": "database", "order": 20, "marker": "optional", "prereqs": ["sql"], "note": "SQL 활용 능력을 검증하는 국내 자격증이다." },
+
+    { "id": "rest-api", "label": "REST API 설계", "type": "concept", "section": "api-design", "order": 21, "marker": "recommended", "prereqs": ["http", "sql"], "note": "자원을 URL과 HTTP 메서드로 표현하는 설계 방식이다. 그 자원은 보통 DB에 저장된 데이터라 SQL 지식이 함께 쓰인다." },
+    { "id": "api-docs", "label": "API 문서화(OpenAPI)", "type": "concept", "section": "api-design", "order": 22, "marker": "recommended", "prereqs": ["rest-api"], "note": "명세를 문서화해두면 프론트와 협업할 때 API를 따로 설명할 필요가 줄어든다." },
+    { "id": "graphql", "label": "GraphQL", "type": "concept", "section": "api-design", "order": 23, "marker": "alternative", "prereqs": ["rest-api"], "note": "클라이언트가 필요한 필드만 골라 요청하는 쿼리 기반 API 방식이다." },
+
+    { "id": "auth-authn-authz", "label": "인증·인가", "type": "concept", "section": "auth-security", "order": 24, "marker": "recommended", "prereqs": ["rest-api"], "note": "누가 요청했는지(인증)와 무엇을 할 수 있는지(인가)를 구분해서 설계해야 한다." },
+    { "id": "jwt-oauth", "label": "JWT·OAuth", "type": "concept", "section": "auth-security", "order": 25, "marker": "recommended", "prereqs": ["auth-authn-authz"], "note": "토큰 기반 인증과 외부 서비스 연동 로그인에 쓰이는 표준이다." },
+    { "id": "info-security", "label": "정보보안", "type": "concept", "section": "auth-security", "order": 26, "marker": "optional", "prereqs": ["auth-authn-authz"], "note": "입력 검증, 암호화, 취약점 대응처럼 인증 이후에도 계속 신경 써야 하는 영역이다." },
+
+    { "id": "redis", "label": "Redis", "type": "skill", "section": "caching-performance", "order": 27, "marker": "recommended", "prereqs": ["postgresql"], "note": "메모리 기반 저장소로 캐시와 세션 저장에 자주 쓰인다." },
+    { "id": "caching-strategy", "label": "캐싱 전략", "type": "concept", "section": "caching-performance", "order": 28, "marker": "recommended", "prereqs": ["redis"], "note": "무엇을 얼마나 오래 캐시할지, 어떻게 무효화할지 결정하는 설계 영역이다." },
+    { "id": "perf-optimization", "label": "확장성·성능 최적화", "type": "concept", "section": "caching-performance", "order": 29, "marker": "optional", "prereqs": ["caching-strategy"], "note": "쿼리, 인덱스, 캐시를 조합해 응답 속도와 처리량을 함께 관리하는 영역이다." },
+
+    { "id": "message-queue", "label": "메시지 큐", "type": "concept", "section": "messaging-async", "order": 30, "marker": "recommended", "prereqs": ["caching-strategy"], "note": "작업을 바로 처리하지 않고 큐에 쌓아 비동기로 처리하는 방식이다." },
+    { "id": "kafka", "label": "Kafka", "type": "skill", "section": "messaging-async", "order": 31, "marker": "recommended", "prereqs": ["message-queue"], "note": "대용량 이벤트 스트림을 처리하는 분산 메시징 시스템이다." },
+    { "id": "event-driven", "label": "이벤트 기반·비동기", "type": "concept", "section": "messaging-async", "order": 32, "marker": "optional", "prereqs": ["kafka"], "note": "서비스끼리 직접 호출하는 대신 이벤트를 주고받아 느슨하게 연결하는 설계 방식이다." },
+
+    { "id": "msa", "label": "MSA·마이크로서비스", "type": "concept", "section": "scale-distributed", "order": 33, "marker": "recommended", "prereqs": ["spring"], "note": "하나의 큰 서비스를 독립 배포 가능한 여러 서비스로 쪼개는 아키텍처다. Spring 같은 프레임워크와 컨테이너 배포를 함께 쓴다." },
+    { "id": "high-traffic", "label": "대규모 트래픽", "type": "concept", "section": "scale-distributed", "order": 34, "marker": "recommended", "prereqs": ["redis", "kafka", "msa"], "note": "동시 요청이 몰릴 때도 서비스가 버티도록 캐시, 큐, 서비스 분리를 함께 고려해야 한다." },
+    { "id": "distributed-systems", "label": "분산 시스템", "type": "concept", "section": "scale-distributed", "order": 35, "marker": "optional", "prereqs": ["msa"], "note": "여러 노드에 걸쳐 상태와 요청을 나누는 만큼 일관성과 장애 처리가 새로운 문제로 등장한다." },
+    { "id": "high-availability", "label": "고가용성·안정성", "type": "concept", "section": "scale-distributed", "order": 36, "marker": "optional", "prereqs": ["distributed-systems"], "note": "장애가 나도 서비스가 멈추지 않도록 이중화하고 빠르게 복구하는 설계 목표다." },
+
+    { "id": "prometheus", "label": "Prometheus", "type": "skill", "section": "observability", "order": 37, "marker": "recommended", "prereqs": ["high-traffic"], "note": "시계열로 지표를 수집하는 모니터링 도구다." },
+    { "id": "grafana", "label": "Grafana", "type": "skill", "section": "observability", "order": 38, "marker": "recommended", "prereqs": ["prometheus"], "note": "수집된 지표를 대시보드로 시각화하는 도구다." },
+    { "id": "observability", "label": "모니터링·옵저버빌리티", "type": "concept", "section": "observability", "order": 39, "marker": "recommended", "prereqs": ["prometheus", "grafana"], "note": "지표, 로그, 트레이스를 함께 봐야 장애 원인을 빠르게 좁힐 수 있다." },
+    { "id": "logging", "label": "로그 수집·분석", "type": "concept", "section": "observability", "order": 40, "marker": "optional", "prereqs": ["observability"], "note": "여러 서비스의 로그를 한곳에 모아 검색 가능한 형태로 남기는 작업이다." },
+
+    { "id": "linux", "label": "Linux", "type": "skill", "section": "containers-deploy", "order": 41, "marker": "recommended", "prereqs": ["terminal-basics"], "note": "대부분의 서버가 리눅스 위에서 돈다." },
+    { "id": "cloud-platform", "label": "클라우드(AWS/GCP/Azure)", "type": "skill", "section": "containers-deploy", "order": 42, "marker": "recommended", "prereqs": ["linux"], "note": "서버를 직접 구매하는 대신 필요한 만큼 빌려 쓰는 인프라다." },
+    { "id": "docker", "label": "Docker", "type": "skill", "section": "containers-deploy", "order": 43, "marker": "recommended", "prereqs": ["linux"], "note": "애플리케이션과 실행 환경을 통째로 묶어 어디서나 같게 실행한다." },
+    { "id": "cicd", "label": "CI/CD·자동화", "type": "concept", "section": "containers-deploy", "order": 44, "marker": "recommended", "prereqs": ["docker", "git"], "note": "코드 변경을 테스트하고 배포까지 자동으로 이어지게 만드는 파이프라인이다." },
+    { "id": "kubernetes", "label": "Kubernetes", "type": "skill", "section": "containers-deploy", "order": 45, "marker": "recommended", "prereqs": ["docker"], "note": "여러 컨테이너를 묶어 자동으로 배포하고 복구하는 오케스트레이션 도구다." },
+    { "id": "helm", "label": "Helm", "type": "skill", "section": "containers-deploy", "order": 46, "marker": "optional", "prereqs": ["kubernetes"], "note": "쿠버네티스 배포 설정을 패키지로 관리하는 도구다." },
+    { "id": "argocd", "label": "ArgoCD", "type": "skill", "section": "containers-deploy", "order": 47, "marker": "alternative", "prereqs": ["kubernetes"], "note": "Git 저장소 상태를 그대로 클러스터에 반영하는 배포 도구다." },
+    { "id": "terraform", "label": "Terraform", "type": "skill", "section": "containers-deploy", "order": 48, "marker": "optional", "prereqs": ["cloud-platform"], "note": "인프라 구성을 코드로 작성해 재현 가능하게 만드는 도구다." },
+    { "id": "devops-automation", "label": "DevOps·인프라자동화", "type": "concept", "section": "containers-deploy", "order": 49, "marker": "optional", "prereqs": ["cicd", "terraform"], "note": "배포뿐 아니라 인프라 구성 자체를 코드와 자동화로 관리하는 흐름이다." },
+    { "id": "cka-cert", "label": "CKA", "type": "cert", "section": "containers-deploy", "order": 50, "marker": "optional", "prereqs": ["kubernetes"], "note": "쿠버네티스 운영 능력을 검증하는 자격증이다." },
+    { "id": "aws-cert", "label": "AWS Certified", "type": "cert", "section": "containers-deploy", "order": 51, "marker": "optional", "prereqs": ["cloud-platform"], "note": "AWS 클라우드 서비스 활용 능력을 검증하는 자격증이다." }
+  ]
+}

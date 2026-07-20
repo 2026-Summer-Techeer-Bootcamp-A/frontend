@@ -1,0 +1,298 @@
+/* 로드맵 백본 뷰(RoadmapView.tsx) — roadmap.sh 스타일: 중앙 척추에 섹션 마일스톤,
+   그 아래 점선 커넥터로 가지 노드. 색은 근본적으로 모노크롬(near-black) + 그린
+   #1f9d57 하나만 액센트로 쓰고, 노드 타입 3색(기술 그린/자격증 퍼플/개념 앰버)은
+   workflowMap.css의 wfs-type 계열 팔레트를 그대로 재사용해 스테이지 뷰와 색 언어를
+   통일한다. rmv 프리픽스로 wfm/wfs 클래스들과 완전히 분리해 서로 간섭하지 않는다. */
+
+.rmv-root {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rmv-tracks {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  align-self: flex-start;
+  background: var(--accent-50, #f0f0f1);
+  border-radius: 999px;
+  padding: 2px;
+}
+.rmv-tracks__btn {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 999px;
+  color: var(--c-muted, #71717a);
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.rmv-tracks__btn:hover { color: var(--c-ink, #18181b); }
+.rmv-tracks__btn.is-active { background: var(--c-ink, #18181b); color: #fff; }
+
+/* 게임 성취 레이어 상단 — 진척 게이지. 캔버스 스크롤과 무관하게 항상 보이는
+   고정 헤더다(캔버스 안에 넣지 않는다). */
+.rmv-progress {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 2px 2px 0;
+}
+.rmv-progress__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.rmv-progress__label {
+  font-size: 11.5px;
+  font-weight: 750;
+  color: var(--c-ink, #18181b);
+}
+.rmv-progress__count {
+  font-size: 11px;
+  font-weight: 800;
+  color: #1f9d57;
+  font-variant-numeric: tabular-nums;
+}
+.rmv-progress__bar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--accent-100, #e4e4e7);
+  overflow: hidden;
+}
+.rmv-progress__fill {
+  height: 100%;
+  border-radius: 999px;
+  background: #1f9d57;
+  transition: width 0.3s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rmv-progress__fill { transition: none; }
+}
+.rmv-progress__guest {
+  font-size: 10.5px;
+  color: var(--c-muted, #7c7f88);
+}
+
+/* 캔버스 — 고정 높이 + 내부 스크롤 + 드래그 패닝(usePanScroll). 빈 배경 영역을
+   눌러 끌면 스크롤 위치가 옮겨지고, 노드/버튼 위에서 누르면 원래 클릭이
+   그대로 동작한다(wfm-stage-pane과 같은 패턴). */
+.rmv-canvas {
+  box-sizing: border-box;
+  width: 100%;
+  overflow: auto;
+  padding: 14px 4px 20px;
+  cursor: grab;
+}
+.rmv-canvas.is-panning {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.rmv-spine {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  /* 중앙 척추 — 마일스톤들을 세로로 잇는 얇은 선. 마일스톤 pill이 그 위에 얹혀
+     선을 가린다(z-index로 앞에 둔다). */
+}
+.rmv-spine::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 50%;
+  width: 2px;
+  background: var(--line, #e6e9ef);
+  transform: translateX(-50%);
+  z-index: 0;
+}
+
+.rmv-section {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.rmv-milestone {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 16px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1.6px solid var(--c-ink, #18181b);
+  box-shadow: 0 2px 6px rgba(20, 20, 24, 0.06);
+}
+.rmv-milestone.is-achieved {
+  border-color: #1f9d57;
+  background: #f0fbf4;
+}
+.rmv-milestone__index {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--c-ink, #18181b);
+  color: #fff;
+  font-size: 9.5px;
+  font-weight: 800;
+}
+.rmv-milestone.is-achieved .rmv-milestone__index { background: #1f9d57; }
+.rmv-milestone__title {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--c-ink, #18181b);
+}
+.rmv-milestone__count {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--c-muted, #7c7f88);
+  font-variant-numeric: tabular-nums;
+}
+.rmv-milestone__star {
+  flex: none;
+  color: #d8b877;
+}
+.rmv-milestone.is-achieved .rmv-milestone__star { color: #1f9d57; }
+
+/* 가지 노드 행 — 마일스톤 아래로 점선 커넥터를 통해 매달린 것처럼 보이게, 각 노드
+   위에 짧은 점선을 세로로 그어 위쪽 가상의 가로 줄기에 닿는 느낌을 준다. */
+.rmv-branches {
+  width: 100%;
+  max-width: 980px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px 12px;
+  padding: 10px 6px 22px;
+  border-top: 1px dashed var(--line, #d8dade);
+  margin-top: 2px;
+}
+
+.rmv-branch {
+  position: relative;
+  padding-top: 12px;
+}
+.rmv-branch::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 50%;
+  width: 0;
+  height: 13px;
+  border-left: 1.4px dashed var(--line, #b9bcc4);
+  transform: translateX(-50%);
+}
+
+.rmv-node {
+  box-sizing: border-box;
+  width: 168px;
+  border-radius: 12px;
+  padding: 9px 12px;
+  background: #fff;
+  border: 1.4px solid var(--line, #e6e9ef);
+  border-left-width: 4px;
+  transition: opacity 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* 마커 — 추천(실선, 기본) / 대안(점선) / 선택(더 옅은 점선). */
+.rmv-marker--alternative { border-style: dashed; }
+.rmv-marker--optional { border-style: dotted; opacity: 0.92; }
+
+/* 타입 좌측 테두리 3색 — 스테이지 뷰(workflowMap.css의 wfs-type--*)와 동일한 팔레트. */
+.rmv-type--skill { border-left-color: #1f9d57; }
+.rmv-type--cert { border-left-color: #8a6fc4; }
+.rmv-type--concept { border-left-color: #b8892b; }
+
+/* 상태 — 보유(그린 배경 틴트) / 지금 해금 가능(테두리 강조 링) / 잠김(흐림+그레이스케일). */
+.rmv-status--owned {
+  background: #f6fbf8;
+}
+.rmv-status--unlockable {
+  box-shadow: 0 0 0 2px rgba(31, 157, 87, 0.22);
+}
+.rmv-status--locked {
+  opacity: 0.48;
+  filter: grayscale(0.5);
+}
+
+/* 목표 강조 — 선택된 목표 공고가 요구하는 노드. 상태 색과 겹쳐도 구분되도록 바깥
+   점선 링을 하나 더 두른다(과한 채색 대신 링 하나로 절제). */
+.rmv-highlighted {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 3.4px #8a6fc4;
+}
+.rmv-status--unlockable.rmv-highlighted {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 3.4px #8a6fc4, 0 0 0 5.4px rgba(31, 157, 87, 0.22);
+}
+
+.rmv-node__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.rmv-node__label {
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 750;
+  color: var(--c-ink, #18181b);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rmv-node__statusicon { flex: none; }
+.rmv-status--owned .rmv-node__statusicon { color: #1f9d57; }
+.rmv-status--locked .rmv-node__statusicon { color: var(--c-muted, #9a9ca3); }
+
+.rmv-node__meta {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+.rmv-node__typebadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #f2f3f5;
+  color: var(--c-muted, #6b6f78);
+}
+.rmv-node__markerbadge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #f2f3f5;
+  color: var(--c-muted, #6b6f78);
+}
+.rmv-node__targetbadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(138, 111, 196, 0.12);
+  color: #6d4fb0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rmv-node { transition: none; }
+}
