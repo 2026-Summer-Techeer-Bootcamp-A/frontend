@@ -1,27 +1,29 @@
-/* 커리어 적합도 Split Diff(K7) — 시안 career-diff-redesign-v2.html(01번 확장 스플릿 다이어그램,
-   확정)을 컴포넌트로 옮긴 것. 색은 하드코딩하지 않고 기존 테마 캐스케이드 토큰(var(--c-*),
-   themes.ts)에 fallback 리터럴을 붙이는 기존 컨벤션(resume-insight.css의
+/* 커리어 적합도 Split Diff(K7, 확정 레이아웃) — 위에서 아래로 (1) 상태 보드 (2) 원문 대조
+   하이라이트 (3) 액션 체크리스트 3단 고정. 색은 하드코딩하지 않고 기존 테마 캐스케이드
+   토큰(var(--c-*), themes.ts)에 fallback 리터럴을 붙이는 기존 컨벤션(resume-insight.css의
    var(--c-muted, #7c7f88) 패턴)을 그대로 따른다. met/partial 전용 토큰(--c-met/--c-partial)은
    themes.ts 정본에 있고, gap은 이미 있는 --c-gap(코랄/레드)을 그대로 재사용한다.
 
-   next-box(보완점 박스)에는 왼쪽 액센트 보더를 두지 않는다 — "AI가 흔히 쓰는 디자인처럼
-   보인다"는 피드백으로 시안에서 이미 제거된 디테일이라 컴포넌트에도 그대로 반영한다.
+   팔레트 원칙: 근흑 모노크롬 + 그린 액센트(--sd-accent, #1f9d57 — career/workflow 화면군에서
+   이미 쓰는 "보유/긍정" 그린과 같은 값). 액센트는 AI 판단 배지·체크박스 등 UI 크롬에만 쓰고,
+   met/partial/gap 상태색과는 분리된 토큰이라 서로 섞이지 않는다. 자격요건/우대요건 뱃지는
+   요건의 "무게"를 나타내는 것이지 판정 상태가 아니므로 상태색이 아니라 잉크(근흑) 스케일만
+   쓴다.
 
-   폰트는 두 스택으로 나눈다. 한글 프로즈는 산세리프(--sd-sans)로, 인덱스 칩·원문 인용·diff
-   마커 같은 코드성 요소만 모노(--sd-mono)로 남긴다. 모노 스택이 Pretendard로 끝나는 것은
-   의도적이다. 라틴/코드 글리프는 모노로 렌더되고, SF Mono에 없는 한글 글리프는 시스템 폰트가
-   아니라 Pretendard로 폴백된다. */
+   next-box류 보완 박스에는 왼쪽 액센트 보더를 두지 않는다 — "AI가 흔히 쓰는 디자인처럼
+   보인다"는 라이브 피드백으로 이전 버전에서 이미 제거된 디테일이라 이번 재구성에도 유지한다.
+
+   폰트는 두 스택으로 나눈다. 한글 프로즈는 산세리프(--sd-sans)로, 원문 인용·diff 마커 같은
+   코드성 요소만 모노(--sd-mono)로 남긴다. */
 
 .rv__splitdiff {
   --sd-sans: 'Pretendard', 'Poppins', sans-serif;
   --sd-mono: ui-monospace, SFMono-Regular, 'SF Mono', 'Pretendard', 'Poppins', sans-serif;
+  --sd-accent: #1f9d57;
   display: flex;
   flex-direction: column;
   border: 1px solid var(--line, #e6e9ef);
   border-radius: var(--c-radius, 14px);
-  /* overflow: hidden이던 옛 설계는 마지막 행(row)의 met/partial/gap 배경이 하단 라운드 코너
-     밖으로 삐져나가는 걸 막기 위한 것이었다. 지금 레이아웃엔 가장자리에 붙는 통배경이 없어서
-     필요 없고, 오히려 quote 툴팁(rv__sd-quotecue-tip)이 카드 경계에서 잘리게 만든다. */
   overflow: visible;
   background: var(--c-card, #ffffff);
 }
@@ -56,45 +58,8 @@
   text-transform: uppercase;
   color: var(--c-muted, #a2a6b0);
 }
-.rv__sd-paircip--base { border-color: color-mix(in srgb, var(--c-accent, #0b0b0c) 40%, var(--line, #e6e9ef)); }
+.rv__sd-paircip--base { border-color: color-mix(in srgb, var(--c-ink, #0b0b0c) 40%, var(--line, #e6e9ef)); }
 .rv__sd-pairarrow { color: var(--c-muted, #a2a6b0); font-size: 15px; }
-
-/* 요구사항 레이아웃 토글(여백 주석 / 인라인) — pairbar와 같은 줄 우측에 붙는다(flex-wrap이라
-   좁은 화면에선 자연히 다음 줄로 내려간다). */
-.rv__sd-toggle {
-  display: inline-flex;
-  gap: 2px;
-  padding: 2px;
-  margin-left: auto;
-  border: 1px solid var(--line, #e6e9ef);
-  border-radius: 999px;
-  background: var(--c-chipbg, #f6f8fa);
-}
-.rv__sd-toggle button {
-  font-family: var(--sd-sans);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: -0.2px;
-  color: var(--c-muted, #71717a);
-  background: transparent;
-  border: none;
-  border-radius: 999px;
-  padding: 5px 11px;
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-.rv__sd-toggle button[aria-pressed='true'] {
-  background: var(--c-card, #fff);
-  color: var(--c-ink, #1c1d21);
-  box-shadow: 0 1px 2px rgba(20, 22, 28, 0.1);
-}
-.rv__sd-toggle button:focus-visible {
-  outline: 2px solid var(--c-accent, #0b0b0c);
-  outline-offset: 2px;
-}
-@media (prefers-reduced-motion: reduce) {
-  .rv__sd-toggle button { transition: none; }
-}
 
 .rv__sd-summary {
   display: grid;
@@ -115,8 +80,8 @@
   font-size: 12px;
   letter-spacing: -0.2px;
   font-weight: 700;
-  color: var(--c-accent, #0b0b0c);
-  border: 1px solid var(--c-accent, #0b0b0c);
+  color: var(--sd-accent);
+  border: 1px solid var(--sd-accent);
   background: var(--c-card, #fff);
   border-radius: 6px;
   padding: 3px 7px;
@@ -134,72 +99,99 @@
   color: var(--c-gap, #e0453a);
 }
 
-.rv__sd-score {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  padding: 14px 16px 12px;
-  border-bottom: 1px solid var(--line, #e6e9ef);
-}
-.rv__sd-donut { flex: none; line-height: 0; }
-.rv__ring-num {
-  font-family: var(--sd-sans);
-  font-size: 21px;
-  font-weight: 800;
-  letter-spacing: -0.5px;
-  font-variant-numeric: tabular-nums;
-  fill: var(--c-ink, #1c1d21);
-}
-.rv__ring-sub {
+/* ---------- 공용 섹션 래퍼 — 3단(상태 보드/원문 대조/액션 체크리스트)이 공유한다. ---------- */
+.rv__sd-section { padding: 16px; border-top: 1px solid var(--line, #e6e9ef); }
+.rv__sd-section:first-of-type { border-top: 0; }
+.rv__sd-section-title {
+  margin: 0 0 12px;
   font-family: var(--sd-sans);
   font-size: 11px;
-  font-weight: 600;
-  letter-spacing: -0.2px;
-  fill: var(--c-muted, #71717a);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--c-muted, #a2a6b0);
 }
-.rv__sd-score-meta { min-width: 0; }
-.rv__sd-score-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.rv__sd-score-head .t { font-size: 14px; font-weight: 700; letter-spacing: -0.3px; color: var(--c-ink, #1c1d21); }
-.rv__sd-formula {
-  margin: 6px 0 0;
-  font-family: var(--sd-sans);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: -0.2px;
-  color: var(--c-muted, #71717a);
-}
-.rv__sd-formula .met { color: var(--c-met, #1f7a63); font-weight: 700; }
-.rv__sd-formula .par { color: var(--c-partial, #8a6d3b); font-weight: 700; }
-.rv__sd-formula .gap { color: var(--c-gap, #e0453a); font-weight: 700; }
-.rv__sd-note {
-  margin: 4px 0 0;
-  font-family: var(--sd-sans);
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: -0.2px;
-  color: var(--c-muted, #71717a);
-  max-width: 52ch;
-}
-.rv__sd-legend {
-  display: flex;
-  gap: 13px;
-  flex-wrap: wrap;
-  margin-top: 8px;
-  font-family: var(--sd-sans);
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: -0.2px;
-  color: var(--c-muted, #71717a);
-}
-.rv__sd-legend span { display: inline-flex; align-items: center; gap: 6px; }
-.rv__sd-legend i { width: 10px; height: 10px; border-radius: 3px; }
-.rv__sd-legend i.met { background: var(--c-met, #1f7a63); }
-.rv__sd-legend i.partial { background: var(--c-partial, #8a6d3b); }
-.rv__sd-legend i.gap { background: var(--c-gap, #e0453a); }
 
-/* ---------- 형광펜 강조(hl) — 두 레이아웃 공유. color-mix로 흐린 배경 + 밑줄 box-shadow로
-   "형광펜 그은" 느낌을 낸다. 판정은 색만으로 두지 않으므로(공통 규칙) hl 자체는 색만 쓰고,
-   글자 라벨은 옆의 노트/뱃지가 맡는다. ---------- */
+/* ---------- 1. 상태 보드 — 충족/부분/공백 3열. 퍼센트 없이 개수 + 칩만. ---------- */
+.rv__sd-board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.rv__sd-col {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid var(--line, #e6e9ef);
+  border-radius: 12px;
+  padding: 10px 11px;
+  background: var(--c-card, #fff);
+}
+.rv__sd-col-head { display: flex; align-items: center; gap: 6px; }
+.rv__sd-col-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.rv__sd-col--met .rv__sd-col-dot { background: var(--c-met, #1f7a63); }
+.rv__sd-col--partial .rv__sd-col-dot { background: var(--c-partial, #8a6d3b); }
+.rv__sd-col--gap .rv__sd-col-dot { background: var(--c-gap, #e0453a); }
+.rv__sd-col-label {
+  font-family: var(--sd-sans);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  color: var(--c-ink, #1c1d21);
+}
+.rv__sd-col--met .rv__sd-col-label { color: var(--c-met, #1f7a63); }
+.rv__sd-col--partial .rv__sd-col-label { color: var(--c-partial, #8a6d3b); }
+.rv__sd-col--gap .rv__sd-col-label { color: var(--c-gap, #e0453a); }
+.rv__sd-col-count {
+  margin-left: auto;
+  font-family: var(--sd-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--c-muted, #71717a);
+  background: var(--c-chipbg, #f0f0f1);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+.rv__sd-col-empty { margin: 2px 0 0; font-size: 12px; color: var(--c-muted, #a2a6b0); }
+.rv__sd-col-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.rv__sd-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-radius: 8px;
+  padding: 7px 9px;
+  background: var(--c-chipbg, #f6f8fa);
+}
+.rv__sd-col--met .rv__sd-chip { background: color-mix(in srgb, var(--c-met, #1f7a63) 8%, var(--c-chipbg, #f6f8fa)); }
+.rv__sd-col--partial .rv__sd-chip { background: color-mix(in srgb, var(--c-partial, #8a6d3b) 9%, var(--c-chipbg, #f6f8fa)); }
+.rv__sd-col--gap .rv__sd-chip { background: color-mix(in srgb, var(--c-gap, #e0453a) 7%, var(--c-chipbg, #f6f8fa)); }
+.rv__sd-chip-text {
+  min-width: 0;
+  font-family: var(--sd-sans);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+  line-height: 1.4;
+  color: var(--c-ink, #1c1d21);
+}
+
+/* ---------- 자격요건/우대요건 뱃지 — 상태색이 아니라 잉크 스케일만 쓴다(무게 표시 ≠ 판정). ---------- */
+.rv__sd-kind {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--sd-sans);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+.rv__sd-kind--must { color: var(--c-card, #fff); background: var(--c-ink, #1c1d21); }
+.rv__sd-kind--preferred { color: var(--c-ink, #1c1d21); background: transparent; border: 1px solid var(--c-ink, #1c1d21); }
+
+/* ---------- 형광펜 강조(hl) — "원문 대조" 섹션이 쓴다. color-mix로 흐린 배경 + 밑줄 box-shadow로
+   "형광펜 그은" 느낌을 낸다. 판정은 색만으로 두지 않으므로(공통 규칙) 옆에 verdict 라벨을 같이
+   붙인다(rv__sd-evidence-vlabel). ---------- */
 .rv__sd-hl {
   border-radius: 3px;
   padding: 1px 4px;
@@ -221,276 +213,98 @@
   box-shadow: inset 0 -2px 0 var(--c-gap, #e0453a);
 }
 
-/* ---------- 상세 카드형(detail) — 좌우 2열 + 좁은 노트 컬럼 구조를 버리고, 요구사항마다
-   형광펜 줄 바로 아래 전체 폭 카드를 세로로 쌓는다(라이브 피드백: 화면을 넓혀도 노트가 좁다).
-   판정 구분은 상단 뱃지 + 옅은 배경 틴트만 쓰고, 왼쪽 컬러 테두리(레일)는 어디에도 없다
-   (라이브 피드백: "AI 티가 난다"). ---------- */
-.rv__sd-detail {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  padding: 16px;
-}
-.rv__sd-detail-item {
-  display: flex;
-  flex-direction: column;
+/* ---------- 2. 원문 대조 — 좌: 기준 문서 원문, 우: 판정 대상 근거. 근거 없는 항목은 따로 모아
+   "근거 없음"으로 솔직하게 표시한다(있는 척하지 않는다). ---------- */
+.rv__sd-evidence-empty { margin: 0; font-size: 12.5px; color: var(--c-muted, #71717a); }
+.rv__sd-evidence-head {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   gap: 10px;
-}
-.rv__sd-detail-line {
-  margin: 0;
+  margin-bottom: 8px;
   font-family: var(--sd-sans);
-  font-size: 15px;
-  line-height: 1.8;
-  color: var(--c-ink, #1c1d21);
-}
-
-.rv__sd-detailcard {
-  box-sizing: border-box;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  border: 1px solid var(--line, #e6e9ef);
-  border-radius: 12px;
-  padding: 14px 16px;
-  background: var(--c-card, #fff);
-}
-/* 판정별 옅은 배경 틴트 — 카드 자체 배경(var(--c-card))에 verdict 색을 아주 조금만 섞는다.
-   레일 대신 이 정도 톤 차이만으로 met/partial/gap을 구분한다. */
-.rv__sd-detailcard--met { background: color-mix(in srgb, var(--c-met, #1f7a63) 6%, var(--c-card, #fff)); }
-.rv__sd-detailcard--partial { background: color-mix(in srgb, var(--c-partial, #8a6d3b) 7%, var(--c-card, #fff)); }
-.rv__sd-detailcard--gap { background: color-mix(in srgb, var(--c-gap, #e0453a) 5%, var(--c-card, #fff)); }
-
-/* 판정 뱃지 — 색 배경 + 글자 라벨(색각 대응). 왼쪽 레일 대신 이 뱃지 하나로 판정을 표시한다. */
-.rv__sd-vbadge {
-  align-self: flex-start;
-  display: inline-flex;
-  align-items: center;
-  font-family: var(--sd-sans);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: -0.2px;
-  padding: 4px 10px;
-  border-radius: 999px;
-}
-.rv__sd-vbadge--met { color: var(--c-met, #1f7a63); background: color-mix(in srgb, var(--c-met, #1f7a63) 16%, transparent); }
-.rv__sd-vbadge--partial { color: var(--c-partial, #8a6d3b); background: color-mix(in srgb, var(--c-partial, #8a6d3b) 17%, transparent); }
-.rv__sd-vbadge--gap { color: var(--c-gap, #e0453a); background: color-mix(in srgb, var(--c-gap, #e0453a) 14%, transparent); }
-
-.rv__sd-detailcard-quote-label {
-  display: block;
-  font-family: var(--sd-sans);
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.03em;
   text-transform: uppercase;
   color: var(--c-muted, #a2a6b0);
-  margin-bottom: 5px;
 }
-.rv__sd-detailcard-quote-text {
-  margin: 0;
-  padding: 9px 12px;
-  border-radius: 8px;
-  background: var(--c-chipbg, #f6f8fa);
-  font-family: var(--sd-mono);
-  font-size: 13px;
-  font-weight: 400;
-  line-height: 1.6;
-  color: var(--c-ink, #1c1d21);
-}
-.rv__sd-detailcard-quote-text::before { content: '\201C'; }
-.rv__sd-detailcard-quote-text::after { content: '\201D'; }
-.rv__sd-detailcard-quote-missing {
-  margin: 0;
+.rv__sd-evidence-head span:last-child { text-align: right; }
+.rv__sd-evidence-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.rv__sd-evidence-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto;
+  align-items: center;
+  gap: 10px;
   font-family: var(--sd-sans);
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: -0.2px;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+.rv__sd-evidence-row .rv__sd-hl:last-of-type { text-align: right; }
+.rv__sd-evidence-arrow { color: var(--c-muted, #a2a6b0); font-size: 13px; flex: none; }
+.rv__sd-evidence-vlabel {
+  flex: none;
+  font-family: var(--sd-sans);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--c-muted, #71717a);
+  white-space: nowrap;
+}
+
+.rv__sd-noevidence {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line, #e6e9ef);
+}
+.rv__sd-noevidence-label {
+  margin: 0 0 8px;
+  font-family: var(--sd-sans);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   color: var(--c-gap, #e0453a);
 }
+.rv__sd-noevidence ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.rv__sd-noevidence li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+.rv__sd-noevidence-text { font-family: var(--sd-sans); font-size: 13px; font-weight: 600; color: var(--c-ink, #1c1d21); }
+.rv__sd-noevidence-note { font-family: var(--sd-sans); font-size: 12px; font-weight: 500; color: var(--c-muted, #71717a); }
 
-.rv__sd-detailcard-rationale {
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--c-muted, #71717a);
+/* ---------- 3. 액션 체크리스트 — 자격요건을 앞, 우대요건을 뒤로 정렬. 체크박스는 로컬 진척용. ---------- */
+.rv__sd-checklist-empty { margin: 0; font-size: 12.5px; color: var(--c-muted, #71717a); }
+.rv__sd-checklist { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; }
+.rv__sd-checklist-item + .rv__sd-checklist-item { border-top: 1px solid var(--line, #e6e9ef); }
+.rv__sd-checklist-row {
   display: flex;
-  gap: 6px;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 2px;
+  cursor: pointer;
 }
-.rv__sd-detailcard-rationale .k {
+.rv__sd-checklist-row input[type='checkbox'] {
   flex: none;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--sd-accent);
+  cursor: pointer;
+}
+.rv__sd-checklist-text {
+  flex: 1;
+  min-width: 0;
   font-family: var(--sd-sans);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: -0.1px;
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+  line-height: 1.5;
+  color: var(--c-ink, #1c1d21);
+}
+.rv__sd-checklist-text.is-done {
   color: var(--c-muted, #a2a6b0);
-  padding-top: 1px;
-}
-.rv__sd-detailcard-rationale span:last-child {
-  font-size: 13px;
-  font-weight: 400;
-  letter-spacing: -0.2px;
+  text-decoration: line-through;
 }
 
-/* 보완점 — 왼쪽 레일 대신 옅은 배경 틴트 + 작은 라벨 뱃지로만 구분한다. */
-.rv__sd-detailcard-next {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 9px 11px;
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--c-accent, #0b0b0c) 5%, transparent);
-}
-.rv__sd-detailcard-next .tag {
-  flex: none;
-  font-family: var(--sd-sans);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: -0.1px;
-  color: var(--c-accent, #0b0b0c);
-  background: var(--c-chipbg, #f0f0f1);
-  border-radius: 5px;
-  padding: 2px 7px;
-  white-space: nowrap;
-  margin-top: 1px;
-}
-.rv__sd-detailcard-next .step {
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: -0.2px;
-  line-height: 1.5;
-  color: var(--c-ink, #1c1d21);
-}
-
-/* ---------- 인라인 배지형(inline, 토글 라벨 "간단") ---------- */
-.rv__sd-inline {
-  margin: 0;
-  padding: 4px 16px 16px;
-  list-style: none;
-  font-family: var(--sd-sans);
-}
-.rv__sd-inline li {
-  padding: 11px 0;
-  border-top: 1px solid var(--line, #e6e9ef);
-}
-.rv__sd-inline li:first-child { border-top: 0; }
-.rv__sd-inline-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  font-size: 15px;
-  line-height: 1.7;
-  color: var(--c-ink, #1c1d21);
-}
-.rv__sd-vpill {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  font-family: var(--sd-mono);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  padding: 2px 8px;
-  border-radius: 6px;
-  white-space: nowrap;
-}
-.rv__sd-vpill--met { background: color-mix(in srgb, var(--c-met, #1f7a63) 15%, transparent); color: var(--c-met, #1f7a63); }
-.rv__sd-vpill--partial { background: color-mix(in srgb, var(--c-partial, #8a6d3b) 15%, transparent); color: var(--c-partial, #8a6d3b); }
-.rv__sd-vpill--gap { background: color-mix(in srgb, var(--c-gap, #e0453a) 12%, transparent); color: var(--c-gap, #e0453a); }
-.rv__sd-inline-sub {
-  margin: 6px 0 0;
-  padding-left: 2px;
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: -0.2px;
-  line-height: 1.5;
-  color: var(--c-muted, #71717a);
-  opacity: 0.85;
-}
-
-/* ---------- 원문 근거 인용 표식(quotecue) — 판정 대상 문서(target)의 quote를 다시 살리는
-   툴팁. 두 레이아웃이 공유한다. 트리거는 실제 button이라 Tab만으로 포커스되고, 포커스 시에도
-   :hover와 동일하게 툴팁이 뜬다(네이티브 title처럼 마우스 전용이 아니다). 툴팁은 배경/글자를
-   ink/card 색을 맞바꿔(반전) 라이트·다크 어느 테마에서도 항상 대비가 서게 한다. ---------- */
-.rv__sd-quotecue {
-  position: relative;
-  display: inline-flex;
-}
-.rv__sd-quotecue-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  width: 18px;
-  height: 18px;
-  padding: 0;
-  border: 1px solid var(--line, #e6e9ef);
-  border-radius: 50%;
-  background: var(--c-card, #fff);
-  color: var(--c-muted, #71717a);
-  font-family: var(--sd-mono);
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1;
-  cursor: help;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-}
-.rv__sd-quotecue-btn:hover,
-.rv__sd-quotecue-btn:focus-visible {
-  color: var(--c-accent, #0b0b0c);
-  border-color: var(--c-accent, #0b0b0c);
-  background: var(--c-chipbg, #f6f8fa);
-}
-.rv__sd-quotecue-btn:focus-visible {
-  outline: 2px solid var(--c-accent, #0b0b0c);
-  outline-offset: 2px;
-}
-/* 카드 경계 밖으로도 잘리지 않게(공통 규칙) rv__splitdiff의 overflow를 visible로 바꿔뒀다.
-   툴팁 자체는 항상 화면 기준 최상위로 뜨도록 z-index를 넉넉히 준다. */
-.rv__sd-quotecue-tip {
-  position: absolute;
-  z-index: 30;
-  left: 50%;
-  bottom: calc(100% + 8px);
-  transform: translateX(-50%) translateY(4px);
-  width: max-content;
-  min-width: 160px;
-  max-width: min(260px, 70vw);
-  padding: 8px 10px;
-  border-radius: 8px;
-  background: var(--c-ink, #1c1d21);
-  color: var(--c-card, #fff);
-  box-shadow: 0 10px 28px -10px rgba(20, 22, 28, 0.4);
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transition: opacity 0.12s ease, transform 0.12s ease;
-}
-.rv__sd-quotecue-btn:hover + .rv__sd-quotecue-tip,
-.rv__sd-quotecue-btn:focus-visible + .rv__sd-quotecue-tip,
-.rv__sd-quotecue-btn:focus + .rv__sd-quotecue-tip {
-  opacity: 1;
-  visibility: visible;
-  transform: translateX(-50%) translateY(0);
-}
-.rv__sd-quotecue-tip-role {
-  display: block;
-  font-family: var(--sd-sans);
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  color: color-mix(in srgb, var(--c-card, #fff) 65%, transparent);
-  margin-bottom: 3px;
-}
-.rv__sd-quotecue-tip-text {
-  display: block;
-  font-family: var(--sd-sans);
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 1.5;
-}
-@media (prefers-reduced-motion: reduce) {
-  .rv__sd-quotecue-btn { transition: none; }
-  .rv__sd-quotecue-tip { transition: none; }
+@media (max-width: 560px) {
+  .rv__sd-board { grid-template-columns: 1fr; }
+  .rv__sd-evidence-head { display: none; }
+  .rv__sd-evidence-row { grid-template-columns: 1fr; }
+  .rv__sd-evidence-row .rv__sd-hl:last-of-type { text-align: left; }
+  .rv__sd-evidence-arrow { display: none; }
 }

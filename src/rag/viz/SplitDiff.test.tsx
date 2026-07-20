@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { SplitDiff } from './SplitDiff'
 
 const jobVsResumePayload = {
@@ -12,11 +12,14 @@ const jobVsResumePayload = {
   degraded: false,
   requirements: [
     { id: 'R1', text: 'FastAPI 개발', source_quote: 'FastAPI로 운영할 분',
-      verdict: 'met', quote: 'FastAPI 40개 엔드포인트 운영', rationale: '일치', next_step: '' },
+      verdict: 'met', quote: 'FastAPI 40개 엔드포인트 운영', rationale: '일치', next_step: '',
+      requirement_kind: 'must' },
     { id: 'R4', text: 'ITIL 프로세스 이해', source_quote: 'ITIL 기반 인시던트 관리 경험',
-      verdict: 'partial', quote: '장애 대응 프로세스를 운영했습니다.', rationale: 'ITIL 용어는 없지만 전이 가능한 근거로 봤어요.', next_step: '' },
+      verdict: 'partial', quote: '장애 대응 프로세스를 운영했습니다.', rationale: 'ITIL 용어는 없지만 전이 가능한 근거로 봤어요.', next_step: '관련 경험을 이력서에 구체적으로 적어보세요',
+      requirement_kind: 'preferred' },
     { id: 'R6', text: 'K8s 운영', source_quote: 'EKS 운영', verdict: 'gap',
-      quote: '', rationale: '', next_step: '사이드프로젝트를 EKS에 배포' },
+      quote: '', rationale: '', next_step: '사이드프로젝트를 EKS에 배포',
+      requirement_kind: 'must' },
   ],
 }
 
@@ -37,55 +40,58 @@ const postingVsPostingPayload = {
   ],
 }
 
-beforeEach(() => {
-  localStorage.clear()
-})
-
-test('renders weighted score, pair bar, summary, and default detail layout (full-width card with quote)', () => {
+test('renders pair bar and summary without any percentage figure', () => {
   const { container } = render(<SplitDiff payload={jobVsResumePayload as any} />)
-  expect(screen.getByText(/75%/)).toBeInTheDocument()
   expect(screen.getByText('공고 · 플랫폼 백엔드')).toBeInTheDocument()
   expect(screen.getByText('내 이력서')).toBeInTheDocument()
   expect(screen.getByText(/K8s 운영이 공백/)).toBeInTheDocument()
 
-  // 공고 문구 형광펜 줄
-  expect(screen.getByText('FastAPI로 운영할 분')).toBeInTheDocument()
-  expect(screen.getByText('EKS 운영')).toBeInTheDocument()
-
-  // 상세 카드 안: 판정 뱃지 + 내 이력서 원문 인용(quote) + 판정 근거(rationale) + 보완점(next_step)
-  expect(screen.getByText('충족')).toBeInTheDocument()
-  expect(screen.getByText('부분 · 전이가능')).toBeInTheDocument()
-  expect(screen.getByText('공백')).toBeInTheDocument()
-  expect(screen.getByText('FastAPI 40개 엔드포인트 운영')).toBeInTheDocument()
-  expect(screen.getByText('장애 대응 프로세스를 운영했습니다.')).toBeInTheDocument()
-  expect(screen.getByText('일치')).toBeInTheDocument()
-  expect(screen.getByText(/사이드프로젝트를 EKS에 배포/)).toBeInTheDocument()
-  expect(screen.getByText('보완점')).toBeInTheDocument()
-
-  // 왼쪽 컬러 레일(테두리)은 어디에도 없어야 한다 — 옛 노트 카드의 verdict 전용 클래스가
-  // 남아있지 않은지 확인한다(rv__sd-note는 상단 score-strip 안내문과 클래스명이 겹치므로 제외).
-  expect(container.querySelector('.rv__sd-note-nv')).toBeNull()
-  expect(container.querySelector('.rv__sd-note--met')).toBeNull()
-  expect(container.querySelector('.rv__sd-vbadge--met')).not.toBeNull()
-  expect(container.querySelector('.rv__sd-detailcard--gap')).not.toBeNull()
+  // 확정 레이아웃엔 퍼센트 적합도 수치가 없어야 한다(가중 도넛/스코어 배지 전부 제거).
+  expect(container.textContent).not.toMatch(/\d+%/)
 })
 
-test('detail card shows the missing-evidence message when quote is empty', () => {
+test('status board groups requirements into met/partial/gap columns with requirement-kind badges', () => {
   render(<SplitDiff payload={jobVsResumePayload as any} />)
-  // R6(gap)은 quote가 빈 문자열이라 인용 대신 안내 문구가 떠야 한다.
-  expect(screen.getByText('내 이력서에서 근거를 찾지 못했어요')).toBeInTheDocument()
+  const board = screen.getByRole('region', { name: '요구사항 상태 보드' })
+
+  expect(within(board).getByText('FastAPI 개발')).toBeInTheDocument()
+  expect(within(board).getByText('ITIL 프로세스 이해')).toBeInTheDocument()
+  expect(within(board).getByText('K8s 운영')).toBeInTheDocument()
+
+  // 자격요건(R1, R6)은 솔리드 뱃지, 우대요건(R4)은 아웃라인 뱃지 클래스로 갈린다.
+  const mustBadges = board.querySelectorAll('.rv__sd-kind--must')
+  const preferredBadges = board.querySelectorAll('.rv__sd-kind--preferred')
+  expect(mustBadges.length).toBe(2)
+  expect(preferredBadges.length).toBe(1)
+
+  // 상태 카운트도 퍼센트가 아니라 개수로만 표시된다(met 1, partial 1, gap 1).
+  const counts = Array.from(board.querySelectorAll('.rv__sd-col-count')).map((el) => el.textContent)
+  expect(counts).toEqual(['1', '1', '1'])
 })
 
-test('detail card degrades gracefully when rationale and next_step are both empty', () => {
-  // postingVsPostingPayload의 B4는 rationale/next_step이 전부 빈 문자열인 간이 비교 데이터다.
-  // 카드는 깨지지 않고 판정 뱃지와 원문 안내(근거 없음)만 보여줘야 한다.
+test('requirement without an explicit kind defaults to 자격요건 (must) without inventing data', () => {
   render(<SplitDiff payload={postingVsPostingPayload as any} />)
-  expect(screen.getByText('ECC에서 S/4HANA로의 전환 프로젝트 참여')).toBeInTheDocument()
-  expect(screen.getAllByText('공백').length).toBeGreaterThan(0)
-  expect(screen.getByText('비교 공고에서 근거를 찾지 못했어요')).toBeInTheDocument()
+  const board = screen.getByRole('region', { name: '요구사항 상태 보드' })
+  // postingVsPostingPayload의 두 요구사항 모두 requirement_kind가 없다 — 기본값은 자격요건(솔리드).
+  expect(board.querySelectorAll('.rv__sd-kind--must').length).toBe(2)
+  expect(board.querySelectorAll('.rv__sd-kind--preferred').length).toBe(0)
 })
 
-test('renders posting vs posting payload through the same component, including degraded badge', () => {
+test('evidence compare maps posting quote to resume quote by color and collects no-evidence items honestly', () => {
+  render(<SplitDiff payload={jobVsResumePayload as any} />)
+  const evidence = screen.getByRole('region', { name: '원문 대조' })
+
+  // quote가 있는 R1, R4는 좌우로 매핑되어 보인다.
+  expect(within(evidence).getByText('FastAPI로 운영할 분')).toBeInTheDocument()
+  expect(within(evidence).getByText('FastAPI 40개 엔드포인트 운영')).toBeInTheDocument()
+
+  // quote가 빈 R6는 "근거 없음"으로 따로 모인다.
+  expect(within(evidence).getByText('근거 없음')).toBeInTheDocument()
+  expect(within(evidence).getByText('EKS 운영')).toBeInTheDocument()
+  expect(within(evidence).getByText('내 이력서에서 근거를 찾지 못했어요')).toBeInTheDocument()
+})
+
+test('renders posting vs posting payload through the same component, including degraded note', () => {
   render(<SplitDiff payload={postingVsPostingPayload as any} />)
   expect(screen.getByText('공고 · SAP SM 모듈 운영 담당자')).toBeInTheDocument()
   expect(screen.getByText('비교 공고 · 시니어 백엔드 엔지니어')).toBeInTheDocument()
@@ -93,42 +99,29 @@ test('renders posting vs posting payload through the same component, including d
   expect(screen.getByText(/비교 공고 원문을 찾지 못해 보유 기술 태그 기반 비교로 대체됐어요/)).toBeInTheDocument()
 })
 
-test('toggling to inline layout ("간단") shows verdict pills, quote tooltip cues, and only surfaces next_step for gap/partial', () => {
+test('action checklist orders must-have items before preferred ones and tracks checkbox progress locally', () => {
   render(<SplitDiff payload={jobVsResumePayload as any} />)
+  const checklist = screen.getByRole('region', { name: '액션 체크리스트' })
+  const items = within(checklist).getAllByRole('checkbox')
+  // next_step이 있는 항목은 R4(preferred)와 R6(must) 두 개다 — must가 먼저 와야 한다.
+  expect(items).toHaveLength(2)
 
-  // 기본(상세) 레이아웃엔 카드 안에서 이미 quote를 직접 인용하므로 quotecue 툴팁이 없어야 한다(중복 방지).
-  expect(screen.queryByRole('button', { name: '내 이력서 원문 근거 보기' })).not.toBeInTheDocument()
+  const labels = within(checklist).getAllByText(/사이드프로젝트를 EKS에 배포|관련 경험을 이력서에 구체적으로 적어보세요/)
+  expect(labels[0]).toHaveTextContent('사이드프로젝트를 EKS에 배포')
+  expect(labels[1]).toHaveTextContent('관련 경험을 이력서에 구체적으로 적어보세요')
 
-  fireEvent.click(screen.getByRole('button', { name: '간단' }))
-  expect(screen.getByRole('button', { name: '간단' })).toHaveAttribute('aria-pressed', 'true')
-  expect(screen.getByRole('button', { name: '상세' })).toHaveAttribute('aria-pressed', 'false')
-
-  // vpill은 마커+짧은 라벨을 이중 표기한다.
-  expect(screen.getByText(/\+ 충족/)).toBeInTheDocument()
-  expect(screen.getByText(/~ 부분/)).toBeInTheDocument()
-  expect(screen.getByText(/− 공백/)).toBeInTheDocument()
-
-  // gap 항목(R6)의 next_step만 보조 줄로 노출되고, met 항목(R1)엔 보조 줄이 없다.
-  expect(screen.getByText(/사이드프로젝트를 EKS에 배포/)).toBeInTheDocument()
-  expect(screen.queryByText('일치')).not.toBeInTheDocument()
-
-  // 인라인에서는 quote 툴팁 표식이 유지된다(quote가 있는 R1, R4만).
-  const cueButtons = screen.getAllByRole('button', { name: '내 이력서 원문 근거 보기' })
-  expect(cueButtons).toHaveLength(2)
-  const describedbyId = cueButtons[0].getAttribute('aria-describedby')
-  expect(describedbyId).toBeTruthy()
-  const tooltip = document.getElementById(describedbyId as string)
-  expect(tooltip).toHaveAttribute('role', 'tooltip')
-  expect(tooltip).toHaveTextContent('FastAPI 40개 엔드포인트 운영')
-
-  expect(localStorage.getItem('techeer_splitdiff_layout')).toBe('inline')
+  expect(items[0]).not.toBeChecked()
+  fireEvent.click(items[0])
+  expect(items[0]).toBeChecked()
 })
 
-test('unknown stored layout value (e.g. legacy "margin") falls back to the default detail layout', () => {
-  localStorage.setItem('techeer_splitdiff_layout', 'margin')
-  render(<SplitDiff payload={jobVsResumePayload as any} />)
-  expect(screen.getByRole('button', { name: '상세' })).toHaveAttribute('aria-pressed', 'true')
-  expect(screen.getByRole('button', { name: '간단' })).toHaveAttribute('aria-pressed', 'false')
-  // 상세 레이아웃 특유의 인용 블록이 보이면 정상적으로 폴백된 것이다.
-  expect(screen.getByText('FastAPI 40개 엔드포인트 운영')).toBeInTheDocument()
+test('action checklist shows an empty state when no requirement has a next step', () => {
+  const noActionPayload = {
+    ...jobVsResumePayload,
+    requirements: jobVsResumePayload.requirements.map((r) => ({ ...r, next_step: '' })),
+  }
+  render(<SplitDiff payload={noActionPayload as any} />)
+  const checklist = screen.getByRole('region', { name: '액션 체크리스트' })
+  expect(within(checklist).getByText('지금 더 준비할 액션이 없어요.')).toBeInTheDocument()
+  expect(within(checklist).queryAllByRole('checkbox')).toHaveLength(0)
 })
