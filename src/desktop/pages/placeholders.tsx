@@ -1356,12 +1356,16 @@ export function DesktopMy() {
 
   useEffect(() => {
     let cancelled = false
-    if (bookmarkIds.length === 0) {
+    // careerData.json(postings)에 이미 있는 id(로드맵 추천 공고 모달 등 데모 공고를 북마크한
+    // 경우)는 백엔드에 없거나 게스트라 항상 404가 나므로 API를 아예 부르지 않는다.
+    // 상세는 bookmarkedPostings의 mockPosting 분기가 postings에서 바로 채운다.
+    const idsNeedingDetail = bookmarkIds.filter((id) => !postings.some((p) => p.id === id))
+    if (idsNeedingDetail.length === 0) {
       setBookmarkedDetails([])
       return
     }
 
-    loadBookmarkDetails(bookmarkIds, (id) => jobsApi.detail(id))
+    loadBookmarkDetails(idsNeedingDetail, (id) => jobsApi.detail(id))
       .then((details) => { if (!cancelled) setBookmarkedDetails(details) })
 
     return () => { cancelled = true }
@@ -1400,12 +1404,14 @@ export function DesktopMy() {
 
   useEffect(() => {
     let cancelled = false
-    if (recentViewIds.length === 0) {
+    // 북마크와 같은 이유로 careerData.json(postings)에 있는 id는 API를 부르지 않는다.
+    const idsNeedingDetail = recentViewIds.filter((id) => !postings.some((p) => p.id === id))
+    if (idsNeedingDetail.length === 0) {
       setRecentViewDetails([])
       return
     }
 
-    loadBookmarkDetails(recentViewIds, (id) => jobsApi.detail(id))
+    loadBookmarkDetails(idsNeedingDetail, (id) => jobsApi.detail(id))
       .then((details) => { if (!cancelled) setRecentViewDetails(details) })
 
     return () => { cancelled = true }
