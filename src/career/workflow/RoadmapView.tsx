@@ -391,7 +391,7 @@ export function RoadmapView({
             else nodeRefs.current.delete(node.id)
           }}
           data-node-id={node.id}
-          className={`rmv-node rmv-marker--${node.marker} rmv-status--${status}${isMilestoneGoal ? ' rmv-node--milestone' : ''}${highlighted ? ' rmv-highlighted' : ''}${dock?.node.id === node.id ? ' rmv-node--active' : ''}`}
+          className={`rmv-node rmv-marker--${node.marker} rmv-status--${status}${isMilestoneGoal ? ' rmv-node--milestone' : ''}${highlighted ? ' rmv-highlighted' : ''}${dock?.node.id === node.id ? ' rmv-node--active' : ''}${activeNodeId === node.id ? ' rmv-node--edgesource' : edgeLinkedNodeIds.has(node.id) ? ' rmv-node--edgelinked' : ''}`}
           title={node.note}
           role="button"
           tabIndex={0}
@@ -399,12 +399,16 @@ export function RoadmapView({
           aria-label={`${node.label}, ${getMedallionAriaLabel(status, isMilestoneGoal)}`}
           onClick={() => handleNodeActivate(node, status)}
           onKeyDown={handleNodeKeyDown(node, status)}
+          onMouseEnter={() => { if (!pan.isPanning) setActiveNodeId(node.id) }}
+          onMouseLeave={() => setActiveNodeId((cur) => (cur === node.id ? null : cur))}
+          onFocus={() => setActiveNodeId(node.id)}
+          onBlur={() => setActiveNodeId((cur) => (cur === node.id ? null : cur))}
         >
           <div className={`rmv-medallion rmv-medallion--${medallionState}`} style={tierVars} aria-hidden="true">
-            {medallionState === 'milestone' && <Flag size={13} fill="#fff" />}
-            {medallionState === 'owned' && <Check size={14} />}
-            {medallionState === 'unlockable' && <Plus size={14} />}
-            {medallionState === 'locked' && <Lock size={13} />}
+            {medallionState === 'milestone' && <Flag size={11} fill="#fff" />}
+            {medallionState === 'owned' && <Check size={12} />}
+            {medallionState === 'unlockable' && <Plus size={12} />}
+            {medallionState === 'locked' && <Lock size={11} />}
           </div>
           <div className="rmv-node__body">
             <span className="rmv-node__label">{node.label}</span>
@@ -465,9 +469,17 @@ export function RoadmapView({
   // getBoundingClientRect는 스크롤 여부와 무관하게 뷰포트 좌표를 주므로, 노드 rect와
   // graphRef rect를 같은 시점에 빼면 스크롤 위치와 무관한 콘텐츠 내부 상대 좌표가
   // 나온다(캔버스를 스크롤해도 둘 다 같은 양만큼 움직이므로 차이는 그대로다).
+  //
+  // 전체 엣지를 늘 그리면 51개 노드/53개 엣지에서도 캔버스가 산만해진다는 피드백을
+  // 받아 온디맨드로 바꿨다 — 좌표 계산(recomputePrereqEdges)은 여전히 전체 엣지를
+  // 한 번에 계산해 두고(레이아웃이 바뀔 때만 다시 재는 게 맞다), 실제로 SVG에
+  // 그리는 건 activeNodeId(마우스 hover 또는 키보드 포커스 중인 노드)와 연결된
+  // 엣지만 렌더 시점에 필터링한다. 그래서 기본 상태(activeNodeId === null)에는
+  // 캔버스에 선이 하나도 없다.
   const graphRef = useRef<HTMLDivElement | null>(null)
   const nodeRefs = useRef<Map<string, HTMLDivElement>>(new Map())
-  const [prereqEdges, setPrereqEdges] = useState<{ key: string; d: string; toOwned: boolean }[]>([])
+  const [prereqEdges, setPrereqEdges] = useState<{ key: string; fromId: string; toId: string; d: string; toOwned: boolean }[]>([])
+  const [activeNodeId, setActiveNodeId] = useState<string | null>(null)
 
   const recomputePrereqEdges = useCallback(() => {
     const wrapper = graphRef.current
@@ -481,7 +493,7 @@ export function RoadmapView({
         y: rect.top + rect.height / 2 - wrapperRect.top,
       })
     })
-    const next: { key: string; d: string; toOwned: boolean }[] = []
+    const next: { key: string; fromId: string; toId: string; d: string; toOwned: boolean }[] = []
     track.nodes.forEach((node) => {
       const to = centers.get(node.id)
       if (!to) return
@@ -498,6 +510,8 @@ export function RoadmapView({
         const c2y = from.y + dy * 0.5
         next.push({
           key: `${prereqId}->${node.id}`,
+          fromId: prereqId,
+          toId: node.id,
           d: `M ${from.x} ${from.y} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${to.x} ${to.y}`,
           // 이미 보유 완료된 노드로 향하는 선은 더 옅게 — "이미 지나온 길"이라
           // 지금 당장 필요한 선행 관계보다 시선을 덜 끌어도 된다.
@@ -507,6 +521,24 @@ export function RoadmapView({
     })
     setPrereqEdges(next)
   }, [track, overlay])
+
+  // 지금 화면에 그릴 엣지 — activeNodeId가 없으면 아예 빈 배열(선 없음). 있으면 그
+  // 노드가 양 끝 중 하나로 걸린 엣지만 남긴다(그 노드의 직접 선행 + 그 노드를
+  // 선행으로 삼는 직접 의존 노드까지 함께 보여줘 "여기서 어디로 이어지는지"를
+  // 양방향으로 알 수 있게 한다).
+  const visiblePrereqEdges = useMemo(
+    () => (activeNodeId ? prereqEdges.filter((e) => e.fromId === activeNodeId || e.toId === activeNodeId) : []),
+    [prereqEdges, activeNodeId],
+  )
+
+  // 지금 보이는 엣지에 걸린 노드 id들 — 렌더 시 hover 대상 노드와 그와 연결된
+  // 노드에 옅은 강조를 얹기 위한 참조용 집합이다(선 자체 외에 카드에도 살짝
+  // 힌트를 줘서 "이게 지금 연결된 노드다"를 더 분명히 한다).
+  const edgeLinkedNodeIds = useMemo(() => {
+    const set = new Set<string>()
+    visiblePrereqEdges.forEach((e) => { set.add(e.fromId); set.add(e.toId) })
+    return set
+  }, [visiblePrereqEdges])
 
   // 재계산 트리거 — 뷰 전환(추천순/난이도순), 트랙 변경(track이 바뀌면 recompute
   // 함수 자체가 새로 만들어짐), 도크 열림/닫힘(캔버스 폭이 줄어 카드가 다시
@@ -578,11 +610,14 @@ export function RoadmapView({
         onMouseLeave={pan.onMouseLeave}
       >
         <div className="rmv-graph" ref={graphRef}>
-        {/* 선행 관계 오버레이 — pointer-events:none이라 클릭/포커스는 전부 노드 카드를
-            그대로 통과한다. DOM 순서상 rmv-spine보다 앞서 그려지고(z-index도
-            명시적으로 낮춰) 카드/메달리온/텍스트를 절대 가리지 않는다. */}
+        {/* 선행 관계 오버레이 — 온디맨드: 기본 상태엔 아무 선도 없다가, 노드에
+            마우스를 올리거나(hover) 포커스하면 그 노드에 직접 연결된 엣지만 뜬다
+            (visiblePrereqEdges가 activeNodeId 기준으로 이미 필터링해 둔다).
+            pointer-events:none이라 클릭/포커스는 전부 노드 카드를 그대로 통과한다.
+            DOM 순서상 rmv-spine보다 앞서 그려지고(z-index도 명시적으로 낮춰)
+            카드/메달리온/텍스트를 절대 가리지 않는다. */}
         <svg className="rmv-graph__edges" aria-hidden="true">
-          {prereqEdges.map((edge) => (
+          {visiblePrereqEdges.map((edge) => (
             <path
               key={edge.key}
               d={edge.d}
@@ -601,7 +636,7 @@ export function RoadmapView({
                     <span className="rmv-milestone__index">{section.order}</span>
                     <span className="rmv-milestone__title">{section.title}</span>
                     {progress && <span className="rmv-milestone__count">{progress.owned}/{progress.total}</span>}
-                    <Star className="rmv-milestone__star" size={13} fill={progress?.achieved ? '#1f9d57' : 'none'} />
+                    <Star className="rmv-milestone__star" size={11} fill={progress?.achieved ? '#1f9d57' : 'none'} />
                   </div>
                   <div className="rmv-branches">
                     {nodes.map((node) => renderNodeCard(node, false))}
@@ -622,7 +657,7 @@ export function RoadmapView({
                     <span className="rmv-milestone__index">{i + 1}</span>
                     <span className="rmv-milestone__title">{TIER_LABEL[tier]}</span>
                     {progress && <span className="rmv-milestone__count">{progress.owned}/{progress.total}</span>}
-                    <Star className="rmv-milestone__star" size={13} fill={achieved ? '#1f9d57' : 'none'} />
+                    <Star className="rmv-milestone__star" size={11} fill={achieved ? '#1f9d57' : 'none'} />
                   </div>
                   <div className="rmv-branches">
                     {nodes.map((node) => renderNodeCard(node, true))}
