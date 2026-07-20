@@ -242,12 +242,20 @@
 .rv__sd-icon--gap { background: var(--sd-gap); }
 
 /* ---------- 툴팁 — 담백한 카드. 기본은 시각적으로 숨겨두고(DOM에는 남겨 aria-describedby로
-   스크린리더가 읽게 함) 호버·포커스 시 보인다. ---------- */
+   스크린리더가 읽게 함) 호버·포커스 시 보인다.
+
+   position: fixed + 뷰포트 좌표(top/left)는 SplitDiff.tsx가 getBoundingClientRect로 계산해
+   인라인 style로 얹는다 — 채팅 스크롤 패널(rc__body)이나 상태 갤러리 데모 프레임
+   (ss-demoframe) 같은 조상의 overflow: hidden/auto에 잘리지 않기 위해서다(그 조상들에는
+   fixed의 컨테이닝 블록을 새로 만드는 transform/filter/perspective/contain이 없음을
+   확인했다). top/left 기본값 0은 JS가 아직 계산하기 전(hover/focus 전, 숨겨진 상태)의
+   자리표시자일 뿐이며 화면에 보이지 않는다. z-index 400은 이 화면 내부 요소들과 사이드
+   시트류(z-index 200대)보다는 높고, 실제 모달(500 이상)보다는 낮게 둔다. */
 .rv__sd-tooltip {
-  position: absolute;
-  z-index: 20;
+  position: fixed;
+  z-index: 400;
+  top: 0;
   left: 0;
-  bottom: calc(100% + 8px);
   display: flex;
   flex-direction: column;
   gap: 8px;
