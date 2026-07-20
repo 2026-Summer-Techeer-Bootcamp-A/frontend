@@ -1,3 +1,5 @@
+import { useCallback, useEffect, useRef, useState } from 'react'
+import type { RefObject } from 'react'
 import type { RequirementKind, RequirementVerdict, SplitDiffPayload, SplitDiffRequirement } from '../chatContract'
 import './SplitDiff.css'
 
@@ -198,6 +200,14 @@ function RequirementCanvas({
 // 하이라이트 구절 한 단위 — 형광펜 색 + 인라인 상태 아이콘 + 호버/포커스 툴팁.
 // 키보드 포커스로도 툴팁이 뜨도록 tabIndex를 주고, 툴팁 콘텐츠는 항상 DOM에 두되(스크린
 // 리더가 aria-describedby로 읽을 수 있게) CSS로 시각적으로만 숨겼다가 :hover/:focus에서 보인다.
+//
+// 툴팁은 채팅 스크롤 패널(rc__body)이나 상태 갤러리 데모 프레임(ss-demoframe) 같은 조상의
+// overflow: hidden/auto에 위쪽이 잘리곤 했다. 포탈로 body에 옮기면 클리핑은 완전히 피하지만
+// DOM상 형광펜 구절의 자식이 아니게 되어 aria-describedby 접근성 연결과 기존 vitest(within(hl)
+// 로 툴팁을 찾는 테스트들)가 깨진다. 그래서 툴팁 DOM 위치는 그대로 두고(포탈 없음), position:
+// fixed + JS로 계산한 뷰포트 좌표만 얹는다 — fixed 포지셔닝은 조상에 transform/filter/
+// perspective/contain 같은 새 컨테이닝 블록이 없는 한 overflow 클리핑을 그대로 피한다(이
+// 화면의 조상 체인에는 그런 속성이 없음을 확인했다).
 function HighlightUnit({
   text,
   req,
@@ -208,35 +218,106 @@ function HighlightUnit({
   targetRole: string
 }) {
   const tooltipId = `sd-tooltip-${req.id}`
+  const hlRef = useRef<HTMLSpanElement>(null)
+  const tooltipRef = useRef<HTMLSpanElement>(null)
+  const activeRef = useRef(false)
+  const [pos, setPos] = useState<TooltipPos | null>(null)
+
+  const reposition = useCallback(() => {
+    const trigger = hlRef.current
+    const tooltip = tooltipRef.current
+    if (!trigger || !tooltip) return
+    const triggerRect = trigger.getBoundingClientRect()
+    const tooltipRect = tooltip.getBoundingClientRect()
+    const gap = 8
+    const viewportW = window.innerWidth
+    const viewportH = window.innerHeight
+
+    // 위쪽 공간이 툴팁 높이보다 부족하고 아래쪽이 더 넓으면 뒤집어 아래에 띄운다.
+    const spaceAbove = triggerRect.top
+    const spaceBelow = viewportH - triggerRect.bottom
+    const placeBelow = spaceAbove < tooltipRect.height + gap && spaceBelow > spaceAbove
+    const top = placeBelow ? triggerRect.bottom + gap : triggerRect.top - tooltipRect.height - gap
+
+    // 가로로는 화면 밖으로 나가지 않게 클램프한다.
+    const maxLeft = Math.max(gap, viewportW - tooltipRect.width - gap)
+    const left = Math.min(Math.max(triggerRect.left, gap), maxLeft)
+
+    setPos({ top, left })
+  }, [])
+
+  const handleActivate = useCallback(() => {
+    activeRef.current = true
+    reposition()
+  }, [reposition])
+
+  const handleDeactivate = useCallback(() => {
+    activeRef.current = false
+  }, [])
+
+  // 툴팁이 떠 있는 동안 스크롤·리사이즈가 일어나면(fixed는 트리거를 따라가지 않으므로)
+  // 좌표를 다시 계산한다. 뜨지 않은 동안은 activeRef가 false라 사실상 no-op이다.
+  useEffect(() => {
+    const onViewportChange = () => {
+      if (activeRef.current) reposition()
+    }
+    window.addEventListener('scroll', onViewportChange, true)
+    window.addEventListener('resize', onViewportChange)
+    return () => {
+      window.removeEventListener('scroll', onViewportChange, true)
+      window.removeEventListener('resize', onViewportChange)
+    }
+  }, [reposition])
+
   return (
     <span
+      ref={hlRef}
       className={`rv__sd-hl rv__sd-hl--${req.verdict}`}
       tabIndex={0}
       aria-describedby={tooltipId}
       data-testid={`sd-hl-${req.id}`}
+      onMouseEnter={handleActivate}
+      onMouseLeave={handleDeactivate}
+      onFocus={handleActivate}
+      onBlur={handleDeactivate}
     >
       {text}
       <span className={`rv__sd-icon rv__sd-icon--${req.verdict}`} aria-hidden="true">
         {VERDICT_ICON[req.verdict]}
       </span>
       <span className="rv__sd-hl-sr">{VERDICT_LABEL[req.verdict]}</span>
-      <RequirementTooltip req={req} targetRole={targetRole} tooltipId={tooltipId} />
+      <RequirementTooltip req={req} targetRole={targetRole} tooltipId={tooltipId} tooltipRef={tooltipRef} pos={pos} />
     </span>
   )
+}
+
+interface TooltipPos {
+  top: number
+  left: number
 }
 
 function RequirementTooltip({
   req,
   targetRole,
   tooltipId,
+  tooltipRef,
+  pos,
 }: {
   req: SplitDiffRequirement
   targetRole: string
   tooltipId: string
+  tooltipRef: RefObject<HTMLSpanElement>
+  pos: TooltipPos | null
 }) {
   const kind = requirementKindOf(req)
   return (
-    <span className="rv__sd-tooltip" role="tooltip" id={tooltipId}>
+    <span
+      className="rv__sd-tooltip"
+      role="tooltip"
+      id={tooltipId}
+      ref={tooltipRef}
+      style={pos ? { top: pos.top, left: pos.left } : undefined}
+    >
       <span className="rv__sd-tooltip-head">
         <span className={`rv__sd-tooltip-verdict rv__sd-tooltip-verdict--${req.verdict}`}>
           {VERDICT_LABEL[req.verdict]}
