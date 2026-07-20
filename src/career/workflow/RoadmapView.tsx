@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent } from 'react'
-import { Award, Check, Lock, Star, Target, X } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent } from 'react'
+import { Award, Check, Lock, Plus, Star, Target, X } from 'lucide-react'
 import { loadRoadmapTrack, ROADMAP_TRACK_LIST, DEFAULT_ROADMAP_TRACK_ID } from '../../data/roadmaps/registry'
 import type { RoadmapNode } from '../../data/roadmaps/types'
-import { buildRoadmapOverlay, type NodeStatus } from './roadmapOverlay'
+import { buildRoadmapOverlay, TIER_LABEL, TIER_ORDER, type DifficultyTier, type NodeStatus } from './roadmapOverlay'
 import { dashboardApi } from '../api'
 import type { RoadmapNodeContentResponse } from '../api'
 import { getAuthToken } from '../authStore'
+import { SegmentedControl } from '../kit'
 import './roadmapView.css'
 
 // 로드맵 백본 뷰 — roadmap.sh 스타일로 섹션을 중앙 척추의 마일스톤으로, 그 섹션에
@@ -23,6 +24,30 @@ import './roadmapView.css'
 // 맞는다.
 const TYPE_LABEL: Record<RoadmapNode['type'], string> = { skill: '기술', concept: '개념', cert: '자격증' }
 const MARKER_LABEL: Record<RoadmapNode['marker'], string> = { recommended: '추천', alternative: '대안', optional: '선택' }
+
+// 메달리온 상태별 접근성 라벨. 이제 좌측 컬러 바 대신 원형 메달리온(색+글리프)으로
+// 상태를 표현하는데, 이 시각 정보를 스크린 리더에도 그대로 전달하려고 aria-label에
+// 덧붙인다. milestone(마일스톤/도전과제)은 owned를 대체하는 특별 상태라 따로 둔다.
+const STATUS_ARIA_LABEL: Record<NodeStatus | 'milestone', string> = {
+  owned: '보유함',
+  unlockable: '해금 가능',
+  locked: '잠김',
+  milestone: '핵심 업적 달성',
+}
+
+// 난이도 티어 색 — 근본 팔레트(near-black + 그린 #1f9d57)는 그대로 두고, 난이도순
+// 뷰에서만 메달리온의 그라데이션/링 색을 이 팔레트로 은은하게 갈아 끼운다(카드
+// 테두리나 좌측 바가 아니라 메달리온 내부 색 하나만 바뀌므로 상태 링(box-shadow)과
+// 겹쳐도 서로 덮어쓰지 않는다). 입문은 기존 그린 그대로, 고급으로 갈수록 붉은
+// 계열로 옮겨간다.
+const TIER_ACCENT: Record<DifficultyTier, { light: string; solid: string; ring: string; glow: string }> = {
+  intro: { light: '#3fc47e', solid: '#178a49', ring: 'rgba(31, 157, 87, 0.14)', glow: 'rgba(31, 157, 87, 0.3)' },
+  basic: { light: '#8fbf5e', solid: '#5c8a37', ring: 'rgba(92, 138, 55, 0.14)', glow: 'rgba(92, 138, 55, 0.3)' },
+  intermediate: { light: '#dba646', solid: '#b9791f', ring: 'rgba(185, 121, 31, 0.14)', glow: 'rgba(185, 121, 31, 0.3)' },
+  advanced: { light: '#d1705a', solid: '#b3492f', ring: 'rgba(179, 73, 47, 0.14)', glow: 'rgba(179, 73, 47, 0.3)' },
+}
+
+type RoadmapViewMode = 'recommended' | 'difficulty'
 
 // 노드 상세 도크 — roadmap.sh가 노드 클릭 시 자료를 펼치는 UX를 따라 한다. 콘텐츠는
 // RAG 엔드포인트(dashboardApi.roadmapNodeContent)에서 받아오되, 클릭 즉시는 그 노드의
@@ -134,6 +159,39 @@ export function RoadmapView({
 
   const sortedSections = useMemo(() => [...track.sections].sort((a, b) => a.order - b.order), [track])
 
+  // 뷰 모드 — 추천순(기본, 섹션 마일스톤)과 난이도순(prereqDepth 티어 마일스톤).
+  // 백본 데이터와 노드 콘텐츠는 완전히 같고, 이 상태는 오직 "노드를 어떤 마일스톤
+  // 아래로 묶어 어떤 순서로 늘어놓을지"만 바꾼다.
+  const [viewMode, setViewMode] = useState<RoadmapViewMode>('recommended')
+
+  const nodesByTier = useMemo(() => {
+    const map = new Map<DifficultyTier, RoadmapNode[]>()
+    TIER_ORDER.forEach((t) => map.set(t, []))
+    track.nodes.forEach((node) => {
+      const tier = overlay.difficultyById.get(node.id)?.tier ?? 'intro'
+      map.get(tier)!.push(node)
+    })
+    map.forEach((list) => list.sort((a, b) => {
+      const da = overlay.difficultyById.get(a.id)?.depth ?? 0
+      const db = overlay.difficultyById.get(b.id)?.depth ?? 0
+      if (da !== db) return da - db
+      return a.order - b.order
+    }))
+    return map
+  }, [track, overlay])
+
+  const tierProgress = useMemo(() => {
+    const map = new Map<DifficultyTier, { owned: number; total: number }>()
+    TIER_ORDER.forEach((t) => map.set(t, { owned: 0, total: 0 }))
+    track.nodes.forEach((node) => {
+      const tier = overlay.difficultyById.get(node.id)?.tier ?? 'intro'
+      const entry = map.get(tier)!
+      entry.total += 1
+      if (overlay.statusById.get(node.id) === 'owned') entry.owned += 1
+    })
+    return map
+  }, [track, overlay])
+
   // 노드 상세 도크 상태 — 클릭한 노드, 그 노드의 콘텐츠(처음엔 정적 note 폴백, 응답
   // 도착 시 교체), 로딩 여부. fetchSeqRef로 노드를 빠르게 갈아타도 낡은 응답이 최신
   // 도크를 덮어쓰지 않게 막는다.
@@ -212,6 +270,70 @@ export function RoadmapView({
     }
   }
 
+  // 노드 카드 — 추천순/난이도순 두 뷰가 완전히 같은 카드를 재사용한다(다른 건 어떤
+  // 마일스톤 아래 어떤 순서로 놓이는지, 그리고 난이도 뱃지 노출 여부뿐). 메달리온이
+  // 상태(보유/해금가능/잠김/마일스톤)를 원형 색+글리프로 표현하고, 타입은 라벨 아래
+  // 뮤트 텍스트 태그로만 조용히 드러낸다 — 좌측 컬러 바는 완전히 없앴다.
+  const renderNodeCard = (node: RoadmapNode, showDifficulty: boolean) => {
+    const status = overlay.statusById.get(node.id) ?? 'locked'
+    const highlighted = overlay.highlightedIds.has(node.id)
+    const isMilestone = overlay.milestoneEligibleIds.has(node.id) && status === 'owned'
+    const medallionState: NodeStatus | 'milestone' = isMilestone ? 'milestone' : status
+    const difficulty = overlay.difficultyById.get(node.id)
+
+    const tierVars = showDifficulty && difficulty && (medallionState === 'owned' || medallionState === 'unlockable')
+      ? ({
+          '--tier-light': TIER_ACCENT[difficulty.tier].light,
+          '--tier-solid': TIER_ACCENT[difficulty.tier].solid,
+          '--tier-ring': TIER_ACCENT[difficulty.tier].ring,
+          '--tier-glow': TIER_ACCENT[difficulty.tier].glow,
+        } as CSSProperties)
+      : undefined
+
+    return (
+      <div key={node.id} className="rmv-branch">
+        <div
+          className={`rmv-node rmv-marker--${node.marker} rmv-status--${status}${isMilestone ? ' rmv-node--milestone' : ''}${highlighted ? ' rmv-highlighted' : ''}${dock?.node.id === node.id ? ' rmv-node--active' : ''}`}
+          title={node.note}
+          role="button"
+          tabIndex={0}
+          aria-pressed={dock?.node.id === node.id}
+          aria-label={`${node.label}, ${STATUS_ARIA_LABEL[medallionState]}`}
+          onClick={() => handleNodeActivate(node, status)}
+          onKeyDown={handleNodeKeyDown(node, status)}
+        >
+          <div className={`rmv-medallion rmv-medallion--${medallionState}`} style={tierVars} aria-hidden="true">
+            {medallionState === 'milestone' && <Star size={14} fill="#fff" />}
+            {medallionState === 'owned' && <Check size={14} />}
+            {medallionState === 'unlockable' && <Plus size={14} />}
+            {medallionState === 'locked' && <Lock size={13} />}
+          </div>
+          <div className="rmv-node__body">
+            <span className="rmv-node__label">{node.label}</span>
+            <div className="rmv-node__meta">
+              <span className={`rmv-node__typetag rmv-node__typetag--${node.type}`}>
+                {node.type === 'cert' ? <Award size={9} /> : null}
+                {TYPE_LABEL[node.type]}
+              </span>
+              {node.marker !== 'recommended' && (
+                <span className="rmv-node__markerbadge">{MARKER_LABEL[node.marker]}</span>
+              )}
+              {highlighted && (
+                <span className="rmv-node__targetbadge"><Target size={9} />목표</span>
+              )}
+              {showDifficulty && difficulty && (
+                <>
+                  <span className={`rmv-node__tierbadge rmv-node__tierbadge--${difficulty.tier}`}>{TIER_LABEL[difficulty.tier]}</span>
+                  <span className="rmv-node__prereqbadge">선행 {difficulty.prereqCount}</span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   const handleTrackChange = (id: string) => {
     setActiveTrackId(id)
     closeDock()
@@ -256,6 +378,15 @@ export function RoadmapView({
         )}
       </div>
 
+      <div className="rmv-viewswitch">
+        <SegmentedControl
+          size="sm"
+          value={viewMode}
+          onChange={(v) => setViewMode(v as RoadmapViewMode)}
+          options={[{ key: 'recommended', label: '추천순' }, { key: 'difficulty', label: '난이도순' }]}
+        />
+      </div>
+
       <div className="rmv-canvasrow" style={{ height }}>
       <div
         ref={pan.ref}
@@ -265,59 +396,48 @@ export function RoadmapView({
         onMouseUp={pan.onMouseUp}
         onMouseLeave={pan.onMouseLeave}
       >
-        <div className="rmv-spine">
-          {sortedSections.map((section) => {
-            const nodes = nodesBySection.get(section.id) ?? []
-            const progress = overlay.sectionProgress.get(section.id)
-            return (
-              <div key={section.id} className="rmv-section">
-                <div className={`rmv-milestone${progress?.achieved ? ' is-achieved' : ''}`}>
-                  <span className="rmv-milestone__index">{section.order}</span>
-                  <span className="rmv-milestone__title">{section.title}</span>
-                  {progress && <span className="rmv-milestone__count">{progress.owned}/{progress.total}</span>}
-                  <Star className="rmv-milestone__star" size={13} fill={progress?.achieved ? '#1f9d57' : 'none'} />
+        {viewMode === 'recommended' ? (
+          <div className="rmv-spine">
+            {sortedSections.map((section) => {
+              const nodes = nodesBySection.get(section.id) ?? []
+              const progress = overlay.sectionProgress.get(section.id)
+              return (
+                <div key={section.id} className="rmv-section">
+                  <div className={`rmv-milestone${progress?.achieved ? ' is-achieved' : ''}`}>
+                    <span className="rmv-milestone__index">{section.order}</span>
+                    <span className="rmv-milestone__title">{section.title}</span>
+                    {progress && <span className="rmv-milestone__count">{progress.owned}/{progress.total}</span>}
+                    <Star className="rmv-milestone__star" size={13} fill={progress?.achieved ? '#1f9d57' : 'none'} />
+                  </div>
+                  <div className="rmv-branches">
+                    {nodes.map((node) => renderNodeCard(node, false))}
+                  </div>
                 </div>
-                <div className="rmv-branches">
-                  {nodes.map((node) => {
-                    const status = overlay.statusById.get(node.id) ?? 'locked'
-                    const highlighted = overlay.highlightedIds.has(node.id)
-                    return (
-                      <div key={node.id} className="rmv-branch">
-                        <div
-                          className={`rmv-node rmv-type--${node.type} rmv-marker--${node.marker} rmv-status--${status}${highlighted ? ' rmv-highlighted' : ''}${dock?.node.id === node.id ? ' rmv-node--active' : ''}`}
-                          title={node.note}
-                          role="button"
-                          tabIndex={0}
-                          aria-pressed={dock?.node.id === node.id}
-                          onClick={() => handleNodeActivate(node, status)}
-                          onKeyDown={handleNodeKeyDown(node, status)}
-                        >
-                          <div className="rmv-node__head">
-                            <span className="rmv-node__label">{node.label}</span>
-                            {status === 'owned' && <Check className="rmv-node__statusicon" size={12} />}
-                            {status === 'locked' && <Lock className="rmv-node__statusicon" size={11} />}
-                          </div>
-                          <div className="rmv-node__meta">
-                            <span className={`rmv-node__typebadge rmv-type--${node.type}`}>
-                              {node.type === 'cert' ? <Award size={9} /> : null}
-                              {TYPE_LABEL[node.type]}
-                            </span>
-                            {node.marker !== 'recommended' && (
-                              <span className="rmv-node__markerbadge">{MARKER_LABEL[node.marker]}</span>
-                            )}
-                            {highlighted && (
-                              <span className="rmv-node__targetbadge"><Target size={9} />목표</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
+              )
+            })}
+          </div>
+        ) : (
+          <div className="rmv-spine">
+            {TIER_ORDER.map((tier, i) => {
+              const nodes = nodesByTier.get(tier) ?? []
+              const progress = tierProgress.get(tier)
+              const achieved = !!progress && progress.total > 0 && progress.owned === progress.total
+              return (
+                <div key={tier} className="rmv-section">
+                  <div className={`rmv-milestone rmv-tier-milestone--${tier}${achieved ? ' is-achieved' : ''}`}>
+                    <span className="rmv-milestone__index">{i + 1}</span>
+                    <span className="rmv-milestone__title">{TIER_LABEL[tier]}</span>
+                    {progress && <span className="rmv-milestone__count">{progress.owned}/{progress.total}</span>}
+                    <Star className="rmv-milestone__star" size={13} fill={achieved ? '#1f9d57' : 'none'} />
+                  </div>
+                  <div className="rmv-branches">
+                    {nodes.map((node) => renderNodeCard(node, true))}
+                  </div>
                 </div>
-              </div>
-            )
-          })}
-        </div>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {dock && (
