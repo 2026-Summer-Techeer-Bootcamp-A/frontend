@@ -1,0 +1,59 @@
+{
+  "_meta": {
+    "version": "v1",
+    "curated_by": "fable",
+    "date": "2026-07-20",
+    "description": "모바일 직군 로드맵 정본. backend.json과 같은 스키마로 작성했다. 스킬 명칭은 skillRelations.json의 실제 이름(Kotlin, Swift, Dart, Android, iOS, Flutter, Jetpack Compose, SwiftUI, RxJava, RxSwift, fastlane)을 그대로 썼다. Android와 iOS가 각각 다른 언어/UI 툴킷/로컬 저장소를 쓰는 만큼 대부분의 섹션에서 두 플랫폼을 alternative로 나란히 두고, Flutter는 크로스플랫폼 대안으로 배치했다.",
+    "prereq_rule": "모든 prereqs는 자기 자신과 같은 섹션이거나 더 앞선 섹션의 노드만 가리킨다(RoadmapNode.prereqs 주석 참고)."
+  },
+  "id": "mobile",
+  "label": "모바일",
+  "sections": [
+    { "id": "foundations", "title": "기초", "order": 1 },
+    { "id": "language", "title": "언어", "order": 2 },
+    { "id": "platform", "title": "플랫폼", "order": 3 },
+    { "id": "ui", "title": "UI", "order": 4 },
+    { "id": "state-management", "title": "상태관리", "order": 5 },
+    { "id": "networking", "title": "네트워킹", "order": 6 },
+    { "id": "local-storage", "title": "로컬 저장", "order": 7 },
+    { "id": "deployment", "title": "배포", "order": 8 }
+  ],
+  "nodes": [
+    { "id": "git", "label": "Git", "type": "skill", "section": "foundations", "order": 1, "marker": "recommended", "prereqs": [], "note": "버전 관리와 협업의 기본 도구다." },
+    { "id": "oop-basics", "label": "객체지향 기초", "type": "concept", "section": "foundations", "order": 2, "marker": "recommended", "prereqs": [], "note": "클래스와 객체로 코드를 구조화하는 기본 패러다임이다." },
+    { "id": "mobile-ux-basics", "label": "모바일 UX 기초", "type": "concept", "section": "foundations", "order": 3, "marker": "optional", "prereqs": [], "note": "터치, 제스처, 화면 전환처럼 모바일 환경 특유의 사용자 경험 원칙이다." },
+
+    { "id": "kotlin", "label": "Kotlin", "type": "skill", "section": "language", "order": 4, "marker": "recommended", "prereqs": ["oop-basics"], "note": "Java와 상호운용되며 안드로이드 공식 언어로 쓰인다." },
+    { "id": "swift", "label": "Swift", "type": "skill", "section": "language", "order": 5, "marker": "alternative", "prereqs": ["oop-basics"], "note": "iOS 개발을 위해 애플이 만든 언어다." },
+    { "id": "dart", "label": "Dart", "type": "skill", "section": "language", "order": 6, "marker": "alternative", "prereqs": ["oop-basics"], "note": "Flutter 프레임워크에서 사용하는 언어다." },
+    { "id": "java-mobile", "label": "Java", "type": "skill", "section": "language", "order": 7, "marker": "optional", "prereqs": ["oop-basics"], "note": "코틀린 이전부터 쓰여온 안드로이드 전통 언어다." },
+
+    { "id": "android", "label": "Android", "type": "skill", "section": "platform", "order": 8, "marker": "recommended", "prereqs": ["kotlin"], "note": "구글이 만든 모바일 운영체제이자 개발 플랫폼이다." },
+    { "id": "ios", "label": "iOS", "type": "skill", "section": "platform", "order": 9, "marker": "alternative", "prereqs": ["swift"], "note": "애플이 만든 모바일 운영체제이자 개발 플랫폼이다." },
+    { "id": "flutter", "label": "Flutter", "type": "skill", "section": "platform", "order": 10, "marker": "alternative", "prereqs": ["dart"], "note": "하나의 코드베이스로 여러 플랫폼 앱을 만드는 프레임워크다." },
+    { "id": "cross-platform-concept", "label": "크로스플랫폼 개발", "type": "concept", "section": "platform", "order": 11, "marker": "optional", "prereqs": ["flutter"], "note": "하나의 코드로 여러 플랫폼을 지원해 개발 리소스를 아끼는 접근이다." },
+
+    { "id": "jetpack-compose", "label": "Jetpack Compose", "type": "skill", "section": "ui", "order": 12, "marker": "recommended", "prereqs": ["android"], "note": "선언형 문법으로 안드로이드 UI를 구성하는 최신 툴킷이다." },
+    { "id": "swiftui", "label": "SwiftUI", "type": "skill", "section": "ui", "order": 13, "marker": "recommended", "prereqs": ["ios"], "note": "선언형 문법으로 iOS UI를 구성하는 애플의 최신 프레임워크다." },
+    { "id": "flutter-widgets", "label": "Flutter 위젯 시스템", "type": "skill", "section": "ui", "order": 14, "marker": "optional", "prereqs": ["flutter"], "note": "위젯을 조합해 화면을 구성하는 Flutter 고유의 UI 모델이다." },
+    { "id": "declarative-ui", "label": "선언형 UI", "type": "concept", "section": "ui", "order": 15, "marker": "recommended", "prereqs": ["jetpack-compose", "swiftui"], "note": "상태가 바뀌면 화면이 자동으로 다시 그려지는 UI 작성 방식이다." },
+
+    { "id": "android-viewmodel", "label": "ViewModel·LiveData", "type": "skill", "section": "state-management", "order": 16, "marker": "recommended", "prereqs": ["jetpack-compose"], "note": "화면 회전 같은 생명주기 변화에도 상태를 지켜주는 안드로이드 아키텍처 요소다." },
+    { "id": "rxjava", "label": "RxJava", "type": "skill", "section": "state-management", "order": 17, "marker": "optional", "prereqs": ["android"], "note": "비동기 이벤트 스트림을 선언적으로 다루는 반응형 라이브러리다." },
+    { "id": "rxswift", "label": "RxSwift", "type": "skill", "section": "state-management", "order": 18, "marker": "optional", "prereqs": ["ios"], "note": "iOS에서 비동기 이벤트를 반응형으로 다루는 라이브러리다." },
+    { "id": "state-management-mobile", "label": "모바일 상태관리", "type": "concept", "section": "state-management", "order": 19, "marker": "recommended", "prereqs": ["android-viewmodel"], "note": "화면 생명주기와 얽힌 상태를 안전하게 유지하는 설계 영역이다." },
+
+    { "id": "rest-client", "label": "REST 클라이언트 연동", "type": "concept", "section": "networking", "order": 20, "marker": "recommended", "prereqs": ["android"], "note": "서버 API를 호출하고 응답을 앱 상태에 반영하는 통신 계층이다." },
+    { "id": "retrofit", "label": "Retrofit", "type": "skill", "section": "networking", "order": 21, "marker": "recommended", "prereqs": ["rest-client"], "note": "안드로이드에서 REST API 호출을 선언적으로 정의하는 라이브러리다." },
+    { "id": "urlsession", "label": "URLSession", "type": "skill", "section": "networking", "order": 22, "marker": "alternative", "prereqs": ["rest-client"], "note": "iOS 기본 네트워킹 API로 서버와 통신한다." },
+    { "id": "offline-first", "label": "오프라인 우선 설계", "type": "concept", "section": "networking", "order": 23, "marker": "optional", "prereqs": ["rest-client"], "note": "네트워크가 불안정해도 앱이 동작하도록 로컬 데이터를 우선하는 설계다." },
+
+    { "id": "room-db", "label": "Room", "type": "skill", "section": "local-storage", "order": 24, "marker": "recommended", "prereqs": ["kotlin"], "note": "안드로이드에서 SQLite를 다루기 쉽게 감싼 로컬 DB 라이브러리다." },
+    { "id": "coredata", "label": "Core Data", "type": "skill", "section": "local-storage", "order": 25, "marker": "alternative", "prereqs": ["swift"], "note": "iOS에서 로컬 데이터를 객체 그래프로 관리하는 프레임워크다." },
+    { "id": "local-storage-concept", "label": "로컬 데이터 저장 전략", "type": "concept", "section": "local-storage", "order": 26, "marker": "optional", "prereqs": ["room-db"], "note": "캐시, 세션, 오프라인 데이터를 기기에 얼마나 어떻게 남길지 정하는 설계다." },
+
+    { "id": "fastlane", "label": "fastlane", "type": "skill", "section": "deployment", "order": 27, "marker": "recommended", "prereqs": ["git"], "note": "빌드, 서명, 스토어 배포를 자동화하는 도구다." },
+    { "id": "app-store-review", "label": "앱스토어 심사·배포", "type": "concept", "section": "deployment", "order": 28, "marker": "recommended", "prereqs": ["fastlane"], "note": "구글 플레이와 앱스토어 각각의 심사 기준과 배포 절차를 따라야 앱을 출시할 수 있다." },
+    { "id": "ci-cd-mobile", "label": "모바일 CI/CD", "type": "concept", "section": "deployment", "order": 29, "marker": "optional", "prereqs": ["fastlane"], "note": "빌드와 테스트, 배포 절차를 자동 파이프라인으로 연결하는 흐름이다." }
+  ]
+}
