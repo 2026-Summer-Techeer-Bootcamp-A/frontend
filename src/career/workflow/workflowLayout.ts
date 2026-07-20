@@ -13,23 +13,25 @@
 // DOM 측정도 없음 — 순수 함수라 리사이즈/스크롤/폰트로딩과 완전히 무관하다).
 export const NODE_WIDTH = 184
 export const NODE_WIDTH_WIDE = 232
-// 컬럼 사이 가로 간격 · 컬럼 안 노드 사이 세로 간격 — 넉넉하게 뒀다(요구사항: "컬럼
-// 사이 가로 간격과 노드 사이 세로 간격을 넉넉히 준다").
+// 컬럼 사이 가로 간격 · 컬럼 안 노드 사이 세로 간격. 워크플로우 맵이 대시보드 전체
+// 폭 행으로 옮겨지면서(2026-07-20) 가로 여유는 늘었지만, 그만큼 세로를 "한 화면
+// 안팎"에 담아야 한다는 요구가 새로 생겼다 — 컬럼 간격은 DAG 가독성을 위해 그대로
+// 넉넉히 두고, 세로 간격만 카드 높이 압축에 맞춰 줄인다.
 export const COLUMN_GAP = 72
-export const ROW_GAP = 22
+export const ROW_GAP = 16
 
-// 시안 3 + 라이브 피드백: 카드 높이를 "훨씬" 키운다. 목표를 하나도 선택하지 않은
-// 상태(보유 요약 카드만 있는 상태)에서도 크게 보여야 하므로, 아래 MIN_* 바닥값은
-// 카드 내용(이유/payoff/대안 배지 유무)과 무관하게 항상 적용된다 — 목표 선택 여부가
-// 이 바닥값에 전혀 영향을 주지 않는다.
-export const SKILL_CARD_PAD_V = 44
-export const SKILL_CARD_HEADER_H = 28
-export const SKILL_CARD_GAP = 16
-export const SKILL_CARD_REASON_H = 38
-export const SKILL_CARD_DEMAND_H = 36
-export const SKILL_CARD_PAYOFF_H = 30
-export const SKILL_CARD_ALT_H = 26
-export const MIN_SKILL_CARD_H = 176
+// 2026-07-20: 태그 몇 개 + 요구 건수만 담긴 카드도 MIN_SKILL_CARD_H 바닥값 때문에
+// 실제 콘텐츠보다 훨씬 크게 뜬다는 피드백으로 패딩·블록 간격·바닥값을 전체적으로
+// 압축했다. 바닥값은 여전히 있지만(카드가 너무 얇아 보이지 않게) 콘텐츠가 적은
+// 카드의 실측 높이에 훨씬 가깝다.
+export const SKILL_CARD_PAD_V = 28
+export const SKILL_CARD_HEADER_H = 22
+export const SKILL_CARD_GAP = 10
+export const SKILL_CARD_REASON_H = 28
+export const SKILL_CARD_DEMAND_H = 24
+export const SKILL_CARD_PAYOFF_H = 20
+export const SKILL_CARD_ALT_H = 18
+export const MIN_SKILL_CARD_H = 100
 
 export function estimateSkillCardHeight(opts: { hasReason: boolean; hasPayoff: boolean; hasAlt: boolean }): number {
   let h = SKILL_CARD_PAD_V + SKILL_CARD_HEADER_H
@@ -40,20 +42,20 @@ export function estimateSkillCardHeight(opts: { hasReason: boolean; hasPayoff: b
   return Math.max(h, MIN_SKILL_CARD_H)
 }
 
-export const BUNDLE_PAD_V = 36
-export const BUNDLE_ROW_H = 32
-export const BUNDLE_NOTE_H = 22
-export const MIN_BUNDLE_H = 168
+export const BUNDLE_PAD_V = 28
+export const BUNDLE_ROW_H = 28
+export const BUNDLE_NOTE_H = 20
+export const MIN_BUNDLE_H = 96
 
 export function estimateBundleHeight(memberCount: number, hasNote: boolean): number {
   const h = BUNDLE_PAD_V + memberCount * BUNDLE_ROW_H + (hasNote ? BUNDLE_NOTE_H : 0)
   return Math.max(h, MIN_BUNDLE_H)
 }
 
-export const CERT_CARD_PAD_V = 30
-export const CERT_CARD_HEADER_H = 24
-export const CERT_CARD_NOTE_H = 32
-export const MIN_CERT_CARD_H = 168
+export const CERT_CARD_PAD_V = 24
+export const CERT_CARD_HEADER_H = 20
+export const CERT_CARD_NOTE_H = 28
+export const MIN_CERT_CARD_H = 92
 
 export function estimateCertCardHeight(hasNote: boolean): number {
   const h = CERT_CARD_PAD_V + CERT_CARD_HEADER_H + (hasNote ? CERT_CARD_NOTE_H : 0)
@@ -62,9 +64,12 @@ export function estimateCertCardHeight(hasNote: boolean): number {
 
 // 시작 컬럼 요약 카드 — 목표(target) 선택 여부와 완전히 무관하게 ownedSkills 총량에만
 // 좌우된다. 즉 목표를 하나도 안 골라도(빈 상태) 이 카드는 항상 이 크기로 나온다.
-export const START_SUMMARY_EMPTY_H = 100
-export const START_SUMMARY_H = 210
-export const CHIP_HEIGHT = 30
+// 2026-07-20: 210px 고정값이 실제 콘텐츠(총 개수 + 언어/프레임워크/기타 3줄)보다
+// 훨씬 커서 카드 아래 빈 공간이 남고, 그 아래 보유 스킬 칩들과도 멀어져 보였다 —
+// 콘텐츠 실측에 맞춰 줄였다.
+export const START_SUMMARY_EMPTY_H = 84
+export const START_SUMMARY_H = 150
+export const CHIP_HEIGHT = 26
 
 export function estimateStartSummaryHeight(totalOwned: number): number {
   return totalOwned === 0 ? START_SUMMARY_EMPTY_H : START_SUMMARY_H

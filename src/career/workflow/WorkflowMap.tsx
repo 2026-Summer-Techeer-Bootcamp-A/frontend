@@ -549,7 +549,10 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
                 // 그린다. 라이브 로드맵은 안 쓰므로 roadmap.loading을 기다리지 않아도
                 // 되지만, 위 isLoading 게이트를 stages 뷰와 공유해 굳이 분기하지 않았다
                 // (실무상 로드맵 응답이 빨라 체감 지연이 거의 없다).
-                <div className="wfm-list-pane" style={{ maxHeight: size === '2x2' ? 500 : 260 }}>
+                // 2026-07-20: 위젯이 대시보드 좌측 인사이트열 안에서 dov__layout 밖
+                // 전체 폭 행으로 옮겨지며 세로 여유가 늘어 상한을 500 -> 720으로
+                // 올렸다(콘텐츠가 그보다 많으면 여전히 이 안에서 스크롤로 흡수한다).
+                <div className="wfm-list-pane" style={{ maxHeight: size === '2x2' ? 720 : 260 }}>
                   <WorkflowList
                     ownedSkills={ownedSkills}
                     ownedSkillCategories={ownedSkillCategories}
@@ -571,7 +574,7 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
                       </button>
                     </div>
                   )}
-                  <div className="wfm-stage-pane" style={{ maxHeight: size === '2x2' ? 500 : 260 }}>
+                  <div className="wfm-stage-pane" style={{ maxHeight: size === '2x2' ? 720 : 260 }}>
                     <WorkflowStages
                       ownedSkills={ownedSkills}
                       ownedSkillCategories={ownedSkillCategories}
@@ -583,6 +586,11 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
                       careerGoalMin={careerGoalMin}
                       resumeCareerMax={resumeCareerMax}
                       liveSteps={roadmap.value.steps}
+                      // 2026-07-20: 대시보드 전체 폭 행으로 옮겨지면서 카드 폭도
+                      // "크게 보기" 모달과 같은 넓은 규격(NODE_WIDTH_WIDE)을 쓴다 —
+                      // 이 위젯은 이제 이 화면에서만 쓰이므로(다른 좁은 카드 컨텍스트
+                      // 없음) 항상 wide로 렌더해도 안전하다.
+                      wide
                     />
                   </div>
                   {legend}

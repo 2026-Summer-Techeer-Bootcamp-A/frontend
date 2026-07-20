@@ -628,20 +628,6 @@ export default function DesktopOverview() {
             </section>
           )}
 
-          {/* Zone 2b — 무엇을 배울까: 학습 워크플로우 맵(전체 폭). 히어로 "다음 한 수"
-              클릭 시 스크롤 대상. 워크플로우 맵은 좌우로 넓게 그려야 DAG가 읽히므로
-              전체 폭을 쓴다. */}
-          {secLearnVisible && (
-            <section className="dov__sec" ref={learnSectionRef}>
-              <div className="dov__sec-grid dov__sec-grid--1">
-                {!isWidgetHidden('dashboard', 'workflow-map') && (
-                  <div className="dov__card-item">
-                    <WorkflowMap size={wsize('workflow-map')} />
-                  </div>
-                )}
-              </div>
-            </section>
-          )}
         </div>
 
         <aside className="dov__rail">
@@ -659,13 +645,29 @@ export default function DesktopOverview() {
               </section>
             )}
             {!isWidgetHidden('dashboard', 'latest-timeline') && (
-              <div style={{ flex: 1, minHeight: 0 }}>
+              <div className="dov__rail-timeline">
                 <LatestJobsTimeline size="2x2" />
               </div>
             )}
           </div>
         </aside>
       </div>
+
+      {/* Zone 2b — 무엇을 배울까: 학습 워크플로우 맵. 히어로 "다음 한 수" 클릭 시 스크롤
+          대상. 좌우로 넓게 그려야 DAG가 읽히므로 dov__layout 2열 그리드 밖으로 빼서
+          대시보드 가로 전체 폭을 쓰는 행으로 렌더한다(좌측 인사이트열 폭에 갇히지
+          않는다). */}
+      {secLearnVisible && (
+        <section className="dov__sec dov__sec--full" ref={learnSectionRef}>
+          <div className="dov__sec-grid dov__sec-grid--1">
+            {!isWidgetHidden('dashboard', 'workflow-map') && (
+              <div className="dov__card-item">
+                <WorkflowMap size={wsize('workflow-map')} />
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       <PresentationTour open={tourOpen} onClose={() => setTourOpen(false)} zones={tourZones} />
     </div>
