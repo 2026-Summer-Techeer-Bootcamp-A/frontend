@@ -1,8 +1,11 @@
 import { useMemo, useState } from 'react'
-import { Award } from 'lucide-react'
+import { Award, Check, CheckCircle2, AlertCircle } from 'lucide-react'
 import type { PostingDetail, ScopedRoadmapStep } from '../api'
-import { classifySkill, avatarColor, requiredByFor, type SkillGroupName } from './workflowShared'
-import { buildStages, type Bundle } from './relations'
+import {
+  classifySkill, avatarColor, requiredByFor, careerGateLabel, isCareerGateFulfilled,
+  type SkillGroupName, type PostingDetailWithConcepts,
+} from './workflowShared'
+import { buildStages, type Bundle, type ConceptNode } from './relations'
 import {
   layoutStages, roundedPath, estimateSkillCardHeight, estimateBundleHeight, estimateCertCardHeight,
   estimateStartSummaryHeight, estimateChipWidth, NODE_WIDTH, NODE_WIDTH_WIDE, COLUMN_GAP, CHIP_HEIGHT,
@@ -27,6 +30,13 @@ import {
 
 const CARD_CAP = 6
 const SUMMARY_NODE_ID = '__wfs_summary__'
+// F: 연차 게이트 — 그래프 엣지로 잇지 않는 알약형(pill) 노드라 layoutStages에 넘길 때도
+// nodeSpecs에만 자리(칸)를 잡아줄 뿐 edgeInputs엔 절대 넣지 않는다. 높이는 estimate* 계열
+// 함수처럼 workflowLayout.ts에 두지 않고 여기 로컬 상수로만 둔다(레이아웃 엔진 자체는
+// 안 건드리는 순수 확장이라, 이 노드도 그 엔진이 이미 지원하는 "고정 크기 노드 하나"
+// 계약만 쓴다).
+const CAREER_GATE_ID = '__wfs_career_gate__'
+const CAREER_GATE_HEIGHT = 64
 
 type ColumnKey = 'start' | 1 | 2 | 3 | 'cert'
 
@@ -53,6 +63,9 @@ export function WorkflowStages({
   targetSkills,
   targetCerts,
   ownedCerts,
+  targetConcepts = [],
+  careerGoalMin = null,
+  resumeCareerMax = null,
   liveSteps,
   wide = false,
 }: {
@@ -62,6 +75,11 @@ export function WorkflowStages({
   targetSkills: string[]
   targetCerts: string[]
   ownedCerts: string[]
+  // F: 4타입 확장 — 셋 다 옵셔널이다. 개념·자격증 정보가 아예 없는 직군(대부분)은 예전과
+  // 똑같이 스킬만 그려진다(순수 확장, 크래시 없음).
+  targetConcepts?: string[]
+  careerGoalMin?: number | null
+  resumeCareerMax?: number | null
   liveSteps: ScopedRoadmapStep[]
   wide?: boolean
 }) {
@@ -69,10 +87,22 @@ export function WorkflowStages({
   const nodeWidth = wide ? NODE_WIDTH_WIDE : NODE_WIDTH
 
   const stages = useMemo(
-    () => buildStages(ownedSkills, targetSkills, targetCerts, ownedCerts),
-    [ownedSkills, targetSkills, targetCerts, ownedCerts],
+    () => buildStages(ownedSkills, targetSkills, targetCerts, ownedCerts, targetConcepts),
+    [ownedSkills, targetSkills, targetCerts, ownedCerts, targetConcepts],
   )
-  const { depthBySkill, edges, bundles, certColumn, viaSkills } = stages
+  const { depthBySkill, edges, bundles, certColumn, viaSkills, concepts, ownedCertPrereqs } = stages
+
+  // F: 개념 카테고리 뱃지 폴백 — concept_path 큐레이션에 category가 없으면(아직 안 큐레이션된
+  // 목표 개념) 선택된 공고가 내려준 concepts[].category로라도 채운다. 둘 다 없으면 뱃지를
+  // 안 그린다(근거 없는 카테고리를 지어내지 않는다).
+  const conceptCategoryFromPostings = useMemo(() => {
+    const map = new Map<string, string>()
+    selectedPostings.forEach((p) => {
+      const list = (p as PostingDetailWithConcepts).concepts ?? []
+      list.forEach((c) => { if (c?.name && c.category && !map.has(c.name)) map.set(c.name, c.category) })
+    })
+    return map
+  }, [selectedPostings])
 
   const viaReasonBySkill = useMemo(() => {
     const map = new Map<string, string>()
@@ -169,17 +199,33 @@ export function WorkflowStages({
     // depthBySkill/ownedSet/bundleMemberSet이 바뀔 때만 목록 자체가 바뀐다.
   }, [depthBySkill, ownedSet, bundleMemberSet])
 
-  // 컬럼 하나(카드+번들)를 정렬 + 캡 처리한 아이템 목록으로 만든다.
-  type ColumnItem = { kind: 'skill'; skill: string } | { kind: 'bundle'; bundle: Bundle }
+  // F: 개념 노드도 스킬과 같은 depth 컬럼(1~3)에 섞여 들어간다 — 별도 "개념 컬럼"을 새로
+  // 만들지 않고, 기존 보유->경유->심화 컬럼 구조 안에서 타입 색(좌측 테두리)으로만
+  // 구분한다(요구사항: 컬럼 구조는 유지, 안에서 타입이 섞인다).
+  const conceptsByColumn = useMemo(() => {
+    const map = new Map<number, ConceptNode[]>()
+    concepts.forEach((c) => {
+      const depth = Math.max(1, Math.min(3, c.depth))
+      if (!map.has(depth)) map.set(depth, [])
+      map.get(depth)!.push(c)
+    })
+    return map
+  }, [concepts])
+
+  // 컬럼 하나(카드+번들+개념)를 정렬 + 캡 처리한 아이템 목록으로 만든다.
+  type ColumnItem = { kind: 'skill'; skill: string } | { kind: 'bundle'; bundle: Bundle } | { kind: 'concept'; node: ConceptNode }
   const columnItemsFor = (depth: 1 | 2 | 3): { items: ColumnItem[]; overflow: number } => {
     const skills = skillsByColumn.get(depth) ?? []
     const columnBundles = bundlesByColumn.get(depth) ?? []
+    const columnConcepts = conceptsByColumn.get(depth) ?? []
     const items: ColumnItem[] = [
       ...skills.map((skill): ColumnItem => ({ kind: 'skill', skill })),
       ...columnBundles.map((bundle): ColumnItem => ({ kind: 'bundle', bundle })),
+      ...columnConcepts.map((node): ColumnItem => ({ kind: 'concept', node })),
     ]
     const keyOf = (item: ColumnItem) => {
       if (item.kind === 'skill') return primaryKeyFor(item.skill)
+      if (item.kind === 'concept') return Number.MAX_SAFE_INTEGER - 1 // 개념은 라이브 로드맵 순서 정보가 없어 항상 스킬/번들 뒤에 온다.
       const rendered = item.bundle.skills.filter((s) => depthBySkill.has(s))
       if (rendered.length === 0) return Number.MAX_SAFE_INTEGER
       return Math.min(...rendered.map((s) => primaryKeyFor(s)))
@@ -196,7 +242,7 @@ export function WorkflowStages({
     return map
     // eslint-disable-next-line react-hooks/exhaustive-deps -- columnItemsFor는 매 렌더 새 클로저지만
     // 아래 값들이 바뀔 때만 실제 출력이 바뀐다.
-  }, [skillsByColumn, bundlesByColumn, depthBySkill, hasOrder, liveOrder, selectedPostings])
+  }, [skillsByColumn, bundlesByColumn, conceptsByColumn, depthBySkill, hasOrder, liveOrder, selectedPostings])
 
   const renderedColumnKeys = useMemo(() => {
     const keys: ColumnKey[] = ['start']
@@ -255,25 +301,45 @@ export function WorkflowStages({
           const hasPayoff = (deltaBySkill.get(skill) ?? 0) > 0
           const hasAlt = altBadgeBySkill.has(skill)
           specs.push({ id: skill, column: col, width: nodeWidth, height: estimateSkillCardHeight({ hasReason, hasPayoff, hasAlt }) })
-        } else {
+        } else if (item.kind === 'bundle') {
           specs.push({
             id: bundleNodeId(item.bundle),
             column: col,
             width: nodeWidth,
             height: estimateBundleHeight(item.bundle.skills.length, !!item.bundle.note),
           })
+        } else {
+          // F: 개념 카드는 별도 estimate 함수를 새로 만들지 않고(workflowLayout.ts는 이
+          // 작업 범위 밖) 스킬 카드와 같은 높이 추정을 재사용한다 — note 유무만 "이유"
+          // 슬롯 유무로 취급한다(개념엔 payoff/대안 배지가 없다).
+          specs.push({ id: item.node.concept, column: col, width: nodeWidth, height: estimateSkillCardHeight({ hasReason: !!item.node.note, hasPayoff: false, hasAlt: false }) })
         }
       })
     })
 
     const certCol = columnPosition.get('cert')
     if (certCol !== undefined) {
+      // F: 목표 자격증이 이미 보유한 자격증을 선행으로 가리키면(예: CKS 목표 + CKA 보유),
+      // 그 보유 자격증도 같은 컬럼에 작은 칩으로 먼저 놓는다 — CKA -> CKS 화살표가 허공에서
+      // 시작하지 않게. 보유 스킬 칩(ownedEdgeSources)과 같은 크기 계약을 재사용한다.
+      ownedCertPrereqs.forEach((cert) => {
+        specs.push({ id: cert, column: certCol, width: estimateChipWidth(cert), height: CHIP_HEIGHT })
+      })
       certColumn.slice(0, CARD_CAP).forEach((c) => {
         specs.push({ id: c.cert, column: certCol, width: nodeWidth, height: estimateCertCardHeight(!!c.note) })
       })
     }
+
+    // F: 연차 게이트 — 그래프 엣지 없이, 가장 오른쪽(목표에 가장 가까운) 렌더된 컬럼에
+    // 알약형 노드 하나만 얹는다. career_min 정보가 있는 목표 공고가 하나도 없으면
+    // (careerGoalMin === null) 아예 렌더하지 않는다.
+    if (careerGoalMin !== null) {
+      const lastKey = renderedColumnKeys[renderedColumnKeys.length - 1]
+      const lastCol = columnPosition.get(lastKey) ?? startCol
+      specs.push({ id: CAREER_GATE_ID, column: lastCol, width: nodeWidth, height: CAREER_GATE_HEIGHT })
+    }
     return specs
-  }, [columnPosition, nodeWidth, totalOwned, ownedEdgeSources, stageItemsByColumn, viaReasonBySkill, deltaBySkill, altBadgeBySkill, certColumn])
+  }, [columnPosition, nodeWidth, totalOwned, ownedEdgeSources, stageItemsByColumn, viaReasonBySkill, deltaBySkill, altBadgeBySkill, certColumn, ownedCertPrereqs, careerGoalMin, renderedColumnKeys])
 
   // layoutStages에 넘길 엣지 목록 — 번들 멤버를 가리키는 엣지는 번들 박스로
   // 리다이렉트한다. 양 끝이 같은 박스로 접히면(같은 번들 안 두 멤버 사이 엣지) 자기
@@ -370,7 +436,7 @@ export function WorkflowStages({
       <div
         key={skill}
         style={{ position: 'absolute', left: rect.x, top: rect.y, width: rect.width, height: rect.height }}
-        className={`wfs-scard${isTarget ? ' wfs-scard--goal' : ' wfs-scard--via'}${isDimmed(skill) ? ' wfs-dim' : ''}`}
+        className={`wfs-scard wfs-type--skill${isTarget ? ' wfs-scard--goal' : ' wfs-scard--via'}${isDimmed(skill) ? ' wfs-dim' : ''}`}
         onMouseEnter={() => setHoveredId(skill)}
         onMouseLeave={() => setHoveredId(null)}
       >
@@ -384,6 +450,31 @@ export function WorkflowStages({
           <div className="wfs-scard__payoff">배우면 <b>+{payoff}건</b> 더 지원 가능</div>
         )}
         {altBadge && <div className="wfs-scard__alt">{altBadge}</div>}
+      </div>
+    )
+  }
+
+  // F: 개념 카드 — 스킬 목표 카드(wfs-scard--goal)와 같은 톤을 쓰되(개념은 항상 "목표"다,
+  // 보유라는 상태가 없다) 좌측 테두리만 앰버로 바꿔 타입을 구분한다. 카테고리 뱃지는
+  // concept_path 큐레이션 우선, 없으면 공고가 내려준 category로 폴백한다(둘 다 없으면
+  // 뱃지 자체를 안 그린다 — 근거 없는 값을 지어내지 않는다).
+  const renderConceptCard = (node: ConceptNode) => {
+    const rect = renderLayout?.rectOf(node.concept)
+    if (!rect) return null
+    const category = node.category ?? conceptCategoryFromPostings.get(node.concept)
+    return (
+      <div
+        key={node.concept}
+        style={{ position: 'absolute', left: rect.x, top: rect.y, width: rect.width, height: rect.height }}
+        className={`wfs-scard wfs-scard--goal wfs-type--concept${isDimmed(node.concept) ? ' wfs-dim' : ''}`}
+        onMouseEnter={() => setHoveredId(node.concept)}
+        onMouseLeave={() => setHoveredId(null)}
+      >
+        <div className="wfs-scard__head">
+          <span className="wfs-scard__name" title={node.concept}>{node.concept}</span>
+          {category && <span className="wfs-chip-cat">{category}</span>}
+        </div>
+        {node.note && <div className="wfs-scard__reason">{node.note}</div>}
       </div>
     )
   }
@@ -424,7 +515,11 @@ export function WorkflowStages({
     )
   }
 
-  const renderColumnItem = (item: ColumnItem) => (item.kind === 'skill' ? renderSkillCard(item.skill) : renderBundleCard(item.bundle))
+  const renderColumnItem = (item: ColumnItem) => {
+    if (item.kind === 'skill') return renderSkillCard(item.skill)
+    if (item.kind === 'concept') return renderConceptCard(item.node)
+    return renderBundleCard(item.bundle)
+  }
 
   return (
     <div className={`wfs-root${wide ? ' wfs-root--wide' : ''}`}>
@@ -511,7 +606,11 @@ export function WorkflowStages({
             {([1, 2, 3] as const).map((depth) => {
               if (!renderedColumnKeys.includes(depth)) return null
               const { items, overflow } = stageItemsByColumn.get(depth) ?? { items: [], overflow: 0 }
-              const ids = items.map((item) => (item.kind === 'skill' ? item.skill : bundleNodeId(item.bundle)))
+              const ids = items.map((item) => {
+                if (item.kind === 'skill') return item.skill
+                if (item.kind === 'concept') return item.node.concept
+                return bundleNodeId(item.bundle)
+              })
               const overflowPos = overflow > 0 ? overflowPosition(ids) : null
               return (
                 <div key={depth}>
@@ -525,6 +624,24 @@ export function WorkflowStages({
               )
             })}
 
+            {ownedCertPrereqs.map((cert) => {
+              const rect = renderLayout.rectOf(cert)
+              if (!rect) return null
+              return (
+                <span
+                  key={cert}
+                  style={{ position: 'absolute', left: rect.x, top: rect.y, width: rect.width, height: rect.height }}
+                  className={`wfs-chip${isDimmed(cert) ? ' wfs-dim' : ''}`}
+                  onMouseEnter={() => setHoveredId(cert)}
+                  onMouseLeave={() => setHoveredId(null)}
+                  title={`${cert} 보유 — 이 선행이 이미 충족됐어요`}
+                >
+                  <Check size={9} />
+                  {cert}
+                </span>
+              )
+            })}
+
             {certColumn.length > 0 && (
               <>
                 {certColumn.slice(0, CARD_CAP).map((c) => {
@@ -534,7 +651,7 @@ export function WorkflowStages({
                     <div
                       key={c.cert}
                       style={{ position: 'absolute', left: rect.x, top: rect.y, width: rect.width, height: rect.height }}
-                      className={`wfs-need-card${isDimmed(c.cert) ? ' wfs-dim' : ''}`}
+                      className={`wfs-need-card wfs-type--cert${isDimmed(c.cert) ? ' wfs-dim' : ''}`}
                       onMouseEnter={() => setHoveredId(c.cert)}
                       onMouseLeave={() => setHoveredId(null)}
                     >
@@ -553,6 +670,26 @@ export function WorkflowStages({
                 })()}
               </>
             )}
+
+            {/* F: 연차 게이트 — 그래프 엣지 없는 알약형 노드. career_min 정보가 있는 목표
+                공고가 하나도 없으면(careerGoalMin === null) 렌더하지 않는다. */}
+            {careerGoalMin !== null && (() => {
+              const rect = renderLayout.rectOf(CAREER_GATE_ID)
+              if (!rect) return null
+              const fulfilled = isCareerGateFulfilled(careerGoalMin, resumeCareerMax)
+              return (
+                <div
+                  style={{ position: 'absolute', left: rect.x, top: rect.y, width: rect.width, height: rect.height }}
+                  className={`wfs-career-gate wfs-type--career${fulfilled ? ' is-fulfilled' : ' is-unfulfilled'}`}
+                >
+                  {fulfilled ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
+                  <div className="wfs-career-gate__text">
+                    <span className="wfs-career-gate__label">{careerGateLabel(careerGoalMin)}</span>
+                    <span className="wfs-career-gate__status">{fulfilled ? '충족' : '미충족'}</span>
+                  </div>
+                </div>
+              )
+            })()}
       </div>
     </div>
   )
