@@ -28,7 +28,7 @@ import { useWidgetData } from '../../career/useWidgetData'
 import { selectDisplayedCoverage } from '../../career/coverageScore'
 import { useDashboardConfig, isWidgetHidden, getWidgetSize, type WidgetSize } from '../../career/dashboardConfig'
 import { MARKET_WIDGETS } from '../../career/widgetCatalog'
-import { loadBookmarkDetails, toggleBookmark, useBookmarks } from '../../career/bookmarkStore'
+import { loadBookmarkDetails, toggleBookmark, useBookmarks, removeBookmark, clearBookmarks } from '../../career/bookmarkStore'
 import { useRecentViews } from '../../career/viewHistoryStore'
 import { useSettings } from '../../career/settingsStore'
 import { SkillManagerModal } from '../SkillManagerModal'
@@ -1608,7 +1608,22 @@ export function DesktopMy() {
                 <h2 id="dmy-posting-dialog-title">{postingListOpen === 'bookmarks' ? '북마크한 공고' : '최근 본 공고'}</h2>
                 <span>{postingListOpen === 'bookmarks' ? bookmarkIds.length : recentViewIds.length}건</span>
               </div>
-              <button type="button" onClick={() => setPostingListOpen(null)} aria-label="닫기"><X size={18} /></button>
+              <div className="dmy__posting-dialog-head-actions">
+                {postingListOpen === 'bookmarks' && bookmarkIds.length > 0 && (
+                  <button
+                    type="button"
+                    className="dmy__clear-all-bookmarks-btn"
+                    onClick={() => {
+                      if (window.confirm('북마크한 공고를 모두 삭제하시겠어요?')) {
+                        clearBookmarks()
+                      }
+                    }}
+                  >
+                    전체 삭제
+                  </button>
+                )}
+                <button type="button" onClick={() => setPostingListOpen(null)} aria-label="닫기"><X size={18} /></button>
+              </div>
             </div>
 
             {(postingListOpen === 'bookmarks' ? bookmarkedPostings : recentViewPostings).length === 0 ? (
@@ -1619,17 +1634,31 @@ export function DesktopMy() {
             ) : (
               <div className="dmy__posting-dialog-list">
                 {(postingListOpen === 'bookmarks' ? bookmarkedPostings : recentViewPostings).map((posting) => (
-                  <JobCardCompact
-                    key={posting.id}
-                    job={{
-                      company: posting.company,
-                      title: posting.title,
-                      matchPct: posting.matchPct,
-                      careerLabel: careerLabel(posting.careerMin, posting.careerMax),
-                    }}
-                    logo={<CompanyLogo logo={posting.logo} name={posting.company} size={40} radius={11} />}
-                    onOpen={() => navigate(`/job/${encodeURIComponent(posting.id)}`)}
-                  />
+                  <div key={posting.id} className="dmy__posting-row">
+                    <JobCardCompact
+                      job={{
+                        company: posting.company,
+                        title: posting.title,
+                        matchPct: posting.matchPct,
+                        careerLabel: careerLabel(posting.careerMin, posting.careerMax),
+                      }}
+                      logo={<CompanyLogo logo={posting.logo} name={posting.company} size={40} radius={11} />}
+                      onOpen={() => navigate(`/job/${encodeURIComponent(posting.id)}`)}
+                    />
+                    {postingListOpen === 'bookmarks' && (
+                      <button
+                        type="button"
+                        className="dmy__posting-remove-btn"
+                        aria-label="북마크 제거"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          removeBookmark(String(posting.id))
+                        }}
+                      >
+                        <X size={16} />
+                      </button>
+                    )}
+                  </div>
                 ))}
               </div>
             )}
