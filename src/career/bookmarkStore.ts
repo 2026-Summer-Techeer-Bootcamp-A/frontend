@@ -35,6 +35,18 @@ export function toggleBookmark(postingId: string): void {
   window.dispatchEvent(new Event(EVENT))
 }
 
+export function removeBookmark(postingId: string): void {
+  const cur = getBookmarks()
+  const next = cur.filter((id) => id !== postingId)
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+  window.dispatchEvent(new Event(EVENT))
+}
+
+export function clearBookmarks(): void {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify([]))
+  window.dispatchEvent(new Event(EVENT))
+}
+
 export function useBookmarks(): string[] {
   const [bookmarks, setBookmarks] = useState<string[]>(getBookmarks)
 
