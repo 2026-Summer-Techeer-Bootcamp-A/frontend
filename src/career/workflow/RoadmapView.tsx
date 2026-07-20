@@ -1,8 +1,11 @@
-import { useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
-import { Award, Check, Lock, Star, Target } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent } from 'react'
+import { Award, Check, Lock, Star, Target, X } from 'lucide-react'
 import { loadRoadmapTrack, ROADMAP_TRACK_LIST, DEFAULT_ROADMAP_TRACK_ID } from '../../data/roadmaps/registry'
 import type { RoadmapNode } from '../../data/roadmaps/types'
-import { buildRoadmapOverlay } from './roadmapOverlay'
+import { buildRoadmapOverlay, type NodeStatus } from './roadmapOverlay'
+import { dashboardApi } from '../api'
+import type { RoadmapNodeContentResponse } from '../api'
+import { getAuthToken } from '../authStore'
 import './roadmapView.css'
 
 // 로드맵 백본 뷰 — roadmap.sh 스타일로 섹션을 중앙 척추의 마일스톤으로, 그 섹션에
@@ -20,6 +23,45 @@ import './roadmapView.css'
 // 맞는다.
 const TYPE_LABEL: Record<RoadmapNode['type'], string> = { skill: '기술', concept: '개념', cert: '자격증' }
 const MARKER_LABEL: Record<RoadmapNode['marker'], string> = { recommended: '추천', alternative: '대안', optional: '선택' }
+
+// 노드 상세 도크 — roadmap.sh가 노드 클릭 시 자료를 펼치는 UX를 따라 한다. 콘텐츠는
+// RAG 엔드포인트(dashboardApi.roadmapNodeContent)에서 받아오되, 클릭 즉시는 그 노드의
+// 정적 note로 채운 폴백을 먼저 보여주고 응답이 오면 교체한다 — 요청이 느리거나
+// 실패해도(엔드포인트 미배선 포함) 화면은 항상 뭔가를 보여주고 절대 크래시하지
+// 않는다(콘솔에만 폴백 사유를 남긴다).
+function buildFallbackNodeContent(node: RoadmapNode): RoadmapNodeContentResponse {
+  return { why: node.note, summary: '', resources: [], project: '', citations: [] }
+}
+
+type DockState = {
+  node: RoadmapNode
+  status: NodeStatus
+  content: RoadmapNodeContentResponse
+  loading: boolean
+}
+
+// 학습함 체크 — 트랙/세션을 넘나들며 남는 소소한 진행 표시라 localStorage에 직접
+// 둔다(다른 스토어 파일을 새로 만들 범위가 아니라 이 파일 안에 인라인).
+const STUDIED_STORAGE_KEY = 'techeer_roadmap_studied_nodes'
+
+function readStudiedIds(): Set<string> {
+  try {
+    const raw = localStorage.getItem(STUDIED_STORAGE_KEY)
+    if (!raw) return new Set()
+    const parsed = JSON.parse(raw)
+    return new Set(Array.isArray(parsed) ? parsed : [])
+  } catch {
+    return new Set()
+  }
+}
+
+function writeStudiedIds(ids: Set<string>) {
+  try {
+    localStorage.setItem(STUDIED_STORAGE_KEY, JSON.stringify([...ids]))
+  } catch {
+    // 프라이빗 모드 등으로 저장이 막혀도 학습함 표시는 부가 기능이라 조용히 넘어간다.
+  }
+}
 
 const PAN_DRAG_THRESHOLD = 4
 function usePanScroll<T extends HTMLElement>() {
@@ -92,6 +134,96 @@ export function RoadmapView({
 
   const sortedSections = useMemo(() => [...track.sections].sort((a, b) => a.order - b.order), [track])
 
+  // 노드 상세 도크 상태 — 클릭한 노드, 그 노드의 콘텐츠(처음엔 정적 note 폴백, 응답
+  // 도착 시 교체), 로딩 여부. fetchSeqRef로 노드를 빠르게 갈아타도 낡은 응답이 최신
+  // 도크를 덮어쓰지 않게 막는다.
+  const [dock, setDock] = useState<DockState | null>(null)
+  const fetchSeqRef = useRef(0)
+  const isMountedRef = useRef(true)
+  useEffect(() => {
+    // main.tsx가 React.StrictMode라 dev에서 이 effect가 mount -> cleanup -> mount로
+    // 두 번 실행된다. 이펙트 본문에서 true로 되돌리지 않으면 첫 cleanup이 내린 false가
+    // 영원히 남아 이후 모든 openNodeDock의 .then/.catch가 isMountedRef 가드에 막혀
+    // setDock(loading:false)를 못 적용한다 — 폴백 콘텐츠는 뜨는데 로딩 표시만 안
+    // 걷히던 버그의 원인이었다.
+    isMountedRef.current = true
+    return () => { isMountedRef.current = false }
+  }, [])
+
+  const [studiedIds, setStudiedIds] = useState<Set<string>>(() => readStudiedIds())
+  const toggleStudied = (id: string) => {
+    setStudiedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      writeStudiedIds(next)
+      return next
+    })
+  }
+
+  const closeDock = () => setDock(null)
+
+  const openNodeDock = (node: RoadmapNode, status: NodeStatus) => {
+    const seq = ++fetchSeqRef.current
+    setDock({ node, status, content: buildFallbackNodeContent(node), loading: true })
+
+    // 이 요청이 여전히 "최신"인지(컴포넌트가 살아있고, 그 사이 다른 노드를 클릭해
+    // fetchSeqRef가 앞서가지 않았는지) — 성공/실패 두 경로와 finally가 모두 이 한
+    // 기준으로만 판단해 판정이 갈리지 않게 한다.
+    const isStale = () => !isMountedRef.current || fetchSeqRef.current !== seq
+
+    dashboardApi
+      .roadmapNodeContent(
+        { node_id: node.id, node_label: node.label, node_type: node.type, section: node.section },
+        getAuthToken(),
+      )
+      .then((res) => {
+        if (isStale()) return
+        setDock({ node, status, content: res, loading: false })
+      })
+      .catch((err) => {
+        // 엔드포인트가 아직 없거나 요청이 404/에러로 실패해도 데모가 끊기면 안 된다 —
+        // 이미 화면에 떠 있는 정적 note 폴백 콘텐츠는 그대로 둔다. 로딩 표시를 내리는
+        // 건 아래 finally가 성공/실패 구분 없이 맡는다(여기서 따로 내리면 실패 경로를
+        // 빠뜨리기 쉽다).
+        console.info('[roadmap] 노드 콘텐츠 요청 실패, 정적 note로 대신 보여줘요', err)
+      })
+      .finally(() => {
+        // 성공/실패 어느 쪽이든 이 요청이 최신이면 로딩 표시는 반드시 걷는다 — 실패
+        // 경로에서만 빠뜨리면 폴백은 뜬 채로 ".rmv-dock__loading"이 영원히 안 사라지는
+        // 버그가 된다.
+        if (isStale()) return
+        setDock((prev) => (prev && prev.node.id === node.id ? { ...prev, loading: false } : prev))
+      })
+  }
+
+  const handleNodeActivate = (node: RoadmapNode, status: NodeStatus) => {
+    if (dock?.node.id === node.id) {
+      closeDock()
+      return
+    }
+    openNodeDock(node, status)
+  }
+
+  const handleNodeKeyDown = (node: RoadmapNode, status: NodeStatus) => (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      handleNodeActivate(node, status)
+    }
+  }
+
+  const handleTrackChange = (id: string) => {
+    setActiveTrackId(id)
+    closeDock()
+  }
+
+  useEffect(() => {
+    if (!dock) return
+    const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') closeDock() }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [dock])
+
   return (
     <div className="rmv-root">
       {ROADMAP_TRACK_LIST.length > 1 && (
@@ -103,7 +235,7 @@ export function RoadmapView({
               role="tab"
               aria-selected={t.id === activeTrackId}
               className={`rmv-tracks__btn${t.id === activeTrackId ? ' is-active' : ''}`}
-              onClick={() => setActiveTrackId(t.id)}
+              onClick={() => handleTrackChange(t.id)}
             >
               {t.label}
             </button>
@@ -124,10 +256,10 @@ export function RoadmapView({
         )}
       </div>
 
+      <div className="rmv-canvasrow" style={{ height }}>
       <div
         ref={pan.ref}
-        className={`rmv-canvas${pan.isPanning ? ' is-panning' : ''}`}
-        style={{ height }}
+        className={`rmv-canvas${pan.isPanning ? ' is-panning' : ''}${dock ? ' rmv-canvas--withdock' : ''}`}
         onMouseDown={pan.onMouseDown}
         onMouseMove={pan.onMouseMove}
         onMouseUp={pan.onMouseUp}
@@ -152,8 +284,13 @@ export function RoadmapView({
                     return (
                       <div key={node.id} className="rmv-branch">
                         <div
-                          className={`rmv-node rmv-type--${node.type} rmv-marker--${node.marker} rmv-status--${status}${highlighted ? ' rmv-highlighted' : ''}`}
+                          className={`rmv-node rmv-type--${node.type} rmv-marker--${node.marker} rmv-status--${status}${highlighted ? ' rmv-highlighted' : ''}${dock?.node.id === node.id ? ' rmv-node--active' : ''}`}
                           title={node.note}
+                          role="button"
+                          tabIndex={0}
+                          aria-pressed={dock?.node.id === node.id}
+                          onClick={() => handleNodeActivate(node, status)}
+                          onKeyDown={handleNodeKeyDown(node, status)}
                         >
                           <div className="rmv-node__head">
                             <span className="rmv-node__label">{node.label}</span>
@@ -181,6 +318,79 @@ export function RoadmapView({
             )
           })}
         </div>
+      </div>
+
+      {dock && (
+        <div className="rmv-dock" role="dialog" aria-label={`${dock.node.label} 학습 콘텐츠`}>
+          <div className="rmv-dock__head">
+            <div className="rmv-dock__headtext">
+              <span className={`rmv-node__typebadge rmv-type--${dock.node.type}`}>
+                {dock.node.type === 'cert' ? <Award size={9} /> : null}
+                {TYPE_LABEL[dock.node.type]}
+              </span>
+              <h3 className="rmv-dock__title">{dock.node.label}</h3>
+            </div>
+            <button type="button" className="rmv-dock__close" onClick={closeDock} aria-label="도크 닫기">
+              <X size={15} />
+            </button>
+          </div>
+
+          <label className="rmv-dock__studied">
+            <input
+              type="checkbox"
+              checked={studiedIds.has(dock.node.id)}
+              onChange={() => toggleStudied(dock.node.id)}
+            />
+            학습함
+          </label>
+
+          {dock.loading && <div className="rmv-dock__loading">학습 콘텐츠를 불러오는 중이에요…</div>}
+
+          <div className="rmv-dock__body">
+            {dock.content.why && (
+              <section className="rmv-dock__section">
+                <h4 className="rmv-dock__sectiontitle">왜 배우나</h4>
+                <p className="rmv-dock__text">{dock.content.why}</p>
+              </section>
+            )}
+            {dock.content.summary && (
+              <section className="rmv-dock__section">
+                <h4 className="rmv-dock__sectiontitle">개념 요약</h4>
+                <p className="rmv-dock__text">{dock.content.summary}</p>
+              </section>
+            )}
+            {dock.content.resources.length > 0 && (
+              <section className="rmv-dock__section">
+                <h4 className="rmv-dock__sectiontitle">리소스</h4>
+                <div className="rmv-dock__chips">
+                  {dock.content.resources.map((r, i) => (
+                    <span key={`${r.label}-${i}`} className="rmv-dock__chip rmv-dock__chip--resource">
+                      {r.label}
+                      <i className="rmv-dock__chipkind">{r.kind}</i>
+                    </span>
+                  ))}
+                </div>
+              </section>
+            )}
+            {dock.content.project && (
+              <section className="rmv-dock__section">
+                <h4 className="rmv-dock__sectiontitle">미니 프로젝트</h4>
+                <p className="rmv-dock__text">{dock.content.project}</p>
+              </section>
+            )}
+            {dock.content.citations.length > 0 && (
+              <section className="rmv-dock__section">
+                <h4 className="rmv-dock__sectiontitle">근거</h4>
+                <div className="rmv-dock__chips">
+                  {dock.content.citations.map((c, i) => (
+                    <span key={i} className="rmv-dock__chip rmv-dock__chip--citation">{c}</span>
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+        </div>
+      )}
       </div>
     </div>
   )
