@@ -55,6 +55,33 @@ export function classifySkill(name: string, backendCategory?: string): SkillGrou
   return groupForCategory(cat)
 }
 
+// F: 스테이지 뷰 카드 배지용 세분화 라벨 — classifySkill의 언어/프레임워크/기타 3버킷은
+// WorkflowList.tsx가 보유 밴드를 정확히 이 3키로만 렌더링해서(map 리터럴이 3개 고정
+// 키다) 바꿀 수 없다. 대신 MariaDB/MongoDB/ClickHouse 같은 데이터·DB 계열이 전부 "기타"로
+// 뭉개져 보인다는 피드백에 대응해, classifySkill과 별개로 카드 배지 표시 전용 라벨을
+// 추가한다 — pearl 사전(TECH_CATEGORY)/보정 테이블(SUPPLEMENT_CATEGORY)의 8종 원본
+// 카테고리를 그대로 살려 더 구체적인 한글 라벨로 보여준다. classifySkill의 3버킷
+// 반환값·리스트 뷰 동작은 전혀 건드리지 않는 순수 추가 함수다.
+const CATEGORY_BADGE_LABEL: Record<string, string> = {
+  language: '언어',
+  backend: '백엔드',
+  frontend: '프론트엔드',
+  mobile: '모바일',
+  data_db: '데이터·DB',
+  cloud_services: '클라우드',
+  devops: '데브옵스',
+  ai_llm: 'AI·LLM',
+}
+
+export function categoryBadgeLabel(name: string, backendCategory?: string): string {
+  if (backendCategory && backendCategory !== 'unknown') {
+    return CATEGORY_BADGE_LABEL[backendCategory] ?? groupForCategory(backendCategory)
+  }
+  const cat = TECH_CATEGORY[name] ?? SUPPLEMENT_CATEGORY[name]
+  if (cat && CATEGORY_BADGE_LABEL[cat]) return CATEGORY_BADGE_LABEL[cat]
+  return groupForCategory(cat)
+}
+
 // 관계(연관·순서) 큐레이션 — "네트워크 그래프처럼 순서를 보여달라"는 피드백에 대응해
 // 같은 카테고리 안의 밋밋한 그룹핑 엣지 말고, 실제 기술 간 방향 있는 관계(아는 언어 ->
 // 그 언어로 배우면 좋은 프레임워크)를 소수만 큐레이션한다. Java -> Spring은 자연스럽지만

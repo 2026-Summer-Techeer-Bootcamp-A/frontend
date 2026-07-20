@@ -509,6 +509,17 @@
   z-index: 5;
 }
 
+/* F-2: AI 로드맵 보강 버튼 — 옆의 추천 공고 버튼(Sparkles, 중립 회색)과 시각적으로
+   헷갈리지 않도록 은은한 인디고 틴트를 얹는다(모노크롬+그린 톤 안에서 절제된 유일한
+   액센트). 로딩 중엔 회전 애니메이션을 추천 버튼과 공유한다. */
+.wfm-enrich-btn {
+  color: #4c4fd9;
+  background: rgba(76, 79, 217, 0.1);
+}
+.wfm-enrich-btn:hover:not(:disabled) { background: rgba(76, 79, 217, 0.18); color: #3c3fc0; }
+.wfm-enrich-btn:disabled { cursor: default; opacity: 0.5; }
+.wfm-enrich-btn.is-loading svg { animation: wfm-recommend-spin 0.9s linear infinite; }
+
 .wfm-modal__backdrop {
   position: fixed;
   inset: 0;
@@ -605,6 +616,128 @@
   background: #f0fbf4;
   border: 1px solid #9dcfb4;
 }
+
+/* F-2: AI 로드맵 보강 모달 — 그래프 확대 모달과 백드롭·타이틀바(.wfm-modal__card)는
+   공유하고, 목록형 콘텐츠라 그래프용 대형 고정 크기 대신 컴팩트한 크기로 오버라이드
+   한다(추천 공고 모달과 같은 패턴). */
+.wfm-enrich-modal {
+  width: min(560px, 92vw);
+  height: auto;
+  max-height: min(720px, 88vh);
+  overflow-y: auto;
+}
+.wfm-enrich-body { padding: 16px 18px 20px; }
+.wfm-enrich-headline {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--c-ink, #18181b);
+}
+.wfm-enrich-summary {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--c-muted, #7c7f88);
+  line-height: 1.5;
+}
+.wfm-enrich-quickwin {
+  margin-top: 14px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #f0fbf4;
+  border: 1px solid #9dcfb4;
+}
+.wfm-enrich-quickwin__label {
+  flex: none;
+  font-size: 10px;
+  font-weight: 800;
+  color: #157a41;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.wfm-enrich-quickwin__text {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #0f5c31;
+}
+
+.wfm-enrich-steps {
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+/* 타입 좌측 테두리는 wfs-type--skill/cert/concept/career(스테이지 뷰와 동일한 3색)를
+   그대로 재사용한다 — 보강 뷰와 로드맵 카드가 같은 색 언어를 쓰게. */
+.wfm-enrich-step {
+  box-sizing: border-box;
+  border: 1px solid var(--line, #e6e9ef);
+  border-radius: 12px;
+  padding: 10px 14px;
+  background: #fff;
+}
+.wfm-enrich-step__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.wfm-enrich-step__order {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--accent-100, #e4e4e7);
+  color: var(--c-ink, #18181b);
+  font-size: 10px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+}
+.wfm-enrich-step__label {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 750;
+  color: var(--c-ink, #18181b);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wfm-enrich-step__priority {
+  flex: none;
+  font-size: 9.5px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.wfm-enrich-step__priority--high { color: #92400e; background: #fef3c7; }
+.wfm-enrich-step__priority--medium { color: #2f5fb0; background: rgba(59, 130, 246, 0.12); }
+.wfm-enrich-step__priority--low { color: var(--c-muted, #6b6f78); background: #eef0f3; }
+.wfm-enrich-step__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #157a41;
+}
+.wfm-enrich-step__reason {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: var(--c-muted, #6b6f78);
+  line-height: 1.45;
+}
+.wfm-enrich-step__project {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: var(--c-ink, #18181b);
+  line-height: 1.45;
+}
+.wfm-enrich-step__project b { font-weight: 750; }
 
 /* 2단계: 리스트 뷰(WorkflowList.tsx) — flow 캔버스와 달리 좌표 산수가 없는 세로 스크롤
    목록이라, 카드 컴팩트 영역에서는 wfm-list-pane이, 크게 보기 모달에서는
@@ -806,6 +939,13 @@
    ============================================================================ */
 .wfs-root {
   position: relative;
+  /* 2026-07-20(2차): 전체 폭 컨테이너에서 콘텐츠가 컨테이너보다 좁으면 왼쪽에 붙어
+     오른쪽만 텅 비어 보였다 — inline-block(콘텐츠 폭만큼만 차지)으로 바꾸고, 감싸는
+     .wfm-stage-pane/.wfm-modal__stage의 text-align:center로 좌우 여백을 고르게
+     나눈다. 컬럼 좌표 자체(workflowLayout.ts)는 전혀 건드리지 않는 순수 시각 정렬이라,
+     콘텐츠가 컨테이너보다 넓을 때는 그대로 좌측부터 스크롤된다. */
+  display: inline-block;
+  text-align: left;
 }
 
 .wfs-headrow {
@@ -868,22 +1008,38 @@
 }
 .wfs-summary {
   box-sizing: border-box;
-  padding: 16px 18px;
+  padding: 12px 14px;
   overflow: hidden;
 }
-.wfs-summary__big { font-size: 26px; font-weight: 800; color: #157a41; }
-.wfs-summary__sub { font-size: 11px; color: #3f7a5b; }
-.wfs-summary__lines {
-  margin-top: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+/* 3: "28개, 언어4/프레임워크8/기타16" 카운트 3줄 대신, 목표가 요구하는 것 중 이미
+   가진 실제 스킬 이름을 pill로 보여준다 — 캡션은 평범한 "보유 기술 N개" 한 줄로
+   내리고, pill은 아래 wfs-chip(선행 보유 칩)과 같은 톤을 재사용해 하나의 덩어리로
+   읽히게 한다(위계를 맞춘다). */
+.wfs-summary__caption {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #3f7a5b;
 }
-.wfs-summary__lines div {
-  font-size: 11.5px;
-  color: #2f6a49;
+.wfs-summary__pills {
+  margin-top: 8px;
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.wfs-summary__pill {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #157a41;
+  background: #fff;
+  border: 1px solid #9dcfb4;
+  border-radius: 999px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+.wfs-summary__note {
+  margin-top: 8px;
+  font-size: 10.5px;
+  color: #6b9b7f;
 }
 .wfs-chip {
   box-sizing: border-box;
@@ -906,31 +1062,52 @@
 }
 .wfs-chip svg { flex: none; }
 
-/* 스킬 카드 — 2026-07-20: 태그+요구 건수만 있는 카드도 빈 공간 없이 콘텐츠 높이에
-   맞게 렌더되도록 패딩·블록 간격을 압축했다(workflowLayout.ts의 MIN_SKILL_CARD_H와
-   반드시 같은 값을 가정한다). 스킬명 -> 카테고리 -> 수요(공고 수 + 회사 아바타) ->
-   (있으면) payoff 순 배치와 목표(다크) / 경유(회색 점선) 색 구분은 그대로 유지한다. */
+/* 스킬 카드 — 2026-07-20(2차): "타깃 카드가 내용보다 훨씬 크고 빈 검정 공간이 크다"는
+   피드백으로 패딩·블록 간격을 다시 압축했다(workflowLayout.ts의 MIN_SKILL_CARD_H와
+   반드시 같은 값을 가정한다 — 대략 56~76px). 스킬명 -> 카테고리 -> (있으면 대안 배지)
+   -> 이유 -> 수요(공고 수 + 회사 아바타) -> (있으면) payoff 순으로 배치한다. 목표
+   (goal)를 꽉 찬 검정으로 채우던 예전 스타일은 없앴다 — 이제 목표/경유 둘 다 밝은
+   카드고, 타입(기술/자격증/개념·연차)은 wfs-type--*의 좌측 테두리 색 하나로만
+   구분한다. 목표 카드는 경유 카드보다 테두리를 진하게(실선·두껍게) 둬서 "이게 실제
+   목표"라는 위계만 살린다. */
 .wfs-scard {
   box-sizing: border-box;
-  border-radius: 14px;
-  padding: 14px 16px;
+  border-radius: 12px;
+  padding: 10px 14px;
   border: 1px solid var(--line, #e6e9ef);
   background: #fff;
   overflow: hidden;
-  transition: opacity 0.15s ease;
+  transition: opacity 0.15s ease, box-shadow 0.15s ease;
 }
 .wfs-scard--goal {
-  background: var(--c-ink, #18181b);
   border-color: var(--c-ink, #18181b);
-  color: #fff;
+  border-width: 1.4px;
 }
 .wfs-scard--via {
-  background: #f4f5f7;
+  background: #f8f9fa;
   border: 1.4px dashed #d3d6dc;
 }
 .wfs-dim { opacity: 0.32; }
 @media (prefers-reduced-motion: reduce) {
   .wfs-scard, .wfs-chip, .wfs-need-card, .wfs-bundle__row { transition: none; }
+}
+
+/* 5: "먼저" 배지 — 정렬 결과 가장 앞선(가장 급한) 카드 한 장에만 붙는다. 링 형태
+   그림자로 카드 자체도 살짝 강조해 목록 훑을 때 바로 눈에 띄게 한다. */
+.wfs-scard--first {
+  box-shadow: 0 0 0 2px rgba(24, 24, 27, 0.14);
+}
+.wfs-first-badge {
+  position: absolute;
+  top: -8px;
+  right: 10px;
+  font-size: 9px;
+  font-weight: 800;
+  color: #fff;
+  background: var(--c-ink, #18181b);
+  border-radius: 999px;
+  padding: 2px 8px;
+  letter-spacing: 0.02em;
 }
 
 .wfs-scard__head {
@@ -942,14 +1119,13 @@
 .wfs-scard__name {
   min-width: 0;
   flex: 1;
-  font-size: 14.5px;
+  font-size: 13.5px;
   font-weight: 750;
   color: var(--c-ink, #18181b);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.wfs-scard--goal .wfs-scard__name { color: #fff; }
 
 .wfs-chip-cat {
   flex: none;
@@ -961,29 +1137,41 @@
   border-radius: 999px;
   padding: 1px 7px;
 }
-.wfs-scard--goal .wfs-chip-cat {
-  color: #c5c7cd;
-  background: #2a2a2f;
-  border-color: #3a3a40;
+
+/* 4: 대안(alternative)을 이미 보유했다는 신호 — 예전엔 카드 맨 아래 글자색만 다른
+   한 줄이라 눈에 잘 안 띄었다. 헤더 바로 아래로 올리고 배지 모양(배경+테두리)을 줘서
+   "이 카드는 급하지 않다"는 걸 바로 알아보게 한다. */
+.wfs-scard__altbadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #2f5fb0;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.28);
+  border-radius: 999px;
+  padding: 2px 8px;
 }
+.wfs-scard__altbadge svg { flex: none; }
 
 .wfs-scard__reason {
   font-size: 10px;
-  margin-top: 10px;
+  margin-top: 8px;
   color: #6b6f78;
-  line-height: 1.45;
+  line-height: 1.4;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.wfs-scard--goal .wfs-scard__reason { color: #c5c7cd; }
 
 .wfs-scard__demand {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-top: 10px;
+  margin-top: 8px;
   flex-wrap: wrap;
 }
 .wfs-scard__avatars {
@@ -993,21 +1181,12 @@
 }
 
 .wfs-scard__payoff {
-  margin-top: 10px;
+  margin-top: 8px;
   font-size: 10.5px;
   font-weight: 650;
   color: #157a41;
 }
 .wfs-scard__payoff b { font-weight: 800; }
-.wfs-scard--goal .wfs-scard__payoff { color: #7fe3ac; }
-
-.wfs-scard__alt {
-  margin-top: 10px;
-  font-size: 10px;
-  font-weight: 700;
-  color: #2f5fb0;
-}
-.wfs-scard--goal .wfs-scard__alt { color: #9cc0ff; }
 
 .wfs-badge {
   font-size: 9.5px;
@@ -1019,7 +1198,6 @@
   white-space: nowrap;
 }
 .wfs-badge--blue { background: rgba(59, 130, 246, 0.14); color: #2f5fb0; }
-.wfs-scard--goal .wfs-badge--blue { background: rgba(59, 130, 246, 0.22); color: #9cc0ff; }
 
 .wfs-avatar {
   width: 16px;
@@ -1047,7 +1225,7 @@
   box-sizing: border-box;
   border: 1.4px dashed #8b8f98;
   border-radius: 12px;
-  padding: 14px 16px 12px;
+  padding: 10px 16px 8px;
   position: relative;
   background: #fff;
   overflow: hidden;
@@ -1068,12 +1246,12 @@
   gap: 6px;
   font-size: 12px;
   color: var(--c-ink, #18181b);
-  padding: 5px 0;
+  padding: 4px 0;
   transition: opacity 0.15s ease;
 }
 .wfs-bundle__row-name { flex: 1; min-width: 0; }
 .wfs-bundle__note {
-  margin-top: 6px;
+  margin-top: 4px;
   font-size: 10px;
   color: var(--c-muted, #7c7f88);
 }
@@ -1087,24 +1265,24 @@
   border: 1px solid var(--line, #e6e9ef);
   color: var(--c-ink, #18181b);
   border-radius: 12px;
-  padding: 14px 16px;
+  padding: 8px 14px;
   text-align: left;
   overflow: hidden;
   transition: opacity 0.15s ease;
 }
 .wfs-need-card__name {
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 700;
   display: flex;
   align-items: center;
   gap: 6px;
 }
 .wfs-need-card__reason {
-  font-size: 11px;
-  margin-top: 10px;
+  font-size: 10.5px;
+  margin-top: 4px;
   color: var(--c-muted, #6b6f78);
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
