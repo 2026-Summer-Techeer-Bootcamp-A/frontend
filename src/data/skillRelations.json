@@ -3,7 +3,7 @@
     "version": "draft-1",
     "curated_by": "fable",
     "date": "2026-07-19",
-    "description": "스킬 관계 정본 초안. requires: target을 배우기 전 prereq가 선행(mode any는 목록 중 하나면 충분, all은 전부). goes_with: 같이 배우면 좋은 묶음. alternative: 같은 역할이라 하나만 깊게 파면 되는 그룹. cert_path: 자격증과 선행 스킬. 통계 검증(pair_stats 비대칭)과 taxonomy canonical 검증을 통과해야 정본이 된다.",
+    "description": "스킬 관계 정본 초안. requires: target을 배우기 전 prereq가 선행(mode any는 목록 중 하나면 충분, all은 전부). goes_with: 같이 배우면 좋은 묶음. alternative: 같은 역할이라 하나만 깊게 파면 되는 그룹. cert_path: 자격증과 선행 스킬. concept_path: 엔지니어링 개념(data-collector-script/concepts_taxonomy.json 정본과 이름을 맞춘 canonical 명)과 선행 스킬·선행 개념. 통계 검증(pair_stats 비대칭)과 taxonomy canonical 검증을 통과해야 정본이 된다.",
     "uncovered_domains": [
       "embedded",
       "cad_eda",
@@ -1570,6 +1570,70 @@
       "prereq_skills": [
         "Linux"
       ]
+    }
+  ],
+  "concept_path": [
+    {
+      "concept": "MSA·마이크로서비스",
+      "category": "아키텍처·확장성",
+      "prereq_skills": [
+        "Spring",
+        "Docker"
+      ],
+      "note": "서비스를 여러 배포 단위로 쪼개려면 API 서버 프레임워크(Spring)와 컨테이너 격리(Docker) 경험이 먼저 있어야 실습이 된다"
+    },
+    {
+      "concept": "대규모 트래픽",
+      "category": "아키텍처·확장성",
+      "prereq_skills": [
+        "Redis",
+        "Kafka"
+      ],
+      "prereq_concepts": [
+        "MSA·마이크로서비스"
+      ],
+      "note": "캐싱(Redis)과 비동기 메시징(Kafka)으로 부하를 흡수하는 기술 위에, 서비스 분리(MSA) 경험이 있어야 트래픽 급증 대응 설계가 왜 필요한지 이해하기 쉽다"
+    },
+    {
+      "concept": "CI/CD·자동화",
+      "category": "개발문화·방법론",
+      "prereq_skills": [
+        "Docker",
+        "Git"
+      ],
+      "note": "컨테이너 이미지 빌드(Docker)와 버전 관리(Git) 위에서 배포 파이프라인 자동화를 구성한다"
+    },
+    {
+      "concept": "클라우드 네이티브",
+      "category": "아키텍처·확장성",
+      "prereq_skills": [
+        "Kubernetes"
+      ],
+      "prereq_concepts": [
+        "MSA·마이크로서비스"
+      ],
+      "note": "쿠버네티스로 컨테이너를 오케스트레이션하고, 서비스 분리(MSA) 구조 위에서 클라우드 네이티브 운영 방식을 익힌다"
+    },
+    {
+      "concept": "DevOps·인프라자동화",
+      "category": "개발문화·방법론",
+      "prereq_skills": [
+        "Ansible",
+        "Terraform"
+      ],
+      "prereq_concepts": [
+        "CI/CD·자동화"
+      ],
+      "note": "구성 관리(Ansible)와 인프라 코드화(Terraform) 도구 경험 위에 배포 자동화(CI/CD) 개념이 있어야 인프라 자동화 전체 그림이 잡힌다"
+    },
+    {
+      "concept": "모니터링·옵저버빌리티",
+      "category": "개발문화·방법론",
+      "prereq_skills": [
+        "Prometheus",
+        "Grafana"
+      ],
+      "note": "모니터링 스택(Prometheus, Grafana) 실습 경험이 옵저버빌리티 개념의 전제가 된다"
     }
   ]
 }
