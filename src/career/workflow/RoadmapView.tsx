@@ -347,21 +347,9 @@ export function RoadmapView({
     return map
   }, [track, overlay, effectiveDifficultyById])
 
-  // 노드 상세 도크 상태 — 클릭한 노드, 그 노드의 콘텐츠(처음엔 정적 note 폴백, 응답
-  // 도착 시 교체), 로딩 여부. fetchSeqRef로 노드를 빠르게 갈아타도 낡은 응답이 최신
-  // 도크를 덮어쓰지 않게 막는다.
+  // 노드 상세 도크 상태 — 클릭한 노드와 그 노드의 콘텐츠(정적 note 폴백).
+  // 백엔드 RAG 요청은 이제 하지 않으므로 로딩 상태가 없다.
   const [dock, setDock] = useState<DockState | null>(null)
-  const fetchSeqRef = useRef(0)
-  const isMountedRef = useRef(true)
-  useEffect(() => {
-    // main.tsx가 React.StrictMode라 dev에서 이 effect가 mount -> cleanup -> mount로
-    // 두 번 실행된다. 이펙트 본문에서 true로 되돌리지 않으면 첫 cleanup이 내린 false가
-    // 영원히 남아 이후 모든 openNodeDock의 .then/.catch가 isMountedRef 가드에 막혀
-    // setDock(loading:false)를 못 적용한다 — 폴백 콘텐츠는 뜨는데 로딩 표시만 안
-    // 걷히던 버그의 원인이었다.
-    isMountedRef.current = true
-    return () => { isMountedRef.current = false }
-  }, [])
 
   const [studiedIds, setStudiedIds] = useState<Set<string>>(() => readStudiedIds())
   const toggleStudied = (id: string) => {
@@ -377,7 +365,6 @@ export function RoadmapView({
   const closeDock = () => setDock(null)
 
   const openNodeDock = (node: RoadmapNode, status: NodeStatus) => {
-    const seq = ++fetchSeqRef.current
     // 난이도(백엔드 객관 보정 또는 선행 깊이 폴백)를 도크에도 실어 basis 근거 문장을
     // 함께 보여준다 — effectiveDifficultyById는 이미 두 경우를 알아서 갈라 준다.
     const difficulty = effectiveDifficultyById.get(node.id)
@@ -391,36 +378,7 @@ export function RoadmapView({
     }))
     const dependents = nodeIndex.dependentsById.get(node.id) ?? []
     const sectionTitle = sectionTitleById.get(node.section) ?? node.section
-    setDock({ node, status, content: buildFallbackNodeContent(node, sectionTitle), loading: true, difficulty, prereqs, dependents })
-
-    // 이 요청이 여전히 "최신"인지(컴포넌트가 살아있고, 그 사이 다른 노드를 클릭해
-    // fetchSeqRef가 앞서가지 않았는지) — 성공/실패 두 경로와 finally가 모두 이 한
-    // 기준으로만 판단해 판정이 갈리지 않게 한다.
-    const isStale = () => !isMountedRef.current || fetchSeqRef.current !== seq
-
-    dashboardApi
-      .roadmapNodeContent(
-        { node_id: node.id, node_label: node.label, node_type: node.type, section: node.section },
-        getAuthToken(),
-      )
-      .then((res) => {
-        if (isStale()) return
-        setDock({ node, status, content: res, loading: false, difficulty, prereqs, dependents })
-      })
-      .catch((err) => {
-        // 엔드포인트가 아직 없거나 요청이 404/에러로 실패해도 데모가 끊기면 안 된다 —
-        // 이미 화면에 떠 있는 정적 note 폴백 콘텐츠는 그대로 둔다. 로딩 표시를 내리는
-        // 건 아래 finally가 성공/실패 구분 없이 맡는다(여기서 따로 내리면 실패 경로를
-        // 빠뜨리기 쉽다).
-        console.info('[roadmap] 노드 콘텐츠 요청 실패, 정적 note로 대신 보여줘요', err)
-      })
-      .finally(() => {
-        // 성공/실패 어느 쪽이든 이 요청이 최신이면 로딩 표시는 반드시 걷는다 — 실패
-        // 경로에서만 빠뜨리면 폴백은 뜬 채로 ".rmv-dock__loading"이 영원히 안 사라지는
-        // 버그가 된다.
-        if (isStale()) return
-        setDock((prev) => (prev && prev.node.id === node.id ? { ...prev, loading: false } : prev))
-      })
+    setDock({ node, status, content: buildFallbackNodeContent(node, sectionTitle), loading: false, difficulty, prereqs, dependents })
   }
 
   const handleNodeActivate = (node: RoadmapNode, status: NodeStatus) => {
@@ -784,8 +742,6 @@ export function RoadmapView({
             />
             학습함
           </label>
-
-          {dock.loading && <div className="rmv-dock__loading">학습 콘텐츠를 불러오는 중이에요…</div>}
 
           <div className="rmv-dock__body">
             {/* 선행/다음 단계 — 캔버스에서 hover해야만 보이는 주황 선(prereq 엣지)이
