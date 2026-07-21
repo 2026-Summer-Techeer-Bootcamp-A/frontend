@@ -7,14 +7,38 @@ import {
   resumeTechTransitionViz,
 } from '../src/ppt/viz/resume-tech-transition.ts'
 
-test('승인된 30개 기술과 세 분야 컬러를 제공한다', () => {
-  assert.equal(RESUME_TECH_CHIPS.length, 30)
-  assert.equal(new Set(RESUME_TECH_CHIPS.map((chip) => chip.name)).size, 30)
+test('기술 30개와 개념 10개를 중복 없이 혼합한다', () => {
+  const technologies = RESUME_TECH_CHIPS.filter((chip) => chip.kind === 'technology')
+  const concepts = RESUME_TECH_CHIPS.filter((chip) => chip.kind === 'concept')
+  const expectedConcepts = new Set([
+    '대규모 트래픽 처리',
+    'MSA',
+    '보안',
+    '분산 시스템',
+    '고가용성',
+    '성능 최적화',
+    '실시간 처리',
+    '데이터 파이프라인',
+    '장애 대응',
+    '모니터링·관측성',
+  ])
+
+  assert.equal(RESUME_TECH_CHIPS.length, 40)
+  assert.equal(new Set(RESUME_TECH_CHIPS.map((chip) => chip.name)).size, 40)
+  assert.equal(technologies.length, 30)
+  assert.equal(concepts.length, 10)
+  assert.deepEqual(new Set(concepts.map((chip) => chip.name)), expectedConcepts)
   assert.deepEqual(
-    new Set(RESUME_TECH_CHIPS.map((chip) => chip.category)),
+    new Set(technologies.map((chip) => chip.category)),
     new Set(['language', 'platform', 'infra']),
   )
-  assert.ok(RESUME_TECH_CHIPS.every((chip) => chip.logo.path.length > 0))
+  assert.ok(technologies.every((chip) => chip.logo?.path.length))
+  assert.ok(concepts.every((chip) => chip.category === 'concept' && chip.symbol))
+
+  const conceptIndices = concepts.map((concept) => RESUME_TECH_CHIPS.indexOf(concept))
+  assert.ok(conceptIndices[0] < 5)
+  assert.ok(conceptIndices.at(-1)! > 34)
+  assert.ok(conceptIndices.slice(1).every((index, position) => index - conceptIndices[position] <= 5))
 })
 
 test('이력서와 기술 칩은 어떤 프레임에도 함께 보이지 않는다', () => {
@@ -47,14 +71,14 @@ test('이력서 6장이 쌓인 뒤 위로 이동하며 사라진다', () => {
   assert.equal(gone.resumes.some((card) => card.visible), false)
 })
 
-test('54% 이후 컬러 기술 칩 30개가 순차 낙하한다', () => {
+test('54% 이후 컬러 칩 40개가 순차 낙하한다', () => {
   const start = getResumeTechTransitionState(0.54, 960, 540)
   const middle = getResumeTechTransitionState(0.72, 960, 540)
   const end = getResumeTechTransitionState(0.92, 960, 540)
 
   assert.equal(start.chips.filter((chip) => chip.visible).length, 0)
   assert.ok(middle.chips.filter((chip) => chip.visible).length > 0)
-  assert.ok(middle.chips.filter((chip) => chip.visible).length < 30)
+  assert.ok(middle.chips.filter((chip) => chip.visible).length < 40)
   assert.ok(end.chips.every((chip) => chip.visible && chip.settled && chip.alpha === 1))
   assert.ok(end.chips.every((chip) => chip.labelColor === '#FFFFFF'))
 })
@@ -77,10 +101,10 @@ test('동일 입력은 결정적이고 4K 레이아웃은 720p의 3배다', () =
   assert.ok(Math.abs(large.resumes[5].width - small.resumes[5].width * 3) < 0.000001)
 })
 
-test('독립된 10초 기능 시각화 메타데이터를 제공한다', () => {
+test('독립된 11초 기능 시각화 메타데이터를 제공한다', () => {
   assert.equal(resumeTechTransitionViz.id, 'resume-tech-transition')
   assert.equal(resumeTechTransitionViz.title, '이력서에서 기술 스택으로')
   assert.equal(resumeTechTransitionViz.category, 'feature')
-  assert.equal(resumeTechTransitionViz.period, 10000)
+  assert.equal(resumeTechTransitionViz.period, 11000)
   assert.equal(resumeTechTransitionViz.render, renderResumeTechTransition)
 })

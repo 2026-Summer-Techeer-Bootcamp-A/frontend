@@ -1,5 +1,5 @@
 // 이력서 더미 → 컬러 기술 칩 전환: 이력서 6장이 완전히 퇴장한 뒤
-// 공식 로고를 포함한 기술 칩 30개가 낙하해 쌓이는 독립 장면이다.
+// 공식 로고 기술 칩 30개와 역량 개념 칩 10개가 섞여 낙하하는 독립 장면이다.
 
 import { Children, isValidElement } from 'react'
 import type { ReactNode } from 'react'
@@ -46,8 +46,20 @@ import {
   roundRect,
 } from './common.ts'
 
-export type ResumeTechCategory = 'language' | 'platform' | 'infra'
+export type ResumeTechCategory = 'language' | 'platform' | 'infra' | 'concept'
 export type ResumeTechPhase = 'resume' | 'gap' | 'chips'
+export type ResumeChipKind = 'technology' | 'concept'
+export type ConceptSymbol =
+  | 'traffic'
+  | 'msa'
+  | 'security'
+  | 'distributed'
+  | 'availability'
+  | 'performance'
+  | 'realtime'
+  | 'pipeline'
+  | 'incident'
+  | 'observability'
 
 export interface CanvasLogo {
   path: string
@@ -58,9 +70,11 @@ export interface CanvasLogo {
 
 export interface ResumeTechChipSpec {
   name: string
+  kind: ResumeChipKind
   category: ResumeTechCategory
-  logo: CanvasLogo
-  row: 0 | 1 | 2 | 3 | 4
+  logo?: CanvasLogo
+  symbol?: ConceptSymbol
+  row: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7
   finalOffsetX: number
   finalRotation: number
   driftX: number
@@ -97,19 +111,20 @@ export interface ResumeTechTransitionState {
   chips: ResumeTechChipState[]
 }
 
-const PERIOD_MS = 10000
-const RESUME_STARTS_MS = [300, 880, 1460, 2040, 2620, 3200] as const
-const RESUME_ARRIVAL_MS = 650
-const RESUME_EXIT_START_MS = 4300
-const RESUME_EXIT_END_MS = 5200
-const CHIP_START_MS = 5400
-const CHIP_GAP_MS = 90
-const CHIP_DROP_MS = 950
+const PERIOD_MS = 11000
+const RESUME_STARTS_MS = [330, 968, 1606, 2244, 2882, 3520] as const
+const RESUME_ARRIVAL_MS = 715
+const RESUME_EXIT_START_MS = 4730
+const RESUME_EXIT_END_MS = 5720
+const CHIP_START_MS = 5940
+const CHIP_GAP_MS = 80
+const CHIP_DROP_MS = 900
 
 const CATEGORY_STYLES: Record<ResumeTechCategory, { fill: string; border: string }> = {
   language: { fill: '#315F9E', border: '#6EA8FE' },
   platform: { fill: '#1F7650', border: '#34D17F' },
   infra: { fill: '#9A5B1F', border: '#E2933F' },
+  concept: { fill: '#4A3564', border: '#A78BC7' },
 }
 
 const FINAL_OFFSETS = [
@@ -158,52 +173,68 @@ function chip(
   logo: CanvasLogo,
   index: number,
 ): ResumeTechChipSpec {
-  const row = Math.floor(index / 6) as 0 | 1 | 2 | 3 | 4
-  const column = index % 6
-  const rowShift = row % 2 === 0 ? 0 : 18
+  const row = Math.floor(index / 5) as 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7
+  const column = index % 5
+  const rowShift = row % 2 === 0 ? 0 : 20
   return {
     name,
+    kind: 'technology',
     category,
     logo,
     row,
-    finalOffsetX: -312 + column * 125 + rowShift,
-    finalRotation: [-0.028, 0.021, -0.014, 0.018, -0.022, 0.012][column],
-    driftX: [-52, 44, -36, 58, -46, 34][(index + row) % 6],
+    finalOffsetX: -300 + column * 150 + rowShift,
+    finalRotation: [-0.028, 0.021, -0.014, 0.018, -0.022][column],
+    driftX: [-52, 44, -36, 58, -46][(index + row) % 5],
   }
+}
+
+function conceptChip(name: string, symbol: ConceptSymbol, index: number): ResumeTechChipSpec {
+  const state = chip(name, 'concept', { path: '', color: '#E7D8F8', viewBoxWidth: 24, viewBoxHeight: 24 }, index)
+  return { ...state, kind: 'concept', logo: undefined, symbol }
 }
 
 // 아래 행부터 위 행 순으로 떨어지되 분야 색상이 층마다 자연스럽게 섞이도록 고정한다.
 export const RESUME_TECH_CHIPS: ResumeTechChipSpec[] = [
   chip('Java', 'language', simpleLogo(siOpenjdk), 0),
   chip('Spring', 'platform', simpleLogo(siSpring), 1),
-  chip('AWS', 'infra', awsLogo(), 2),
-  chip('Python', 'language', simpleLogo(siPython), 3),
-  chip('Docker', 'infra', simpleLogo(siDocker), 4),
-  chip('React', 'platform', simpleLogo(siReact), 5),
-  chip('TypeScript', 'language', simpleLogo(siTypescript), 6),
-  chip('Kafka', 'platform', simpleLogo(siApachekafka), 7),
-  chip('Kubernetes', 'infra', simpleLogo(siKubernetes), 8),
-  chip('Redis', 'platform', simpleLogo(siRedis), 9),
-  chip('Go', 'language', simpleLogo(siGo), 10),
-  chip('MySQL', 'platform', simpleLogo(siMysql), 11),
-  chip('Git', 'infra', simpleLogo(siGit), 12),
-  chip('Vue', 'platform', simpleLogo(siVuedotjs), 13),
-  chip('Swift', 'language', simpleLogo(siSwift), 14),
-  chip('PostgreSQL', 'platform', simpleLogo(siPostgresql), 15),
-  chip('Linux', 'infra', simpleLogo(siLinux), 16),
-  chip('Node.js', 'platform', simpleLogo(siNodedotjs), 17),
-  chip('Kotlin', 'language', simpleLogo(siKotlin), 18),
-  chip('MongoDB', 'platform', simpleLogo(siMongodb), 19),
-  chip('Terraform', 'infra', simpleLogo(siTerraform), 20),
-  chip('Django', 'platform', simpleLogo(siDjango), 21),
-  chip('Ruby', 'language', simpleLogo(siRuby), 22),
-  chip('Nginx', 'infra', simpleLogo(siNginx), 23),
-  chip('JavaScript', 'language', simpleLogo(siJavascript), 24),
-  chip('FastAPI', 'platform', simpleLogo(siFastapi), 25),
-  chip('PHP', 'language', simpleLogo(siPhp), 26),
-  chip('GraphQL', 'platform', simpleLogo(siGraphql), 27),
-  chip('Rust', 'language', simpleLogo(siRust), 28),
-  chip('Next.js', 'platform', simpleLogo(siNextdotjs), 29),
+  conceptChip('대규모 트래픽 처리', 'traffic', 2),
+  chip('AWS', 'infra', awsLogo(), 3),
+  chip('Python', 'language', simpleLogo(siPython), 4),
+  chip('Docker', 'infra', simpleLogo(siDocker), 5),
+  conceptChip('MSA', 'msa', 6),
+  chip('React', 'platform', simpleLogo(siReact), 7),
+  chip('TypeScript', 'language', simpleLogo(siTypescript), 8),
+  chip('Kafka', 'platform', simpleLogo(siApachekafka), 9),
+  conceptChip('보안', 'security', 10),
+  chip('Kubernetes', 'infra', simpleLogo(siKubernetes), 11),
+  chip('Redis', 'platform', simpleLogo(siRedis), 12),
+  chip('Go', 'language', simpleLogo(siGo), 13),
+  conceptChip('분산 시스템', 'distributed', 14),
+  chip('MySQL', 'platform', simpleLogo(siMysql), 15),
+  chip('Git', 'infra', simpleLogo(siGit), 16),
+  chip('Vue', 'platform', simpleLogo(siVuedotjs), 17),
+  conceptChip('고가용성', 'availability', 18),
+  chip('Swift', 'language', simpleLogo(siSwift), 19),
+  chip('PostgreSQL', 'platform', simpleLogo(siPostgresql), 20),
+  chip('Linux', 'infra', simpleLogo(siLinux), 21),
+  conceptChip('성능 최적화', 'performance', 22),
+  chip('Node.js', 'platform', simpleLogo(siNodedotjs), 23),
+  chip('Kotlin', 'language', simpleLogo(siKotlin), 24),
+  chip('MongoDB', 'platform', simpleLogo(siMongodb), 25),
+  conceptChip('실시간 처리', 'realtime', 26),
+  chip('Terraform', 'infra', simpleLogo(siTerraform), 27),
+  chip('Django', 'platform', simpleLogo(siDjango), 28),
+  chip('Ruby', 'language', simpleLogo(siRuby), 29),
+  conceptChip('데이터 파이프라인', 'pipeline', 30),
+  chip('Nginx', 'infra', simpleLogo(siNginx), 31),
+  chip('JavaScript', 'language', simpleLogo(siJavascript), 32),
+  chip('FastAPI', 'platform', simpleLogo(siFastapi), 33),
+  conceptChip('장애 대응', 'incident', 34),
+  chip('PHP', 'language', simpleLogo(siPhp), 35),
+  chip('GraphQL', 'platform', simpleLogo(siGraphql), 36),
+  chip('Rust', 'language', simpleLogo(siRust), 37),
+  conceptChip('모니터링·관측성', 'observability', 38),
+  chip('Next.js', 'platform', simpleLogo(siNextdotjs), 39),
 ]
 
 function getResumeStates(timeMs: number, width: number, height: number): ResumeTransitionCardState[] {
@@ -237,7 +268,7 @@ function getChipStates(timeMs: number, width: number, height: number): ResumeTec
   const scale = Math.min(width / 960, height / 540)
   const chipHeight = 36 * scale
   const floorY = height * 0.86
-  const rowGap = 34 * scale
+  const rowGap = 31 * scale
 
   return RESUME_TECH_CHIPS.map((tech, index) => {
     const local = clamp01((timeMs - CHIP_START_MS - index * CHIP_GAP_MS) / CHIP_DROP_MS)
@@ -251,6 +282,10 @@ function getChipStates(timeMs: number, width: number, height: number): ResumeTec
       ? Math.sin(bounce * Math.PI) * 10 * scale * (1 - bounce * 0.35)
       : 0
     const style = CATEGORY_STYLES[tech.category]
+    const labelUnits = Array.from(tech.name).reduce(
+      (sum, character) => sum + (character.charCodeAt(0) > 127 ? 1.65 : 1),
+      0,
+    )
     return {
       ...tech,
       visible: timeMs > CHIP_START_MS && local > 0,
@@ -258,7 +293,7 @@ function getChipStates(timeMs: number, width: number, height: number): ResumeTec
       alpha: clamp01(local / 0.1),
       x: lerp(startX, targetX, fall),
       y: lerp(startY, targetY, fall * fall) - bounceLift,
-      width: (50 + tech.name.length * 6.6) * scale,
+      width: (50 + labelUnits * 6.6) * scale,
       height: chipHeight,
       rotation: lerp(tech.finalRotation * -6, tech.finalRotation, fall)
         + Math.sin(bounce * Math.PI) * 0.035,
@@ -372,6 +407,128 @@ function drawLogo(ctx: CanvasRenderingContext2D, logo: CanvasLogo, centerX: numb
   ctx.restore()
 }
 
+function drawConceptSymbol(
+  ctx: CanvasRenderingContext2D,
+  symbol: ConceptSymbol,
+  centerX: number,
+  size: number,
+): void {
+  const half = size / 2
+  const nodeRadius = size * 0.105
+  ctx.save()
+  ctx.translate(centerX, 0)
+  ctx.strokeStyle = '#E7D8F8'
+  ctx.fillStyle = '#E7D8F8'
+  ctx.lineWidth = Math.max(1.2, size * 0.09)
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
+  ctx.beginPath()
+
+  switch (symbol) {
+    case 'traffic':
+      ctx.moveTo(-half * 0.7, half * 0.55)
+      ctx.lineTo(-half * 0.2, 0)
+      ctx.lineTo(half * 0.12, half * 0.18)
+      ctx.lineTo(half * 0.68, -half * 0.58)
+      ctx.moveTo(half * 0.3, -half * 0.58)
+      ctx.lineTo(half * 0.68, -half * 0.58)
+      ctx.lineTo(half * 0.64, -half * 0.2)
+      break
+    case 'msa':
+      ctx.moveTo(-half * 0.5, -half * 0.42)
+      ctx.lineTo(half * 0.5, -half * 0.42)
+      ctx.lineTo(half * 0.5, half * 0.42)
+      ctx.lineTo(-half * 0.5, half * 0.42)
+      ctx.closePath()
+      ctx.stroke()
+      for (const [x, y] of [[-0.5, -0.42], [0.5, -0.42], [0.5, 0.42], [-0.5, 0.42]] as const) {
+        ctx.beginPath()
+        ctx.arc(x * half, y * half, nodeRadius, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      ctx.restore()
+      return
+    case 'security':
+      ctx.moveTo(0, -half * 0.72)
+      ctx.lineTo(half * 0.58, -half * 0.44)
+      ctx.lineTo(half * 0.48, half * 0.2)
+      ctx.quadraticCurveTo(0, half * 0.72, 0, half * 0.72)
+      ctx.quadraticCurveTo(-half * 0.48, half * 0.2, -half * 0.48, half * 0.2)
+      ctx.lineTo(-half * 0.58, -half * 0.44)
+      ctx.closePath()
+      break
+    case 'distributed':
+      for (const [x, y] of [[0, 0], [-0.6, -0.48], [0.6, -0.48], [-0.6, 0.48], [0.6, 0.48]] as const) {
+        if (x !== 0 || y !== 0) {
+          ctx.moveTo(0, 0)
+          ctx.lineTo(x * half, y * half)
+        }
+      }
+      ctx.stroke()
+      for (const [x, y] of [[0, 0], [-0.6, -0.48], [0.6, -0.48], [-0.6, 0.48], [0.6, 0.48]] as const) {
+        ctx.beginPath()
+        ctx.arc(x * half, y * half, nodeRadius, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      ctx.restore()
+      return
+    case 'availability':
+      ctx.arc(0, 0, half * 0.68, 0, Math.PI * 2)
+      ctx.moveTo(-half * 0.35, 0)
+      ctx.lineTo(-half * 0.06, half * 0.3)
+      ctx.lineTo(half * 0.42, -half * 0.32)
+      break
+    case 'performance':
+      ctx.arc(0, half * 0.2, half * 0.62, Math.PI, 0)
+      ctx.moveTo(0, half * 0.2)
+      ctx.lineTo(half * 0.4, -half * 0.25)
+      break
+    case 'realtime':
+      ctx.arc(0, 0, half * 0.68, 0, Math.PI * 2)
+      ctx.moveTo(0, 0)
+      ctx.lineTo(0, -half * 0.42)
+      ctx.moveTo(0, 0)
+      ctx.lineTo(half * 0.36, half * 0.2)
+      break
+    case 'pipeline':
+      ctx.moveTo(-half * 0.7, 0)
+      ctx.lineTo(half * 0.7, 0)
+      ctx.moveTo(half * 0.4, -half * 0.28)
+      ctx.lineTo(half * 0.7, 0)
+      ctx.lineTo(half * 0.4, half * 0.28)
+      ctx.stroke()
+      for (const x of [-0.58, -0.08, 0.42]) {
+        ctx.beginPath()
+        ctx.arc(x * half, 0, nodeRadius, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      ctx.restore()
+      return
+    case 'incident':
+      ctx.moveTo(0, -half * 0.7)
+      ctx.lineTo(half * 0.7, half * 0.62)
+      ctx.lineTo(-half * 0.7, half * 0.62)
+      ctx.closePath()
+      ctx.moveTo(0, -half * 0.25)
+      ctx.lineTo(0, half * 0.2)
+      break
+    case 'observability':
+      ctx.moveTo(-half * 0.74, 0)
+      ctx.quadraticCurveTo(0, -half * 0.72, half * 0.74, 0)
+      ctx.quadraticCurveTo(0, half * 0.72, -half * 0.74, 0)
+      ctx.closePath()
+      ctx.stroke()
+      ctx.beginPath()
+      ctx.arc(0, 0, nodeRadius * 1.35, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.restore()
+      return
+  }
+
+  ctx.stroke()
+  ctx.restore()
+}
+
 function drawTechChip(ctx: CanvasRenderingContext2D, state: ResumeTechChipState): void {
   if (!state.visible || state.alpha <= 0) return
 
@@ -394,14 +551,18 @@ function drawTechChip(ctx: CanvasRenderingContext2D, state: ResumeTechChipState)
   ctx.stroke()
 
   const iconX = -state.width / 2 + 18 * scale
-  ctx.fillStyle = 'rgba(255,255,255,0.94)'
+  ctx.fillStyle = state.kind === 'concept' ? 'rgba(31,20,46,0.72)' : 'rgba(255,255,255,0.94)'
   ctx.beginPath()
   ctx.arc(iconX, 0, 11.5 * scale, 0, Math.PI * 2)
   ctx.fill()
-  drawLogo(ctx, state.logo, iconX, 15 * scale)
+  if (state.kind === 'concept' && state.symbol) {
+    drawConceptSymbol(ctx, state.symbol, iconX, 15 * scale)
+  } else if (state.logo) {
+    drawLogo(ctx, state.logo, iconX, 15 * scale)
+  }
 
   ctx.fillStyle = state.labelColor
-  ctx.font = `600 ${12.5 * scale}px ${FONT}`
+  ctx.font = `600 ${(state.kind === 'concept' ? 11.5 : 12.5) * scale}px ${FONT}`
   ctx.textAlign = 'left'
   ctx.textBaseline = 'middle'
   ctx.fillText(state.name, iconX + 17 * scale, 0.5 * scale)
@@ -434,7 +595,7 @@ export const renderResumeTechTransition: VizRender = (ctx, width, height, progre
 export const resumeTechTransitionViz: VizDef = {
   id: 'resume-tech-transition',
   title: '이력서에서 기술 스택으로',
-  subtitle: '이력서 더미가 사라지고 30개의 기술이 쏟아지다',
+  subtitle: '이력서 더미가 사라지고 40개의 기술·개념이 쏟아지다',
   category: 'feature',
   period: PERIOD_MS,
   render: renderResumeTechTransition,
