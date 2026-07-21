@@ -11,63 +11,106 @@
 // 않는다), 컬럼 안 노드 y는 위에서부터 높이+간격을 그대로 누적한 값이다. 엣지 경로도
 // 이 알려진 좌표에서 직접 직교(orthogonal) polyline으로 계산한다(elkjs 의존성 없음,
 // DOM 측정도 없음 — 순수 함수라 리사이즈/스크롤/폰트로딩과 완전히 무관하다).
+//
+// 2026-07-20(2차): 전체 폭 행으로 옮겨진 뒤 "오른쪽이 텅 빈다"는 피드백이 있었다.
+// 카드를 한 컬럼 안에 2~3열 그리드로 감싸는 안도 검토했지만, 그러려면 컬럼 안 레인마다
+// 엣지 진입/이탈 x좌표가 갈라져 위 문단의 "컬럼 경계를 가로지르지 않는 깔끔한 직교
+// 꺾은선"이 깨진다(레인1에 있는 카드로 들어오는 화살표가 레인0 카드를 가로지를 수
+// 있다) — 엣지 라우팅은 이미 한 번 두 가지 접근(DOM 측정, elk)이 깨졌던 자리라 같은
+// 리스크를 세 번째로 반복하지 않기로 하고, 대신 컬럼 간격(COLUMN_GAP)과 카드 폭
+// (NODE_WIDTH_WIDE)을 넓혀 "단계 컬럼을 가로로 벌리는" 쪽으로 폭을 쓴다 — 컬럼 x는
+// 여전히 컬럼 인덱스만의 함수로 남는다. 컨텐츠가 컨테이너보다 좁게 남는 나머지 여백은
+// WorkflowStages.tsx가 감싸는 컨테이너를 가운데 정렬(justify-content: center)해
+// 좌우로 고르게 분산한다(workflowMap.css의 .wfm-stage-pane/.wfm-modal__stage).
 export const NODE_WIDTH = 184
-export const NODE_WIDTH_WIDE = 232
-// 컬럼 사이 가로 간격 · 컬럼 안 노드 사이 세로 간격 — 넉넉하게 뒀다(요구사항: "컬럼
-// 사이 가로 간격과 노드 사이 세로 간격을 넉넉히 준다").
-export const COLUMN_GAP = 72
-export const ROW_GAP = 22
+export const NODE_WIDTH_WIDE = 258
+export const COLUMN_GAP = 88
+export const ROW_GAP = 14
 
-// 시안 3 + 라이브 피드백: 카드 높이를 "훨씬" 키운다. 목표를 하나도 선택하지 않은
-// 상태(보유 요약 카드만 있는 상태)에서도 크게 보여야 하므로, 아래 MIN_* 바닥값은
-// 카드 내용(이유/payoff/대안 배지 유무)과 무관하게 항상 적용된다 — 목표 선택 여부가
-// 이 바닥값에 전혀 영향을 주지 않는다.
-export const SKILL_CARD_PAD_V = 44
-export const SKILL_CARD_HEADER_H = 28
-export const SKILL_CARD_GAP = 16
-export const SKILL_CARD_REASON_H = 38
-export const SKILL_CARD_DEMAND_H = 36
-export const SKILL_CARD_PAYOFF_H = 30
-export const SKILL_CARD_ALT_H = 26
-export const MIN_SKILL_CARD_H = 176
+// 2026-07-20(2차): 타깃 카드가 내용(제목+태그+짧은 메타)보다 훨씬 커서 빈 검정 공간이
+// 크다는 피드백으로 패딩·블록 간격·바닥값을 다시 한번 압축했다. 목표는 "요구 건수
+// 한 줄만 있는 가장 흔한 카드"가 대략 56~76px 사이에 오는 것이다(56+20(헤더)+8(gap)+
+// 18(수요줄) = 66px). hasDemand가 꺼지면(목표 1건일 때 수요 줄 자체를 안 그린다) 더
+// 낮아질 수 있어 MIN_SKILL_CARD_H를 바닥으로만 둔다.
+//
+// 2026-07-20(3차): 위 압축 이후 실제 렌더에서 카테고리 태그·번들 여러 줄·이유 줄이
+// 잘려 나오는 버그가 있었다. 원인은 이 카드들의 DOM 높이가 CSS로 자연스럽게 정해지는
+// 게 아니라 layoutStages가 계산한 값이 인라인 style(height)로 그대로 강제된다는
+// 점이다(WorkflowStages.tsx가 rect.height를 그대로 꽂는다) — 그 값이 실제 CSS로
+// 렌더될 내용보다 조금이라도 작으면 카드의 overflow:hidden이 나머지를 그냥 잘라
+// 버린다. 아래 블록별 상수는 이제 workflowMap.css가 명시적으로 고정하는 px 값
+// (height/line-height, 줄바꿈 없는 한 줄 텍스트)과 1:1로 맞춘다 — 한쪽만 바뀌면
+// 반드시 잘리거나 빈 공간이 생기므로 두 파일은 항상 같이 고친다.
+export const SKILL_CARD_PAD_V = 20
+export const SKILL_CARD_HEADER_H = 20
+export const SKILL_CARD_GAP = 8
+export const SKILL_CARD_REASON_H = 16
+export const SKILL_CARD_DEMAND_H = 18
+export const SKILL_CARD_PAYOFF_H = 16
+export const SKILL_CARD_ALT_H = 18
+export const MIN_SKILL_CARD_H = 56
 
-export function estimateSkillCardHeight(opts: { hasReason: boolean; hasPayoff: boolean; hasAlt: boolean }): number {
+export function estimateSkillCardHeight(opts: { hasReason: boolean; hasPayoff: boolean; hasAlt: boolean; hasDemand?: boolean }): number {
   let h = SKILL_CARD_PAD_V + SKILL_CARD_HEADER_H
-  if (opts.hasReason) h += SKILL_CARD_GAP + SKILL_CARD_REASON_H
-  h += SKILL_CARD_GAP + SKILL_CARD_DEMAND_H
-  if (opts.hasPayoff) h += SKILL_CARD_GAP + SKILL_CARD_PAYOFF_H
   if (opts.hasAlt) h += SKILL_CARD_GAP + SKILL_CARD_ALT_H
+  if (opts.hasReason) h += SKILL_CARD_GAP + SKILL_CARD_REASON_H
+  // N: 목표 공고가 1건뿐이면 "1개 공고 요구" 줄 자체가 정보량이 0이라
+  // WorkflowStages.tsx가 hasDemand를 false로 넘겨 이 블록을 아예 뺀다(기본값은 true라
+  // 기존 다중 목표 동작은 그대로다).
+  if (opts.hasDemand ?? true) h += SKILL_CARD_GAP + SKILL_CARD_DEMAND_H
+  if (opts.hasPayoff) h += SKILL_CARD_GAP + SKILL_CARD_PAYOFF_H
   return Math.max(h, MIN_SKILL_CARD_H)
 }
 
-export const BUNDLE_PAD_V = 36
-export const BUNDLE_ROW_H = 32
-export const BUNDLE_NOTE_H = 22
-export const MIN_BUNDLE_H = 168
+export const BUNDLE_PAD_V = 18
+// 3차: 22px는 12px 폰트의 브라우저 기본 line-height(폰트마다 1.15~1.3 사이로 들쭉날쭉)
+// 를 가정했는데, workflowMap.css가 이제 줄당 line-height를 16px로 명시 고정하면서
+// 실제 필요한 값(16 + 위아래 padding 4px씩 = 24)보다 작아졌다 — 번들 멤버가 3~4줄만
+// 돼도 마지막 한두 줄이 박스 아래로 밀려 잘렸다.
+export const BUNDLE_ROW_H = 24
+// 3차: note(예: "iOS에 필요해서 추가했어요" 류 한 줄 설명)는 margin-top:4px로 위 행과
+// 떨어지는데, 이 4px 간격이 예전엔 높이 추정에 아예 빠져 있었다 — 노트가 있는 번들마다
+// 4px씩 실제보다 낮게 잡혀 있었다.
+export const BUNDLE_NOTE_GAP = 4
+export const BUNDLE_NOTE_H = 16
+export const MIN_BUNDLE_H = 64
 
 export function estimateBundleHeight(memberCount: number, hasNote: boolean): number {
-  const h = BUNDLE_PAD_V + memberCount * BUNDLE_ROW_H + (hasNote ? BUNDLE_NOTE_H : 0)
+  const h = BUNDLE_PAD_V + memberCount * BUNDLE_ROW_H + (hasNote ? BUNDLE_NOTE_GAP + BUNDLE_NOTE_H : 0)
   return Math.max(h, MIN_BUNDLE_H)
 }
 
-export const CERT_CARD_PAD_V = 30
-export const CERT_CARD_HEADER_H = 24
-export const CERT_CARD_NOTE_H = 32
-export const MIN_CERT_CARD_H = 168
+export const CERT_CARD_PAD_V = 16
+export const CERT_CARD_HEADER_H = 18
+// 3차: 번들 노트와 같은 이유로 자격증 카드의 note도 margin-top:4px 간격이 추정에서
+// 빠져 있었다.
+export const CERT_CARD_NOTE_GAP = 4
+export const CERT_CARD_NOTE_H = 16
+export const MIN_CERT_CARD_H = 56
 
 export function estimateCertCardHeight(hasNote: boolean): number {
-  const h = CERT_CARD_PAD_V + CERT_CARD_HEADER_H + (hasNote ? CERT_CARD_NOTE_H : 0)
+  const h = CERT_CARD_PAD_V + CERT_CARD_HEADER_H + (hasNote ? CERT_CARD_NOTE_GAP + CERT_CARD_NOTE_H : 0)
   return Math.max(h, MIN_CERT_CARD_H)
 }
 
-// 시작 컬럼 요약 카드 — 목표(target) 선택 여부와 완전히 무관하게 ownedSkills 총량에만
-// 좌우된다. 즉 목표를 하나도 안 골라도(빈 상태) 이 카드는 항상 이 크기로 나온다.
-export const START_SUMMARY_EMPTY_H = 100
-export const START_SUMMARY_H = 210
-export const CHIP_HEIGHT = 30
+// 시작 컬럼 요약 카드 — 2026-07-20(2차): "28개, 언어4/프레임워크8/기타16" 카운트
+// 3줄 대신, 목표 공고가 요구하는 것 중 이미 보유한 실제 스킬 pill(최대 4개)을 이름으로
+// 보여주는 쪽으로 내용이 바뀌었다(WorkflowStages.tsx). 높이도 그 내용(캡션 한 줄 +
+// pill 1~2줄)에 맞춰 다시 추정한다 — 카운트 3줄 고정이던 예전보다 훨씬 작아진다.
+export const START_SUMMARY_EMPTY_H = 64
+export const START_SUMMARY_PAD_V = 24
+export const START_SUMMARY_CAPTION_H = 14
+export const START_SUMMARY_GAP = 8
+export const START_SUMMARY_PILL_ROW_H = 22
+export const START_SUMMARY_PILL_ROW_GAP = 4
+export const CHIP_HEIGHT = 26
 
-export function estimateStartSummaryHeight(totalOwned: number): number {
-  return totalOwned === 0 ? START_SUMMARY_EMPTY_H : START_SUMMARY_H
+export function estimateStartSummaryHeight(totalOwned: number, matchedPillCount = 0): number {
+  if (totalOwned === 0) return START_SUMMARY_EMPTY_H
+  const shown = Math.max(0, Math.min(matchedPillCount, 4))
+  const rows = shown > 0 ? Math.ceil(shown / 2) : 1 // pill이 하나도 안 맞으면 안내 문구 한 줄만 차지한다.
+  return START_SUMMARY_PAD_V + START_SUMMARY_CAPTION_H + START_SUMMARY_GAP
+    + rows * START_SUMMARY_PILL_ROW_H + Math.max(0, rows - 1) * START_SUMMARY_PILL_ROW_GAP
 }
 
 // 칩(엣지 출발점인 보유 스킬)은 카드처럼 컬럼 폭을 꽉 채우지 않고 텍스트 길이만큼만

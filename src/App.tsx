@@ -1,6 +1,5 @@
 import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
-import DemoRemote from './career/DemoRemote'
 import ResponsiveProductLayout from './shared/ResponsiveProductLayout'
 import Adaptive from './shared/Adaptive'
 import DefaultLoader from './shared/DefaultLoader'
@@ -112,7 +111,6 @@ const PptVisualMaker = lazy(() => import('./ppt/PptVisualMaker'))
 export default function App() {
   return (
     <>
-    <DemoRemote />
     <Suspense fallback={<DefaultLoader size="large" />}>
       <Routes>
         {/* ─────────────────────────────────────────────────────────────

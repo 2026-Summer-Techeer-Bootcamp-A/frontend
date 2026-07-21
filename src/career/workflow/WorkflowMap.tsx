@@ -1,56 +1,314 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Award, List, Maximize2, Plus, Sparkles, Workflow, X } from 'lucide-react'
+import { Check, Maximize2, Plus, Sparkles, WandSparkles, X } from 'lucide-react'
 import { SectionHeader, PreviewBadge } from '../kit'
-import { AsOf } from '../charts'
 import { useResumesState } from '../state'
 import { getAuthToken } from '../authStore'
-import { useBookmarks, loadBookmarkDetails, isBookmarked, toggleBookmark } from '../bookmarkStore'
+import { useBookmarks, loadBookmarkDetails, toggleBookmark } from '../bookmarkStore'
 import {
   useSelectedGoalIds, useGoalSelectionTouched, toggleGoalId,
-  getSelectedGoalIds, isGoalSelectionTouched, setSelectedGoalIds,
 } from '../goalSelectionStore'
-import { dashboardApi, jobsApi, type Identity, type PostingCard, type PostingDetail, type ScopedRoadmapData } from '../api'
-import { useWidgetData } from '../useWidgetData'
+import {
+  dashboardApi, jobsApi, type Identity, type PostingDetail,
+  type RoadmapEnrichRequest, type RoadmapEnrichResponse, type RoadmapEnrichStep,
+} from '../api'
 import type { WidgetSize } from '../dashboardConfig'
-import dreamCompanies from '../../data/dreamCompanies.json'
-import { avatarColor, matchPctFor, yearBadgeFor, minPairwiseJaccard } from './workflowShared'
-import { WorkflowList } from './WorkflowList'
-import { WorkflowStages } from './WorkflowStages'
+import { getDemoRecommendations } from '../../data/demoRecommend'
+import careerData from '../../data/careerData.json'
+import CompanyLogo from '../CompanyLogo'
+import { avatarColor, matchPctFor, yearBadgeFor, type PostingDetailWithConcepts } from './workflowShared'
+import { RoadmapView } from './RoadmapView'
+import { loadRoadmapTrack, DEFAULT_ROADMAP_TRACK_ID } from '../../data/roadmaps/registry'
+import { buildRoadmapOverlay, type NodeStatus } from './roadmapOverlay'
 import './workflowMap.css'
 
-// 데모용: 클릭 한 번으로 유명 기업 공고를 북마크 + 목표 선택까지 채워 넣어 워크플로우
-// 맵을 즉석에서 populate한다. 실제 검증된 기업명 목록은 dreamCompanies.json에 있다.
-type DreamCompany = { name: string; tier: '대기업' | '중견' }
-const DREAM_COMPANIES = dreamCompanies as DreamCompany[]
-const RECOMMEND_TARGET_NEW = 8
-const RECOMMEND_MAX_COMPANIES = 12
-const RECOMMEND_CHUNK_SIZE = 4
+// 데모용 추천 공고 — careerData.json 실제 공고를 직무 8개로 미리 분류·큐레이션해둔
+// demoRecommend.ts를 그대로 쓴다. 네트워크 호출이 전혀 없어(백엔드·로그인 여부와
+// 무관하게) 게스트 화면에서도 항상 같은 결과가 즉시 뜬다. 모듈 스코프에서 한 번만
+// 계산해 두는 이유는 이 값이 careerData.json이라는 정적 입력에만 의존해 렌더마다
+// 다시 계산할 이유가 없기 때문이다(리렌더 때마다 배열을 새로 만들면 각 그룹의
+// postings 배열 참조가 매번 바뀌어 하위 리스트의 불필요한 재조정만 늘어난다).
+const DEMO_RECOMMEND_GROUPS = getDemoRecommendations()
+
+// 추천 공고 모달에서 "목표로 추가"한 데모 공고(careerData.json)의 상세를 채우기 위한
+// id -> PostingDetail 맵. placeholders.tsx(DesktopMy)가 북마크/최근본 공고 상세를
+// 채울 때 쓰는 것과 같은 패턴 — careerData.json에 이미 있는 id는 백엔드에 없거나
+// 게스트라 jobsApi.detail이 항상 실패하므로, API를 부르는 대신 이 정적 데이터에서
+// 바로 채운다. 이게 없으면 목표로 고른 추천 공고가 postings에 전혀 안 담겨
+// selectedPostings가 비고, inferRoadmapTrackId가 항상 backend로 폴백해버린다.
+// careerData.json의 필드명(techs/postDate/closeDate/careerMin/careerMax/logo)을
+// PostingDetail이 기대하는 필드명(skills/post_date/close_date/career_min/career_max/
+// logo_url)으로 맞춰 매핑하고, certs/categories/concepts처럼 careerData에 아예 없는
+// 필드는 안전하게 빈 값으로 둔다. id는 careerData.json에서 문자열(예:
+// "wanted:wanted:https://...")이라 PostingDetail.id(number) 타입과는 다르지만, 이
+// 파일에서 posting.id는 항상 String(...)으로 감싸 문자열 비교에만 쓰이므로 런타임
+// 동작엔 영향이 없다.
+type CareerDataPosting = (typeof careerData.postings)[number]
+function toCareerDataPostingDetail(p: CareerDataPosting): PostingDetail {
+  return {
+    id: p.id as unknown as number,
+    title: p.title,
+    company: p.company,
+    post_date: p.postDate || null,
+    close_date: p.closeDate || null,
+    skills: p.techs,
+    url: '',
+    logo_url: p.logo || null,
+    matched_count: null,
+    source: p.source,
+    pool: p.pool,
+    career_min: p.careerMin,
+    career_max: p.careerMax,
+    region: p.region ?? null,
+    lat: null,
+    lng: null,
+    industry: p.industry ?? null,
+    response_rate: null,
+    categories: [],
+    certs: [],
+    desc_sections: p.descSections,
+  }
+}
+const CAREER_DATA_POSTINGS_BY_ID = new Map<string, PostingDetail>(
+  careerData.postings.map((p) => [p.id, toCareerDataPostingDetail(p)]),
+)
+
+// JobSheet.tsx의 careerText와 같은 표기(신입·무관 / 경력 N년+ / 경력 N~M년)를 그대로
+// 따른다 — 이 워크플로우 맵 파일 안에서만 쓰는 값이라 workflowShared.ts에 새 export를
+// 얹는 대신 여기 작게 둔다.
+// careerData.json은 상한이 없는 공고를 careerMax: 100(센티널 값)으로 표시한다 —
+// 그대로 보여주면 "경력 5~100년"처럼 어색해지므로 상한이 사실상 무제한인 경우엔
+// "N년+"로만 표기한다.
+const CAREER_MAX_UNBOUNDED = 50
+function demoCareerText(min: number | null, max: number | null): string {
+  if (!min) return '신입·무관'
+  const hasCappedMax = max != null && max !== min && max < CAREER_MAX_UNBOUNDED
+  return hasCappedMax ? `경력 ${min}~${max}년` : `경력 ${min}년+`
+}
 
 // A-5: 목표 · 학습 워크플로우 맵 — 북마크한 공고 전부(암묵적 목표) 대신 목표 선택
 // 패널에서 "목표로 삼을 것"을 직접 골라야 한다. 시안 1: 예전엔 이 선택 UI가 다이어그램
 // 위에 겹치는 플로팅 드로어였는데, 위젯 헤더 바로 아래 상시 노출되는 앵커 바(선택된
 // 목표를 매칭률+삭제(X) 칩으로)와 그 옆의 "목표 추가" 팝오버로 옮겼다 — 다이어그램은
 // 그 아래 온전히 남고, 목표 추가/삭제는 팝오버 안에서 in place로 끝난다(시안 2: 위젯
-// 밖 스크롤 위치를 흔들지 않기 위해 handleToggle이 스크롤 위치를 보존한다). 선택된
-// 공고들의 요구 기술과 이력서 보유 기술을 스테이지 뷰(WorkflowStages)로 이어 "무엇을
-// 어떤 순서로 배우면 좋은가"를 보여준다. 좌표 계산·엣지 라우팅 등은 전부
-// WorkflowStages.tsx(+workflowLayout.ts)로 옮겼다 — 이 파일은 데이터 패칭, 목표 선택,
-// 추천 공고 모달, 크게 보기 모달, 뷰(stages/list) 토글 같은 위젯 셸만 담당한다. list 뷰
-// (WorkflowList)와 workflowShared.ts의 공용 헬퍼(분류·아바타색·매치율 등)는 그대로
-// 유지한다 — list 뷰가 여전히 그 헬퍼들을 쓴다.
+// 밖 스크롤 위치를 흔들지 않기 위해 handleToggle이 스크롤 위치를 보존한다). 이 파일은
+// 데이터 패칭, 목표 선택, 추천 공고 모달, AI 보강 모달, 크게 보기 모달 같은 위젯 셸을
+// 담당하고, 실제 로드맵 렌더는 RoadmapView.tsx가 맡는다.
+//
+// Phase 2(로드맵 유일 뷰 전환): 예전엔 roadmap/stages/list 세 뷰를 토글로 오가며
+// stages/list는 북마크 -> 목표 선택이 있어야만 뭔가 그려지는 "장난감"이었다. 사람이
+// 큐레이션한 정본 백본(RoadmapView, src/data/roadmaps/backend.json)은 북마크·로그인
+// 여부와 무관하게 항상 그려지고 목표 선택은 그 위에 강조만 얹으므로, 뷰 토글과
+// stages/list 렌더 분기를 걷어내고 로드맵을 유일한 뷰로 굳혔다. WorkflowStages.tsx와
+// WorkflowList.tsx 파일 자체는 다른 곳에서 참조될 수 있어 남겨두되 이 위젯은 더 이상
+// import하지 않는다.
 
-const MOCK_ROADMAP: ScopedRoadmapData = { start_matched: 0, total: 0, as_of: '', steps: [] }
+// F-2: AI 보강 우선순위 라벨 — RoadmapEnrichStep.priority(high/medium/low)를 한글
+// 배지 문구로 옮긴다.
+const ENRICH_PRIORITY_LABEL: Record<RoadmapEnrichStep['priority'], string> = {
+  high: '우선',
+  medium: '보통',
+  low: '여유',
+}
 
-// 2단계: stages/list 보기 선택 저장 키 — dashboardConfig.ts의 STORAGE_KEY_DASHBOARD_CONFIG와
-// 같은 techeer_ 프리픽스 네이밍을 따른다.
-const VIEW_STORAGE_KEY = 'techeer_workflow_view'
+// F-2: 폴백 보강 — 보강 엔드포인트가 아직 없거나(다른 에이전트가 백엔드에 붙이는 중)
+// 요청이 실패해도 데모가 끊기면 안 된다는 요구로, 현재 화면에 이미 있는 목표/미보유
+// 기술 정보만으로 결정적으로(랜덤 없이) 같은 형태의 응답을 만든다. 실제 LLM 판단이
+// 아니라 "그럴듯한 우선순위 순서"일 뿐이라는 걸 명확히 하려고 굳이 화려한 문구를
+// 쓰지 않는다 — 실패했다는 사실은 콘솔에만 남기고(WorkflowMap 본문), 화면은 정상
+// 보강 뷰와 동일한 컴포넌트로 그대로 렌더된다.
+//
+// hasGoal: 목표(북마크 선택)가 있는 요청인지, 아니면 로드맵 미보유 노드로 만든
+// 요청(buildRoadmapGap)인지. 데이터 자체(req)는 두 경우 모두 같은 shape이라 이
+// 플래그 없이는 구분할 방법이 없는데, 문구가 "OO 공고가 요구하는 기술" 처럼 실제
+// 공고를 전제하면 목표가 없을 때는 어색해진다 — 그래서 문구 분기에만 쓴다.
+function buildFallbackEnrichment(req: RoadmapEnrichRequest, hasGoal: boolean): RoadmapEnrichResponse {
+  const company = req.goal_company || '목표 기업'
+  const title = req.goal_title || (hasGoal ? '목표 공고' : '로드맵')
+  const steps: RoadmapEnrichStep[] = []
+  let order = 1
+
+  req.missing_skills.slice(0, 4).forEach((skill, i) => {
+    steps.push({
+      order: order++,
+      label: skill,
+      type: 'skill',
+      effort: i === 0 ? '1~2주' : '2~4주',
+      priority: i === 0 ? 'high' : i < 2 ? 'medium' : 'low',
+      reason: hasGoal
+        ? `${company} ${title} 공고가 요구하는 기술이에요.`
+        : `${title}에서 다음으로 추천하는 기술이에요.`,
+      project: `${skill}로 작은 프로젝트를 하나 만들어 포트폴리오에 올려보세요.`,
+    })
+  })
+  req.concepts.slice(0, 2).forEach((concept) => {
+    steps.push({
+      order: order++,
+      label: concept,
+      type: 'concept',
+      effort: '2~3주',
+      priority: 'medium',
+      reason: hasGoal
+        ? `${title} 직무에서 자주 요구하는 개념이에요.`
+        : `${title}에서 자주 나오는 핵심 개념이에요.`,
+      project: `${concept}을 정리한 글을 써보고 관련 사례를 하나 분석해보세요.`,
+    })
+  })
+  req.certs.slice(0, 2).forEach((cert) => {
+    steps.push({
+      order: order++,
+      label: cert,
+      type: 'cert',
+      effort: '4~8주',
+      priority: 'low',
+      reason: '보유하면 서류에서 눈에 띄는 자격증이에요.',
+      project: `${cert} 취득 일정을 잡고 준비를 시작해보세요.`,
+    })
+  })
+  if (hasGoal && req.career_required != null && req.career_required > 0 && (req.career_mine ?? 0) < req.career_required) {
+    steps.push({
+      order: order++,
+      label: `경력 ${req.career_required}년+`,
+      type: 'career',
+      effort: '장기',
+      priority: 'medium',
+      reason: '이 목표가 요구하는 최소 경력이에요.',
+      project: '관련 프로젝트·인턴 경험을 이력서에 꾸준히 쌓아가세요.',
+    })
+  }
+
+  return {
+    headline: hasGoal ? `${company} ${title}까지 남은 것` : `${title}에서 다음으로 채우면 좋은 것`,
+    summary: steps.length > 0
+      ? (hasGoal
+        ? `${title} 목표까지 ${steps.length}가지를 준비하면 좋아요. 급한 순서로 정리했어요.`
+        : `${title} 기준으로 아직 채우지 못한 핵심 항목 ${steps.length}가지를 정리했어요. 급한 순서로 나열했어요.`)
+      : (hasGoal
+        ? '지금 보유한 기술만으로도 이 목표에 이미 잘 맞고 있어요.'
+        : '이미 로드맵의 핵심 항목을 대부분 채웠어요.'),
+    quick_win: steps[0] ? `${steps[0].label}부터 시작해보세요` : '보유 기술을 하나씩 늘려가 보세요',
+    steps,
+  }
+}
+
+// F-2 확장: 목표(북마크 선택)가 하나도 없어도 AI 보강 버튼이 항상 작동해야 한다는
+// 데모 요구로, 로드맵 정본 백본(backend.json)에서 아직 보유하지 못한 노드들을
+// 뽑아 보강 요청의 재료로 삼는다 — RoadmapView.tsx와 완전히 같은 오버레이 계산
+// (buildRoadmapOverlay)을 재사용해 "화면에 실제로 잠겨/해금 가능으로 보이는 노드"와
+// 정확히 같은 기준으로 갭을 판정한다. 정렬은 지금 당장 시작할 수 있는(unlockable)
+// 노드를 먼저, 그다음 아직 잠긴(locked) 노드를 로드맵 진행 순서(섹션 순서 -> 노드
+// 순서)대로 둬서 "다음에 뭘 해야 하는지"가 자연스럽게 읽히게 한다.
+const ROADMAP_GAP_SKILL_LIMIT = 6
+const ROADMAP_GAP_CONCEPT_LIMIT = 3
+const ROADMAP_GAP_CERT_LIMIT = 2
+const GAP_STATUS_RANK: Record<NodeStatus, number> = { unlockable: 0, locked: 1, owned: 2 }
+
+function buildRoadmapGap(ownedSkills: string[], ownedCerts: string[]) {
+  const track = loadRoadmapTrack(DEFAULT_ROADMAP_TRACK_ID)
+  const overlay = buildRoadmapOverlay(track, ownedSkills, ownedCerts)
+  const sectionOrderById = new Map(track.sections.map((s) => [s.id, s.order]))
+
+  const gapNodes = track.nodes
+    .filter((n) => overlay.statusById.get(n.id) !== 'owned')
+    .sort((a, b) => {
+      const ra = GAP_STATUS_RANK[overlay.statusById.get(a.id) ?? 'locked']
+      const rb = GAP_STATUS_RANK[overlay.statusById.get(b.id) ?? 'locked']
+      if (ra !== rb) return ra - rb
+      const sa = sectionOrderById.get(a.section) ?? 0
+      const sb = sectionOrderById.get(b.section) ?? 0
+      if (sa !== sb) return sa - sb
+      return a.order - b.order
+    })
+
+  return {
+    trackLabel: track.label,
+    missingSkills: gapNodes.filter((n) => n.type === 'skill').map((n) => n.label).slice(0, ROADMAP_GAP_SKILL_LIMIT),
+    concepts: gapNodes.filter((n) => n.type === 'concept').map((n) => n.label).slice(0, ROADMAP_GAP_CONCEPT_LIMIT),
+    certs: gapNodes.filter((n) => n.type === 'cert').map((n) => n.label).slice(0, ROADMAP_GAP_CERT_LIMIT),
+  }
+}
+
+// 4: 위젯 캔버스 영역의 고정 높이 — 목표 미선택/로딩/AI 보강 렌더 등 어떤 상태에서도
+// 이 값을 그대로 쓴다(예전엔 각 상태 분기가 제각각 maxHeight를 걸어서, 내용이 짧은
+// 상태로 전환될 때마다 위젯 전체 높이가 확 무너져 보였다). 값 자체는 기존에 stage/list
+// pane이 쓰던 maxHeight(2x2=720, 그 외=260)를 그대로 가져온 것이라 화면상 크기는
+// 바뀌지 않는다 — 내용이 이보다 크면 pane 안에서만 스크롤로 흡수한다.
+function canvasHeightFor(size: WidgetSize): number {
+  return size === '2x2' ? 720 : 260
+}
+
+// G: 목표 직군 추론 — 로드맵이 항상 backend 트랙으로 고정돼 있던 문제를 풀기 위해,
+// 선택된 목표 공고(selectedPostings)의 title/skills 키워드로 직군을 판정하고 그
+// 직군을 로드맵 트랙 id로 그대로 쓴다(직군명과 트랙 id가 1:1이라 별도 매핑 테이블이
+// 필요 없다: 백엔드/풀스택 -> backend, 프론트엔드 -> frontend, 데이터 분석·엔지니어·
+// ML/AI -> data, 데브옵스·SRE -> devops, 모바일 -> mobile). 아직 registry에 없는
+// 트랙 id를 반환해도 loadRoadmapTrack이 backend로 폴백하므로 안전하다.
+//
+// 판정 순서(TRACK_PRIORITY)는 식별력이 높은 직군(모바일 -> 프론트엔드 -> 데이터 ->
+// 데브옵스)을 먼저 검사하고 backend를 캐치올로 둔다 — 예를 들어 "TypeScript"만으로는
+// 프론트/백엔드 구분이 안 되지만 "React"가 함께 있으면 프론트엔드로 확정할 수 있는
+// 식으로, 키워드 자체를 직군 고유 도구/프레임워크 위주로 골랐다.
+type RoadmapTrackHintId = 'mobile' | 'frontend' | 'data' | 'devops' | 'backend'
+const TRACK_PRIORITY: RoadmapTrackHintId[] = ['mobile', 'frontend', 'data', 'devops', 'backend']
+const TRACK_KEYWORDS: Record<RoadmapTrackHintId, string[]> = {
+  mobile: [
+    'kotlin', 'swift', 'swiftui', 'flutter', 'dart', 'android', 'ios',
+    'react native', '리액트 네이티브', '안드로이드', '모바일', '앱 개발', 'jetpack compose',
+  ],
+  frontend: [
+    'react', 'vue', 'angular', 'svelte', 'next.js', 'nuxt', 'html', 'css', 'sass',
+    '프론트엔드', '프론트', 'ui/ux', '웹퍼블리셔', 'webpack', 'vite',
+  ],
+  data: [
+    'sql', 'pandas', 'numpy', 'tensorflow', 'pytorch', 'spark', 'hadoop', 'airflow',
+    '머신러닝', '딥러닝', '인공지능', '데이터 분석', '데이터 엔지니어', '데이터 사이언스',
+    'ml', 'ai', '빅데이터', 'etl', 'tableau',
+  ],
+  devops: [
+    'kubernetes', 'k8s', 'terraform', 'ansible', 'jenkins', 'helm', 'prometheus', 'grafana',
+    '데브옵스', 'sre', '인프라', 'ci/cd', 'argocd',
+  ],
+  backend: [
+    'spring', 'django', 'flask', 'fastapi', 'express', 'nestjs', 'node.js', 'node',
+    'jpa', 'mysql', 'postgresql', 'redis', 'kafka', 'msa', '서버', '백엔드', 'java', 'go', 'golang',
+  ],
+}
+
+// 공고 하나의 직군을 title + skills 키워드로 판정한다. TRACK_PRIORITY 순서대로 훑어
+// 처음 매칭되는 직군을 쓰고, 아무 키워드도 안 걸리면 backend로 캐치올한다.
+function classifyPostingTrack(posting: Pick<PostingDetail, 'title' | 'skills'>): RoadmapTrackHintId {
+  const haystack = [posting.title, ...(posting.skills ?? [])].join(' ').toLowerCase()
+  for (const trackHint of TRACK_PRIORITY) {
+    if (TRACK_KEYWORDS[trackHint].some((kw) => haystack.includes(kw))) return trackHint
+  }
+  return 'backend'
+}
+
+// 선택된 목표 여러 개 중 가장 많이 나온 직군(최빈값)을 로드맵 트랙으로 쓴다. 목표가
+// 없으면 DEFAULT_ROADMAP_TRACK_ID(backend)로 둔다. 동점일 때는 TRACK_PRIORITY 순서
+// (식별력 높은 직군 우선)로 타이브레이크한다.
+function inferRoadmapTrackId(postings: Pick<PostingDetail, 'title' | 'skills'>[]): string {
+  if (postings.length === 0) return DEFAULT_ROADMAP_TRACK_ID
+  const counts = new Map<RoadmapTrackHintId, number>()
+  postings.forEach((p) => {
+    const trackHint = classifyPostingTrack(p)
+    counts.set(trackHint, (counts.get(trackHint) ?? 0) + 1)
+  })
+  let best: RoadmapTrackHintId = 'backend'
+  let bestCount = -1
+  for (const trackHint of TRACK_PRIORITY) {
+    const count = counts.get(trackHint) ?? 0
+    if (count > bestCount) {
+      bestCount = count
+      best = trackHint
+    }
+  }
+  return best
+}
 
 export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
+  const canvasHeight = canvasHeightFor(size)
   const { activeResume } = useResumesState()
   const ownedSkills = useMemo(() => activeResume?.skills ?? [], [activeResume])
-  // E: 이력서 스킬의 category(백엔드가 이미 내려주는 값)를 classifySkill에 넘겨서
-  // pearl 사전 폴백보다 우선 신뢰하게 한다.
-  const ownedSkillCategories = useMemo(() => activeResume?.skillCategories ?? {}, [activeResume])
   const ownedSet = useMemo(() => new Set(ownedSkills), [ownedSkills])
   const bookmarkIds = useBookmarks()
   const resumeId = Number(activeResume?.id)
@@ -66,10 +324,31 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
       setPostings([])
       return
     }
+    // placeholders.tsx(DesktopMy)와 같은 패턴: careerData.json(추천 공고 모달의 데모
+    // 공고)에 이미 있는 id는 API를 부르지 않고 CAREER_DATA_POSTINGS_BY_ID에서 바로
+    // 채운다. 그 id가 아닌 것만(실제 백엔드 공고) jobsApi.detail로 계속 불러온다.
+    const idsNeedingDetail = bookmarkIds.filter((id) => !CAREER_DATA_POSTINGS_BY_ID.has(id))
+    if (idsNeedingDetail.length === 0) {
+      setPostingsLoading(false)
+      setPostings(bookmarkIds.flatMap((id) => {
+        const careerPosting = CAREER_DATA_POSTINGS_BY_ID.get(id)
+        return careerPosting ? [careerPosting] : []
+      }))
+      return
+    }
     let cancelled = false
     setPostingsLoading(true)
-    loadBookmarkDetails(bookmarkIds, (id) => jobsApi.detail(id))
-      .then((items) => { if (!cancelled) setPostings(items) })
+    loadBookmarkDetails(idsNeedingDetail, (id) => jobsApi.detail(id))
+      .then((items) => {
+        if (cancelled) return
+        const detailsById = new Map(items.map((item) => [String(item.id), item]))
+        setPostings(bookmarkIds.flatMap((id) => {
+          const careerPosting = CAREER_DATA_POSTINGS_BY_ID.get(id)
+          if (careerPosting) return [careerPosting]
+          const detail = detailsById.get(id)
+          return detail ? [detail] : []
+        }))
+      })
       .finally(() => { if (!cancelled) setPostingsLoading(false) })
     return () => { cancelled = true }
   }, [bookmarkIds])
@@ -113,7 +392,6 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
     [postings, selectedIdSet],
   )
 
-  const postingIds = useMemo(() => selectedPostings.map((p) => Number(p.id)), [selectedPostings])
   const targetSet = useMemo(() => {
     const set = new Set<string>()
     selectedPostings.forEach((p) => p.skills.forEach((s) => { if (!ownedSet.has(s)) set.add(s) }))
@@ -121,9 +399,14 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
   }, [selectedPostings, ownedSet])
   const targetSkillsArray = useMemo(() => [...targetSet], [targetSet])
 
-  // 자격증 트랙 — roadmapScoped는 자격증을 모르므로(학습 순서·payoff 계산 대상이 아님)
-  // 스킬 쪽과는 완전히 별도로, 보유/목표 두 집합만 뽑는다. 스테이지 뷰는 이 값들로 직접
-  // 자격증 컬럼을 계산하고(relations.ts), list 뷰는 하단 칩 레인(certLane)으로 보여준다.
+  // G: 선택된 목표들의 직군을 추론해 로드맵 백본 트랙을 그 직군으로 유동적으로
+  // 바꾼다 — 예전엔 항상 backend 트랙이 고정이라 목표를 바꿔도 백본이 그대로였다.
+  // targetSkills/targetConcepts 강조는 그대로 유지되고(아래 RoadmapView에 계속
+  // 넘긴다), 바뀌는 건 오직 어떤 트랙 JSON을 백본으로 그릴지 뿐이다.
+  const inferredTrackId = useMemo(() => inferRoadmapTrackId(selectedPostings), [selectedPostings])
+
+  // 자격증 트랙 — 보유/목표 두 집합만 뽑는다. RoadmapView에는 ownedCerts만 넘기고,
+  // targetCerts는 AI 보강 요청 payload에 쓴다.
   const ownedCerts = useMemo(() => activeResume?.certs ?? [], [activeResume])
   const ownedCertSet = useMemo(() => new Set(ownedCerts), [ownedCerts])
   const targetCerts = useMemo(() => {
@@ -131,19 +414,31 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
     selectedPostings.forEach((p) => p.certs.forEach((c) => { if (!ownedCertSet.has(c)) set.add(c) }))
     return [...set]
   }, [selectedPostings, ownedCertSet])
-  const hasCertLane = ownedCerts.length > 0 || targetCerts.length > 0
 
-  const roadmapKey = identity && postingIds.length ? `${resumeId}:${postingIds.slice().sort().join(',')}` : 'idle'
-  const roadmap = useWidgetData<ScopedRoadmapData>(
-    identity && postingIds.length ? () => dashboardApi.roadmapScoped(identity, postingIds, 10) : null,
-    MOCK_ROADMAP,
-    roadmapKey,
-  )
+  // F: 개념 트랙 — 공고 상세가 concepts를 옵셔널로 내려주면(다른 에이전트가 백엔드에 추가
+  // 중이라 아직 없을 수 있다) 목표로 선택된 공고들의 개념명만 모은다. 이력서엔 "보유 개념"
+  // 개념 자체가 없으므로(개념은 공고 요구사항일 뿐 사람이 소유하는 게 아니다) owned 집합은
+  // 두지 않는다. 필드가 없는 공고는 조용히 건너뛴다(크래시 없음).
+  const targetConcepts = useMemo(() => {
+    const set = new Set<string>()
+    selectedPostings.forEach((p) => {
+      const list = (p as PostingDetailWithConcepts).concepts ?? []
+      list.forEach((c) => { if (c?.name) set.add(c.name) })
+    })
+    return [...set]
+  }, [selectedPostings])
+
+  // F: 연차 게이트 — 선택된 목표 공고들 중 career_min이 있는 것들의 최댓값을 "이 목표
+  // 묶음을 지원하려면 필요한 경력"으로 삼는다(여러 공고 중 가장 까다로운 기준). 하나도
+  // career_min이 없으면(전부 신입·무관) 게이트 자체를 렌더하지 않는다.
+  const careerGoalMin = useMemo(() => {
+    const mins = selectedPostings.map((p) => p.career_min).filter((v): v is number => v != null && v > 0)
+    return mins.length > 0 ? Math.max(...mins) : null
+  }, [selectedPostings])
+  const resumeCareerMax = activeResume?.careerMax ?? null
 
   const showNoBookmarks = bookmarkIds.length === 0
   const showNoSelection = !showNoBookmarks && selectedIds.length === 0
-  const isLoading = !showNoBookmarks && !showNoSelection && (postingsLoading || (identity !== null && roadmap.loading))
-  const canShowGraph = !showNoBookmarks && !showNoSelection && !isLoading
 
   // 시안 1: 목표 선택 패널은 이제 앵커 바 옆 "목표 추가" 팝오버다(다이어그램 위에
   // 겹치지 않는다). 기본은 닫힘이지만, 아직 목표를 하나도 안 골랐으면(showNoSelection)
@@ -175,97 +470,12 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
     return selectedIds.map((id) => byId.get(id)).filter((pw): pw is typeof postingsWithMatch[number] => !!pw)
   }, [selectedIds, postingsWithMatch])
 
-  // 2단계: stages/list 보기 전환 — dashboardConfig.ts와 같은 패턴(localStorage가 정본)을
-  // 이 위젯 안에서 useState+localStorage로 간단히 구현한다(별도 스토어 모듈은 과하다).
-  // 마운트 시 1회만 저장된 값을 읽고, 그 뒤엔 토글 버튼으로만 바뀐다.
-  const [view, setViewState] = useState<'stages' | 'list'>(() => {
-    try {
-      return localStorage.getItem(VIEW_STORAGE_KEY) === 'list' ? 'list' : 'stages'
-    } catch {
-      return 'stages'
-    }
-  })
-  const setView = (next: 'stages' | 'list') => {
-    setViewState(next)
-    try {
-      localStorage.setItem(VIEW_STORAGE_KEY, next)
-    } catch {
-      // localStorage 접근 불가(프라이빗 모드 등)해도 뷰 전환 자체는 계속 동작해야 한다.
-    }
-  }
-
-  // D: 선택된 공고가 2개 이상이고 서로 이질적이면(요구 스킬 집합 쌍별 Jaccard 유사도의
-  // 최솟값 < 0.2) 스테이지 뷰 위에 "리스트 보기로 나눠 보라"는 안내 배너를 띄운다.
-  // 배너는 캔버스 밖(위) HTML이라 스테이지 뷰 레이아웃엔 영향이 없다.
-  const heterogeneousGoals = useMemo(() => {
-    if (selectedPostings.length < 2) return false
-    return minPairwiseJaccard(selectedPostings.map((p) => new Set(p.skills))) < 0.2
-  }, [selectedPostings])
-
-  // 데모용 추천 공고 가져오기 — 검증된 기업명으로 최대 12개 회사를 4개씩 묶어 조회해
-  // 후보를 최대 8개 모은다. 예전엔 모으자마자 전부 자동으로 북마크했는데, 어떤 공고가
-  // 담기는지 미리 보고 골라 담고 싶다는 요청으로 모달에 나열하고 개별 추가 버튼으로
-  // 바꿨다. 개별 회사 조회 실패는 allSettled로 흡수해 하나 실패해도 전체가 안 멈춘다.
-  const [recommendLoading, setRecommendLoading] = useState(false)
-  const [recommendMessage, setRecommendMessage] = useState<string | null>(null)
-  const [recommendCandidates, setRecommendCandidates] = useState<PostingCard[]>([])
+  // 데모용 추천 공고 — DEMO_RECOMMEND_GROUPS는 careerData.json에서 이미 계산해 둔
+  // 고정값이라(모듈 스코프), 여기선 모달을 열고 닫는 상태만 관리한다. 예전엔 API로
+  // 회사명을 조회해서 게스트·백엔드 다운 상황에서 실패하곤 했는데, 이제 네트워크 호출
+  // 자체가 없어 실패할 방법이 없다.
   const [recommendModalOpen, setRecommendModalOpen] = useState(false)
-  const [addedCandidateIds, setAddedCandidateIds] = useState<Set<string>>(new Set())
-
-  const handleRecommendClick = async () => {
-    if (recommendLoading) return
-    setRecommendLoading(true)
-    setRecommendMessage(null)
-    const seenIds = new Set<string>()
-    const collected: PostingCard[] = []
-    try {
-      const pool = DREAM_COMPANIES.slice(0, RECOMMEND_MAX_COMPANIES)
-      for (let i = 0; i < pool.length && collected.length < RECOMMEND_TARGET_NEW; i += RECOMMEND_CHUNK_SIZE) {
-        const chunk = pool.slice(i, i + RECOMMEND_CHUNK_SIZE)
-        const results = await Promise.allSettled(
-          chunk.map((company) => jobsApi.list({
-            pool: 'domestic', company: company.name, sort: 'latest', page: 1, page_size: 2,
-            include_recent_closed: true,
-          }, token)),
-        )
-        for (const result of results) {
-          if (collected.length >= RECOMMEND_TARGET_NEW) break
-          if (result.status !== 'fulfilled') continue
-          for (const item of result.value.items) {
-            if (collected.length >= RECOMMEND_TARGET_NEW) break
-            const id = String(item.id)
-            if (seenIds.has(id) || isBookmarked(id)) continue
-            seenIds.add(id)
-            collected.push(item)
-          }
-        }
-      }
-
-      if (collected.length === 0) {
-        setRecommendMessage('이미 추천드릴 새 공고가 없어요')
-        window.setTimeout(() => setRecommendMessage(null), 4000)
-      } else {
-        setRecommendCandidates(collected)
-        setAddedCandidateIds(new Set())
-        setRecommendModalOpen(true)
-      }
-    } catch {
-      setRecommendMessage('추천 공고를 가져오지 못했어요')
-      window.setTimeout(() => setRecommendMessage(null), 4000)
-    } finally {
-      setRecommendLoading(false)
-    }
-  }
-
-  const handleAddCandidate = (item: PostingCard) => {
-    const id = String(item.id)
-    if (addedCandidateIds.has(id)) return
-    toggleBookmark(id)
-    if (isGoalSelectionTouched()) {
-      setSelectedGoalIds([...new Set([...getSelectedGoalIds(), id])])
-    }
-    setAddedCandidateIds((prev) => new Set(prev).add(id))
-  }
+  const handleRecommendClick = () => setRecommendModalOpen(true)
 
   useEffect(() => {
     if (!recommendModalOpen) return
@@ -274,8 +484,71 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [recommendModalOpen])
 
-  // 2a: 크게 보기 — 더 넓은 영역에 스테이지 뷰(또는 리스트 뷰)를 그리는 오버레이 모달.
-  // Escape·백드롭 클릭으로 닫는다.
+  // F-2: 목표 미선택 시 AI 보강 payload의 재료 — 로드맵 정본에서 아직 보유하지 못한
+  // 노드들(buildRoadmapGap)을 이력서 보유 스킬/자격증이 바뀔 때만 다시 계산한다.
+  // 목표가 선택된 경우엔 아래 handleEnrichClick이 이 값을 참조하지 않는다.
+  const roadmapGap = useMemo(() => buildRoadmapGap(ownedSkills, ownedCerts), [ownedSkills, ownedCerts])
+
+  // F-2: AI 로드맵 보강 — 별 아이콘 버튼(WandSparkles). 위 Sparkles 추천 버튼과 헷갈리지
+  // 않도록 아이콘·툴팁을 다르게 둔다(추천 = 새 목표 후보 찾기, 보강 = 이미 고른 목표의
+  // 학습 순서를 LLM이 다시 짜준다). 데모 요구: 목표를 하나도 안 골라도 버튼이 항상
+  // 작동해야 하므로(선택 0개가 "비활성"으로 보이면 안 된다), 선택된 목표가 있으면
+  // 그걸 우선 쓰고 없으면 로드맵의 미보유 핵심 노드(buildRoadmapGap)로 payload를
+  // 채운다 — 그래서 이 버튼은 더 이상 selectedPostings 유무로 비활성화되지 않는다.
+  const [enrichModalOpen, setEnrichModalOpen] = useState(false)
+  const [enrichLoading, setEnrichLoading] = useState(false)
+  const [enrichData, setEnrichData] = useState<RoadmapEnrichResponse | null>(null)
+
+  const handleEnrichClick = async () => {
+    if (enrichLoading) return
+    const hasGoal = selectedPostings.length > 0
+    const primary = selectedPostings[0]
+    const payload: RoadmapEnrichRequest = hasGoal
+      ? {
+        goal_company: primary.company ?? '목표 기업',
+        goal_title: primary.title,
+        owned_skills: ownedSkills,
+        missing_skills: targetSkillsArray,
+        concepts: targetConcepts,
+        certs: targetCerts,
+        career_required: careerGoalMin,
+        career_mine: resumeCareerMax,
+      }
+      : {
+        goal_company: '',
+        goal_title: `${roadmapGap.trackLabel} 로드맵`,
+        owned_skills: ownedSkills,
+        missing_skills: roadmapGap.missingSkills,
+        concepts: roadmapGap.concepts,
+        certs: roadmapGap.certs,
+        career_required: null,
+        career_mine: resumeCareerMax,
+      }
+    setEnrichModalOpen(true)
+    setEnrichLoading(true)
+    setEnrichData(null)
+    try {
+      const res = await dashboardApi.roadmapEnrich(payload, token)
+      setEnrichData(res)
+    } catch (err) {
+      // 12: 엔드포인트가 아직 없거나 요청이 실패해도 데모가 끊기면 안 된다 — 폴백으로
+      // 조용히 이어간다(실패했다는 사실만 콘솔에 남긴다).
+      console.info('[workflow] AI 보강 응답 실패, 준비된 폴백으로 대체해요', err)
+      setEnrichData(buildFallbackEnrichment(payload, hasGoal))
+    } finally {
+      setEnrichLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!enrichModalOpen) return
+    const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') setEnrichModalOpen(false) }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [enrichModalOpen])
+
+  // 2a: 크게 보기 — 더 넓은 영역에 로드맵을 그리는 오버레이 모달. Escape·백드롭
+  // 클릭으로 닫는다.
   const [expanded, setExpanded] = useState(false)
   useEffect(() => {
     if (!expanded) return
@@ -283,52 +556,6 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [expanded])
-
-  // 범례 — 보유(초록) · 목표(검정) · 경유/추론된 선행(회색) 3색과, 파란 실선 화살표
-  // (먼저 배우기) · 점선 박스(같이 배우기) 두 표기를 설명한다.
-  const legend = (
-    <div className="wfm-legend">
-      <span className="wfm-legend__item"><i className="wfm-dot wfm-dot--owned" />보유</span>
-      <span className="wfm-legend__item"><i className="wfm-dot wfm-dot--target" />목표</span>
-      <span className="wfm-legend__item"><i className="wfm-dot wfm-dot--bridge" />경유 · 추론된 선행</span>
-      <span className="wfm-legend__item">
-        <svg width="18" height="8" viewBox="0 0 18 8" className="wfm-legend__arrow" aria-hidden="true">
-          <line x1="0" y1="4" x2="12" y2="4" stroke="#3b82f6" strokeWidth="2" />
-          <path d="M11 0.5 L17 4 L11 7.5 Z" fill="#3b82f6" />
-        </svg>
-        파란 실선 화살표 = 먼저 배우기
-      </span>
-      <span className="wfm-legend__item">
-        <i className="wfm-legend__box" aria-hidden="true" />
-        점선 박스 = 같이 배우기
-      </span>
-    </div>
-  )
-
-  // 자격증 레인 — 학습 순서가 없는 정보라 메인 그래프에 억지로 엮지 않고, list 뷰 카드
-  // 하단에 완전히 분리된 작은 패널로만 붙인다. 스테이지 뷰는 자격증 컬럼을 따로 쓰므로
-  // 이 레인을 렌더링하지 않는다(아래 JSX의 stages 분기에서 certLane을 넣지 않은 이유).
-  // 양쪽 다 비어 있으면(대부분의 비자격증 직군) 레인 자체를 렌더링하지 않는다.
-  const certLane = hasCertLane ? (
-    <div className="wfm-cert-lane" aria-label="자격증">
-      <span className="wfm-cert-lane__title">자격증</span>
-      <div className="wfm-cert-lane__row">
-        {ownedCerts.map((c) => (
-          <span key={`oc-${c}`} className="wfm-cert-chip wfm-cert-chip--owned">
-            <Award size={11} />
-            {c}
-          </span>
-        ))}
-        {targetCerts.map((c) => (
-          <span key={`tc-${c}`} className="wfm-cert-chip wfm-cert-chip--target">
-            <Award size={11} />
-            {c}
-            <span className="wfm-cert-chip__badge">필요</span>
-          </span>
-        ))}
-      </div>
-    </div>
-  ) : null
 
   // 왼쪽 패널 — 북마크 전부를 체크박스 행으로 보여준다. 목표 선택 자체가 이 위젯의
   // 주된 진입점이라, "선택 0개" 상태에서도 이 패널만은 계속 온전히 보이고 조작 가능해야 한다.
@@ -374,82 +601,59 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
       <div className="dcard wfm-card">
         <SectionHeader
           title="목표 · 학습 워크플로우 맵"
-          hint="북마크에서 목표를 선택하면 학습 순서를 보여줘요"
+          hint="백엔드 로드맵을 항상 보여주고, 북마크에서 목표를 고르면 필요한 노드를 강조해요"
           right={(
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div className="wfm-header-actions">
               {!showNoBookmarks && !identity && <PreviewBadge />}
-              {!showNoBookmarks && (
-                <div className="wfm-view-toggle" role="group" aria-label="보기 방식 전환">
-                  <button
-                    type="button"
-                    className={`wfm-view-toggle__btn${view === 'stages' ? ' is-active' : ''}`}
-                    onClick={() => setView('stages')}
-                    aria-label="단계별 보기"
-                    aria-pressed={view === 'stages'}
-                    title="단계별 보기"
-                  >
-                    <Workflow size={13} />
-                  </button>
-                  <button
-                    type="button"
-                    className={`wfm-view-toggle__btn${view === 'list' ? ' is-active' : ''}`}
-                    onClick={() => setView('list')}
-                    aria-label="리스트 보기"
-                    aria-pressed={view === 'list'}
-                    title="리스트 보기"
-                  >
-                    <List size={13} />
-                  </button>
-                </div>
-              )}
+              {/* F-2: 이제 북마크/목표 선택 여부와 무관하게 항상 렌더되고 항상 눌려야
+                  한다 — 목표가 없으면 handleEnrichClick이 로드맵 갭 기반 payload로
+                  대신 채운다. 로딩 중에만 잠깐 비활성화한다. */}
+              <button
+                type="button"
+                className={`wfm-expand-btn wfm-enrich-btn${enrichLoading ? ' is-loading' : ''}`}
+                onClick={handleEnrichClick}
+                disabled={enrichLoading}
+                aria-label="AI로 로드맵 보강"
+                title="AI로 로드맵 보강"
+              >
+                <WandSparkles size={14} />
+              </button>
               <div className="wfm-recommend-wrap">
                 <button
                   type="button"
-                  className={`wfm-expand-btn wfm-recommend-btn${recommendLoading ? ' is-loading' : ''}`}
+                  className="wfm-expand-btn wfm-recommend-btn"
                   onClick={handleRecommendClick}
-                  disabled={recommendLoading}
-                  aria-label="추천 공고 가져오기"
-                  title="추천 공고 가져오기"
+                  aria-label="직무별 추천 공고 보기"
+                  title="직무별 추천 공고 보기"
                 >
                   <Sparkles size={14} />
                 </button>
-                {recommendMessage && (
-                  <span className="wfm-recommend-msg" role="status" aria-live="polite">{recommendMessage}</span>
-                )}
               </div>
-              {!showNoBookmarks && canShowGraph && (
-                <button
-                  type="button"
-                  className="wfm-expand-btn"
-                  onClick={() => setExpanded(true)}
-                  aria-label="워크플로우 맵 크게 보기"
-                  title="크게 보기"
-                >
-                  <Maximize2 size={14} />
-                </button>
-              )}
+              <button
+                type="button"
+                className="wfm-expand-btn"
+                onClick={() => setExpanded(true)}
+                aria-label="워크플로우 맵 크게 보기"
+                title="크게 보기"
+              >
+                <Maximize2 size={14} />
+              </button>
             </div>
           )}
         />
-        {showNoBookmarks ? (
-          <div className="wfm-empty">
-            <p className="wfm-empty__lead">북마크한 공고를 목표로 학습 경로를 그려드려요.</p>
-            <span className="wfm-empty__hint">관심 있는 공고를 북마크하면 목표로 고를 수 있어요.</span>
-            {ownedSkills.length > 0 && (
-              <div className="wfm-empty__owned">
-                <span className="wfm-empty__owned-label">지금 보유한 기술</span>
-                <div className="wfm-empty__chips">
-                  {ownedSkills.slice(0, 12).map((s) => <span key={s} className="wfm-chip wfm-chip--owned">{s}</span>)}
-                </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="wfm-body">
-            {/* 시안 1: 선택된 목표는 위젯 헤더 바로 아래 앵커 바에 상시 칩으로 뜬다
-                (매칭 퍼센트 + 삭제(X) 포함). 목표 추가는 옆 팝오버로 열리고, 팝오버는
-                position:absolute라 열려도 이 바 아래 다이어그램 레이아웃을 흔들지
-                않는다(시안 2). */}
+        <div className="wfm-body">
+          {/* Phase 1: 목표 선택 앵커 바는 이제 showNoBookmarks와 무관하게 항상 보인다 —
+              roadmap 뷰도 targetSkills/targetConcepts로 강조를 받으므로 북마크가 없는
+              게스트에게는 "북마크하면 목표를 강조해준다"는 안내로 대신 채운다. 시안 1:
+              선택된 목표는 위젯 헤더 바로 아래 앵커 바에 상시 칩으로 뜬다(매칭 퍼센트 +
+              삭제(X) 포함). 목표 추가는 옆 팝오버로 열리고, 팝오버는 position:absolute라
+              열려도 이 바 아래 다이어그램 레이아웃을 흔들지 않는다(시안 2). */}
+          {showNoBookmarks ? (
+            <div className="wfm-goal-anchorbar">
+              <span className="wfm-goal-anchorbar__label">목표</span>
+              <span className="wfm-goal-anchorbar__empty">관심 있는 공고를 북마크하면 로드맵에서 목표 노드를 강조해줘요</span>
+            </div>
+          ) : (
             <div className="wfm-goal-anchorbar">
               <span className="wfm-goal-anchorbar__label">목표</span>
               <div className="wfm-goal-chips">
@@ -509,62 +713,24 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
                 )}
               </div>
             </div>
-            <div className="wfm-graph-pane">
-              {showNoSelection ? (
-                <div className="wfm-empty wfm-empty--selection">
-                  <p className="wfm-empty__lead">북마크한 공고 중 목표로 삼을 걸 선택해보세요.</p>
-                  <span className="wfm-empty__hint">위의 "목표 추가" 버튼에서 하나 이상 체크하면 학습 순서가 나타나요.</span>
-                </div>
-              ) : isLoading ? (
-                <div className="wfm-loading" role="status" aria-live="polite">워크플로우 맵을 그리는 중이에요.</div>
-              ) : view === 'list' ? (
-                // D: 리스트 뷰 — 보유 밴드 · 공통 코어 · 공고별 트랙을 WorkflowList가
-                // 그린다. 라이브 로드맵은 안 쓰므로 roadmap.loading을 기다리지 않아도
-                // 되지만, 위 isLoading 게이트를 stages 뷰와 공유해 굳이 분기하지 않았다
-                // (실무상 로드맵 응답이 빨라 체감 지연이 거의 없다).
-                <div className="wfm-list-pane" style={{ maxHeight: size === '2x2' ? 500 : 260 }}>
-                  <WorkflowList
-                    ownedSkills={ownedSkills}
-                    ownedSkillCategories={ownedSkillCategories}
-                    selectedPostings={selectedPostings}
-                  />
-                  {certLane}
-                </div>
-              ) : (
-                <>
-                  {heterogeneousGoals && (
-                    <div className="wfm-heterogeneous-banner">
-                      <span>선택한 공고들의 분야가 달라요.</span>
-                      <button
-                        type="button"
-                        className="wfm-heterogeneous-banner__btn"
-                        onClick={() => setView('list')}
-                      >
-                        리스트 보기에서 공고별로 나눠 볼 수 있어요
-                      </button>
-                    </div>
-                  )}
-                  <div className="wfm-stage-pane" style={{ maxHeight: size === '2x2' ? 500 : 260 }}>
-                    <WorkflowStages
-                      ownedSkills={ownedSkills}
-                      ownedSkillCategories={ownedSkillCategories}
-                      selectedPostings={selectedPostings}
-                      targetSkills={targetSkillsArray}
-                      targetCerts={targetCerts}
-                      ownedCerts={ownedCerts}
-                      liveSteps={roadmap.value.steps}
-                    />
-                  </div>
-                  {legend}
-                  {roadmap.value.as_of && <AsOf asOf={roadmap.value.as_of} n={roadmap.value.total} />}
-                </>
-              )}
-            </div>
+          )}
+          <div className="wfm-graph-pane">
+            {/* Phase 2: 로드맵 백본은 showNoBookmarks/showNoSelection 게이트와 무관하게
+                항상 그려진다 — 북마크·목표 선택이 없어도 정본 백본이 보이고, 목표를
+                고르면 그 위에 강조만 얹힌다. */}
+            <RoadmapView
+              ownedSkills={ownedSkills}
+              ownedCerts={ownedCerts}
+              targetSkills={targetSkillsArray}
+              targetConcepts={targetConcepts}
+              trackId={inferredTrackId}
+              height={canvasHeight}
+            />
           </div>
-        )}
+        </div>
       </div>
 
-      {expanded && canShowGraph && (
+      {expanded && (
         <div className="wfm-modal__backdrop" onClick={() => setExpanded(false)}>
           <div
             className="wfm-modal__card"
@@ -579,35 +745,18 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
                 <X size={16} />
               </button>
             </div>
-            {view === 'list' ? (
-              // 2단계: "크게 보기" 모달도 현재 모드를 따른다 — list 모드면 모달도
-              // 리스트를 더 넓은 영역에 그린다(WorkflowList 자체는 캡 없이 전부
-              // 보여주므로 컴팩트 카드보다 스크롤 여유만 커지면 충분하다).
-              <div className="wfm-modal__list">
-                <WorkflowList
-                  ownedSkills={ownedSkills}
-                  ownedSkillCategories={ownedSkillCategories}
-                  selectedPostings={selectedPostings}
-                />
-                {certLane}
-              </div>
-            ) : (
-              <>
-                <div className="wfm-modal__stage">
-                  <WorkflowStages
-                    ownedSkills={ownedSkills}
-                    ownedSkillCategories={ownedSkillCategories}
-                    selectedPostings={selectedPostings}
-                    targetSkills={targetSkillsArray}
-                    targetCerts={targetCerts}
-                    ownedCerts={ownedCerts}
-                    liveSteps={roadmap.value.steps}
-                    wide
-                  />
-                </div>
-                {legend}
-              </>
-            )}
+            {/* 로드맵 백본은 모달에서도 같은 컴포넌트를 더 큰 높이로 그린다 — 백본 자체가
+                이미 내부 스크롤(패닝)을 갖고 있어 모달 전용 래퍼가 따로 필요 없다. */}
+            <div className="wfm-modal__roadmap">
+              <RoadmapView
+                ownedSkills={ownedSkills}
+                ownedCerts={ownedCerts}
+                targetSkills={targetSkillsArray}
+                targetConcepts={targetConcepts}
+                trackId={inferredTrackId}
+                height={640}
+              />
+            </div>
           </div>
         </div>
       )}
@@ -618,46 +767,125 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
             className="wfm-modal__card wfm-recommend-modal"
             role="dialog"
             aria-modal="true"
-            aria-label="추천 공고"
+            aria-label="직무별 추천 공고"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="wfm-modal__titlebar">
-              <span className="wfm-modal__title">추천 공고</span>
+              <span className="wfm-modal__title">직무별 추천 공고</span>
               <button type="button" className="wfm-modal__close" onClick={() => setRecommendModalOpen(false)} aria-label="닫기">
                 <X size={16} />
               </button>
             </div>
-            <p className="wfm-recommend-modal__hint">담고 싶은 공고만 골라서 추가하세요. 추가하면 북마크되고 목표로도 반영돼요.</p>
-            <ul className="wfm-recommend-modal__list">
-              {recommendCandidates.map((item) => {
-                const id = String(item.id)
-                const added = addedCandidateIds.has(id)
-                const company = item.company ?? '회사명 미상'
-                const matchPct = matchPctFor(item.skills, item.matched_count, ownedSet)
-                const yearBadge = yearBadgeFor(item.post_date)
-                return (
-                  <li key={id} className="wfm-recommend-modal__item">
-                    <span className="wfm-goal-avatar" style={{ background: avatarColor(company) }}>
-                      {company.slice(0, 1)}
-                    </span>
-                    <span className="wfm-goal-info">
-                      <span className="wfm-goal-company">{company}</span>
-                      <span className="wfm-goal-title" title={item.title}>{item.title}</span>
-                    </span>
-                    {yearBadge && <span className="wfm-goal-year">{yearBadge}</span>}
-                    <span className="wfm-goal-pct">{matchPct}%</span>
-                    <button
-                      type="button"
-                      className={`wfm-recommend-modal__add${added ? ' is-added' : ''}`}
-                      onClick={() => handleAddCandidate(item)}
-                      disabled={added}
-                    >
-                      {added ? '추가됨' : '추가'}
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
+            <p className="wfm-recommend-modal__hint">직무 8개로 모은 유명 기업 공고예요. 정보가 풍부한 순으로 추렸어요.</p>
+            <div className="wfm-recommend-modal__roles">
+              {DEMO_RECOMMEND_GROUPS.map(({ role, postings }) => (
+                <section key={role} className="wfm-demo-role">
+                  <div className="wfm-demo-role__head">
+                    <span className="wfm-demo-role__name">{role}</span>
+                    <span className="wfm-demo-role__count">{postings.length}</span>
+                  </div>
+                  <ul className="wfm-demo-role__cards">
+                    {postings.map((card) => {
+                      const shownTechs = card.techs.slice(0, 4)
+                      const moreCount = card.techs.length - shownTechs.length
+                      return (
+                        <li key={card.id} className="wfm-demo-card">
+                          <CompanyLogo logo={card.logo} name={card.company} size={30} radius={9} />
+                          <div className="wfm-demo-card__body">
+                            <div className="wfm-demo-card__headline">
+                              <span className="wfm-demo-card__company">{card.company}</span>
+                              {card.tier === '대기업' && <span className="wfm-demo-card__tier">대기업</span>}
+                              <span className="wfm-demo-card__career">{demoCareerText(card.careerMin, card.careerMax)}</span>
+                              <button
+                                type="button"
+                                className={`wfm-demo-card__add-btn${bookmarkIds.includes(String(card.id)) ? ' is-added' : ''}`}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  toggleBookmark(String(card.id))
+                                  toggleGoalId(String(card.id), selectedIds)
+                                }}
+                                aria-label={`${card.company} ${card.title} 공고 추가`}
+                                title={bookmarkIds.includes(String(card.id)) ? '추가됨' : '추가'}
+                              >
+                                {bookmarkIds.includes(String(card.id)) ? <Check size={14} /> : <Plus size={14} />}
+                              </button>
+                            </div>
+                            <div className="wfm-demo-card__title" title={card.title}>{card.title}</div>
+                            <div className="wfm-demo-card__chips">
+                              {shownTechs.map((tech) => (
+                                <span key={tech} className="wfm-demo-card__chip">{tech}</span>
+                              ))}
+                              {moreCount > 0 && (
+                                <span className="wfm-demo-card__chip wfm-demo-card__chip--more">+{moreCount}</span>
+                              )}
+                            </div>
+                            {card.requirementSummary && (
+                              <p className="wfm-demo-card__req">{card.requirementSummary}</p>
+                            )}
+                          </div>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </section>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {enrichModalOpen && (
+        <div className="wfm-modal__backdrop" onClick={() => setEnrichModalOpen(false)}>
+          <div
+            className="wfm-modal__card wfm-enrich-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="AI 로드맵 보강"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="wfm-modal__titlebar">
+              <span className="wfm-modal__title">AI 로드맵 보강</span>
+              <button type="button" className="wfm-modal__close" onClick={() => setEnrichModalOpen(false)} aria-label="닫기">
+                <X size={16} />
+              </button>
+            </div>
+            {enrichLoading ? (
+              <div className="wfm-loading" role="status" aria-live="polite">AI가 로드맵을 보강하는 중이에요.</div>
+            ) : enrichData ? (
+              <div className="wfm-enrich-body">
+                <div className="wfm-enrich-headline">{enrichData.headline}</div>
+                {enrichData.summary && <p className="wfm-enrich-summary">{enrichData.summary}</p>}
+                {enrichData.quick_win && (
+                  <div className="wfm-enrich-quickwin">
+                    <span className="wfm-enrich-quickwin__label">지금 바로</span>
+                    <span className="wfm-enrich-quickwin__text">{enrichData.quick_win}</span>
+                  </div>
+                )}
+                <ul className="wfm-enrich-steps">
+                  {[...enrichData.steps].sort((a, b) => a.order - b.order).map((step) => (
+                    <li key={`${step.order}-${step.label}`} className={`wfm-enrich-step wfs-type--${step.type}`}>
+                      <div className="wfm-enrich-step__head">
+                        <span className="wfm-enrich-step__order">{step.order}</span>
+                        <span className="wfm-enrich-step__label">{step.label}</span>
+                        <span className={`wfm-enrich-step__priority wfm-enrich-step__priority--${step.priority}`}>
+                          {ENRICH_PRIORITY_LABEL[step.priority] ?? step.priority}
+                        </span>
+                      </div>
+                      <div className="wfm-enrich-step__meta">
+                        <Check size={10} />
+                        <span>{step.effort}</span>
+                      </div>
+                      {step.reason && <p className="wfm-enrich-step__reason">{step.reason}</p>}
+                      {step.project && (
+                        <p className="wfm-enrich-step__project"><b>프로젝트 제안</b> {step.project}</p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <div className="wfm-loading">보강 결과를 불러오지 못했어요.</div>
+            )}
           </div>
         </div>
       )}

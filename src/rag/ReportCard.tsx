@@ -4,8 +4,10 @@ import { isBookmarked, toggleBookmark, useBookmarks } from '../career/bookmarkSt
 
 // 3a 리포트 카드 — FinalBlock 상단에 얹는 요약 헤드라인 + SplitDiff 미니 스트립 + 다음 액션.
 // 카드 왼쪽 세로 액센트 보더는 쓰지 않는다(AI 클리셰 지적으로 SplitDiff.css에서도 이미 제거된
-// 디테일, 같은 이유로 여기서도 배제) — 대신 배경 틴트(rc__report)와 스코어 배지 색으로 상태를
-// 구분한다. 커리어 적합도(resume_posting_llm) 결과가 있을 때만 스코어·스트립·북마크 CTA를
+// 디테일, 같은 이유로 여기서도 배제) — 대신 배경 틴트(rc__report)와 스트립 색으로 상태를
+// 구분한다. 퍼센트 적합도 수치는 쓰지 않는다(확정 레이아웃 스펙: 요건 무게는 배지로, 판정
+// 상태는 색으로만 표시하고 점수 배지는 두지 않는다) — 대신 충족/부분/공백 개수 스트립이 그
+// 자리를 대신한다. 커리어 적합도(resume_posting_llm) 결과가 있을 때만 스트립·북마크 CTA를
 // 채우고, 그 외 응답 유형은 헤드라인 한 줄만 보여준다(스펙 3.a: "데이터가 없는 응답 유형이면
 // 헤드라인만").
 
@@ -47,7 +49,6 @@ export default function ReportCard({ answer, results, attachments }: ReportCardP
   }
 
   const payload = compareResult.compare as SplitDiffPayload
-  const score = Math.round(Math.max(0, Math.min(100, payload.score)))
   const { met, partial, gap } = payload.counts
 
   // 북마크 대상은 이력서 vs 공고 비교(resume_posting_llm)에서만 명확하다 — posting_posting_llm은
@@ -60,10 +61,6 @@ export default function ReportCard({ answer, results, attachments }: ReportCardP
   return (
     <div className="rc__report">
       <div className="rc__report-head">
-        <div className="rc__report-score">
-          <div className="rc__report-score-v">{score}%</div>
-          <div className="rc__report-score-l">적합도</div>
-        </div>
         <div className="rc__report-headline">{payload.summary || extractHeadline(answer)}</div>
       </div>
 

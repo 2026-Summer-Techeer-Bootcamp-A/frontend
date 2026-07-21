@@ -1,68 +1,56 @@
-import { useId, useState } from 'react'
-import type { RequirementVerdict, SplitDiffPayload, SplitDiffRequirement } from '../chatContract'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import type { RefObject } from 'react'
+import { createPortal } from 'react-dom'
+import type { RequirementKind, RequirementVerdict, SplitDiffPayload, SplitDiffRequirement } from '../chatContract'
 import './SplitDiff.css'
 
-// 커리어 적합도 Split Diff(K7) — 태그 교집합이 아니라 기준 문서/판정 대상 문서 원문을 LLM으로
-// 대조해 요구사항별 met/partial/gap을 판정한 결과를 좌(기준 원문 인용)/우(판정 대상 근거 또는
-// 보완 액션)로 보여준다. kind가 resume_posting_llm(이력서 vs 공고)이든 posting_posting_llm(공고
-// vs 공고)이든 이 컴포넌트 하나로 렌더한다 — kind로 분기하지 않고 payload의 base_role/target_role
-// 필드만 보고 그린다(범용성 유지).
+// 커리어 적합도 Split Diff(시안 3, 형광펜 방식) — 채용 공고 요구 구절을 메인 캔버스로 삼아
+// 형광펜 색으로 met/partial/gap을 칠하고, 인라인 상태 아이콘으로 색약도 구분 가능하게 하며,
+// 구절에 호버·포커스하면 이력서 원문 대조 툴팁을 띄운다. kind가 resume_posting_llm(이력서 vs
+// 공고)이든 posting_posting_llm(공고 vs 공고)이든 이 컴포넌트 하나로 렌더한다 — kind로
+// 분기하지 않고 payload의 base_role/target_role 필드만 보고 그린다(범용성 유지).
 //
-// 시안 원천: /tmp/.../scratchpad/career-diff-redesign-v2.html(01번 확장 스플릿 다이어그램, 확정).
-// diff 마커(+/~/−)와 pair bar, ai-banner, score-strip 레이아웃을 이 시안에서 가져오되, 색은
-// 하드코딩하지 않고 기존 테마 캐스케이드 토큰(var(--c-*), src/design/tokens.ts)에 fallback
-// 리터럴을 붙이는 기존 컨벤션(resume-insight.css, rag-console.css)을 그대로 따른다.
+// 이전 버전(상태 보드 + 원문 대조 + 액션 체크리스트 3단)은 라이브 피드백에 따라 형광펜 하나로
+// 합쳤다. 퍼센트 적합도 수치는 화면 어디에도 없다 — 상단 pill은 met/partial/gap 개수와
+// 자격요건/우대요건 개수만 보여준다. 판정 상태는 형광펜 색(준비 초록/애매 앰버/부족 빨강)과
+// 인라인 아이콘(체크/물결/엑스) 둘 다로 표시해 색약도 구분 가능하게 한다.
+//
+// 팔레트: 근흑 모노크롬 + 그린 액센트(#1f9d57, --sd-accent, AI 판단 배지 등 UI 크롬 전용)와
+// 상태 전용 색(--sd-met #218a58 / --sd-partial #b8892b / --sd-gap #c8382d)을 분리한다. 상태색은
+// 이 컴포넌트 로컬 토큰이다 — career/workflow 화면군이 쓰는 공용 --c-met/--c-partial/--c-gap과
+// 값이 다르므로 그 토큰을 건드리지 않고 새 로컬 변수로 둔다.
 
 export interface SplitDiffProps {
   payload: SplitDiffPayload
 }
 
 const VERDICT_LABEL: Record<RequirementVerdict, string> = {
-  met: '충족',
-  partial: '부분 · 전이가능',
-  gap: '공백',
+  met: '준비',
+  partial: '애매',
+  gap: '부족',
 }
 
-// 인라인 배지(vpill)용 짧은 라벨 — 노트 카드의 VERDICT_LABEL과 달리 한 줄에 붙는 배지라 더
-// 짧게 줄인다("부분 · 전이가능"은 인라인에서 너무 길다).
-const VERDICT_PILL_LABEL: Record<RequirementVerdict, string> = {
-  met: '충족',
-  partial: '부분',
-  gap: '공백',
+const VERDICT_ICON: Record<RequirementVerdict, string> = {
+  met: '✓', // check mark
+  partial: '∼', // tilde operator(물결)
+  gap: '✕', // multiplication x
 }
 
-// diff 라인 마커 — met은 추가(+), partial은 걸침(~), gap은 빠짐(−).
-const VERDICT_MARK: Record<RequirementVerdict, string> = {
-  met: '+',
-  partial: '~',
-  gap: '−',
+const KIND_LABEL: Record<RequirementKind, string> = {
+  must: '자격요건',
+  preferred: '우대요건',
 }
 
-// 요구사항 레이아웃 토글 — 가로 넓은 상세 카드형(detail)과 인라인 배지형(inline) 중 선택.
-// WorkflowMap.tsx의 techeer_workflow_view와 같은 패턴(localStorage가 정본, 마운트 시 1회만 읽고
-// 이후엔 토글 버튼으로만 바뀐다)을 따른다. 예전엔 'margin'(좌우 2열 여백 주석형)이었는데, 라이브
-// 피드백으로 폭 좁은 노트 컬럼을 버리고 전체 폭 카드로 바꾸면서 값 이름도 바꿨다 — 옛 저장값
-// 'margin'은 이제 모르는 값이라 기본값(detail)으로 자연히 폴백된다(마이그레이션 코드 불필요).
-type SplitDiffLayout = 'detail' | 'inline'
-const LAYOUT_STORAGE_KEY = 'techeer_splitdiff_layout'
-
-function readStoredLayout(): SplitDiffLayout {
-  try {
-    return localStorage.getItem(LAYOUT_STORAGE_KEY) === 'inline' ? 'inline' : 'detail'
-  } catch {
-    return 'detail'
-  }
+// requirement_kind가 없는 요구사항은 자격요건으로 기본 처리한다(스펙 결정: 값이 없다고 UI가
+// 빈칸을 보여주거나 데이터를 지어내지 않는다 — 백엔드가 아직 섹션 출처를 안 보내는 동안의
+// 정직한 기본값이다).
+function requirementKindOf(req: SplitDiffRequirement): RequirementKind {
+  return req.requirement_kind === 'preferred' ? 'preferred' : 'must'
 }
 
 // 형광펜을 그을 텍스트 — source_quote가 있으면 그걸, 없으면 요구사항 짧은 제목(text)을 쓴다.
-// 둘 다 동시에 보여주지 않는다(한 항목당 한 줄만, 깔끔함 우선).
 function highlightText(req: SplitDiffRequirement): string {
   return req.source_quote || req.text
-}
-
-function clampPct(v: number): number {
-  if (!Number.isFinite(v)) return 0
-  return Math.max(0, Math.min(100, v))
 }
 
 // 역할 뒤에 제목을 붙이되, 제목이 빈 문자열이면(예: 이력서는 별도 title이 없음) 생략한다.
@@ -71,31 +59,7 @@ function roleLabel(role: string, title: string): string {
 }
 
 export function SplitDiff({ payload }: SplitDiffProps) {
-  const { base_role, base_title, target_role, target_title, score, counts, summary, requirements, degraded } = payload
-  const total = counts.met + counts.partial + counts.gap
-  const roundedScore = Math.round(clampPct(score))
-  const [layout, setLayoutState] = useState<SplitDiffLayout>(readStoredLayout)
-
-  const setLayout = (next: SplitDiffLayout) => {
-    setLayoutState(next)
-    try {
-      localStorage.setItem(LAYOUT_STORAGE_KEY, next)
-    } catch {
-      // localStorage 접근 불가(프라이빗 모드 등)해도 레이아웃 전환 자체는 계속 동작해야 한다.
-    }
-  }
-
-  // 가중 도넛 — met은 온전한 비중, partial은 절반 비중만 채워 "충족 4 + 부분 1×0.5 + 공백 1×0"의
-  // 가중 점수를 시각적으로 그대로 옮긴다(스코어%와 도넛 채움 비율이 항상 일치하는 정직한 도넛).
-  const size = 96
-  const radius = size / 2
-  const strokeWidth = 10
-  const r = radius - strokeWidth / 2 - 1
-  const circumference = 2 * Math.PI * r
-  const metFrac = total > 0 ? counts.met / total : 0
-  const partialFrac = total > 0 ? (counts.partial / total) * 0.5 : 0
-  const metLen = circumference * metFrac
-  const partialLen = circumference * partialFrac
+  const { base_role, base_title, target_role, target_title, summary, requirements, degraded, counts, base_description } = payload
 
   return (
     <div className="rv__splitdiff">
@@ -109,23 +73,6 @@ export function SplitDiff({ payload }: SplitDiffProps) {
           <span className="role">판정</span>
           {roleLabel(target_role, target_title)}
         </span>
-
-        <div className="rv__sd-toggle" role="group" aria-label="요구사항 레이아웃 전환">
-          <button
-            type="button"
-            aria-pressed={layout === 'detail'}
-            onClick={() => setLayout('detail')}
-          >
-            상세
-          </button>
-          <button
-            type="button"
-            aria-pressed={layout === 'inline'}
-            onClick={() => setLayout('inline')}
-          >
-            간단
-          </button>
-        </div>
       </div>
 
       <div className="rv__sd-summary">
@@ -138,171 +85,306 @@ export function SplitDiff({ payload }: SplitDiffProps) {
         </div>
       </div>
 
-      <div className="rv__sd-score">
-        <div className="rv__sd-donut">
-          <svg
-            width={size}
-            height={size}
-            viewBox={`0 0 ${size} ${size}`}
-            role="img"
-            aria-label={`가중 적합도 ${roundedScore}퍼센트, 충족 ${counts.met} 부분 ${counts.partial} 공백 ${counts.gap}`}
-          >
-            <circle
-              cx={radius} cy={radius} r={r} fill="none"
-              stroke="color-mix(in srgb, var(--c-gap, #e0453a) 12%, transparent)"
-              strokeWidth={strokeWidth}
-            />
-            {metLen > 0 && (
-              <circle
-                cx={radius} cy={radius} r={r} fill="none"
-                stroke="var(--c-met, #1f7a63)"
-                strokeWidth={strokeWidth}
-                strokeDasharray={`${metLen} ${circumference}`}
-                transform={`rotate(-90 ${radius} ${radius})`}
-              />
-            )}
-            {partialLen > 0 && (
-              <circle
-                cx={radius} cy={radius} r={r} fill="none"
-                stroke="var(--c-partial, #8a6d3b)"
-                strokeWidth={strokeWidth}
-                strokeDasharray={`${partialLen} ${circumference}`}
-                strokeDashoffset={-metLen}
-                transform={`rotate(-90 ${radius} ${radius})`}
-              />
-            )}
-            <text x={radius} y={radius - 2} textAnchor="middle" dominantBaseline="middle" className="rv__ring-num">
-              {roundedScore}%
-            </text>
-            <text x={radius} y={radius + 14} textAnchor="middle" dominantBaseline="middle" className="rv__ring-sub">
-              가중 적합도
-            </text>
-          </svg>
-        </div>
-        <div className="rv__sd-score-meta">
-          <div className="rv__sd-score-head">
-            <span className="t">{total}개 요구 중 {counts.met}개 충족</span>
-          </div>
-          <p className="rv__sd-formula">
-            <span className="met">충족 {counts.met}</span> · <span className="par">부분 {counts.partial}</span> · <span className="gap">공백 {counts.gap}</span>
-          </p>
-          <p className="rv__sd-note">LLM이 원문을 읽고 요구마다 매긴 가중 추정치예요. 정확한 매칭 개수는 아니에요.</p>
-          <div className="rv__sd-legend">
-            <span><i className="met" />충족 1점</span>
-            <span><i className="partial" />부분 0.5점</span>
-            <span><i className="gap" />공백 0점</span>
-          </div>
-        </div>
-      </div>
-
-      {layout === 'detail' ? (
-        <SplitDiffDetailLayout requirements={requirements} targetRole={target_role} />
-      ) : (
-        <SplitDiffInlineLayout requirements={requirements} targetRole={target_role} />
-      )}
+      <SummaryPills counts={counts} requirements={requirements} />
+      <RequirementCanvas requirements={requirements} targetRole={target_role} description={base_description} />
     </div>
   )
 }
 
-// 형광펜 강조 span — 두 레이아웃이 공유한다. verdict 색은 색각 대응을 위해 항상 옆/아래에 글자
-// 라벨이 같이 붙으므로(노트의 verdict 라벨, 인라인의 vpill), 여기 자체는 색으로만 표시해도 된다.
-function SplitDiffHighlight({ req }: { req: SplitDiffRequirement }) {
-  return <span className={`rv__sd-hl rv__sd-hl--${req.verdict}`}>{highlightText(req)}</span>
+// ---------------------------------------------------------------------------
+// 상단 pill 요약 — 준비/애매/부족 개수 + 자격요건/우대요건 개수. 퍼센트는 없다.
+// ---------------------------------------------------------------------------
+
+function SummaryPills({
+  counts,
+  requirements,
+}: {
+  counts: { met: number; partial: number; gap: number }
+  requirements: SplitDiffRequirement[]
+}) {
+  const mustCount = requirements.filter((req) => requirementKindOf(req) === 'must').length
+  const preferredCount = requirements.length - mustCount
+
+  return (
+    <div className="rv__sd-pills" role="group" aria-label="적합도 요약">
+      <span className="rv__sd-pill rv__sd-pill--met">{VERDICT_LABEL.met} {counts.met}</span>
+      <span className="rv__sd-pill rv__sd-pill--partial">{VERDICT_LABEL.partial} {counts.partial}</span>
+      <span className="rv__sd-pill rv__sd-pill--gap">{VERDICT_LABEL.gap} {counts.gap}</span>
+      <span className="rv__sd-pill rv__sd-pill--kind">{KIND_LABEL.must} {mustCount}</span>
+      <span className="rv__sd-pill rv__sd-pill--kind">{KIND_LABEL.preferred} {preferredCount}</span>
+    </div>
+  )
 }
 
-// 판정 대상 문서(target)의 원문 근거(quote)를 다시 살리는 자리 — quote가 있을 때만 작은
-// 인용 표식을 두고, 마우스 호버뿐 아니라 키보드 포커스로도 전문을 볼 수 있게 한다. 네이티브
-// title 속성만으론 포커스 시 안 뜨므로, aria-describedby로 이어진 CSS 툴팁(role="tooltip")을
-// 직접 만든다. 트리거는 실제 button(탭 가능)이라 마우스 없이도 Tab만으로 도달·확인된다.
-function QuoteCue({ quote, targetRole }: { quote: string; targetRole: string }) {
-  const tooltipId = useId()
-  if (!quote) return null
+// ---------------------------------------------------------------------------
+// 메인 캔버스 — 공고 요구 구절을 읽기 흐름으로 배치하고 형광펜 색으로 칠한다.
+// base_description(공고 원문 전체)이 있고 모든 source_quote를 그 안에서 안정적으로(서로
+// 겹치지 않게) 찾을 수 있으면 원문 그대로를 렌더하며 구간을 하이라이트한다. 없거나 매칭이
+// 불안정하면 source_quote들을 문단 흐름으로 나열하는 폴백으로 안전하게 내려간다 — 데이터에
+// 없는 것을 지어내지 않는다.
+// ---------------------------------------------------------------------------
+
+interface DescriptionSegment {
+  type: 'text' | 'requirement'
+  content: string
+  req?: SplitDiffRequirement
+}
+
+// description 안에서 각 requirement의 source_quote 위치를 찾아 순서대로 세그먼트화한다.
+// 구절을 못 찾거나(인용이 원문과 정확히 일치하지 않음) 두 구절이 겹치면 전체를 폴백으로
+// 넘긴다(null 리턴) — 신뢰할 수 없는 부분 매칭을 어설프게 보여주지 않는다.
+function buildDescriptionSegments(
+  description: string,
+  requirements: SplitDiffRequirement[],
+): DescriptionSegment[] | null {
+  const quoted = requirements.filter((req) => req.source_quote)
+  if (quoted.length === 0) return null
+
+  type Match = { start: number; end: number; req: SplitDiffRequirement }
+  const matches: Match[] = []
+  for (const req of quoted) {
+    const start = description.indexOf(req.source_quote)
+    if (start === -1) return null
+    matches.push({ start, end: start + req.source_quote.length, req })
+  }
+  matches.sort((a, b) => a.start - b.start)
+  for (let i = 1; i < matches.length; i += 1) {
+    if (matches[i].start < matches[i - 1].end) return null
+  }
+
+  const segments: DescriptionSegment[] = []
+  let cursor = 0
+  for (const m of matches) {
+    if (m.start > cursor) segments.push({ type: 'text', content: description.slice(cursor, m.start) })
+    segments.push({ type: 'requirement', content: description.slice(m.start, m.end), req: m.req })
+    cursor = m.end
+  }
+  if (cursor < description.length) segments.push({ type: 'text', content: description.slice(cursor) })
+  return segments
+}
+
+function RequirementCanvas({
+  requirements,
+  targetRole,
+  description,
+}: {
+  requirements: SplitDiffRequirement[]
+  targetRole: string
+  description?: string
+}) {
+  const segments = description ? buildDescriptionSegments(description, requirements) : null
+
   return (
-    <span className="rv__sd-quotecue">
-      <button type="button" className="rv__sd-quotecue-btn" aria-describedby={tooltipId} aria-label={`${targetRole} 원문 근거 보기`}>
-        <span aria-hidden="true">”</span>
-      </button>
-      <span role="tooltip" id={tooltipId} className="rv__sd-quotecue-tip">
-        <span className="rv__sd-quotecue-tip-role">{targetRole} 원문</span>
-        <span className="rv__sd-quotecue-tip-text">{quote}</span>
+    <section className="rv__sd-section" aria-label="공고 요구 구절 하이라이트">
+      <h4 className="rv__sd-section-title">공고 원문 하이라이트</h4>
+      {segments ? (
+        <div className="rv__sd-canvas rv__sd-canvas--full">
+          {segments.map((seg, i) =>
+            seg.type === 'requirement' && seg.req ? (
+              <HighlightUnit key={seg.req.id} text={seg.content} req={seg.req} targetRole={targetRole} />
+            ) : (
+              <span key={`t-${i}`}>{seg.content}</span>
+            ),
+          )}
+        </div>
+      ) : (
+        <div className="rv__sd-canvas rv__sd-canvas--fallback">
+          {requirements.map((req) => (
+            <HighlightUnit key={req.id} text={highlightText(req)} req={req} targetRole={targetRole} />
+          ))}
+        </div>
+      )}
+    </section>
+  )
+}
+
+// 하이라이트 구절 한 단위 — 형광펜 색 + 인라인 상태 아이콘 + 호버/포커스 툴팁.
+// 키보드 포커스로도 툴팁이 뜨도록 tabIndex를 주고, 툴팁 콘텐츠는 항상 DOM에 두되(스크린
+// 리더가 aria-describedby로 읽을 수 있게) CSS로 시각적으로만 숨겼다가 열렸을 때만 보인다.
+//
+// 툴팁은 채팅 스크롤 패널(rc__body)이나 상태 갤러리 데모 프레임(ss-demoframe) 같은 조상의
+// overflow: hidden/auto에 위쪽이 잘리는 문제가 있었다. position: fixed만으로는(포탈 없이)
+// 못 피하는 조상이 실제로 있다 — 어시스턴트 워크스페이스 라우트에서는
+// desktop/DesktopShell.css의 `.dshell__content:has(.aw) { overflow: hidden; }`가 콘텐츠
+// 카드를 자르고, 페이지 전환 래퍼 career/kit.css의 `.kit-trans--tab`/`--push`가 진입
+// 애니메이션(kit-tab-in/kit-push-in, 0.34~0.4s) 동안 transform 값을 유지해 그 시간 동안
+// position: fixed의 컨테이닝 블록을 뷰포트가 아니라 자기 자신으로 새로 만든다 — 그 결과
+// 뷰포트 좌표로 계산한 fixed 툴팁이 엉뚱한 위치(화면 밖)로 밀려나 아예 안 보였다. 이런
+// transform 컨테이닝 블록은 모션이 있는 화면일수록 흔해 예측하기 어려우므로, fixed만으로는
+// 근본적으로 못 피한다.
+//
+// 그래서 툴팁을 React.createPortal로 document.body에 직접 렌더한다 — 모든 조상의
+// overflow/stacking/transform 컨테이닝 블록을 완전히 벗어나므로 뷰포트 좌표가 항상
+// 정확하다. DOM상 더 이상 형광펜 span의 자식이 아니지만, id/aria-describedby로 접근성
+// 연결은 그대로 유지한다(스크린 리더는 DOM 트리 위치가 아니라 id 참조로 연결을 읽는다).
+//
+// 표시 여부는 CSS :hover/:focus에 맡기지 않고 React 상태(hovering/focused)로 직접 켠다.
+// CSS 의사 클래스로 표시를 켜면서 동시에 JS가 mouseenter 시점에 좌표를 다시 재는 구조였을 때,
+// 화면에 즉시 뜨는 것(브라우저 :hover 재계산)과 좌표 갱신(React state 커밋)의 타이밍이
+// 어긋나 깜빡이거나 잘못된 위치에서 잠깐 보였다 사라지는 문제가 있었다. 이제는 open 상태가
+// true로 바뀔 때만 useLayoutEffect로 위치를 계산해 얹으므로, 브라우저가 페인트하기 전에
+// "열림 + 정확한 좌표"가 같은 커밋에 반영된다(레이아웃 이펙트는 페인트 전에 동기적으로
+// 재실행되므로 중간 상태가 화면에 그려지지 않는다).
+function HighlightUnit({
+  text,
+  req,
+  targetRole,
+}: {
+  text: string
+  req: SplitDiffRequirement
+  targetRole: string
+}) {
+  const tooltipId = `sd-tooltip-${req.id}`
+  const hlRef = useRef<HTMLSpanElement>(null)
+  const tooltipRef = useRef<HTMLSpanElement>(null)
+  const [hovering, setHovering] = useState(false)
+  const [focused, setFocused] = useState(false)
+  const [pos, setPos] = useState<TooltipPos | null>(null)
+  // hover(구절 또는 툴팁 자체) 또는 키보드 포커스, 둘 중 하나만 있어도 열린다(기존 CSS의
+  // :hover, :focus, :focus-visible OR 의미를 그대로 유지).
+  const isOpen = hovering || focused
+
+  const reposition = useCallback(() => {
+    const trigger = hlRef.current
+    const tooltip = tooltipRef.current
+    if (!trigger || !tooltip) return
+    const triggerRect = trigger.getBoundingClientRect()
+    const tooltipRect = tooltip.getBoundingClientRect()
+    const gap = 8
+    const viewportW = window.innerWidth
+    const viewportH = window.innerHeight
+
+    // 위쪽 공간이 툴팁 높이보다 부족하고 아래쪽이 더 넓으면 뒤집어 아래에 띄운다.
+    const spaceAbove = triggerRect.top
+    const spaceBelow = viewportH - triggerRect.bottom
+    const placeBelow = spaceAbove < tooltipRect.height + gap && spaceBelow > spaceAbove
+    const top = placeBelow ? triggerRect.bottom + gap : triggerRect.top - tooltipRect.height - gap
+
+    // 가로로는 화면 밖으로 나가지 않게 클램프한다.
+    const maxLeft = Math.max(gap, viewportW - tooltipRect.width - gap)
+    const left = Math.min(Math.max(triggerRect.left, gap), maxLeft)
+
+    setPos({ top, left })
+  }, [])
+
+  // 열릴 때(hover/focus로 isOpen이 true가 된 순간)만, 레이아웃이 확정된 뒤(페인트 전) 좌표를
+  // 계산한다 — mouseenter 시점의 숨김 상태 rect를 읽어 오배치되던 레이스를 없앤다.
+  useLayoutEffect(() => {
+    if (!isOpen) return
+    reposition()
+  }, [isOpen, reposition])
+
+  // 열려 있는 동안 스크롤·리사이즈가 일어나면(fixed는 트리거를 따라가지 않으므로) 좌표를
+  // 다시 계산한다. 닫혀 있을 때는 리스너 자체를 달지 않는다.
+  useEffect(() => {
+    if (!isOpen) return
+    window.addEventListener('scroll', reposition, true)
+    window.addEventListener('resize', reposition)
+    return () => {
+      window.removeEventListener('scroll', reposition, true)
+      window.removeEventListener('resize', reposition)
+    }
+  }, [isOpen, reposition])
+
+  return (
+    <span
+      ref={hlRef}
+      className={`rv__sd-hl rv__sd-hl--${req.verdict}`}
+      tabIndex={0}
+      aria-describedby={tooltipId}
+      data-testid={`sd-hl-${req.id}`}
+      onMouseEnter={() => setHovering(true)}
+      onMouseLeave={() => setHovering(false)}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+    >
+      {text}
+      <span className={`rv__sd-icon rv__sd-icon--${req.verdict}`} aria-hidden="true">
+        {VERDICT_ICON[req.verdict]}
       </span>
+      <span className="rv__sd-hl-sr">{VERDICT_LABEL[req.verdict]}</span>
+      <RequirementTooltip
+        req={req}
+        targetRole={targetRole}
+        tooltipId={tooltipId}
+        tooltipRef={tooltipRef}
+        pos={pos}
+        isOpen={isOpen}
+        onMouseEnter={() => setHovering(true)}
+        onMouseLeave={() => setHovering(false)}
+      />
     </span>
   )
 }
 
-// 상세 카드형 — 요구사항마다 (a) 공고 문구를 형광펜으로 그은 줄, (b) 그 바로 아래 전체 폭을 쓰는
-// 상세 카드를 세로로 쌓는다. 좌우 2열 + 좁은 노트 컬럼 구조는 버렸다(화면이 넓어도 노트가 좁다는
-// 피드백). 카드 안에서 quote(판정 대상 원문)를 직접 인용하므로 여기선 QuoteCue 툴팁을 쓰지 않는다
-// (같은 정보를 두 번 보여주는 중복이라서). 판정 구분은 뱃지 + 옅은 배경 틴트로만 하고, 어디에도
-// 왼쪽 컬러 테두리(레일)를 두지 않는다 — "AI 클리셰"라는 라이브 피드백으로 명시적으로 제거됨.
-function SplitDiffDetailLayout({ requirements, targetRole }: { requirements: SplitDiffRequirement[]; targetRole: string }) {
-  return (
-    <div className="rv__sd-detail">
-      {requirements.map((req) => (
-        <div key={req.id} className="rv__sd-detail-item">
-          <p className="rv__sd-detail-line">
-            <SplitDiffHighlight req={req} />
-          </p>
-          <SplitDiffDetailCard req={req} targetRole={targetRole} />
-        </div>
-      ))}
-    </div>
-  )
+interface TooltipPos {
+  top: number
+  left: number
 }
 
-function SplitDiffDetailCard({ req, targetRole }: { req: SplitDiffRequirement; targetRole: string }) {
-  const { verdict, quote, rationale, next_step } = req
-  return (
-    <div className={`rv__sd-detailcard rv__sd-detailcard--${verdict}`}>
-      <span className={`rv__sd-vbadge rv__sd-vbadge--${verdict}`}>{VERDICT_LABEL[verdict]}</span>
-
-      <div className="rv__sd-detailcard-quote">
-        <span className="rv__sd-detailcard-quote-label">{targetRole} 원문</span>
-        {quote ? (
-          <blockquote className="rv__sd-detailcard-quote-text">{quote}</blockquote>
+function RequirementTooltip({
+  req,
+  targetRole,
+  tooltipId,
+  tooltipRef,
+  pos,
+  isOpen,
+  onMouseEnter,
+  onMouseLeave,
+}: {
+  req: SplitDiffRequirement
+  targetRole: string
+  tooltipId: string
+  tooltipRef: RefObject<HTMLSpanElement>
+  pos: TooltipPos | null
+  isOpen: boolean
+  onMouseEnter: () => void
+  onMouseLeave: () => void
+}) {
+  const kind = requirementKindOf(req)
+  // document.body로 포탈한다 — 조상 overflow/transform 컨테이닝 블록을 완전히 벗어나야
+  // 뷰포트 좌표(top/left)가 항상 정확하다. id/aria-describedby로 트리거 span과의 접근성
+  // 연결은 DOM 트리 위치와 무관하게 유지된다.
+  return createPortal(
+    <span
+      className={`rv__sd-tooltip${isOpen ? ' rv__sd-tooltip--open' : ''}`}
+      role="tooltip"
+      id={tooltipId}
+      ref={tooltipRef}
+      style={pos ? { top: pos.top, left: pos.left } : undefined}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
+      <span className="rv__sd-tooltip-head">
+        <span className={`rv__sd-tooltip-verdict rv__sd-tooltip-verdict--${req.verdict}`}>
+          {VERDICT_LABEL[req.verdict]}
+        </span>
+        <RequirementKindBadge kind={kind} />
+      </span>
+      <span className="rv__sd-tooltip-text">{req.text}</span>
+      <span className="rv__sd-tooltip-row">
+        <span className="rv__sd-tooltip-label">{targetRole} 근거</span>
+        {req.quote ? (
+          <span className="rv__sd-tooltip-quote">{req.quote}</span>
         ) : (
-          <p className="rv__sd-detailcard-quote-missing">{targetRole}에서 근거를 찾지 못했어요</p>
+          <span className="rv__sd-tooltip-quote rv__sd-tooltip-quote--missing">
+            {targetRole}에서 근거를 찾지 못했어요
+          </span>
         )}
-      </div>
-
-      {rationale && (
-        <p className="rv__sd-detailcard-rationale">
-          <span className="k">판정 근거</span>
-          <span>{rationale}</span>
-        </p>
+      </span>
+      {req.next_step && (
+        <span className="rv__sd-tooltip-row">
+          <span className="rv__sd-tooltip-label">보완</span>
+          <span className="rv__sd-tooltip-nextstep">{req.next_step}</span>
+        </span>
       )}
-
-      {next_step && (
-        <div className="rv__sd-detailcard-next">
-          <span className="tag">보완점</span>
-          <span className="step">{next_step}</span>
-        </div>
-      )}
-    </div>
+    </span>,
+    document.body,
   )
 }
 
-// 시안 3 · 인라인 배지형 — 형광펜 그은 문구 바로 뒤에 verdict pill을 붙인다. 기본은 한 줄이고,
-// gap/partial 항목만 정보 손실 방지를 위해 보조 줄로 next_step을 보여준다(met은 보조 줄 없음).
-function SplitDiffInlineLayout({ requirements, targetRole }: { requirements: SplitDiffRequirement[]; targetRole: string }) {
-  return (
-    <ul className="rv__sd-inline">
-      {requirements.map((req) => (
-        <li key={req.id}>
-          <div className="rv__sd-inline-row">
-            <SplitDiffHighlight req={req} />
-            <span className={`rv__sd-vpill rv__sd-vpill--${req.verdict}`}>
-              {VERDICT_MARK[req.verdict]} {VERDICT_PILL_LABEL[req.verdict]}
-            </span>
-            <QuoteCue quote={req.quote} targetRole={targetRole} />
-          </div>
-          {req.verdict !== 'met' && req.next_step && (
-            <p className="rv__sd-inline-sub">{req.next_step}</p>
-          )}
-        </li>
-      ))}
-    </ul>
-  )
+function RequirementKindBadge({ kind }: { kind: RequirementKind }) {
+  return <span className={`rv__sd-kind rv__sd-kind--${kind}`}>{KIND_LABEL[kind]}</span>
 }
 
 export default SplitDiff

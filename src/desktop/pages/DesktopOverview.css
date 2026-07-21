@@ -83,16 +83,32 @@
 .dov__cta-btn:active { transform: scale(0.97); opacity: 0.85; }
 
 /* 2단 레이아웃 — 좌측 인사이트 존(히어로 행 + 2열 masonry) + 우측 세로 타임라인 레일.
-   레일은 뷰포트에 고정(sticky)돼 내부 콘텐츠가 자체 스크롤되고, 좁은 화면에서는
+   레일 트랙 높이는 grid align-items: stretch로 좌측 인사이트열 높이를 그대로 따라간다
+   (뷰포트 고정 calc(100dvh - ...)보다 실제 콘텐츠 높이에 맞는 그리드 정렬 기반이 더 안전하다).
+   레일 내부는 세로 flex로 짜여 있어(JSX 인라인 스타일) "요즘 뜨는 내 기술" 카드는 콘텐츠
+   높이만 쓰고, 최신 공고 타임라인 카드가 flex:1로 남는 높이를 채운다. 좁은 화면에서는
    한 컬럼으로 접힌다. */
-.dov__layout { display: grid; grid-template-columns: minmax(0, 1fr) 460px; gap: 16px; align-items: start; margin-top: 8px; }
+.dov__layout { display: grid; grid-template-columns: minmax(0, 1fr) 508px; gap: 16px; align-items: stretch; margin-top: 8px; }
 .dov__rail { position: sticky; top: 0; align-self: stretch; }
-.dov__rail > * { height: calc(100dvh - 150px); }
+.dov__rail > * { height: 100%; }
 @media (max-width: 1180px) {
   .dov__layout { grid-template-columns: 1fr; }
   .dov__rail { position: static; }
   .dov__rail > * { height: auto; }
 }
+
+/* 최신 공고 타임라인 카드 — 워크플로우 맵이 좌측 인사이트열에서 빠지면서 상단
+   2열 영역(히어로+시장 진단)이 짧아진 만큼, 레일이 grid stretch로 그 높이를 그대로
+   따라가면 타임라인 카드가 필요 이상으로 길어질 수 있다. 합리적인 상한을 둬 카드가
+   과하게 늘어나지 않게 하고, 내부 공고 목록(.wow-joblist)이 이미 갖고 있는
+   overflow-y: auto 스크롤로 넘치는 항목을 흡수한다. */
+.dov__rail-timeline { flex: 1; min-height: 0; max-height: min(640px, 70vh); }
+.dov__rail-timeline > * { height: 100%; }
+
+/* 워크플로우 맵 전체 폭 행 — dov__layout(히어로+시장 진단 | 요즘 뜨는 내 기술+타임라인)
+   아래, 대시보드 가로 전체를 쓴다. DAG가 좌우로 넓게 펼쳐져야 학습 순서가 한눈에
+   읽히므로 좌측 인사이트열 폭에 가두지 않는다. */
+.dov__sec--full { margin-top: 28px; }
 
 /* 좌측 인사이트: [Zone1 히어로존] + [Zone2~3 라벨 섹션들].
    히어로는 1개(커리어 점수)만 크게 두고, 나머지는 제목 붙은 섹션(.dov__sec)으로 그룹해

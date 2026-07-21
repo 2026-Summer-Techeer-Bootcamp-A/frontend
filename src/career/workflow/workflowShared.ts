@@ -55,6 +55,33 @@ export function classifySkill(name: string, backendCategory?: string): SkillGrou
   return groupForCategory(cat)
 }
 
+// F: 스테이지 뷰 카드 배지용 세분화 라벨 — classifySkill의 언어/프레임워크/기타 3버킷은
+// WorkflowList.tsx가 보유 밴드를 정확히 이 3키로만 렌더링해서(map 리터럴이 3개 고정
+// 키다) 바꿀 수 없다. 대신 MariaDB/MongoDB/ClickHouse 같은 데이터·DB 계열이 전부 "기타"로
+// 뭉개져 보인다는 피드백에 대응해, classifySkill과 별개로 카드 배지 표시 전용 라벨을
+// 추가한다 — pearl 사전(TECH_CATEGORY)/보정 테이블(SUPPLEMENT_CATEGORY)의 8종 원본
+// 카테고리를 그대로 살려 더 구체적인 한글 라벨로 보여준다. classifySkill의 3버킷
+// 반환값·리스트 뷰 동작은 전혀 건드리지 않는 순수 추가 함수다.
+const CATEGORY_BADGE_LABEL: Record<string, string> = {
+  language: '언어',
+  backend: '백엔드',
+  frontend: '프론트엔드',
+  mobile: '모바일',
+  data_db: '데이터·DB',
+  cloud_services: '클라우드',
+  devops: '데브옵스',
+  ai_llm: 'AI·LLM',
+}
+
+export function categoryBadgeLabel(name: string, backendCategory?: string): string {
+  if (backendCategory && backendCategory !== 'unknown') {
+    return CATEGORY_BADGE_LABEL[backendCategory] ?? groupForCategory(backendCategory)
+  }
+  const cat = TECH_CATEGORY[name] ?? SUPPLEMENT_CATEGORY[name]
+  if (cat && CATEGORY_BADGE_LABEL[cat]) return CATEGORY_BADGE_LABEL[cat]
+  return groupForCategory(cat)
+}
+
 // 관계(연관·순서) 큐레이션 — "네트워크 그래프처럼 순서를 보여달라"는 피드백에 대응해
 // 같은 카테고리 안의 밋밋한 그룹핑 엣지 말고, 실제 기술 간 방향 있는 관계(아는 언어 ->
 // 그 언어로 배우면 좋은 프레임워크)를 소수만 큐레이션한다. Java -> Spring은 자연스럽지만
@@ -176,4 +203,25 @@ export function minPairwiseJaccard(sets: Set<string>[]): number {
     }
   }
   return min
+}
+
+// F: 4타입 확장 — 개념(concept)·연차 게이트(career). 백엔드가 공고 상세에 concepts를
+// 아직 안 내려줄 수 있어 PostingDetail 자체(api.ts, 다른 에이전트가 손대는 중)는 건드리지
+// 않고, 여기서 옵셔널 확장 타입만 얹는다. concepts가 undefined면 그 타입 노드는 그냥 렌더
+// 안 한다(그레이스풀 디그레이드) — 크래시 없음.
+export type ConceptRef = { name: string; category?: string }
+export type PostingDetailWithConcepts = PostingDetail & { concepts?: ConceptRef[] }
+
+// 연차 게이트 라벨 — JobSheet.tsx/CareerDashboard.tsx의 careerText/careerLabel과 같은
+// 표기(신입·무관 / 경력 N년+)를 재사용한다(새 문구 체계를 만들지 않는다).
+export function careerGateLabel(goalMin: number | null): string {
+  if (!goalMin || goalMin <= 0) return '경력 무관'
+  return `경력 ${goalMin}년+`
+}
+
+// 충족 판정 — CareerDashboard.tsx의 기존 규칙(공고의 최소 경력이 내 이력서 경력 상한을
+// 넘지 않아야 지원 가능)을 그대로 재사용한다. 목표 경력이 없으면(신입·무관) 항상 충족.
+export function isCareerGateFulfilled(goalMin: number | null, resumeCareerMax: number | null): boolean {
+  if (!goalMin || goalMin <= 0) return true
+  return resumeCareerMax != null && goalMin <= resumeCareerMax
 }
