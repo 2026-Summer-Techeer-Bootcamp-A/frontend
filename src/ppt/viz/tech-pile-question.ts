@@ -7,10 +7,9 @@ import {
   clamp01,
   easeInOut,
   roundRect,
-  drawBackground,
 } from './common.ts'
 import { getTechChipPileStates } from './tech-chip-pile.ts'
-import { MONO_CHIP_STYLES } from './tech-chip-pile-mono.ts'
+import { MONO_CHIP_STYLES, WHITE_MONO_STAGE_COLOR } from './tech-chip-pile-mono.ts'
 
 export interface TechPileQuestionFrame {
   chips: ReturnType<typeof getTechChipPileStates>
@@ -100,24 +99,28 @@ function drawQuestion(
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
 
-  ctx.fillStyle = '#A1A1AA'
+  ctx.fillStyle = '#71717A'
   ctx.font = `600 ${20 * scale}px ${FONT}`
   ctx.fillText('쏟아지는 기술들,', width / 2, 142 * scale)
 
-  ctx.fillStyle = '#F4F4F5'
+  ctx.fillStyle = '#18181B'
   ctx.font = `800 ${34 * scale}px ${FONT}`
   ctx.fillText('내 커리어에 필요한 건 무엇일까?', width / 2, 190 * scale)
   ctx.restore()
 }
 
 export const renderTechPileQuestion: VizRender = (ctx, width, height, progress) => {
-  drawBackground(ctx, width, height)
+  ctx.save()
+  ctx.fillStyle = WHITE_MONO_STAGE_COLOR
+  ctx.fillRect(0, 0, width, height)
+  ctx.restore()
+
   const scale = Math.min(width / 960, height / 540)
   const frame = getTechPileQuestionFrame(progress, width, height)
   const floorY = height * 0.82 + 27 * scale
 
   ctx.save()
-  ctx.strokeStyle = 'rgba(255,255,255,0.16)'
+  ctx.strokeStyle = 'rgba(24,24,27,0.15)'
   ctx.lineWidth = Math.max(1, scale)
   ctx.beginPath()
   ctx.moveTo(width * 0.16, floorY)

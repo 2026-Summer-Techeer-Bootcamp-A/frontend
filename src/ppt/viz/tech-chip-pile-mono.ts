@@ -1,13 +1,10 @@
-// 기술 칩 낙하·적층 모노: 기존 고정 궤적을 재사용하고
-// 흰색·회색·짙은 회색 칩만 별도 스타일로 그린다.
+// 기술 칩 낙하·적층 화이트 모노: 기존 고정 궤적을 재사용하고
+// 화이트 스테이지 위에 흰색·회색·짙은 회색 칩을 그린다.
 
 import type { VizDef, VizRender } from '../types.ts'
 import {
   FONT,
   roundRect,
-  drawBackground,
-  drawTopLabel,
-  drawCaption,
 } from './common.ts'
 import { getTechChipPileStates } from './tech-chip-pile.ts'
 
@@ -22,10 +19,12 @@ export interface MonoChipStyle {
   text: string
 }
 
+export const WHITE_MONO_STAGE_COLOR = '#F7F7F5'
+
 const STYLE_BY_TONE: Record<MonoTone, Omit<MonoChipStyle, 'tone'>> = {
   light: {
     fill: '#F4F4F5',
-    border: '#FFFFFF',
+    border: '#CFCFD3',
     iconFill: '#18181B',
     iconText: '#FFFFFF',
     text: '#18181B',
@@ -101,12 +100,16 @@ function drawMonoTechChip(
 }
 
 export const renderTechChipPileMono: VizRender = (ctx, width, height, progress) => {
-  drawBackground(ctx, width, height)
+  ctx.save()
+  ctx.fillStyle = WHITE_MONO_STAGE_COLOR
+  ctx.fillRect(0, 0, width, height)
+  ctx.restore()
+
   const scale = Math.min(width / 960, height / 540)
   const floorY = height * 0.82 + 27 * scale
 
   ctx.save()
-  ctx.strokeStyle = 'rgba(255,255,255,0.16)'
+  ctx.strokeStyle = 'rgba(24,24,27,0.15)'
   ctx.lineWidth = Math.max(1, scale)
   ctx.beginPath()
   ctx.moveTo(width * 0.16, floorY)
@@ -117,13 +120,6 @@ export const renderTechChipPileMono: VizRender = (ctx, width, height, progress) 
   getTechChipPileStates(progress, width, height).forEach((state, index) => {
     drawMonoTechChip(ctx, state, MONO_CHIP_STYLES[index])
   })
-
-  drawTopLabel(ctx, '문제 인식', '쏟아지는 기술')
-  drawCaption(
-    ctx,
-    height,
-    progress < 0.72 ? '기술들이 끊임없이 쏟아집니다' : '16개의 기술이 하나의 더미로 쌓였습니다',
-  )
 }
 
 export const techChipPileMonoViz: VizDef = {
