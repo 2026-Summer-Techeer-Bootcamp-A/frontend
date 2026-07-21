@@ -18,6 +18,7 @@ import { resumeStackCleanViz } from './viz/resume-stack-clean'
 import { techChipPileViz } from './viz/tech-chip-pile'
 import { techChipPileMonoViz } from './viz/tech-chip-pile-mono'
 import { techPileQuestionViz } from './viz/tech-pile-question'
+import { serviceTitleRevealViz } from './viz/service-title-reveal'
 import { resumeSkillRoutingViz } from './viz/resume-skill-routing'
 import { skillLearningWorkflowWhiteViz } from './viz/skill-learning-workflow-white'
 
@@ -42,6 +43,7 @@ export const vizRegistry: VizDef[] = [
   techChipPileViz,
   techChipPileMonoViz,
   techPileQuestionViz,
+  serviceTitleRevealViz,
   resumeSkillRoutingViz,
   skillLearningWorkflowWhiteViz,
   {
