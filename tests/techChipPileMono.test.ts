@@ -1,5 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import {
   MONO_CHIP_STYLES,
   renderTechChipPileMono,
@@ -37,4 +38,11 @@ test('독립된 8초 기능 시각화 메타데이터를 제공한다', () => {
   assert.equal(techChipPileMonoViz.category, 'feature')
   assert.equal(techChipPileMonoViz.period, 8000)
   assert.equal(techChipPileMonoViz.render, renderTechChipPileMono)
+})
+
+test('시각화 목록에 모노 버전이 컬러 버전과 별도로 등록된다', () => {
+  const registrySource = readFileSync(new URL('../src/ppt/vizRegistry.ts', import.meta.url), 'utf8')
+
+  assert.match(registrySource, /techChipPileViz/)
+  assert.match(registrySource, /techChipPileMonoViz/)
 })
