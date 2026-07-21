@@ -8,6 +8,18 @@
   min-height: 0;
 }
 
+/* 6: AI 보강·추천·크게 보기 버튼을 위젯 헤더 툴바(SectionHeader의 right 슬롯) 한 줄에
+   정렬한다 — 캔버스 위에 떠 있는 별도 컨트롤이 아니라 헤더 소속임을 레이아웃으로도
+   분명히 한다. flex-wrap:nowrap이라 좁아져도 두 줄로 안 깨진다. 2단계: 뷰 토글(로드맵/
+   단계별/리스트)을 걷어내면서 이 gap만으로도 남은 버튼들이 자연스레 정렬된다. */
+.wfm-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  flex: none;
+}
+
 /* 시안 1: 목표 선택은 캔버스 위에 겹치는 드로어 대신 위젯 헤더 바로 아래 상시
    노출되는 앵커 바(.wfm-goal-anchorbar) + 옆 팝오버(.wfm-goal-popover)로 옮겼다.
    다이어그램(.wfm-graph-pane)은 그 아래 온전한 영역을 그대로 쓴다.
@@ -293,75 +305,6 @@
   display: flex;
   flex-direction: column;
 }
-.wfm-empty--selection { padding: 18px 4px; }
-
-.wfm-legend {
-  display: flex;
-  gap: 14px;
-  margin-top: 10px;
-  flex-wrap: wrap;
-}
-.wfm-legend__item {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 10.5px;
-  color: var(--c-muted, #7c7f88);
-  font-weight: 650;
-}
-.wfm-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-.wfm-dot--owned { background: #1f9d57; }
-.wfm-dot--target { background: #18181b; }
-.wfm-dot--bridge { background: #d8dade; border: 1px solid #b9bcc4; }
-
-/* 자격증 레인 — 스킬 DAG와 완전히 분리된 보조 패널. 학습 순서가 없는 정보라
-   앰버/골드 톤만으로 존재를 알리고, 메인 그래프와 시각적으로 경쟁하지 않게 작게 둔다. */
-.wfm-cert-lane {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px dashed var(--line, #e6e9ef);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.wfm-cert-lane__title {
-  font-size: 10.5px;
-  font-weight: 750;
-  color: var(--c-muted, #7c7f88);
-}
-.wfm-cert-lane__row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.wfm-cert-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 4px 9px;
-  border-radius: 999px;
-}
-.wfm-cert-chip--owned {
-  background: #fffbeb;
-  color: #92400e;
-  border: 1px solid #f2c879;
-}
-.wfm-cert-chip--target {
-  background: #fef3c7;
-  color: #78350f;
-  border: 1px solid #e6ab3a;
-}
-.wfm-cert-chip__badge {
-  font-size: 9px;
-  font-weight: 800;
-  color: #92400e;
-  background: #fff;
-  border-radius: 999px;
-  padding: 1px 5px;
-  margin-left: 1px;
-}
 
 .wfm-loading {
   flex: 1;
@@ -371,52 +314,6 @@
   min-height: 220px;
   color: var(--c-muted, #7c7f88);
   font-size: 12.5px;
-}
-
-.wfm-empty {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  justify-content: center;
-  padding: 18px 4px;
-}
-.wfm-empty__lead {
-  font-size: 13.5px;
-  font-weight: 750;
-  color: var(--c-ink, #18181b);
-  margin: 0;
-}
-.wfm-empty__hint {
-  font-size: 11.5px;
-  color: var(--c-muted, #7c7f88);
-}
-.wfm-empty__owned {
-  margin-top: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.wfm-empty__owned-label {
-  font-size: 10.5px;
-  font-weight: 700;
-  color: var(--c-muted, #7c7f88);
-}
-.wfm-empty__chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.wfm-chip {
-  font-size: 11px;
-  font-weight: 700;
-  padding: 4px 9px;
-  border-radius: 999px;
-}
-.wfm-chip--owned {
-  background: #f0fbf4;
-  color: #1f9d57;
-  border: 1px solid #9dcfb4;
 }
 
 /* 2a: 크게 보기 버튼 + 전체화면 모달. SkillManagerModal의 중앙 다이얼로그 패턴(백드롭
@@ -434,77 +331,22 @@
 }
 .wfm-expand-btn:hover { background: var(--accent-100, #e4e4e7); color: var(--c-ink, #18181b); }
 
-/* 2단계: flow/list 아이콘 세그먼트 토글 — wfm-goal-add-btn.is-active와 같은 active
-   톤(진한 배경/흰 아이콘)을 재사용해 새 색 체계를 만들지 않는다. 추천 버튼(Sparkles)
-   바로 왼쪽에 둔다. */
-.wfm-view-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  background: var(--accent-50, #f0f0f1);
-  border-radius: 999px;
-  padding: 2px;
-}
-.wfm-view-toggle__btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 999px;
-  color: var(--c-muted, #71717a);
-  transition: background 0.12s ease, color 0.12s ease;
-}
-.wfm-view-toggle__btn:hover { color: var(--c-ink, #18181b); }
-.wfm-view-toggle__btn.is-active {
-  background: var(--c-ink, #18181b);
-  color: #fff;
-}
-
-/* D: 이질성 안내 배너 — flow 캔버스 밖(위) HTML이라 React Flow 좌표에 영향 없다. */
-.wfm-heterogeneous-banner {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 8px;
-  padding: 8px 12px;
-  border-radius: 10px;
-  background: #fffbeb;
-  border: 1px solid #f2c879;
-  font-size: 11.5px;
-  color: #78350f;
-}
-.wfm-heterogeneous-banner__btn {
-  font-weight: 750;
-  color: #92400e;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-.wfm-heterogeneous-banner__btn:hover { color: #78350f; }
-
-/* 데모용 추천 공고 가져오기 버튼 — expand 버튼과 같은 아이콘 버튼 스타일을 공유하고,
-   로딩 중엔 아이콘을 회전시키고, 완료 메시지는 버튼 바로 아래 작은 말풍선으로 띄운다. */
+/* 데모용 추천 공고 버튼 — expand 버튼과 같은 아이콘 버튼 스타일을 공유한다. 이제
+   careerData.json에서 미리 계산해둔 고정 결과를 보여줄 뿐이라(demoRecommend.ts)
+   네트워크 대기가 없어 로딩/에러 상태 자체가 없다. */
 .wfm-recommend-wrap { position: relative; display: flex; align-items: center; }
-.wfm-recommend-btn:disabled { cursor: default; opacity: 0.7; }
-.wfm-recommend-btn.is-loading svg { animation: wfm-recommend-spin 0.9s linear infinite; }
 @keyframes wfm-recommend-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-.wfm-recommend-msg {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 6px;
-  white-space: nowrap;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--c-ink, #18181b);
-  background: #fff;
-  border: 1px solid var(--accent-100, #e4e4e7);
-  padding: 4px 9px;
-  border-radius: 999px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  z-index: 5;
+
+/* F-2: AI 로드맵 보강 버튼 — 옆의 추천 공고 버튼(Sparkles, 중립 회색)과 시각적으로
+   헷갈리지 않도록 은은한 인디고 틴트를 얹는다(모노크롬+그린 톤 안에서 절제된 유일한
+   액센트). 로딩 중엔 회전 애니메이션을 추천 버튼과 공유한다. */
+.wfm-enrich-btn {
+  color: #4c4fd9;
+  background: rgba(76, 79, 217, 0.1);
 }
+.wfm-enrich-btn:hover:not(:disabled) { background: rgba(76, 79, 217, 0.18); color: #3c3fc0; }
+.wfm-enrich-btn:disabled { cursor: default; opacity: 0.5; }
+.wfm-enrich-btn.is-loading svg { animation: wfm-recommend-spin 0.9s linear infinite; }
 
 .wfm-modal__backdrop {
   position: fixed;
@@ -554,14 +396,15 @@
   transition: transform 0.12s ease, background 0.12s ease, color 0.12s ease;
 }
 .wfm-modal__close:hover { background: var(--accent-100, #e4e4e7); color: var(--c-ink, #18181b); }
-.wfm-modal__card .wfm-legend { padding: 10px 18px 14px; margin-top: 0; }
 
 /* 추천 공고 모달 — 그래프 확대 모달(.wfm-modal__card)과 백드롭·타이틀바는 공유하되,
-   목록형 콘텐츠라 그래프용 대형 고정 크기 대신 컴팩트한 크기로 오버라이드한다. */
+   직무 8개 섹션을 세로로 늘어놓는 목록형 콘텐츠라 그래프용 대형 고정 크기 대신
+   컴팩트한 크기로 오버라이드한다. 카드 안에 칩·자격요건 줄까지 들어가 예전 한 줄
+   목록보다 폭이 더 필요해 480px보다 넓혔다. */
 .wfm-recommend-modal {
-  width: min(480px, 92vw);
+  width: min(640px, 94vw);
   height: auto;
-  max-height: min(640px, 88vh);
+  max-height: min(720px, 88vh);
 }
 .wfm-recommend-modal__hint {
   flex: none;
@@ -569,57 +412,266 @@
   font-size: 12.5px;
   color: var(--c-muted, #7c7f88);
 }
-.wfm-recommend-modal__list {
+.wfm-recommend-modal__roles {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 8px 10px 14px;
+  padding: 10px 18px 20px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 16px;
 }
-.wfm-recommend-modal__item {
+
+/* 직무 섹션 — 이름 + 개수 헤더 아래 그 직무의 큐레이션 공고 카드들을 세로로 쌓는다. */
+.wfm-demo-role__head {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.wfm-demo-role__name {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--c-ink, #18181b);
+}
+.wfm-demo-role__count {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--c-muted, #7c7f88);
+}
+.wfm-demo-role__cards {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* 공고 카드 — 로고 + (회사명 · 대기업 배지 · 연차) + 직함 + 기술 칩 + 자격요건 한 줄.
+   모노크롬 근간에 그린 포인트(대기업 배지, 자격요건 라벨색)만 얹는다. */
+.wfm-demo-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line, #e6e9ef);
+  border-radius: 12px;
+  background: #fff;
+}
+.wfm-demo-card__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.wfm-demo-card__headline {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 8px;
-  border-radius: 10px;
+  flex-wrap: wrap;
+  gap: 6px;
 }
-.wfm-recommend-modal__item:hover { background: var(--accent-50, #f0f0f1); }
-.wfm-recommend-modal__add {
+.wfm-demo-card__company {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--c-ink, #18181b);
+}
+.wfm-demo-card__tier {
   flex: none;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 5px 12px;
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #1f9d57;
+  background: #f0fbf4;
+  border: 1px solid #9dcfb4;
   border-radius: 999px;
-  color: #fff;
-  background: var(--c-ink, #18181b);
-  transition: background 0.12s ease, color 0.12s ease, opacity 0.12s ease;
+  padding: 1px 7px;
 }
-.wfm-recommend-modal__add:hover:not(:disabled) { background: #000; }
-.wfm-recommend-modal__add.is-added {
+.wfm-demo-card__career {
+  flex: none;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--c-muted, #7c7f88);
+}
+
+.wfm-demo-card__add-btn {
+  margin-left: auto;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  color: var(--c-muted, #71717a);
+  background: var(--accent-50, #f0f0f1);
+  transition: background 0.12s ease, color 0.12s ease;
+  cursor: pointer;
+}
+.wfm-demo-card__add-btn:hover {
+  background: var(--accent-100, #e4e4e7);
+  color: var(--c-ink, #18181b);
+}
+.wfm-demo-card__add-btn.is-added {
   color: #1f9d57;
   background: #f0fbf4;
   border: 1px solid #9dcfb4;
 }
+.wfm-demo-card__title {
+  font-size: 11.5px;
+  color: var(--c-muted, #6b6f78);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wfm-demo-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+.wfm-demo-card__chip {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--c-ink, #18181b);
+  background: var(--accent-50, #f0f0f1);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+.wfm-demo-card__chip--more { color: var(--c-muted, #7c7f88); background: transparent; }
+.wfm-demo-card__req {
+  margin: 4px 0 0;
+  font-size: 10.5px;
+  color: #157a41;
+  line-height: 1.4;
+}
 
-/* 2단계: 리스트 뷰(WorkflowList.tsx) — flow 캔버스와 달리 좌표 산수가 없는 세로 스크롤
-   목록이라, 카드 컴팩트 영역에서는 wfm-list-pane이, 크게 보기 모달에서는
-   wfm-modal__list가 스크롤 컨테이너를 맡는다. 안쪽 wfm-list-* 클래스는 두 컨테이너
-   어디에 들어가든 동일하게 동작한다. */
-.wfm-list-pane {
+/* F-2: AI 로드맵 보강 모달 — 그래프 확대 모달과 백드롭·타이틀바(.wfm-modal__card)는
+   공유하고, 목록형 콘텐츠라 그래프용 대형 고정 크기 대신 컴팩트한 크기로 오버라이드
+   한다(추천 공고 모달과 같은 패턴). */
+.wfm-enrich-modal {
+  width: min(560px, 92vw);
+  height: auto;
+  max-height: min(720px, 88vh);
   overflow-y: auto;
+}
+.wfm-enrich-body { padding: 16px 18px 20px; }
+.wfm-enrich-headline {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--c-ink, #18181b);
+}
+.wfm-enrich-summary {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--c-muted, #7c7f88);
+  line-height: 1.5;
+}
+.wfm-enrich-quickwin {
+  margin-top: 14px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #f0fbf4;
+  border: 1px solid #9dcfb4;
+}
+.wfm-enrich-quickwin__label {
+  flex: none;
+  font-size: 10px;
+  font-weight: 800;
+  color: #157a41;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.wfm-enrich-quickwin__text {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #0f5c31;
+}
+
+.wfm-enrich-steps {
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+/* 타입 좌측 테두리는 wfs-type--skill/cert/concept/career(스테이지 뷰와 동일한 3색)를
+   그대로 재사용한다 — 보강 뷰와 로드맵 카드가 같은 색 언어를 쓰게. */
+.wfm-enrich-step {
+  box-sizing: border-box;
   border: 1px solid var(--line, #e6e9ef);
   border-radius: 12px;
-  background: #fbfbfc;
-  padding: 12px 14px;
+  padding: 10px 14px;
+  background: #fff;
 }
-.wfm-modal__list {
+.wfm-enrich-step__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.wfm-enrich-step__order {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--accent-100, #e4e4e7);
+  color: var(--c-ink, #18181b);
+  font-size: 10px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+}
+.wfm-enrich-step__label {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 750;
+  color: var(--c-ink, #18181b);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wfm-enrich-step__priority {
+  flex: none;
+  font-size: 9.5px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.wfm-enrich-step__priority--high { color: #92400e; background: #fef3c7; }
+.wfm-enrich-step__priority--medium { color: #2f5fb0; background: rgba(59, 130, 246, 0.12); }
+.wfm-enrich-step__priority--low { color: var(--c-muted, #6b6f78); background: #eef0f3; }
+.wfm-enrich-step__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #157a41;
+}
+.wfm-enrich-step__reason {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: var(--c-muted, #6b6f78);
+  line-height: 1.45;
+}
+.wfm-enrich-step__project {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: var(--c-ink, #18181b);
+  line-height: 1.45;
+}
+.wfm-enrich-step__project b { font-weight: 750; }
+
+/* Phase 1: 로드맵 백본 모달 — RoadmapView 자신이 이미 고정 높이 + 내부 스크롤을
+   가지므로 이 래퍼는 여백만 준다. */
+.wfm-modal__roadmap {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 16px 18px 20px;
-  background: #fbfbfc;
+  padding: 14px 18px 20px;
 }
 
 .wfm-list {
@@ -803,6 +855,14 @@
    ============================================================================ */
 .wfs-root {
   position: relative;
+  /* 2026-07-20(2차): 전체 폭 컨테이너에서 콘텐츠가 컨테이너보다 좁으면 왼쪽에 붙어
+     오른쪽만 텅 비어 보였다 — inline-block(콘텐츠 폭만큼만 차지)으로 바꾸고, 감싸는
+     컨테이너의 text-align:center로 좌우 여백을 고르게 나눈다(2단계: 뷰가 로드맵으로
+     단일화되면서 이 컴포넌트를 감싸던 wfm-stage-pane/wfm-modal__stage는 제거됐다).
+     컬럼 좌표 자체(workflowLayout.ts)는 전혀 건드리지 않는 순수 시각 정렬이라, 콘텐츠가
+     컨테이너보다 넓을 때는 그대로 좌측부터 스크롤된다. */
+  display: inline-block;
+  text-align: left;
 }
 
 .wfs-headrow {
@@ -852,35 +912,80 @@
   padding: 8px 2px;
 }
 
-/* 시작 컬럼 — 보유 요약 카드. 목표 선택 여부와 무관하게 항상 이 크기로 나온다
-   (workflowLayout.ts의 estimateStartSummaryHeight가 ownedSkills 총량에만 의존). */
+/* 8: 목표 공고가 요구 스킬/개념/자격증을 하나도 추출하지 못한 진짜 데이터 공백일
+   때만 보이는 안내 — wfs-canvas(절대 좌표 카드들) 밖 일반 플로우에 둔다. */
+.wfs-no-data-note {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f7f7f8;
+  border: 1px dashed var(--line, #e6e9ef);
+  font-size: 11.5px;
+  color: var(--c-muted, #6b6f78);
+}
+
+/* 시작 컬럼 — "지금 보유" 그룹. 요약 카드(총 개수 + 언어/프레임워크/기타)와 그 아래
+   보유 스킬 칩들이 서로 동떨어져 보이지 않도록, wfs-start-group이 둘을 감싸는 옅은
+   배경 패널을 깔아 하나의 덩어리로 읽히게 한다(WorkflowStages.tsx에서 요약 카드~
+   마지막 칩까지의 bounding box로 계산). 요약 카드 자체는 이제 그 패널 위에 얹히는
+   내용일 뿐이라 자체 배경/테두리를 지웠다(이중 박스 방지). */
+.wfs-start-group {
+  box-sizing: border-box;
+  background: #f5faf7;
+  border: 1px solid #dcebe2;
+  border-radius: 16px;
+}
 .wfs-summary {
   box-sizing: border-box;
-  background: #f0fbf4;
-  border: 1px solid #9dcfb4;
-  border-radius: 12px;
-  padding: 22px 18px;
+  padding: 12px 14px;
   overflow: hidden;
 }
-.wfs-summary__big { font-size: 26px; font-weight: 800; color: #157a41; }
-.wfs-summary__sub { font-size: 11px; color: #3f7a5b; }
-.wfs-summary__lines {
-  margin-top: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+/* 3: "28개, 언어4/프레임워크8/기타16" 카운트 3줄 대신, 목표가 요구하는 것 중 이미
+   가진 실제 스킬 이름을 pill로 보여준다 — 캡션은 평범한 "보유 기술 N개" 한 줄로
+   내리고, pill은 아래 wfs-chip(선행 보유 칩)과 같은 톤을 재사용해 하나의 덩어리로
+   읽히게 한다(위계를 맞춘다). */
+.wfs-summary__caption {
+  height: 14px;
+  line-height: 14px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #3f7a5b;
 }
-.wfs-summary__lines div {
-  font-size: 11.5px;
-  color: #2f6a49;
+.wfs-summary__pills {
+  margin-top: 8px;
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+/* 3차: workflowLayout.ts의 START_SUMMARY_PILL_ROW_H(22)와 맞춘다. */
+.wfs-summary__pill {
+  box-sizing: border-box;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #157a41;
+  background: #fff;
+  border: 1px solid #9dcfb4;
+  border-radius: 999px;
+  padding: 2px 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wfs-summary__note {
+  margin-top: 8px;
+  font-size: 10.5px;
+  color: #6b9b7f;
 }
 .wfs-chip {
   box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 3px;
   font-size: 10.5px;
   font-weight: 700;
   padding: 0 8px;
@@ -891,29 +996,47 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  opacity: 0.9;
   transition: opacity 0.15s ease;
 }
+.wfs-chip svg { flex: none; }
 
-/* 스킬 카드 — 시안 3 + 라이브 피드백: 카드 높이를 훨씬 키우고(workflowLayout.ts의
-   MIN_SKILL_CARD_H이 목표 선택 여부와 무관하게 항상 적용되는 바닥값이다), 스킬명 ->
-   카테고리 -> 수요(공고 수 + 회사 아바타) -> (있으면) payoff 순으로 여백 있게
-   배치한다. 목표(다크) / 경유(회색 점선) 색 구분은 그대로 유지한다. */
+/* 스킬 카드 — 2026-07-20(2차): "타깃 카드가 내용보다 훨씬 크고 빈 검정 공간이 크다"는
+   피드백으로 패딩·블록 간격을 다시 압축했다(workflowLayout.ts의 MIN_SKILL_CARD_H와
+   반드시 같은 값을 가정한다 — 대략 56~76px). 스킬명 -> 카테고리 -> (있으면 대안 배지)
+   -> 이유 -> 수요(공고 수 + 회사 아바타) -> (있으면) payoff 순으로 배치한다. 목표
+   (goal)를 꽉 찬 검정으로 채우던 예전 스타일은 없앴다 — 이제 목표/경유 둘 다 밝은
+   카드고, 타입(기술/자격증/개념·연차)은 wfs-type--*의 좌측 테두리 색 하나로만
+   구분한다. 목표 카드는 경유 카드보다 테두리를 진하게(실선·두껍게) 둬서 "이게 실제
+   목표"라는 위계만 살린다. */
+/* 3차: 카드 자체(.wfs-scard)의 실제 DOM 크기는 더 이상 style="width/height"로 직접
+   좌표를 받지 않는다 — 그 좌표는 이제 감싸는 슬롯(.wfs-node-slot, WorkflowStages.tsx
+   에서 인라인 style로 rect.x/y/width/height를 그대로 꽂는 컨테이너)이 갖고, 카드는
+   그 슬롯을 100% 채우기만 한다. 이렇게 한 겹을 더 둔 이유는 "먼저" 배지·번들 라벨처럼
+   카드 테두리 위로 살짝 걸치는(top:-8px) 요소가 카드 자신의 overflow:hidden에 잘리는
+   버그가 있었기 때문이다 — 슬롯은 overflow를 두지 않으므로 카드 밖으로 걸치는 배지는
+   그대로 보이고, 카드 안쪽 내용(텍스트 등)만 카드 자신의 overflow:hidden으로 여전히
+   레이아웃 슬롯 경계를 넘지 않게 잡아준다. */
+.wfs-node-slot {
+  position: absolute;
+}
 .wfs-scard {
   box-sizing: border-box;
-  border-radius: 14px;
-  padding: 22px 18px;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  padding: 10px 14px;
   border: 1px solid var(--line, #e6e9ef);
   background: #fff;
   overflow: hidden;
-  transition: opacity 0.15s ease;
+  transition: opacity 0.15s ease, box-shadow 0.15s ease;
 }
 .wfs-scard--goal {
-  background: var(--c-ink, #18181b);
   border-color: var(--c-ink, #18181b);
-  color: #fff;
+  border-width: 1.4px;
 }
 .wfs-scard--via {
-  background: #f4f5f7;
+  background: #f8f9fa;
   border: 1.4px dashed #d3d6dc;
 }
 .wfs-dim { opacity: 0.32; }
@@ -921,7 +1044,32 @@
   .wfs-scard, .wfs-chip, .wfs-need-card, .wfs-bundle__row { transition: none; }
 }
 
+/* 5: "먼저" 배지 — 정렬 결과 가장 앞선(가장 급한) 카드 한 장에만 붙는다. 링 형태
+   그림자로 카드 자체도 살짝 강조해 목록 훑을 때 바로 눈에 띄게 한다. 3차: 이제
+   .wfs-scard가 아니라 .wfs-node-slot의 자식이라 top:-8px로 카드 위로 걸쳐도 잘리지
+   않는다. */
+.wfs-scard--first {
+  box-shadow: 0 0 0 2px rgba(24, 24, 27, 0.14);
+}
+.wfs-first-badge {
+  position: absolute;
+  top: -8px;
+  right: 10px;
+  font-size: 9px;
+  font-weight: 800;
+  color: #fff;
+  background: var(--c-ink, #18181b);
+  border-radius: 999px;
+  padding: 2px 8px;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+}
+
+/* 3차: workflowLayout.ts의 SKILL_CARD_HEADER_H(20)와 반드시 같은 값 — 이름/카테고리
+   태그는 둘 다 20px보다 낮은 한 줄짜리 요소라 flex 중앙 정렬로 안에서 뜨고, 헤더 행
+   자체의 높이는 내용과 무관하게 20px로 고정해 추정치와 어긋나지 않게 한다. */
 .wfs-scard__head {
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -930,14 +1078,13 @@
 .wfs-scard__name {
   min-width: 0;
   flex: 1;
-  font-size: 14.5px;
+  font-size: 13.5px;
   font-weight: 750;
   color: var(--c-ink, #18181b);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.wfs-scard--goal .wfs-scard__name { color: #fff; }
 
 .wfs-chip-cat {
   flex: none;
@@ -948,54 +1095,87 @@
   border: 1px solid #e4e6ea;
   border-radius: 999px;
   padding: 1px 7px;
-}
-.wfs-scard--goal .wfs-chip-cat {
-  color: #c5c7cd;
-  background: #2a2a2f;
-  border-color: #3a3a40;
+  white-space: nowrap;
 }
 
-.wfs-scard__reason {
-  font-size: 10px;
-  margin-top: 16px;
-  color: #6b6f78;
-  line-height: 1.45;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+/* 4: 대안(alternative)을 이미 보유했다는 신호 — 예전엔 카드 맨 아래 글자색만 다른
+   한 줄이라 눈에 잘 안 띄었다. 헤더 바로 아래로 올리고 배지 모양(배경+테두리)을 줘서
+   "이 카드는 급하지 않다"는 걸 바로 알아보게 한다. 3차: SKILL_CARD_ALT_H(18)와 맞춰
+   높이를 고정하고, 대안이 여러 개 이어지면(예: "대안 Vue, Svelte 보유") 카드 폭을
+   넘지 않도록 텍스트 자체를 한 줄 말줄임으로 자른다. */
+.wfs-scard__altbadge {
+  box-sizing: border-box;
+  height: 18px;
+  max-width: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #2f5fb0;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.28);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+.wfs-scard__altbadge svg { flex: none; }
+.wfs-scard__altbadge-text {
+  min-width: 0;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
-.wfs-scard--goal .wfs-scard__reason { color: #c5c7cd; }
 
+/* 3차: SKILL_CARD_REASON_H(16)와 맞춰 높이를 고정한다. -webkit-line-clamp는 브라우저
+   별 박스 모델 미세 오차가 있어, 더 예측 가능한 white-space:nowrap 한 줄 말줄임으로
+   바꿨다(카드 높이 추정과 어긋날 여지를 없앤다). */
+.wfs-scard__reason {
+  box-sizing: border-box;
+  height: 16px;
+  line-height: 16px;
+  font-size: 10px;
+  margin-top: 8px;
+  color: #6b6f78;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 3차: SKILL_CARD_DEMAND_H(18)와 맞춰 높이를 고정한다. flex-wrap을 nowrap으로 바꿔
+   회사 아바타가 여러 개라도 두 번째 줄로 넘어가 높이 추정을 벗어나지 않게 한다(넘치는
+   아바타는 이미 renderBadges가 +N개로 접어서 넘긴다). */
 .wfs-scard__demand {
+  box-sizing: border-box;
+  height: 18px;
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-top: 16px;
-  flex-wrap: wrap;
+  margin-top: 8px;
+  flex-wrap: nowrap;
+  overflow: hidden;
 }
 .wfs-scard__avatars {
   display: inline-flex;
   align-items: center;
   gap: 3px;
+  flex: none;
 }
 
+/* 3차: SKILL_CARD_PAYOFF_H(16)와 맞춰 높이를 고정한다. */
 .wfs-scard__payoff {
-  margin-top: 16px;
+  box-sizing: border-box;
+  height: 16px;
+  line-height: 16px;
+  margin-top: 8px;
   font-size: 10.5px;
   font-weight: 650;
   color: #157a41;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .wfs-scard__payoff b { font-weight: 800; }
-.wfs-scard--goal .wfs-scard__payoff { color: #7fe3ac; }
-
-.wfs-scard__alt {
-  margin-top: 16px;
-  font-size: 10px;
-  font-weight: 700;
-  color: #2f5fb0;
-}
-.wfs-scard--goal .wfs-scard__alt { color: #9cc0ff; }
 
 .wfs-badge {
   font-size: 9.5px;
@@ -1007,7 +1187,6 @@
   white-space: nowrap;
 }
 .wfs-badge--blue { background: rgba(59, 130, 246, 0.14); color: #2f5fb0; }
-.wfs-scard--goal .wfs-badge--blue { background: rgba(59, 130, 246, 0.22); color: #9cc0ff; }
 
 .wfs-avatar {
   width: 16px;
@@ -1030,13 +1209,17 @@
 }
 
 /* 번들(goes_with) — 점선 박스 안 행 목록. 박스 하나가 layoutStages의 노드 하나다
-   (멤버 각각이 아니라) — 박스를 가리키는 엣지는 박스 테두리에 붙는다. */
+   (멤버 각각이 아니라) — 박스를 가리키는 엣지는 박스 테두리에 붙는다. 3차: 박스 몸통
+   (.wfs-bundle)은 여전히 .wfs-node-slot(overflow 없음)의 자식이고 100% 채우기만
+   하며, 라벨(.wfs-bundle__label)은 박스 밖 슬롯의 형제로 옮겨서 top:-8px가 더 이상
+   박스 자신의 overflow:hidden에 잘리지 않는다. */
 .wfs-bundle {
   box-sizing: border-box;
+  width: 100%;
+  height: 100%;
   border: 1.4px dashed #8b8f98;
   border-radius: 12px;
-  padding: 18px 16px 14px;
-  position: relative;
+  padding: 10px 16px 8px;
   background: #fff;
   overflow: hidden;
 }
@@ -1049,51 +1232,135 @@
   font-weight: 700;
   background: #fff;
   color: var(--c-muted, #6b6f78);
+  pointer-events: none;
 }
+/* 3차: workflowLayout.ts의 BUNDLE_ROW_H(24) = line-height(16) + padding 4px*2. 이름이
+   길어도 줄바꿈하지 않고 한 줄 말줄임으로 자른다 — 줄바꿈을 허용하면 추정 높이보다
+   실제 렌더가 더 커져서 다음 멤버 행이나 note가 잘리는 원인이 됐다. */
 .wfs-bundle__row {
+  box-sizing: border-box;
+  height: 24px;
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 12px;
+  line-height: 16px;
   color: var(--c-ink, #18181b);
-  padding: 6px 0;
+  padding: 4px 0;
   transition: opacity 0.15s ease;
 }
-.wfs-bundle__row-name { flex: 1; min-width: 0; }
+.wfs-bundle__row-name {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* 3차: BUNDLE_NOTE_GAP(4) + BUNDLE_NOTE_H(16)와 맞춘다. 예전엔 이 4px margin이 높이
+   추정에서 빠져 있었고, 줄바꿈 제한도 없어 노트가 길면 박스 아래로 잘렸다. */
 .wfs-bundle__note {
-  margin-top: 8px;
+  box-sizing: border-box;
+  height: 16px;
+  line-height: 16px;
+  margin-top: 4px;
   font-size: 10px;
   color: var(--c-muted, #7c7f88);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* 자격증 컬럼 */
+/* 자격증 컬럼 — 몸통은 스킬 카드와 같은 뉴트럴 톤으로 두고(과한 채색 금지), 타입 식별은
+   아래 wfs-type--cert의 좌측 테두리(보라 #8a6fc4) 하나로만 한다. */
 .wfs-need-card {
   box-sizing: border-box;
   width: 100%;
-  background: #fdf3e6;
-  border: 1px solid #ecd4a8;
-  color: #9a6613;
+  height: 100%;
+  background: #fff;
+  border: 1px solid var(--line, #e6e9ef);
+  color: var(--c-ink, #18181b);
   border-radius: 12px;
-  padding: 18px 16px;
+  padding: 8px 14px;
   text-align: left;
   overflow: hidden;
   transition: opacity 0.15s ease;
 }
+/* 3차: workflowLayout.ts의 CERT_CARD_HEADER_H(18)와 맞춘다. */
 .wfs-need-card__name {
-  font-size: 13px;
+  box-sizing: border-box;
+  height: 18px;
+  font-size: 12.5px;
   font-weight: 700;
   display: flex;
   align-items: center;
   gap: 6px;
 }
+/* 3차: CERT_CARD_NOTE_GAP(4) + CERT_CARD_NOTE_H(16)와 맞춘다(예전엔 margin-top 4px가
+   추정에서 빠져 있었다). 한 줄 말줄임으로 고정해 줄바꿈으로 인한 어긋남을 막는다. */
 .wfs-need-card__reason {
-  font-size: 11px;
-  margin-top: 10px;
-  color: #a5761e;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  box-sizing: border-box;
+  height: 16px;
+  line-height: 16px;
+  font-size: 10.5px;
+  margin-top: 4px;
+  color: var(--c-muted, #6b6f78);
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* F: 노드 타입 4종(skill/cert/concept/career) — 좌측 테두리 색만으로 구분한다(요구사항:
+   과한 채색 금지, 기존 앱 카테고리 색은 스킬 노드 안 점 정도로만). 3그룹: 기술=초록,
+   자격증=보라, 연차·개념·기타=앰버. 카드 몸통 배경/글자색은 기존 goal/via 톤을 그대로
+   유지하고, 여기서는 4px 좌측 테두리만 덧씌운다. */
+.wfs-type--skill { border-left: 4px solid #1f9d57; }
+.wfs-type--cert { border-left: 4px solid #8a6fc4; }
+.wfs-type--concept { border-left: 4px solid #b8892b; }
+.wfs-type--career { border-left: 4px solid #b8892b; }
+
+/* F: 연차 게이트 — 그래프 엣지가 없는 알약형(pill) 종착 노드. 목표 열 근처(가장 오른쪽
+   렌더된 컬럼)에 한 장만 놓인다. 충족/미충족을 아이콘+색으로 함께 표시한다. */
+.wfs-career-gate {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1.6px solid #d8b877;
+  background: #fdf6e8;
+  color: #8a6416;
+}
+.wfs-career-gate.is-fulfilled {
+  border-color: #9dcfb4;
+  background: #f0fbf4;
+  color: #157a41;
+}
+.wfs-career-gate.is-unfulfilled {
+  border-color: #e6ab3a;
+  background: #fef3c7;
+  color: #92400e;
+}
+.wfs-career-gate svg { flex: none; }
+.wfs-career-gate__text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.wfs-career-gate__label {
+  font-size: 12.5px;
+  font-weight: 750;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wfs-career-gate__status {
+  font-size: 10px;
+  font-weight: 700;
+  opacity: 0.85;
 }
 
 .wfs-overflow-row {
@@ -1104,29 +1371,3 @@
   padding: 2px 2px;
 }
 
-/* 컴팩트 카드/크게 보기 모달에서 스테이지 뷰를 감싸는 스크롤 컨테이너 — wfm-canvas와
-   달리(React Flow는 내부적으로 pan/zoom을 다루므로 overflow:hidden이었다) 여기는 일반
-   DOM 플로우라 넘치는 컬럼을 가로 스크롤로, 넘치는 카드를 세로 스크롤로 보여줘야 한다. */
-.wfm-stage-pane {
-  width: 100%;
-  overflow: auto;
-  border: 1px solid var(--line, #e6e9ef);
-  border-radius: 12px;
-  background: #fbfbfc;
-  padding: 16px 16px 20px;
-}
-.wfm-modal__stage {
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
-  background: #fbfbfc;
-  padding: 20px 22px 24px;
-}
-
-.wfm-legend__box {
-  width: 16px;
-  height: 11px;
-  border: 1.4px dashed #8b8f98;
-  border-radius: 4px;
-  display: inline-block;
-}

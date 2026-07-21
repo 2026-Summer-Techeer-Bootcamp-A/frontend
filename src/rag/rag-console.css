@@ -739,12 +739,10 @@
 
 /* === 리포트 카드(ReportCard, 3a) — FinalBlock 상단에 얹는 헤드라인 + 미니 요약 스트립 + 다음
    액션. 카드 왼쪽 세로 액센트 보더는 쓰지 않는다(AI 클리셰 지적으로 SplitDiff에서도 이미 제거된
-   패턴) — 대신 스코어 배지 색과 배경 틴트로 상태를 구분한다. */
+   패턴) — 대신 배경 틴트와 스트립 색으로 상태를 구분한다. 퍼센트 적합도 배지는 없다(확정
+   레이아웃 스펙: 점수 대신 충족/부분/공백 개수 스트립으로만 상태를 보여준다). */
 .rc__report { display: flex; flex-direction: column; gap: 12px; padding: 13px 15px; background: #f6f8fc; border: 1px solid #e2e5ec; border-radius: 14px; }
 .rc__report-head { display: flex; align-items: flex-start; gap: 13px; }
-.rc__report-score { flex: none; text-align: center; width: 52px; }
-.rc__report-score-v { font-size: 22px; font-weight: 800; letter-spacing: -0.8px; line-height: 1; font-variant-numeric: tabular-nums; color: #1c1d21; }
-.rc__report-score-l { font-size: 9px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #a2a6b0; margin-top: 3px; }
 .rc__report-headline { min-width: 0; flex: 1; font-size: 13.5px; font-weight: 700; color: #1c1d21; line-height: 1.45; letter-spacing: -0.2px; }
 .rc__report-strip { display: flex; gap: 8px; flex-wrap: wrap; }
 .rc__report-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 4px 10px; }

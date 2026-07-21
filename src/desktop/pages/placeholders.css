@@ -397,6 +397,63 @@
   .dmy__posting-dialog-list { grid-template-columns: 1fr; padding: 14px; }
 }
 
+/* 북마크 목록 삭제 기능 */
+.dmy__posting-dialog-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dmy__clear-all-bookmarks-btn {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-muted);
+  padding: 7px 12px;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.13s ease;
+}
+
+.dmy__clear-all-bookmarks-btn:hover {
+  color: var(--c-ink);
+  background: var(--accent-50);
+}
+
+.dmy__posting-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.dmy__posting-row > :first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.dmy__posting-remove-btn {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--c-muted);
+  cursor: pointer;
+  transition: all 0.13s ease;
+}
+
+.dmy__posting-remove-btn:hover {
+  background: var(--accent-50);
+  color: var(--c-ink);
+}
+
 /* 좁은 폭 대응 */
 @media (max-width: 1180px) {
   .djobs__grid { grid-template-columns: 1fr 340px; }

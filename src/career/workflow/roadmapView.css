@@ -1,0 +1,678 @@
+/* 로드맵 백본 뷰(RoadmapView.tsx) — roadmap.sh 스타일: 중앙 척추에 마일스톤(추천순
+   뷰는 섹션, 난이도순 뷰는 난이도 티어), 그 아래 점선 커넥터로 가지 노드. 색은
+   근본적으로 모노크롬(near-black) + 그린 #1f9d57 하나만 액센트로 쓴다. 노드는
+   좌측 컬러 바 대신 원형 메달리온(상태를 색+글리프로 표현)이고, 타입(기술/자격증/
+   개념)은 라벨 아래 뮤트 텍스트 태그로만 조용히 드러난다 — 카드 테두리와 좌측 바는
+   항상 중립 var(--line) 하나로 고정. rmv 프리픽스로 wfm/wfs 클래스들과 완전히
+   분리해 서로 간섭하지 않는다. */
+
+.rmv-root {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rmv-tracks {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  align-self: flex-start;
+  background: var(--accent-50, #f0f0f1);
+  border-radius: 999px;
+  padding: 2px;
+}
+.rmv-tracks__btn {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 999px;
+  color: var(--c-muted, #71717a);
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.rmv-tracks__btn:hover { color: var(--c-ink, #18181b); }
+.rmv-tracks__btn.is-active { background: var(--c-ink, #18181b); color: #fff; }
+
+/* 뷰 세그먼트(추천순/난이도순) — kit.tsx의 SegmentedControl(kit-segctl)을 그대로
+   재사용해 앱 전역 토글과 같은 촉감을 낸다. rmv-root의 flex column 안에서 왼쪽
+   정렬만 맞춘다. */
+.rmv-viewswitch {
+  align-self: flex-start;
+}
+
+/* 게임 성취 레이어 상단 — 진척 게이지. 캔버스 스크롤과 무관하게 항상 보이는
+   고정 헤더다(캔버스 안에 넣지 않는다). */
+.rmv-progress {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 2px 2px 0;
+}
+.rmv-progress__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.rmv-progress__label {
+  font-size: 11.5px;
+  font-weight: 750;
+  color: var(--c-ink, #18181b);
+}
+.rmv-progress__count {
+  font-size: 11px;
+  font-weight: 800;
+  color: #1f9d57;
+  font-variant-numeric: tabular-nums;
+}
+.rmv-progress__bar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--accent-100, #e4e4e7);
+  overflow: hidden;
+}
+.rmv-progress__fill {
+  height: 100%;
+  border-radius: 999px;
+  background: #1f9d57;
+  transition: width 0.3s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rmv-progress__fill { transition: none; }
+}
+.rmv-progress__guest {
+  font-size: 10.5px;
+  color: var(--c-muted, #7c7f88);
+}
+
+/* 캔버스 + 노드 상세 도크를 나란히 두는 행. 도크가 열려도 이 행의 높이(props.height)는
+   그대로라 위젯 전체 높이가 무너지지 않는다 — 도크는 안에서 자기 높이만큼만 차지하고
+   내부 스크롤로 넘치는 내용을 흡수한다. */
+.rmv-canvasrow {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  width: 100%;
+  min-height: 0;
+}
+
+/* 캔버스 — 고정 높이 + 내부 스크롤 + 드래그 패닝(usePanScroll). 빈 배경 영역을
+   눌러 끌면 스크롤 위치가 옮겨지고, 노드/버튼 위에서 누르면 원래 클릭이
+   그대로 동작한다(wfm-stage-pane과 같은 패턴). 노드도 이제 role="button"이라
+   usePanScroll의 인터랙티브 요소 제외 규칙에 걸려 노드 위에서 누르면 패닝이
+   시작되지 않고 클릭만 동작한다. */
+.rmv-canvas {
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  overflow: auto;
+  padding: 14px 4px 20px;
+  cursor: grab;
+}
+.rmv-canvas.is-panning {
+  cursor: grabbing;
+  user-select: none;
+}
+.rmv-canvas--withdock {
+  flex-basis: 0;
+}
+
+/* 선행 관계 연결선 오버레이 — rmv-graph가 SVG와 rmv-spine을 함께 감싸는 좌표
+   기준(RoadmapView.tsx의 graphRef)이다. rmv-graph 자체는 높이를 지정하지 않고
+   안의 rmv-spine(정상 흐름) 크기에 맞춰 자연스럽게 늘어나고, absolute + inset:0인
+   svg는 그렇게 확정된 높이에 맞춰 함께 늘어난다 — 스크롤 컨테이너(rmv-canvas)
+   안에서도 콘텐츠와 함께 스크롤되니 별도 스크롤 동기화가 필요 없다. */
+.rmv-graph {
+  position: relative;
+  width: 100%;
+}
+.rmv-graph__edges {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+/* 이제 hover/포커스한 노드의 엣지만 온디맨드로 뜬다(RoadmapView.tsx의
+   visiblePrereqEdges) — 화면에 동시에 뜨는 선이 소수(보통 노드 하나당 최대 3개)라
+   기존 상시 노출 때보다 opacity를 한 단계 올려 또렷하게 보이게 한다. */
+.rmv-graph__edge {
+  fill: none;
+  stroke: #e0602e;
+  stroke-width: 1.4;
+  stroke-dasharray: 5 4;
+  stroke-linecap: round;
+  opacity: 0.55;
+}
+/* 이미 보유 완료된 노드로 향하는 선 — 이미 지나온 길이라 지금 당장 필요한 선행
+   관계보다 한 단계 더 옅게 눌러 시선을 덜 끈다. */
+.rmv-graph__edge--done {
+  opacity: 0.3;
+}
+
+
+.rmv-spine {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  /* 중앙 척추 — 마일스톤들을 세로로 잇는 얇은 선. 마일스톤 pill이 그 위에 얹혀
+     선을 가린다(z-index로 앞에 둔다). rmv-spine 자체의 z-index:1은 형제인
+     rmv-graph__edges(z-index:0)보다 위에서 그려지게 해 연결선이 카드를 가리지
+     않게 한다. */
+}
+.rmv-spine::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 50%;
+  width: 2px;
+  background: var(--line, #e6e9ef);
+  transform: translateX(-50%);
+  z-index: 0;
+}
+
+.rmv-section {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.rmv-milestone {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1.6px solid var(--c-ink, #18181b);
+  box-shadow: 0 2px 6px rgba(20, 20, 24, 0.06);
+}
+.rmv-milestone.is-achieved {
+  border-color: #1f9d57;
+  background: #f0fbf4;
+}
+.rmv-milestone__index {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--c-ink, #18181b);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+}
+.rmv-milestone.is-achieved .rmv-milestone__index { background: #1f9d57; }
+.rmv-milestone__title {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--c-ink, #18181b);
+}
+.rmv-milestone__count {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--c-muted, #7c7f88);
+  font-variant-numeric: tabular-nums;
+}
+.rmv-milestone__star {
+  flex: none;
+  color: #d8b877;
+}
+.rmv-milestone.is-achieved .rmv-milestone__star { color: #1f9d57; }
+
+/* 난이도순 뷰의 티어 마일스톤 — 섹션 마일스톤과 같은 pill이지만 인덱스 원의 배경만
+   입문(그린)에서 고급(붉은 계열)으로 옮겨가는 절제된 색으로 구분한다. 완주(is-achieved)
+   상태는 명시도가 더 높은 선택자라 티어 색 위에 늘 초록으로 덮인다(달성=초록이라는
+   언어를 티어와 무관하게 통일). */
+.rmv-tier-milestone--intro .rmv-milestone__index { background: #1f9d57; }
+.rmv-tier-milestone--basic .rmv-milestone__index { background: #5c8a37; }
+.rmv-tier-milestone--intermediate .rmv-milestone__index { background: #b9791f; }
+.rmv-tier-milestone--advanced .rmv-milestone__index { background: #b3492f; }
+
+/* 가지 노드 행 — 마일스톤 아래로 점선 커넥터를 통해 매달린 것처럼 보이게, 각 노드
+   위에 짧은 점선을 세로로 그어 위쪽 가상의 가로 줄기에 닿는 느낌을 준다. */
+.rmv-branches {
+  width: 100%;
+  max-width: 980px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 10px;
+  padding: 8px 6px 16px;
+  border-top: 1px dashed var(--line, #d8dade);
+  margin-top: 2px;
+}
+
+.rmv-branch {
+  position: relative;
+  padding-top: 9px;
+}
+.rmv-branch::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 50%;
+  width: 0;
+  height: 10px;
+  border-left: 1.4px dashed var(--line, #b9bcc4);
+  transform: translateX(-50%);
+}
+
+/* 노드 카드 — 도전과제 메달리온(좌) + 라벨/태그(우) 가로 배치. 예전엔 좌측 4px
+   컬러 바로 타입을 표시했지만(rmv-type--* border-left-color), AI 티가 난다는
+   피드백으로 전부 없앴다 — 이제 타입은 라벨 아래 뮤트 텍스트 태그로만, 상태는
+   메달리온의 색+글리프로만 표현한다. 카드 테두리는 어떤 상태든 얇은 중립
+   var(--line) 하나로 고정. */
+.rmv-node {
+  box-sizing: border-box;
+  width: 186px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  border-radius: 12px;
+  padding: 8px 10px;
+  background: #fff;
+  border: 1.4px solid var(--line, #e6e9ef);
+  cursor: pointer;
+  transition: opacity 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease;
+}
+.rmv-node:focus-visible {
+  outline: 2px solid #1f9d57;
+  outline-offset: 2px;
+}
+/* 지금 도크에 열려 있는 노드 표시 — box-shadow 링(상태/목표 강조)과 겹쳐도 구분되게
+   outline을 별도 레이어로 둔다. */
+.rmv-node--active {
+  outline: 2px solid #1f9d57;
+  outline-offset: 1px;
+}
+
+/* 타입별 배경 틴트 — 카드가 어떤 타입인지 색으로 한눈에 구별되게 아주 옅게(8%)
+   깐다. 개념(초록)/기술(주황)/자격증(보라) 세 톤이고, 메달리온 상태색이나 텍스트
+   가독성을 해치지 않도록 아주 옅은 배경 하나만 준다. 이 규칙은 상태 배경 규칙보다
+   앞서 선언해서(같은 명시도라 소스 순서로 캐스케이드) 아래 rmv-status--owned /
+   rmv-node--edgelinked가 실제로 이 틴트 위에 우선해서 덮어쓴다 — 보유/호버 강조는
+   기존처럼 그대로 보이고, 그 외(기본/해금가능/잠김) 카드에서 타입 틴트가 보인다. */
+.rmv-node--type-concept {
+  background: rgba(31, 157, 87, 0.08);
+}
+.rmv-node--type-skill {
+  background: rgba(224, 96, 46, 0.08);
+}
+.rmv-node--type-cert {
+  background: rgba(138, 111, 196, 0.08);
+}
+
+/* 마커 — 추천(실선, 기본) / 대안(점선) / 선택(더 옅은 점선). */
+.rmv-marker--alternative { border-style: dashed; }
+.rmv-marker--optional { border-style: dotted; opacity: 0.92; }
+
+/* 상태 — 보유(그린 배경 틴트) / 지금 해금 가능(테두리 강조 링) / 잠김(흐림+그레이스케일).
+   좌측 바 대신 이 상태들이 메달리온 색으로도 한 번 더 표현된다(아래 rmv-medallion--*). */
+.rmv-status--owned {
+  background: #f6fbf8;
+}
+.rmv-status--unlockable {
+  box-shadow: 0 0 0 2px rgba(31, 157, 87, 0.22);
+}
+.rmv-status--locked {
+  opacity: 0.48;
+  filter: grayscale(0.5);
+}
+.rmv-status--locked .rmv-node__label {
+  color: var(--c-muted, #9a9ca3);
+}
+
+/* 목표 강조 — 선택된 목표 공고가 요구하는 노드. 상태 색과 겹쳐도 구분되도록 바깥
+   점선 링을 하나 더 두른다(과한 채색 대신 링 하나로 절제). */
+.rmv-highlighted {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 3.4px #8a6fc4;
+}
+.rmv-status--unlockable.rmv-highlighted {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 3.4px #8a6fc4, 0 0 0 5.4px rgba(31, 157, 87, 0.22);
+}
+
+/* hover/포커스로 선행 연결선이 뜬 노드 표시 — 지금 가리킨 노드 자신(edgesource)은
+   테두리 링으로 뚜렷하게, 그 선의 반대쪽 끝에 걸린 노드(edgelinked, 선행 또는
+   의존 노드)는 더 옅은 배경 틴트로만 살짝 표시한다. box-shadow가 아니라 outline을
+   써서 상태/목표 강조(box-shadow 기반)와 레이어가 겹쳐도 서로 지우지 않는다.
+   상태별 rmv-status--* 규칙보다 뒤에 둬서(같은 명시도라 캐스케이드 순서로 승리)
+   owned 배경 틴트 위에도 edgelinked 틴트가 실제로 보이게 한다. */
+.rmv-node--edgesource {
+  outline: 2px solid rgba(224, 96, 46, 0.55);
+  outline-offset: 1px;
+}
+.rmv-node--edgelinked {
+  background: rgba(224, 96, 46, 0.1);
+}
+
+/* 메달리온 — 게임 실적 배지 스타일 원형. 상태별 색+글리프(RoadmapView.tsx)만 바뀌고
+   테두리 링/그라데이션은 난이도순 뷰에서 --tier-* 커스텀 프로퍼티로 은은하게
+   갈아 끼워진다(기본값은 항상 그린 팔레트라 추천순 뷰에서는 지금까지와 같은 색으로
+   보인다). box-shadow가 카드(.rmv-status--unlockable/.rmv-highlighted)와 별개
+   레이어라 서로 덮어쓸 걱정이 없다. */
+.rmv-medallion {
+  flex: none;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+}
+.rmv-medallion--owned {
+  background: radial-gradient(circle at 32% 28%, var(--tier-light, #3fc47e), var(--tier-solid, #178a49));
+  color: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+/* milestone(주황 깃발) — "이미 보유함"이 아니라 "아직 안 했지만 해야 할 핵심
+   목표"를 뜻한다(owned면 이 상태 대신 항상 초록 체크). 그린(보유/해금)·앰버(중급
+   난이도)와 헷갈리지 않게 확실히 다른 주황(#e0602e) 계열 하나로 고정한다. */
+.rmv-medallion--milestone {
+  background: radial-gradient(circle at 32% 28%, #f08a5f, #e0602e);
+  color: #fff;
+  border: 1px solid rgba(180, 78, 30, 0.5);
+  box-shadow: 0 0 0 3px rgba(224, 96, 46, 0.18);
+}
+.rmv-medallion--unlockable {
+  background: #fff;
+  border: 2px solid var(--tier-solid, #1f9d57);
+  color: var(--tier-solid, #1f9d57);
+  box-shadow: 0 0 0 4px var(--tier-ring, rgba(31, 157, 87, 0.14)), 0 0 8px var(--tier-glow, rgba(31, 157, 87, 0.3));
+}
+.rmv-medallion--locked {
+  background: #eceef1;
+  border: 1.6px solid #d4d6db;
+  color: #9a9ca3;
+}
+
+.rmv-node__body {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.rmv-node__label {
+  display: block;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.25;
+  color: var(--c-ink, #18181b);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rmv-node__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px;
+}
+/* 타입 태그 — 라벨 아래 조용한 뮤트 텍스트. 배경은 모든 타입이 같은 중립 회색이고,
+   타입 색을 쓰더라도 이 텍스트 색 정도로만 절제한다(카드 테두리/좌측 바에는 절대
+   쓰지 않는다). */
+.rmv-node__typebadge,
+.rmv-node__typetag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #f2f3f5;
+  color: var(--c-muted, #6b6f78);
+}
+.rmv-node__typetag--skill { color: #1f7a44; }
+.rmv-node__typetag--cert { color: #6d4fb0; }
+.rmv-node__typetag--concept { color: #93701f; }
+.rmv-node__markerbadge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #f2f3f5;
+  color: var(--c-muted, #6b6f78);
+}
+/* 난이도 뱃지 + 선행 개수 — 난이도순 뷰에서만 노출(RoadmapView.tsx의 showDifficulty). */
+.rmv-node__tierbadge {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+.rmv-node__tierbadge--intro { background: rgba(31, 157, 87, 0.12); color: #1f9d57; }
+.rmv-node__tierbadge--basic { background: rgba(92, 138, 55, 0.14); color: #5c8a37; }
+.rmv-node__tierbadge--intermediate { background: rgba(185, 121, 31, 0.14); color: #b9791f; }
+.rmv-node__tierbadge--advanced { background: rgba(179, 73, 47, 0.14); color: #b3492f; }
+.rmv-node__prereqbadge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #f2f3f5;
+  color: var(--c-muted, #6b6f78);
+}
+/* 노드 설명(note) — 출처 통계(basis, 이제 난이도 뱃지 title 툴팁으로만 노출)
+   대신 카드 본문에 상시 보이는 한 줄. 노트가 길어도 카드 높이가 늘어나면 안 되니
+   한 줄로 자르고 넘치면 말줄임(ellipsis) 처리한다. */
+.rmv-node__note {
+  margin: 0;
+  max-width: 100%;
+  font-size: 9.5px;
+  line-height: 1.3;
+  color: var(--c-muted, #7c7f88);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* 잠긴 노드 힌트 — "이걸 먼저 해야 열린다"를 한 줄로. 자물쇠 메달리온과 같은
+   무채색 회색 톤을 써서 난이도 근거(뮤트 그레이)나 상태 색과 섞이지 않게 절제한다. */
+.rmv-node__prereqhint {
+  margin: 0;
+  font-size: 9.5px;
+  line-height: 1.3;
+  color: #9a9ca3;
+}
+.rmv-node__targetbadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(138, 111, 196, 0.12);
+  color: #6d4fb0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rmv-node { transition: none; }
+}
+
+/* 노드 상세 도크 — 캔버스 옆에 고정 폭으로 붙는 사이드 패널. 캔버스와 같은 행
+   높이를 그대로 쓰고(rmv-canvasrow), 내부에서만 head/studied/body 세 구획으로
+   나눠 body만 스크롤한다. */
+.rmv-dock {
+  box-sizing: border-box;
+  flex: none;
+  width: 320px;
+  max-width: 46%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: 14px;
+  border: 1.4px solid var(--c-ink, #18181b);
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(20, 20, 24, 0.08);
+  overflow: hidden;
+}
+
+.rmv-dock__head {
+  flex: none;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 12px 8px;
+  border-bottom: 1px solid var(--line, #e6e9ef);
+}
+.rmv-dock__headtext {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.rmv-dock__title {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--c-ink, #18181b);
+  word-break: keep-all;
+}
+.rmv-dock__close {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  color: var(--c-muted, #7c7f88);
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.rmv-dock__close:hover {
+  background: var(--accent-50, #f0f0f1);
+  color: var(--c-ink, #18181b);
+}
+
+.rmv-dock__studied {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 12px;
+  border-bottom: 1px dashed var(--line, #e6e9ef);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--c-ink, #18181b);
+  cursor: pointer;
+}
+.rmv-dock__studied input {
+  accent-color: #1f9d57;
+}
+
+.rmv-dock__loading {
+  flex: none;
+  padding: 8px 12px 0;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--c-muted, #7c7f88);
+}
+
+.rmv-dock__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 선행/다음 단계/난이도 근거/왜 배우나/개념 요약/리소스/미니 프로젝트/근거까지
+   섹션이 최대 8개로 늘어난 만큼(폴백이 항상 꽉 찬 내용을 채우므로), 섹션 사이에
+   얇은 점선 구분선을 둬서 스크롤 중에도 어디부터 다음 섹션인지 눈에 들어오게
+   한다. 첫 섹션에는 위 여백이 필요 없다. */
+.rmv-dock__section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line, #e6e9ef);
+}
+.rmv-dock__section:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+.rmv-dock__sectiontitle {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--c-muted, #7c7f88);
+}
+.rmv-dock__text {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--c-ink, #18181b);
+  white-space: pre-wrap;
+}
+
+.rmv-dock__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.rmv-dock__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #f2f3f5;
+  border: 1px solid var(--line, #e6e9ef);
+  color: var(--c-ink, #18181b);
+}
+.rmv-dock__chip--citation {
+  background: #fafafa;
+  color: var(--c-muted, #6b6f78);
+}
+/* 선행 칩 — 자물쇠 메달리온과 같은 무채색 회색으로, 이미 있는 리소스/근거 칩과
+   형태는 같되 톤만 낮춰 "아직 못 한 것"이라는 느낌을 준다(met === false). */
+.rmv-dock__chip--prereq {
+  background: #eceef1;
+  border-color: #d4d6db;
+  color: #7c7f88;
+}
+/* 이미 충족된 선행 칩 — 보유 상태 그린 팔레트를 그대로 가져와 "이건 이미 끝냈다"를
+   한눈에 구분한다. */
+.rmv-dock__chip--met {
+  background: rgba(31, 157, 87, 0.1);
+  border-color: rgba(31, 157, 87, 0.3);
+  color: #1f9d57;
+}
+/* 다음 단계 칩 — 캔버스의 주황 선(선행 관계 엣지)과 같은 색 계열로, 이 노드에서
+   나가는 연결이라는 걸 색으로도 짐작할 수 있게 한다. */
+.rmv-dock__chip--next {
+  background: rgba(224, 96, 46, 0.1);
+  border-color: rgba(224, 96, 46, 0.3);
+  color: #b3492f;
+}
+.rmv-dock__chipkind {
+  font-style: normal;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--c-muted, #9a9ca3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rmv-dock__close { transition: none; }
+}

@@ -89,6 +89,15 @@ export interface ResumeMarketPayload {
 // 잠정 계약(백엔드 posting_posting_llm 작업과 나중에 필드명을 맞춰야 한다).
 export type RequirementVerdict = 'met' | 'partial' | 'gap'
 
+// 요구사항이 공고 원문의 어느 섹션(자격요건/우대사항)에서 나왔는지. 백엔드
+// app/services/career/requirements.py의 extract_requirements는 아직 posting_description의
+// 섹션 구분(normalize_jobkorea_sections가 만드는 "자격 요건"/"우대 사항" 제목)을 유지한 채
+// LLM에 넘기지 않는다 — 섹션 텍스트를 전부 이어붙인 평문(_description_to_text)만 LLM이 보므로
+// 요구사항 단위로 섹션 출처를 되짚을 방법이 없다. 그래서 이 필드는 항상 옵셔널이고, 백엔드가
+// 섹션 출처를 함께 내려주기 전까지는 값이 오지 않는다 — 없는 값을 프론트에서 지어내지 않는다
+// (UI 쪽 기본 처리는 requirementKindOf, SplitDiff.tsx 참고: 값이 없으면 '자격요건'으로 본다).
+export type RequirementKind = 'must' | 'preferred'
+
 export interface SplitDiffRequirement {
   id: string
   text: string
@@ -97,6 +106,7 @@ export interface SplitDiffRequirement {
   quote: string
   rationale: string
   next_step: string
+  requirement_kind?: RequirementKind
 }
 
 // 커리어 적합도 Split Diff payload — kind가 "resume_posting_llm"(이력서 vs 공고)이든
@@ -113,6 +123,13 @@ export interface SplitDiffPayload {
   summary: string
   requirements: SplitDiffRequirement[]
   degraded: boolean
+  // 기준 문서(공고) 원문 전체. 백엔드가 아직 안 내려주는 옵셔널 필드다(compare_tool.py는
+  // 지금 base_role/base_title 등 요약 필드만 조립하고 원문 description은 프론트로 넘기지
+  // 않는다) — 나중에 붙을 것을 대비한 잠정 계약. 값이 오면 SplitDiff가 원문 그대로를 렌더하며
+  // 그 안에서 각 requirement의 source_quote 구간을 찾아 하이라이트하고, 없거나 매칭이
+  // 불안정하면(구절을 원문에서 못 찾거나 겹치면) source_quote들을 문단 흐름으로 나열하는
+  // 폴백으로 안전하게 내려간다.
+  base_description?: string
 }
 
 export interface ToolResult {
