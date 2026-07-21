@@ -15,6 +15,7 @@ import { renderDataScale } from './viz/data-scale'
 import { renderPerfTuning } from './viz/perf-tuning'
 import { renderCicd } from './viz/cicd'
 import { resumeStackCleanViz } from './viz/resume-stack-clean'
+import { resumeTechTransitionViz } from './viz/resume-tech-transition'
 import { techChipPileViz } from './viz/tech-chip-pile'
 import { techChipPileMonoViz } from './viz/tech-chip-pile-mono'
 import { techPileQuestionViz } from './viz/tech-pile-question'
@@ -42,6 +43,7 @@ export const vizRegistry: VizDef[] = [
     render: renderVoyagePath,
   },
   resumeStackCleanViz,
+  resumeTechTransitionViz,
   techChipPileViz,
   techChipPileMonoViz,
   techPileQuestionViz,
