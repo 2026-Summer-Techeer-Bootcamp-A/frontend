@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import {
   MONO_CHIP_STYLES,
+  WHITE_MONO_STAGE_COLOR,
   renderTechChipPileMono,
   techChipPileMonoViz,
 } from '../src/ppt/viz/tech-chip-pile-mono.ts'
@@ -17,6 +18,17 @@ test('16개 칩에 흰색 5개, 회색 6개, 짙은 회색 5개를 분산한다'
     }, {}),
     { light: 5, dark: 5, mid: 6 },
   )
+})
+
+test('기존 검은 배경 대신 고정된 화이트 스테이지를 사용한다', () => {
+  assert.equal(WHITE_MONO_STAGE_COLOR, '#F7F7F5')
+
+  const source = readFileSync(
+    new URL('../src/ppt/viz/tech-chip-pile-mono.ts', import.meta.url),
+    'utf8',
+  )
+  assert.doesNotMatch(source, /drawBackground/)
+  assert.doesNotMatch(source, /drawTopLabel|drawCaption/)
 })
 
 test('모노 버전도 기존 16개 칩의 낙하·적층 상태를 사용한다', () => {
