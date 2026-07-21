@@ -54,6 +54,18 @@ test('최종 더미는 열 정렬 없이 결정적인 불규칙 슬롯을 사용
   assert.ok(new Set(RESUME_TECH_CHIPS.map((chip) => chip.finalRotation)).size >= 20)
 })
 
+test('층 경계는 약하게 흐트러지되 회전은 5도 안쪽으로 절제한다', () => {
+  const rowSpreads = [...new Set(RESUME_TECH_CHIPS.map((chip) => chip.row))].map((row) => {
+    const offsets = RESUME_TECH_CHIPS.filter((chip) => chip.row === row).map((chip) => chip.finalOffsetY)
+    return Math.max(...offsets) - Math.min(...offsets)
+  })
+  const maxRotation = Math.max(...RESUME_TECH_CHIPS.map((chip) => Math.abs(chip.finalRotation)))
+
+  assert.ok(rowSpreads.every((spread) => spread >= 8))
+  assert.ok(maxRotation >= 0.075)
+  assert.ok(maxRotation <= 0.087)
+})
+
 test('이력서와 기술 칩은 어떤 프레임에도 함께 보이지 않는다', () => {
   for (let frame = 0; frame <= 600; frame += 1) {
     const state = getResumeTechTransitionState(frame / 600, 960, 540)

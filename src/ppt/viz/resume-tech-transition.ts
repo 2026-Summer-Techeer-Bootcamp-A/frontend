@@ -233,8 +233,8 @@ function chip(
     logo,
     row: slot.row,
     finalOffsetX: slot.x,
-    finalOffsetY: slot.y,
-    finalRotation: slot.rotation,
+    finalOffsetY: slot.y * 1.75,
+    finalRotation: slot.rotation * 1.45,
     driftX: [-61, 47, -38, 56, -49, 34, 68, -43, 51, -57][index % 10],
   }
 }
@@ -322,7 +322,7 @@ function getChipStates(timeMs: number, width: number, height: number): ResumeTec
   const scale = Math.min(width / 960, height / 540)
   const chipHeight = 36 * scale
   const floorY = height * 0.86
-  const rowGap = 31 * scale
+  const rowGap = 29.5 * scale
 
   return RESUME_TECH_CHIPS.map((tech, index) => {
     const local = clamp01((timeMs - CHIP_START_MS - index * CHIP_GAP_MS) / CHIP_DROP_MS)
