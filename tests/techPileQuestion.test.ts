@@ -1,5 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import {
   getTechPileQuestionFrame,
   renderTechPileQuestion,
@@ -29,4 +30,9 @@ test('독립된 5초 기능 시각화 메타데이터를 제공한다', () => {
   assert.equal(techPileQuestionViz.category, 'feature')
   assert.equal(techPileQuestionViz.period, 5000)
   assert.equal(techPileQuestionViz.render, renderTechPileQuestion)
+})
+
+test('시각화 목록에 별도 항목으로 등록된다', () => {
+  const source = readFileSync(new URL('../src/ppt/vizRegistry.ts', import.meta.url), 'utf8')
+  assert.match(source, /techPileQuestionViz/)
 })

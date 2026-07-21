@@ -17,6 +17,7 @@ import { renderCicd } from './viz/cicd'
 import { resumeStackCleanViz } from './viz/resume-stack-clean'
 import { techChipPileViz } from './viz/tech-chip-pile'
 import { techChipPileMonoViz } from './viz/tech-chip-pile-mono'
+import { techPileQuestionViz } from './viz/tech-pile-question'
 import { resumeSkillRoutingViz } from './viz/resume-skill-routing'
 
 export const vizRegistry: VizDef[] = [
@@ -39,6 +40,7 @@ export const vizRegistry: VizDef[] = [
   resumeStackCleanViz,
   techChipPileViz,
   techChipPileMonoViz,
+  techPileQuestionViz,
   resumeSkillRoutingViz,
   {
     id: 'problem-scatter',
