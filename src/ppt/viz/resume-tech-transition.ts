@@ -2,6 +2,7 @@
 // 공식 로고를 포함한 기술 칩 30개가 낙하해 쌓이는 독립 장면이다.
 
 import { Children, isValidElement } from 'react'
+import type { ReactNode } from 'react'
 import { FaAws } from 'react-icons/fa'
 import {
   siApachekafka,
@@ -35,7 +36,15 @@ import {
   siVuedotjs,
 } from 'simple-icons'
 import type { SimpleIcon } from 'simple-icons'
-import { clamp01, easeOut, lerp } from './common.ts'
+import type { VizDef, VizRender } from '../types.ts'
+import {
+  FONT,
+  clamp01,
+  drawBackground,
+  easeOut,
+  lerp,
+  roundRect,
+} from './common.ts'
 
 export type ResumeTechCategory = 'language' | 'platform' | 'infra'
 export type ResumeTechPhase = 'resume' | 'gap' | 'chips'
@@ -129,7 +138,7 @@ function awsLogo(): CanvasLogo {
   // simple-icons 16에서는 AWS 항목이 제거되어 이미 설치된 react-icons의
   // Font Awesome 공식 AWS 벡터 경로를 Canvas 데이터로 변환한다.
   const element = FaAws({})
-  if (!isValidElement<{ children?: unknown }>(element)) {
+  if (!isValidElement<{ children?: ReactNode }>(element)) {
     return { path: '', color: '#FF9900', viewBoxWidth: 640, viewBoxHeight: 512 }
   }
   const pathElement = Children.toArray(element.props.children).find(
@@ -276,4 +285,157 @@ export function getResumeTechTransitionState(
     resumes: getResumeStates(timeMs, width, height),
     chips: getChipStates(timeMs, width, height),
   }
+}
+
+function drawResumeCard(ctx: CanvasRenderingContext2D, card: ResumeTransitionCardState): void {
+  if (!card.visible || card.alpha <= 0) return
+
+  const scale = card.width / 250
+  const left = -card.width / 2 + 28 * scale
+  const top = -card.height / 2 + 30 * scale
+
+  ctx.save()
+  ctx.translate(card.x, card.y)
+  ctx.rotate(card.rotation)
+  ctx.globalAlpha = card.alpha
+
+  ctx.shadowColor = 'rgba(0,0,0,0.28)'
+  ctx.shadowBlur = 18 * scale
+  ctx.shadowOffsetY = 8 * scale
+  ctx.fillStyle = '#F4F4F5'
+  roundRect(ctx, -card.width / 2, -card.height / 2, card.width, card.height, 12 * scale)
+  ctx.fill()
+
+  ctx.shadowColor = 'transparent'
+  ctx.strokeStyle = 'rgba(24,24,27,0.12)'
+  ctx.lineWidth = Math.max(1, scale)
+  ctx.stroke()
+
+  ctx.fillStyle = '#D4D4D8'
+  ctx.beginPath()
+  ctx.arc(left + 20 * scale, top + 20 * scale, 20 * scale, 0, Math.PI * 2)
+  ctx.fill()
+
+  ctx.fillStyle = '#3F3F46'
+  ctx.fillRect(left + 54 * scale, top + 7 * scale, 92 * scale, 6 * scale)
+  ctx.fillStyle = '#A1A1AA'
+  ctx.fillRect(left + 54 * scale, top + 24 * scale, 66 * scale, 4 * scale)
+  ctx.fillStyle = '#D4D4D8'
+  ctx.fillRect(left, top + 61 * scale, card.width - 56 * scale, Math.max(1, scale))
+
+  ;[0.92, 0.72, 0.84, 0.61, 0.78].forEach((ratio, row) => {
+    ctx.fillStyle = row === 0 ? '#71717A' : '#A1A1AA'
+    ctx.fillRect(
+      left,
+      top + (83 + row * 31) * scale,
+      (card.width - 56 * scale) * ratio,
+      (row === 0 ? 5 : 4) * scale,
+    )
+  })
+
+  if (card.index === 5) {
+    ctx.fillStyle = '#52525B'
+    ctx.font = `700 ${11 * scale}px ${FONT}`
+    ctx.textAlign = 'right'
+    ctx.textBaseline = 'alphabetic'
+    ctx.fillText('RESUME', card.width / 2 - 22 * scale, card.height / 2 - 20 * scale)
+  }
+
+  ctx.restore()
+}
+
+const logoPathCache = new Map<string, Path2D>()
+
+function drawLogo(ctx: CanvasRenderingContext2D, logo: CanvasLogo, centerX: number, size: number): void {
+  if (!logo.path || typeof Path2D === 'undefined') return
+
+  let path = logoPathCache.get(logo.path)
+  if (!path) {
+    try {
+      path = new Path2D(logo.path)
+      logoPathCache.set(logo.path, path)
+    } catch {
+      return
+    }
+  }
+
+  const maxDimension = Math.max(logo.viewBoxWidth, logo.viewBoxHeight)
+  const pathScale = size / maxDimension
+  ctx.save()
+  ctx.translate(
+    centerX - (logo.viewBoxWidth * pathScale) / 2,
+    -(logo.viewBoxHeight * pathScale) / 2,
+  )
+  ctx.scale(pathScale, pathScale)
+  ctx.fillStyle = logo.color
+  ctx.fill(path)
+  ctx.restore()
+}
+
+function drawTechChip(ctx: CanvasRenderingContext2D, state: ResumeTechChipState): void {
+  if (!state.visible || state.alpha <= 0) return
+
+  const scale = state.height / 36
+  ctx.save()
+  ctx.translate(state.x, state.y)
+  ctx.rotate(state.rotation)
+  ctx.globalAlpha = state.alpha
+
+  ctx.shadowColor = 'rgba(0,0,0,0.26)'
+  ctx.shadowBlur = 10 * scale
+  ctx.shadowOffsetY = 4 * scale
+  ctx.fillStyle = state.fill
+  roundRect(ctx, -state.width / 2, -state.height / 2, state.width, state.height, state.height / 2)
+  ctx.fill()
+
+  ctx.shadowColor = 'transparent'
+  ctx.strokeStyle = state.border
+  ctx.lineWidth = Math.max(1, scale)
+  ctx.stroke()
+
+  const iconX = -state.width / 2 + 18 * scale
+  ctx.fillStyle = 'rgba(255,255,255,0.94)'
+  ctx.beginPath()
+  ctx.arc(iconX, 0, 11.5 * scale, 0, Math.PI * 2)
+  ctx.fill()
+  drawLogo(ctx, state.logo, iconX, 15 * scale)
+
+  ctx.fillStyle = state.labelColor
+  ctx.font = `600 ${12.5 * scale}px ${FONT}`
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(state.name, iconX + 17 * scale, 0.5 * scale)
+  ctx.restore()
+}
+
+export const renderResumeTechTransition: VizRender = (ctx, width, height, progress) => {
+  drawBackground(ctx, width, height)
+  const state = getResumeTechTransitionState(progress, width, height)
+
+  if (state.phase === 'resume') {
+    state.resumes.forEach((card) => drawResumeCard(ctx, card))
+  }
+
+  if (state.phase === 'chips') {
+    const scale = Math.min(width / 960, height / 540)
+    const floorY = height * 0.86 + 22 * scale
+    ctx.save()
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)'
+    ctx.lineWidth = Math.max(1, scale)
+    ctx.beginPath()
+    ctx.moveTo(width * 0.08, floorY)
+    ctx.lineTo(width * 0.92, floorY)
+    ctx.stroke()
+    ctx.restore()
+    state.chips.forEach((chipState) => drawTechChip(ctx, chipState))
+  }
+}
+
+export const resumeTechTransitionViz: VizDef = {
+  id: 'resume-tech-transition',
+  title: '이력서에서 기술 스택으로',
+  subtitle: '이력서 더미가 사라지고 30개의 기술이 쏟아지다',
+  category: 'feature',
+  period: PERIOD_MS,
+  render: renderResumeTechTransition,
 }
