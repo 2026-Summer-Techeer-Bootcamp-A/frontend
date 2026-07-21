@@ -1,5 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import {
   MARKET_GLYPHS,
   getServiceTitleRevealFrame,
@@ -73,4 +74,10 @@ test('독립된 7초 기능 시각화 메타데이터를 제공한다', () => {
   assert.equal(serviceTitleRevealViz.category, 'feature')
   assert.equal(serviceTitleRevealViz.period, 7000)
   assert.equal(serviceTitleRevealViz.render, renderServiceTitleReveal)
+})
+
+test('기술 더미 질문 바로 다음에 등록된다', () => {
+  const source = readFileSync(new URL('../src/ppt/vizRegistry.ts', import.meta.url), 'utf8')
+
+  assert.match(source, /techPileQuestionViz,\s*serviceTitleRevealViz,/)
 })
