@@ -3,6 +3,8 @@ import assert from 'node:assert/strict'
 import {
   RESUME_TECH_CHIPS,
   getResumeTechTransitionState,
+  renderResumeTechTransition,
+  resumeTechTransitionViz,
 } from '../src/ppt/viz/resume-tech-transition.ts'
 
 test('승인된 30개 기술과 세 분야 컬러를 제공한다', () => {
@@ -73,4 +75,12 @@ test('동일 입력은 결정적이고 4K 레이아웃은 720p의 3배다', () =
   assert.ok(Math.abs(large.chips[0].x - small.chips[0].x * 3) < 0.000001)
   assert.ok(Math.abs(large.chips[0].width - small.chips[0].width * 3) < 0.000001)
   assert.ok(Math.abs(large.resumes[5].width - small.resumes[5].width * 3) < 0.000001)
+})
+
+test('독립된 10초 기능 시각화 메타데이터를 제공한다', () => {
+  assert.equal(resumeTechTransitionViz.id, 'resume-tech-transition')
+  assert.equal(resumeTechTransitionViz.title, '이력서에서 기술 스택으로')
+  assert.equal(resumeTechTransitionViz.category, 'feature')
+  assert.equal(resumeTechTransitionViz.period, 10000)
+  assert.equal(resumeTechTransitionViz.render, renderResumeTechTransition)
 })
