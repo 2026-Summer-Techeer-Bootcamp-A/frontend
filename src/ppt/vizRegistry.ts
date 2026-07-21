@@ -15,6 +15,7 @@ import { renderDataScale } from './viz/data-scale'
 import { renderPerfTuning } from './viz/perf-tuning'
 import { renderCicd } from './viz/cicd'
 import { resumeStackCleanViz } from './viz/resume-stack-clean'
+import { techChipPileViz } from './viz/tech-chip-pile'
 
 export const vizRegistry: VizDef[] = [
   {
@@ -34,6 +35,7 @@ export const vizRegistry: VizDef[] = [
     render: renderVoyagePath,
   },
   resumeStackCleanViz,
+  techChipPileViz,
   {
     id: 'problem-scatter',
     title: '문제 인식',
