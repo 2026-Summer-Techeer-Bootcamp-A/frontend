@@ -1,6 +1,10 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { getResumeStackStates } from '../src/ppt/viz/resume-stack-clean.ts'
+import {
+  getResumeStackStates,
+  renderResumeStackClean,
+  resumeStackCleanViz,
+} from '../src/ppt/viz/resume-stack-clean.ts'
 
 test('첫 0.4초는 모든 이력서가 화면 밖에 있다', () => {
   const cards = getResumeStackStates(0.05, 960, 540)
@@ -31,4 +35,11 @@ test('레이아웃은 해상도에 비례한다', () => {
   assert.ok(Math.abs(large[5].x - small[5].x * 3) < 0.000001)
   assert.ok(Math.abs(large[5].y - small[5].y * 3) < 0.000001)
   assert.ok(Math.abs(large[5].width - small[5].width * 3) < 0.000001)
+})
+
+test('독립된 6초 기능 시각화 메타데이터를 제공한다', () => {
+  assert.equal(resumeStackCleanViz.id, 'resume-stack-clean')
+  assert.equal(resumeStackCleanViz.category, 'feature')
+  assert.equal(resumeStackCleanViz.period, 6000)
+  assert.equal(resumeStackCleanViz.render, renderResumeStackClean)
 })
