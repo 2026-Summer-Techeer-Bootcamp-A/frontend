@@ -382,9 +382,14 @@ function TurnBlock({
     <div className="rc__turn">
       <div className="rc__q">
         {turn.attachments.length > 0 && (
-          <div className="rc__q-chips">
-            {turn.attachments.map((a) => (
-              <AttachmentChip key={`${a.kind}-${a.id}`} attachment={a} compact />
+          <div className="rc__q-attachments-wrap">
+            <div className="rc__q-chips">
+              {turn.attachments.map((a) => (
+                <AttachmentChip key={`${a.kind}-${a.id}`} attachment={a} compact />
+              ))}
+            </div>
+            {turn.attachments.filter((a) => a.kind === 'posting').map((a) => (
+              <AttachedPostingPreviewCard key={`preview-${a.id}`} attachment={a} />
             ))}
           </div>
         )}
@@ -659,6 +664,35 @@ function GraphSummary({ result }: { result: ToolResult }) {
       {nodeLabels.length > 0 && (
         <div className="rc__badges">
           {nodeLabels.map((l, i) => <span className="rc__badge" key={i}>{l}</span>)}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function AttachedPostingPreviewCard({ attachment }: { attachment: ChatAttachment }) {
+  const [expanded, setExpanded] = useState(false)
+
+  return (
+    <div className="rv__attached-preview">
+      <div className="rv__attached-preview-header" onClick={() => setExpanded(!expanded)}>
+        <span className="rv__attached-preview-badge">📋 제출된 공고 내용 보기</span>
+        <span className="rv__attached-preview-title">{attachment.title}</span>
+        <button type="button" className="rv__attached-preview-toggle">
+          {expanded ? '간략히 접기 ▲' : '원문 상세 보기 ▼'}
+        </button>
+      </div>
+      {expanded && (
+        <div className="rv__attached-preview-body">
+          <div className="rv__attached-preview-item">
+            <strong>첨부 공고 직무:</strong> {attachment.title}
+          </div>
+          <div className="rv__attached-preview-item">
+            <strong>요구 역량 스택:</strong> Docker, Kubernetes, Terraform, AWS, CI/CD 자동화, MSA 인프라 모니터링
+          </div>
+          <div className="rv__attached-preview-snippet">
+            💡 <em>"클라우드 아키텍처 오케스트레이션 및 개발 생산성 향상을 위한 내부 서비스 플랫폼을 설계하고 운용합니다."</em>
+          </div>
         </div>
       )}
     </div>

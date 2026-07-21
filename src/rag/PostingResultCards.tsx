@@ -93,6 +93,14 @@ function PostingItemCard({ item }: { item: ToolResultItem }) {
             <SkillChipGroup kind="concept" skills={item.concepts} />
           </div>
         )}
+        {item.highlight_snippet && (
+          <div className="rv__postingitem-quote">
+            <span className="rv__postingitem-quote-badge">💡 매칭 인용</span>
+            <mark className="rv__postingitem-highlighter">
+              "{item.highlight_snippet}"
+            </mark>
+          </div>
+        )}
       </div>
       <div className="rv__postingitem-actions">
         {idStr != null ? (
