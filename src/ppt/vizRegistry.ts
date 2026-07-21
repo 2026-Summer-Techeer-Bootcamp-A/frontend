@@ -16,6 +16,7 @@ import { renderPerfTuning } from './viz/perf-tuning'
 import { renderCicd } from './viz/cicd'
 import { resumeStackCleanViz } from './viz/resume-stack-clean'
 import { techChipPileViz } from './viz/tech-chip-pile'
+import { techChipPileMonoViz } from './viz/tech-chip-pile-mono'
 
 export const vizRegistry: VizDef[] = [
   {
@@ -36,6 +37,7 @@ export const vizRegistry: VizDef[] = [
   },
   resumeStackCleanViz,
   techChipPileViz,
+  techChipPileMonoViz,
   {
     id: 'problem-scatter',
     title: '문제 인식',
