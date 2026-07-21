@@ -60,6 +60,9 @@ export type ConceptSymbol =
   | 'pipeline'
   | 'incident'
   | 'observability'
+  | 'api'
+  | 'cloud'
+  | 'testing'
 
 export interface CanvasLogo {
   path: string
@@ -76,6 +79,7 @@ export interface ResumeTechChipSpec {
   symbol?: ConceptSymbol
   row: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7
   finalOffsetX: number
+  finalOffsetY: number
   finalRotation: number
   driftX: number
 }
@@ -145,6 +149,54 @@ const ENTRY_VECTORS = [
   [0, 0.72, 0.16],
 ] as const
 
+// 아래가 넓고 위로 갈수록 좁아지되, 같은 열이 생기지 않도록 X/Y/회전을
+// 칩마다 다르게 고정한다. 무작위처럼 보이면서 탐색·MP4 결과는 항상 같다.
+const PILE_SLOTS = [
+  { row: 0, x: -310, y: 0, rotation: -0.052 },
+  { row: 0, x: -216, y: 3, rotation: 0.031 },
+  { row: 0, x: -118, y: -2, rotation: -0.024 },
+  { row: 0, x: -14, y: 2, rotation: 0.046 },
+  { row: 0, x: 91, y: -4, rotation: -0.035 },
+  { row: 0, x: 202, y: 1, rotation: 0.026 },
+  { row: 0, x: 309, y: -3, rotation: -0.041 },
+  { row: 1, x: -298, y: 1, rotation: 0.037 },
+  { row: 1, x: -204, y: -4, rotation: -0.049 },
+  { row: 1, x: -105, y: 3, rotation: 0.022 },
+  { row: 1, x: 4, y: -2, rotation: -0.032 },
+  { row: 1, x: 112, y: 4, rotation: 0.051 },
+  { row: 1, x: 219, y: -1, rotation: -0.021 },
+  { row: 1, x: 304, y: 2, rotation: 0.043 },
+  { row: 2, x: -274, y: -3, rotation: -0.028 },
+  { row: 2, x: -163, y: 2, rotation: 0.047 },
+  { row: 2, x: -51, y: -4, rotation: -0.039 },
+  { row: 2, x: 61, y: 1, rotation: 0.019 },
+  { row: 2, x: 174, y: 4, rotation: -0.055 },
+  { row: 2, x: 281, y: -2, rotation: 0.034 },
+  { row: 3, x: -283, y: 3, rotation: 0.025 },
+  { row: 3, x: -169, y: -3, rotation: -0.045 },
+  { row: 3, x: -47, y: 2, rotation: 0.052 },
+  { row: 3, x: 72, y: -4, rotation: -0.018 },
+  { row: 3, x: 183, y: 1, rotation: 0.041 },
+  { row: 3, x: 287, y: 4, rotation: -0.033 },
+  { row: 4, x: -235, y: -2, rotation: -0.048 },
+  { row: 4, x: -113, y: 4, rotation: 0.029 },
+  { row: 4, x: 13, y: -3, rotation: -0.022 },
+  { row: 4, x: 139, y: 2, rotation: 0.054 },
+  { row: 4, x: 246, y: -1, rotation: -0.037 },
+  { row: 5, x: -242, y: 3, rotation: 0.044 },
+  { row: 5, x: -121, y: -4, rotation: -0.031 },
+  { row: 5, x: 7, y: 1, rotation: 0.023 },
+  { row: 5, x: 132, y: -2, rotation: -0.051 },
+  { row: 5, x: 238, y: 4, rotation: 0.035 },
+  { row: 6, x: -178, y: -3, rotation: -0.026 },
+  { row: 6, x: -57, y: 3, rotation: 0.049 },
+  { row: 6, x: 76, y: -2, rotation: -0.042 },
+  { row: 6, x: 184, y: 2, rotation: 0.027 },
+  { row: 7, x: -119, y: 2, rotation: 0.038 },
+  { row: 7, x: 8, y: -3, rotation: -0.047 },
+  { row: 7, x: 128, y: 1, rotation: 0.024 },
+] as const
+
 function simpleLogo(icon: SimpleIcon): CanvasLogo {
   return { path: icon.path, color: `#${icon.hex}`, viewBoxWidth: 24, viewBoxHeight: 24 }
 }
@@ -173,18 +225,17 @@ function chip(
   logo: CanvasLogo,
   index: number,
 ): ResumeTechChipSpec {
-  const row = Math.floor(index / 5) as 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7
-  const column = index % 5
-  const rowShift = row % 2 === 0 ? 0 : 20
+  const slot = PILE_SLOTS[index]
   return {
     name,
     kind: 'technology',
     category,
     logo,
-    row,
-    finalOffsetX: -300 + column * 150 + rowShift,
-    finalRotation: [-0.028, 0.021, -0.014, 0.018, -0.022][column],
-    driftX: [-52, 44, -36, 58, -46][(index + row) % 5],
+    row: slot.row,
+    finalOffsetX: slot.x,
+    finalOffsetY: slot.y,
+    finalRotation: slot.rotation,
+    driftX: [-61, 47, -38, 56, -49, 34, 68, -43, 51, -57][index % 10],
   }
 }
 
@@ -200,41 +251,44 @@ export const RESUME_TECH_CHIPS: ResumeTechChipSpec[] = [
   conceptChip('대규모 트래픽 처리', 'traffic', 2),
   chip('AWS', 'infra', awsLogo(), 3),
   chip('Python', 'language', simpleLogo(siPython), 4),
-  chip('Docker', 'infra', simpleLogo(siDocker), 5),
-  conceptChip('MSA', 'msa', 6),
+  conceptChip('API 설계', 'api', 5),
+  chip('Docker', 'infra', simpleLogo(siDocker), 6),
   chip('React', 'platform', simpleLogo(siReact), 7),
-  chip('TypeScript', 'language', simpleLogo(siTypescript), 8),
-  chip('Kafka', 'platform', simpleLogo(siApachekafka), 9),
-  conceptChip('보안', 'security', 10),
+  conceptChip('MSA', 'msa', 8),
+  chip('TypeScript', 'language', simpleLogo(siTypescript), 9),
+  chip('Kafka', 'platform', simpleLogo(siApachekafka), 10),
   chip('Kubernetes', 'infra', simpleLogo(siKubernetes), 11),
-  chip('Redis', 'platform', simpleLogo(siRedis), 12),
-  chip('Go', 'language', simpleLogo(siGo), 13),
-  conceptChip('분산 시스템', 'distributed', 14),
-  chip('MySQL', 'platform', simpleLogo(siMysql), 15),
-  chip('Git', 'infra', simpleLogo(siGit), 16),
-  chip('Vue', 'platform', simpleLogo(siVuedotjs), 17),
-  conceptChip('고가용성', 'availability', 18),
-  chip('Swift', 'language', simpleLogo(siSwift), 19),
-  chip('PostgreSQL', 'platform', simpleLogo(siPostgresql), 20),
-  chip('Linux', 'infra', simpleLogo(siLinux), 21),
-  conceptChip('성능 최적화', 'performance', 22),
-  chip('Node.js', 'platform', simpleLogo(siNodedotjs), 23),
-  chip('Kotlin', 'language', simpleLogo(siKotlin), 24),
-  chip('MongoDB', 'platform', simpleLogo(siMongodb), 25),
-  conceptChip('실시간 처리', 'realtime', 26),
-  chip('Terraform', 'infra', simpleLogo(siTerraform), 27),
-  chip('Django', 'platform', simpleLogo(siDjango), 28),
-  chip('Ruby', 'language', simpleLogo(siRuby), 29),
-  conceptChip('데이터 파이프라인', 'pipeline', 30),
-  chip('Nginx', 'infra', simpleLogo(siNginx), 31),
-  chip('JavaScript', 'language', simpleLogo(siJavascript), 32),
-  chip('FastAPI', 'platform', simpleLogo(siFastapi), 33),
-  conceptChip('장애 대응', 'incident', 34),
-  chip('PHP', 'language', simpleLogo(siPhp), 35),
-  chip('GraphQL', 'platform', simpleLogo(siGraphql), 36),
-  chip('Rust', 'language', simpleLogo(siRust), 37),
-  conceptChip('모니터링·관측성', 'observability', 38),
-  chip('Next.js', 'platform', simpleLogo(siNextdotjs), 39),
+  conceptChip('보안', 'security', 12),
+  chip('Redis', 'platform', simpleLogo(siRedis), 13),
+  chip('Go', 'language', simpleLogo(siGo), 14),
+  conceptChip('클라우드 아키텍처', 'cloud', 15),
+  chip('MySQL', 'platform', simpleLogo(siMysql), 16),
+  chip('Git', 'infra', simpleLogo(siGit), 17),
+  conceptChip('분산 시스템', 'distributed', 18),
+  chip('Vue', 'platform', simpleLogo(siVuedotjs), 19),
+  chip('Swift', 'language', simpleLogo(siSwift), 20),
+  chip('PostgreSQL', 'platform', simpleLogo(siPostgresql), 21),
+  conceptChip('고가용성', 'availability', 22),
+  chip('Linux', 'infra', simpleLogo(siLinux), 23),
+  chip('Node.js', 'platform', simpleLogo(siNodedotjs), 24),
+  conceptChip('테스트 자동화', 'testing', 25),
+  chip('Kotlin', 'language', simpleLogo(siKotlin), 26),
+  chip('MongoDB', 'platform', simpleLogo(siMongodb), 27),
+  conceptChip('성능 최적화', 'performance', 28),
+  chip('Terraform', 'infra', simpleLogo(siTerraform), 29),
+  chip('Django', 'platform', simpleLogo(siDjango), 30),
+  chip('Ruby', 'language', simpleLogo(siRuby), 31),
+  conceptChip('실시간 처리', 'realtime', 32),
+  chip('Nginx', 'infra', simpleLogo(siNginx), 33),
+  chip('JavaScript', 'language', simpleLogo(siJavascript), 34),
+  conceptChip('데이터 파이프라인', 'pipeline', 35),
+  chip('FastAPI', 'platform', simpleLogo(siFastapi), 36),
+  chip('PHP', 'language', simpleLogo(siPhp), 37),
+  conceptChip('장애 대응', 'incident', 38),
+  chip('GraphQL', 'platform', simpleLogo(siGraphql), 39),
+  chip('Rust', 'language', simpleLogo(siRust), 40),
+  conceptChip('모니터링·관측성', 'observability', 41),
+  chip('Next.js', 'platform', simpleLogo(siNextdotjs), 42),
 ]
 
 function getResumeStates(timeMs: number, width: number, height: number): ResumeTransitionCardState[] {
@@ -275,7 +329,7 @@ function getChipStates(timeMs: number, width: number, height: number): ResumeTec
     const fall = clamp01(local / 0.78)
     const bounce = clamp01((local - 0.78) / 0.22)
     const targetX = width * 0.5 + tech.finalOffsetX * scale
-    const targetY = floorY - chipHeight / 2 - tech.row * rowGap
+    const targetY = floorY - chipHeight / 2 - tech.row * rowGap + tech.finalOffsetY * scale
     const startX = targetX + tech.driftX * scale
     const startY = -60 * scale
     const bounceLift = bounce > 0 && bounce < 1
@@ -523,6 +577,29 @@ function drawConceptSymbol(
       ctx.fill()
       ctx.restore()
       return
+    case 'api':
+      ctx.moveTo(-half * 0.68, -half * 0.5)
+      ctx.lineTo(-half * 0.38, 0)
+      ctx.lineTo(-half * 0.68, half * 0.5)
+      ctx.moveTo(half * 0.68, -half * 0.5)
+      ctx.lineTo(half * 0.38, 0)
+      ctx.lineTo(half * 0.68, half * 0.5)
+      ctx.moveTo(-half * 0.14, half * 0.58)
+      ctx.lineTo(half * 0.14, -half * 0.58)
+      break
+    case 'cloud':
+      ctx.moveTo(-half * 0.62, half * 0.34)
+      ctx.bezierCurveTo(-half * 0.88, half * 0.12, -half * 0.7, -half * 0.18, -half * 0.42, -half * 0.18)
+      ctx.bezierCurveTo(-half * 0.28, -half * 0.66, half * 0.38, -half * 0.66, half * 0.48, -half * 0.16)
+      ctx.bezierCurveTo(half * 0.82, -half * 0.1, half * 0.86, half * 0.34, half * 0.54, half * 0.4)
+      ctx.lineTo(-half * 0.62, half * 0.4)
+      break
+    case 'testing':
+      ctx.arc(0, 0, half * 0.68, 0, Math.PI * 2)
+      ctx.moveTo(-half * 0.36, 0)
+      ctx.lineTo(-half * 0.08, half * 0.3)
+      ctx.lineTo(half * 0.44, -half * 0.34)
+      break
   }
 
   ctx.stroke()
@@ -595,7 +672,7 @@ export const renderResumeTechTransition: VizRender = (ctx, width, height, progre
 export const resumeTechTransitionViz: VizDef = {
   id: 'resume-tech-transition',
   title: '이력서에서 기술 스택으로',
-  subtitle: '이력서 더미가 사라지고 40개의 기술·개념이 쏟아지다',
+  subtitle: '이력서 더미가 사라지고 43개의 기술·개념이 쏟아지다',
   category: 'feature',
   period: PERIOD_MS,
   render: renderResumeTechTransition,
