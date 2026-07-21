@@ -1,7 +1,7 @@
 // 정돈된 이력서 스택: 이력서 6장이 화면 밖에서 한 장씩 들어와 중앙의
 // 정돈된 더미로 멈춘다. 기존 문제 인식 시각화와 독립된 발표용 장면이다.
 
-import type { VizRender } from '../types.ts'
+import type { VizDef, VizRender } from '../types.ts'
 import {
   FONT,
   clamp01,
@@ -146,4 +146,13 @@ export const renderResumeStackClean: VizRender = (ctx, width, height, progress) 
   getResumeStackStates(progress, width, height).forEach((card) => drawResumeCard(ctx, card))
   drawTopLabel(ctx, '문제 인식', '쌓이는 이력서')
   drawCaption(ctx, height, progress < 5 / 6 ? '이력서가 한 장씩 모입니다' : '6장의 이력서가 정돈되었습니다')
+}
+
+export const resumeStackCleanViz: VizDef = {
+  id: 'resume-stack-clean',
+  title: '이력서 더미',
+  subtitle: '흩어진 이력서 6장이 하나의 더미로 모이다',
+  category: 'feature',
+  period: PERIOD_MS,
+  render: renderResumeStackClean,
 }

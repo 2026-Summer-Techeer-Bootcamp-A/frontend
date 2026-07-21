@@ -14,6 +14,7 @@ import { renderSplitDiff } from './viz/split-diff'
 import { renderDataScale } from './viz/data-scale'
 import { renderPerfTuning } from './viz/perf-tuning'
 import { renderCicd } from './viz/cicd'
+import { resumeStackCleanViz } from './viz/resume-stack-clean'
 
 export const vizRegistry: VizDef[] = [
   {
@@ -32,6 +33,7 @@ export const vizRegistry: VizDef[] = [
     period: 13000,
     render: renderVoyagePath,
   },
+  resumeStackCleanViz,
   {
     id: 'problem-scatter',
     title: '문제 인식',
