@@ -19,6 +19,7 @@ import { techChipPileViz } from './viz/tech-chip-pile'
 import { techChipPileMonoViz } from './viz/tech-chip-pile-mono'
 import { techPileQuestionViz } from './viz/tech-pile-question'
 import { resumeSkillRoutingViz } from './viz/resume-skill-routing'
+import { skillLearningWorkflowWhiteViz } from './viz/skill-learning-workflow-white'
 
 export const vizRegistry: VizDef[] = [
   {
@@ -42,6 +43,7 @@ export const vizRegistry: VizDef[] = [
   techChipPileMonoViz,
   techPileQuestionViz,
   resumeSkillRoutingViz,
+  skillLearningWorkflowWhiteViz,
   {
     id: 'problem-scatter',
     title: '문제 인식',
