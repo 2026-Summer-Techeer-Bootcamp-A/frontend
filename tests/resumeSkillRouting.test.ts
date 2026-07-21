@@ -1,5 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import {
   RESUME_SKILLS,
   getResumeSkillRoutingFrame,
@@ -61,4 +62,9 @@ test('독립된 9초 기능 시각화 메타데이터를 제공한다', () => {
   assert.equal(resumeSkillRoutingViz.category, 'feature')
   assert.equal(resumeSkillRoutingViz.period, 9000)
   assert.equal(resumeSkillRoutingViz.render, renderResumeSkillRouting)
+})
+
+test('시각화 목록에 별도 항목으로 등록된다', () => {
+  const source = readFileSync(new URL('../src/ppt/vizRegistry.ts', import.meta.url), 'utf8')
+  assert.match(source, /resumeSkillRoutingViz/)
 })
