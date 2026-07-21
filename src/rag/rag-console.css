@@ -371,30 +371,31 @@
 /* === 파이프라인 계기판(PipelineDashboard, 1a) — 옛 접히는 타임라인을 대체한다. plan → 실행된
    도구 스텝 → 종합을 가로 노드 레일로 그린다. 노드 개수는 고정 5개가 아니라 실제로 도착한
    step(kind==='tool') 프레임 수만큼 동적으로 늘어난다(위 PipelineDashboard.tsx 주석 참고). */
-.rc__pipe { display: flex; flex-direction: column; gap: 14px; padding: 2px; animation: rc-fade .3s ease both; }
+.rc__pipe { display: flex; flex-direction: column; gap: 6px; padding: 0 2px; animation: rc-fade .3s ease both; }
 .rc__pipe-top { display: flex; justify-content: flex-end; }
 .rc__pipe-timer {
-  font-family: 'SF Mono', ui-monospace, monospace; font-size: 11px; color: #7c7f88; font-variant-numeric: tabular-nums;
+  font-family: 'SF Mono', ui-monospace, monospace; font-size: 10.5px; color: #7c7f88; font-variant-numeric: tabular-nums;
 }
 
-.rc__pipe-rail { position: relative; display: flex; gap: 4px; padding-top: 2px; }
+.rc__pipe-rail { position: relative; display: flex; gap: 4px; padding-top: 0; }
 .rc__pipe-track {
-  content: ''; position: absolute; left: 22px; right: 22px; top: 21px; height: 2px; background: #e2e5ec; border-radius: 2px;
+  content: ''; position: absolute; left: 16px; right: 16px; top: 15px; height: 2px; background: #e2e5ec; border-radius: 2px;
 }
 .rc__pipe-progress {
-  position: absolute; left: 22px; top: 21px; height: 2px; border-radius: 2px; background: #0b0b0c;
+  position: absolute; left: 16px; top: 15px; height: 2px; border-radius: 2px; background: #0b0b0c;
   transition: width .5s cubic-bezier(0.25,0.1,0.25,1);
 }
 .rc__pipe-rail--error .rc__pipe-progress { background: #c8382d; }
 
-.rc__pipe-node { flex: 1 1 0; min-width: 56px; display: flex; flex-direction: column; align-items: center; gap: 8px; position: relative; z-index: 1; }
+.rc__pipe-node { flex: 1 1 0; min-width: 48px; display: flex; flex-direction: column; align-items: center; gap: 4px; position: relative; z-index: 1; }
 .rc__pipe-bead {
-  width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center;
+  width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;
   background: #fff; border: 1.5px solid #e2e5ec; color: #a2a6b0; transition: all .25s ease;
 }
-.rc__pipe-nlabel { font-size: 10.5px; font-weight: 600; color: #a2a6b0; text-align: center; letter-spacing: -0.1px; }
+.rc__pipe-bead svg { width: 14px; height: 14px; }
+.rc__pipe-nlabel { font-size: 10px; font-weight: 600; color: #a2a6b0; text-align: center; letter-spacing: -0.1px; }
 .rc__pipe-chip {
-  font-size: 9.5px; font-weight: 700; padding: 3px 8px; border-radius: 999px;
+  font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 999px;
   background: #fff; border: 1px solid #e2e5ec; color: #a2a6b0; white-space: nowrap; text-align: center;
 }
 
