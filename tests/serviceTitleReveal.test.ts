@@ -76,8 +76,8 @@ test('독립된 7초 기능 시각화 메타데이터를 제공한다', () => {
   assert.equal(serviceTitleRevealViz.render, renderServiceTitleReveal)
 })
 
-test('기술 더미 질문 바로 다음에 등록된다', () => {
+test('목표 기술 격차 바로 다음에 등록된다', () => {
   const source = readFileSync(new URL('../src/ppt/vizRegistry.ts', import.meta.url), 'utf8')
 
-  assert.match(source, /techPileQuestionViz,\s*serviceTitleRevealViz,/)
+  assert.match(source, /careerGapPathViz,\s*serviceTitleRevealViz,/)
 })
