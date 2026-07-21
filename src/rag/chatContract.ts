@@ -56,6 +56,7 @@ export interface ToolResultItem {
   matched_skills?: string[]
   missing_skills?: string[]
   concepts?: string[]
+  highlight_snippet?: string
 }
 
 // 비교 3종의 전용 payload — items[]로는 표현 안 되는 구조라 kind별로 별도 필드를 둔다.
