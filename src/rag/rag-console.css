@@ -557,6 +557,7 @@
 .rv__skillchip-kind { font-weight: 700; }
 .rv__skillchip--matched { color: #1c7a4d; background: #e6f5ed; border: 1px solid #cdeadb; }
 .rv__skillchip--missing { color: #c8382d; background: #fbe9e7; border: 1px solid #f5d2cd; }
+.rv__skillchip--concept { color: #d97706; background: #fffbeb; border: 1px solid #fde68a; }
 .rv__skillchip--overflow { font-weight: 700; }
 
 /* 모바일(390) — 카드 내부를 세로 스택으로, 액션 버튼은 폭 채움 */

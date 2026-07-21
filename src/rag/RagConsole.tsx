@@ -396,7 +396,11 @@ function TurnBlock({
         <div className="rc__meta">
           <span className={`rc__route rc__route--${turn.route}`}>{routeLabel(turn.route)}</span>
           <span className="rc__badge rc__badge--intent">{intentLabel(turn.plan.intent)}</span>
-          {turn.final?.degraded && <span className="rc__degraded">근거가 얕아 규칙 기반으로 보완됐어요</span>}
+          {turn.final?.degraded && (
+            <span className="rc__degraded">
+              Gemini 통신 실패로 자체 임베딩 및 벡터 DB/규칙 기반으로 우회 전환되었어요
+            </span>
+          )}
         </div>
       )}
 
