@@ -14,6 +14,15 @@ import { renderSplitDiff } from './viz/split-diff'
 import { renderDataScale } from './viz/data-scale'
 import { renderPerfTuning } from './viz/perf-tuning'
 import { renderCicd } from './viz/cicd'
+import { resumeStackCleanViz } from './viz/resume-stack-clean'
+import { techChipPileViz } from './viz/tech-chip-pile'
+import { techChipPileMonoViz } from './viz/tech-chip-pile-mono'
+import { techPileQuestionViz } from './viz/tech-pile-question'
+import { careerGapPathViz } from './viz/career-gap-path'
+import { serviceTitleRevealViz } from './viz/service-title-reveal'
+import { serviceTitleDirectionViz } from './viz/service-title-direction'
+import { resumeSkillRoutingViz } from './viz/resume-skill-routing'
+import { skillLearningWorkflowWhiteViz } from './viz/skill-learning-workflow-white'
 
 export const vizRegistry: VizDef[] = [
   {
@@ -32,6 +41,15 @@ export const vizRegistry: VizDef[] = [
     period: 13000,
     render: renderVoyagePath,
   },
+  resumeStackCleanViz,
+  techChipPileViz,
+  techChipPileMonoViz,
+  techPileQuestionViz,
+  careerGapPathViz,
+  serviceTitleRevealViz,
+  serviceTitleDirectionViz,
+  resumeSkillRoutingViz,
+  skillLearningWorkflowWhiteViz,
   {
     id: 'problem-scatter',
     title: '문제 인식',
