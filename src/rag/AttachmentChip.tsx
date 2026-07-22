@@ -22,7 +22,6 @@ export default function AttachmentChip({ attachment, onRemove, compact = false }
     // 전송 후 유저 버블(rc__q) 안에 나오는 축약 칩 — 제거 버튼 없이 아이콘 + 제목만.
     return (
       <span className="rc__q-chip">
-        <Icon size={11} aria-hidden="true" />
         <span className="rc__sr-only">{kindLabel}: </span>
         {attachment.title}
       </span>

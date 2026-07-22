@@ -377,51 +377,92 @@
   font-family: 'SF Mono', ui-monospace, monospace; font-size: 10.5px; color: #7c7f88; font-variant-numeric: tabular-nums;
 }
 
-.rc__pipe-rail { position: relative; display: flex; gap: 4px; padding-top: 0; }
-.rc__pipe-track {
-  content: ''; position: absolute; left: 16px; right: 16px; top: 15px; height: 2px; background: #e2e5ec; border-radius: 2px;
-}
-.rc__pipe-progress {
-  position: absolute; left: 16px; top: 15px; height: 2px; border-radius: 2px; background: #0b0b0c;
-  transition: width .5s cubic-bezier(0.25,0.1,0.25,1);
-}
-.rc__pipe-rail--error .rc__pipe-progress { background: #c8382d; }
+.rc__pipe-rail { position: relative; display: flex; flex-direction: row; gap: 6px; align-items: center; padding-top: 2px; flex-wrap: wrap; }
+.rc__pipe-track { display: none; }
+.rc__pipe-progress { display: none; }
+.rc__pipe-rail--error .rc__pipe-progress { display: none; }
 
-.rc__pipe-node { flex: 1 1 0; min-width: 48px; display: flex; flex-direction: column; align-items: center; gap: 4px; position: relative; z-index: 1; }
+.rc__pipe-node {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  color: #868e96;
+  flex: 0 0 auto;
+  min-width: unset;
+  position: relative;
+  z-index: 1;
+}
 .rc__pipe-bead {
-  width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;
-  background: #fff; border: 1.5px solid #e2e5ec; color: #a2a6b0; transition: all .25s ease;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  background: transparent;
+  border: none;
+  color: inherit;
+  transition: all .25s ease;
 }
-.rc__pipe-bead svg { width: 14px; height: 14px; }
-.rc__pipe-nlabel { font-size: 10px; font-weight: 600; color: #a2a6b0; text-align: center; letter-spacing: -0.1px; }
+.rc__pipe-bead svg { width: 11px; height: 11px; }
+.rc__pipe-nlabel { font-size: 10px; font-weight: 600; color: inherit; text-align: left; letter-spacing: -0.1px; }
 .rc__pipe-chip {
-  font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 999px;
-  background: #fff; border: 1px solid #e2e5ec; color: #a2a6b0; white-space: nowrap; text-align: center;
+  font-size: 9.5px;
+  font-weight: 500;
+  padding: 0 0 0 5px;
+  border-radius: 0;
+  background: transparent;
+  border: none;
+  border-left: 1px solid #dee2e6;
+  color: inherit;
+  white-space: nowrap;
+  text-align: left;
+  margin-left: 2px;
 }
 
-.rc__pipe-node--done .rc__pipe-bead { background: #0b0b0c; border-color: #0b0b0c; color: #fff; }
-.rc__pipe-node--done .rc__pipe-nlabel { color: #1c1d21; }
-.rc__pipe-node--done .rc__pipe-chip { color: #1c1d21; border-color: #cdd2db; }
+.rc__pipe-node--done {
+  background: #e6f4ea;
+  border-color: #c4e9d0;
+  color: #137333;
+}
+.rc__pipe-node--done .rc__pipe-bead { background: transparent; border: none; color: inherit; }
+.rc__pipe-node--done .rc__pipe-nlabel { color: inherit; }
+.rc__pipe-node--done .rc__pipe-chip { color: inherit; border: none; border-left: 1px solid #badcc3; }
 
+.rc__pipe-node--active {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1e40af;
+  box-shadow: 0 0 0 3px rgba(30,64,175,0.05);
+}
 .rc__pipe-node--active .rc__pipe-bead {
-  border-color: #0b0b0c; color: #0b0b0c; background: #fff; box-shadow: 0 0 0 4px rgba(11,11,12,0.08);
-  animation: rc-pipe-glow 1.8s ease-in-out infinite;
+  background: transparent;
+  border: none;
+  color: inherit;
 }
-@keyframes rc-pipe-glow { 0%,100% { box-shadow: 0 0 0 3px rgba(11,11,12,0.06); } 50% { box-shadow: 0 0 0 7px rgba(11,11,12,0.12); } }
 .rc__pipe-bead--spin svg { animation: rc-spin 1.4s linear infinite; }
 @keyframes rc-spin { to { transform: rotate(360deg); } }
-.rc__pipe-node--active .rc__pipe-nlabel { color: #1c1d21; }
-.rc__pipe-node--active .rc__pipe-chip { color: #1c1d21; border-color: #cdd2db; position: relative; overflow: hidden; }
+.rc__pipe-node--active .rc__pipe-nlabel { color: inherit; }
+.rc__pipe-node--active .rc__pipe-chip { color: inherit; border: none; border-left: 1px solid #bfdbfe; position: relative; overflow: hidden; }
 .rc__pipe-chip--shimmer::after {
   content: ''; position: absolute; inset: 0;
-  background: linear-gradient(100deg, transparent 20%, rgba(11,11,12,0.08) 50%, transparent 80%);
+  background: linear-gradient(100deg, transparent 20%, rgba(30,64,175,0.1) 50%, transparent 80%);
   animation: rc-pipe-shimmer 1.6s linear infinite;
 }
 @keyframes rc-pipe-shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
 
-.rc__pipe-node--error .rc__pipe-bead { border-color: #c8382d; color: #c8382d; background: #fbe9e7; }
-.rc__pipe-node--error .rc__pipe-nlabel { color: #8f2a22; }
-.rc__pipe-node--error .rc__pipe-chip { color: #8f2a22; border-color: #f5d2cd; background: #fbe9e7; }
+.rc__pipe-node--error {
+  background: #fbe9e7;
+  border-color: #f5d2cd;
+  color: #c8382d;
+}
+.rc__pipe-node--error .rc__pipe-bead { background: transparent; border: none; color: inherit; }
+.rc__pipe-node--error .rc__pipe-nlabel { color: inherit; }
+.rc__pipe-node--error .rc__pipe-chip { color: inherit; border: none; border-left: 1px solid #f5d2cd; }
 
 .rc__pipe-foot { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #7c7f88; flex-wrap: wrap; }
 .rc__pipe-foot--done { color: #1c7a4d; }
@@ -433,9 +474,9 @@
 }
 
 @media (max-width: 560px) {
-  .rc__pipe-rail { flex-wrap: wrap; row-gap: 14px; }
+  .rc__pipe-rail { flex-wrap: wrap; row-gap: 6px; }
   .rc__pipe-track, .rc__pipe-progress { display: none; }
-  .rc__pipe-node { flex: 1 1 30%; min-width: 76px; }
+  .rc__pipe-node { flex: 0 0 auto; min-width: unset; }
 }
 
 /* === 비교 카드(ComparisonCards) — 이력서↔공고 / 공고↔공고 / 이력서↔시장 3종(스펙 3·4장).

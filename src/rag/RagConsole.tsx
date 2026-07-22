@@ -678,7 +678,7 @@ function AttachedPostingPreviewCard({ attachment }: { attachment: ChatAttachment
   return (
     <div className="rv__attached-preview">
       <div className="rv__attached-preview-header" onClick={() => setExpanded(!expanded)}>
-        <span className="rv__attached-preview-badge">📋 제출된 공고 내용 보기</span>
+        <span className="rv__attached-preview-badge">제출된 공고 내용 보기</span>
         <span className="rv__attached-preview-title">{attachment.title}</span>
         <button type="button" className="rv__attached-preview-toggle">
           {expanded ? '간략히 접기 ▲' : '원문 상세 보기 ▼'}
