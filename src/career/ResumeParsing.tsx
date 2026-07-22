@@ -27,6 +27,9 @@ export interface ParsedResult {
   level?: string
   regions?: string[]
   sectorInterests?: string[]
+  coreCompetencies?: string[]
+  keyProjects?: string[]
+  workStyle?: string
   memoSentences: string[]
   rawText: string
 }
@@ -137,6 +140,9 @@ export default function ResumeParsing({
   const [level, setLevel] = useState<string>('')
   const [regions, setRegions] = useState<string[]>([])
   const [sectorInterests, setSectorInterests] = useState<string[]>([])
+  const [coreCompetencies, setCoreCompetencies] = useState<string[]>([])
+  const [keyProjects, setKeyProjects] = useState<string[]>([])
+  const [workStyle, setWorkStyle] = useState<string>('')
   const [done, setDone] = useState(false)
 
   const accumulatedRef = useRef<ParsedResult>({
@@ -147,6 +153,9 @@ export default function ResumeParsing({
     level: '',
     regions: [],
     sectorInterests: [],
+    coreCompetencies: [],
+    keyProjects: [],
+    workStyle: '',
     memoSentences: [],
     rawText: '',
   })
@@ -154,6 +163,13 @@ export default function ResumeParsing({
   const [errorMsg, setErrorMsg] = useState('')
   const [activeSkill, setActiveSkill] = useState<string>('')
   const sourceRef = useRef<HTMLDivElement>(null)
+
+  const handleCancel = () => {
+    setClosing(true)
+    setTimeout(() => {
+      onCancel()
+    }, 250)
+  }
 
   // 스켈레톤 수 (초기 3개, 탐지될수록 줄어듦)
   const [skillSkeletons, setSkillSkeletons] = useState(3)
@@ -251,11 +267,17 @@ export default function ResumeParsing({
                 setLevel(evt.level as string ?? '')
                 setRegions(evt.regions as string[] ?? [])
                 setSectorInterests(evt.sector_interests as string[] ?? [])
+                setCoreCompetencies(evt.core_competencies as string[] ?? [])
+                setKeyProjects(evt.key_projects as string[] ?? [])
+                setWorkStyle(evt.work_style as string ?? '')
                 accumulatedRef.current.position = evt.position as string ?? ''
                 accumulatedRef.current.careerYears = evt.career_years as number | null
                 accumulatedRef.current.level = evt.level as string ?? ''
                 accumulatedRef.current.regions = evt.regions as string[] ?? []
                 accumulatedRef.current.sectorInterests = evt.sector_interests as string[] ?? []
+                accumulatedRef.current.coreCompetencies = evt.core_competencies as string[] ?? []
+                accumulatedRef.current.keyProjects = evt.key_projects as string[] ?? []
+                accumulatedRef.current.workStyle = evt.work_style as string ?? ''
                 advance()
                 break
 
@@ -279,10 +301,6 @@ export default function ResumeParsing({
                   setActiveSkill('')
                 }, 1200)
                 advance()
-                // 원문 스크롤
-                if (sourceRef.current) {
-                  sourceRef.current.scrollTop = sourceRef.current.scrollHeight * 0.3
-                }
                 break
               }
 
@@ -352,7 +370,7 @@ export default function ResumeParsing({
   const segments = buildTextSegments(displayText, piiList, skillList)
 
   return (
-    <div className={`rp-backdrop ${closing ? 'rp-backdrop--closing' : ''}`} onClick={onCancel}>
+    <div className={`rp-backdrop ${closing ? 'rp-backdrop--closing' : ''}`} onClick={handleCancel}>
       <div className={`rp-overlay ${closing ? 'rp-overlay--closing' : ''}`} onClick={(e) => e.stopPropagation()}>
       {/* ── 헤더 ── */}
       <div className="rp-header">
@@ -369,7 +387,7 @@ export default function ResumeParsing({
             : PHASE_MSGS[phase] ?? phase}
         </span>
         <button
-          onClick={onCancel}
+          onClick={handleCancel}
           style={{ display: 'flex', color: 'var(--c-muted)', padding: 4, marginLeft: 4 }}
           aria-label="닫기"
         >
@@ -424,7 +442,7 @@ export default function ResumeParsing({
 
           {/* 포지션 & 연차 & 레벨 */}
           <div className="rp-panel__section">
-            <div className="rp-panel__label">직무·경력 (자동)</div>
+            <div className="rp-panel__label">직무 · 연차 · 레벨</div>
             <div className="rp-panel__chips">
               {position && <span className="rp-chip">{position}</span>}
               {careerYears !== null && <span className="rp-chip">{careerYears}년</span>}
@@ -432,10 +450,30 @@ export default function ResumeParsing({
             </div>
           </div>
 
+          {/* 핵심 역량 & 강점 */}
+          {coreCompetencies.length > 0 && (
+            <div className="rp-panel__section">
+              <div className="rp-panel__label">핵심 역량 & 강점</div>
+              <div className="rp-panel__chips">
+                {coreCompetencies.map((c) => <span key={c} className="rp-chip">{c}</span>)}
+              </div>
+            </div>
+          )}
+
+          {/* 주요 프로젝트 & 성과 */}
+          {keyProjects.length > 0 && (
+            <div className="rp-panel__section">
+              <div className="rp-panel__label">주요 프로젝트 & 성과</div>
+              <div className="rp-panel__chips">
+                {keyProjects.map((p) => <span key={p} className="rp-chip">{p}</span>)}
+              </div>
+            </div>
+          )}
+
           {/* 선호 지역 */}
           {regions.length > 0 && (
             <div className="rp-panel__section">
-              <div className="rp-panel__label">지역</div>
+              <div className="rp-panel__label">희망 지역</div>
               <div className="rp-panel__chips">
                 {regions.map((r) => <span key={r} className="rp-chip">{r}</span>)}
               </div>
@@ -452,10 +490,20 @@ export default function ResumeParsing({
             </div>
           )}
 
+          {/* 근무 형태 */}
+          {workStyle && (
+            <div className="rp-panel__section">
+              <div className="rp-panel__label">근무 형태</div>
+              <div className="rp-panel__chips">
+                <span className="rp-chip">{workStyle}</span>
+              </div>
+            </div>
+          )}
+
           {/* 기술 스택 */}
           <div className="rp-panel__section">
             <div className="rp-panel__label">
-              기술 스택 {skillCount > 0 && <span style={{ color: 'var(--c-ink)' }}>{skillCount}</span>}
+              보유 기술 {skillCount > 0 && <span style={{ color: 'var(--c-ink)' }}>{skillCount}</span>}
             </div>
             <div className="rp-panel__chips">
               {skillList.map((s) => (
@@ -495,7 +543,7 @@ export default function ResumeParsing({
 
           {/* 메모 */}
           <div className="rp-panel__section rp-panel__section--memo">
-            <div className="rp-panel__label">메모 (자동)</div>
+            <div className="rp-panel__label">AI 이력서 요약 & 메모</div>
             {memoSentences.map((s, i) => (
               <div key={i} className="rp-memo-sentence">{s}</div>
             ))}
