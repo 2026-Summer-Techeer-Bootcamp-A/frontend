@@ -285,6 +285,7 @@ export default function ResumeSubmit() {
           <div style={{ fontSize: 11.5, marginTop: 4 }}>
             {'기술·자격증·포지션·연차를 AI가 실시간 분석해요'}
           </div>
+          <div style={{ color: '#dc2626', fontWeight: 700, fontSize: 13, marginTop: 8 }}>⚠ 업로드 시, 개인정보를 넣지 마세요</div>
           {saveError && <div className="scr-excluded" style={{ background: '#fbe9e9', color: '#b3261e' }}>{saveError}</div>}
         </label>
       ) : (
