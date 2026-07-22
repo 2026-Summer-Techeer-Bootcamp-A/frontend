@@ -164,10 +164,13 @@ export default function ResumeSubmit() {
       setCareerMin(String(result.careerYears))
       setCareerMax(String(result.careerYears + 1))
     }
-    // 메모 문장들을 줄바꿈으로 연결해 메모 필드에 자동 채움 (기존 메모가 비어 있을 때만)
-    if (!memo.trim() && result.memoSentences.length > 0) {
+    // 메모 문장들을 줄바꿈으로 연결해 메모 필드에 자동 채움
+    if (result.memoSentences && result.memoSentences.length > 0) {
       setMemo(result.memoSentences.join('\n'))
     }
+    if (result.level) setLevel(result.level as Level)
+    if (result.regions && result.regions.length > 0) setRegions(result.regions)
+    if (result.sectorInterests && result.sectorInterests.length > 0) setSectorInterests(result.sectorInterests)
     // RAG 세션 시딩 (부가 효과 — 실패해도 무시)
     if (result.rawText) {
       confirmResumeSession({
