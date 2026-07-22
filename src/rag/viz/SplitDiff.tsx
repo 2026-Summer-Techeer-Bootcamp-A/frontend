@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { RefObject } from 'react'
 import { createPortal } from 'react-dom'
+import { Check, HelpCircle, X, LucideIcon } from 'lucide-react'
 import type { RequirementKind, RequirementVerdict, SplitDiffPayload, SplitDiffRequirement } from '../chatContract'
 import './SplitDiff.css'
 
@@ -30,10 +31,10 @@ const VERDICT_LABEL: Record<RequirementVerdict, string> = {
   gap: '부족',
 }
 
-const VERDICT_ICON: Record<RequirementVerdict, string> = {
-  met: '✓', // check mark
-  partial: '∼', // tilde operator(물결)
-  gap: '✕', // multiplication x
+const VERDICT_ICON: Record<RequirementVerdict, LucideIcon> = {
+  met: Check,
+  partial: HelpCircle,
+  gap: X,
 }
 
 const KIND_LABEL: Record<RequirementKind, string> = {
@@ -300,7 +301,10 @@ function HighlightUnit({
     >
       {text}
       <span className={`rv__sd-icon rv__sd-icon--${req.verdict}`} aria-hidden="true">
-        {VERDICT_ICON[req.verdict]}
+        {(() => {
+          const Icon = VERDICT_ICON[req.verdict]
+          return <Icon size={10} strokeWidth={3} />
+        })()}
       </span>
       <span className="rv__sd-hl-sr">{VERDICT_LABEL[req.verdict]}</span>
       <RequirementTooltip

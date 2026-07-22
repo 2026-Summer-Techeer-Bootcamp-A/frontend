@@ -1037,46 +1037,11 @@ export function DesktopMarket() {
         </section>
       )}
 
-      {/* ② 기술 수요·성장 — 사실 시각화(판단은 사용자 몫, 신입 문호 자리 대체). */}
-      {sec2Visible && (
-        <section className="dmkt2__sec">
-          <header className="dmkt2__sec-h">
-            <h2>② 기술 수요·성장</h2>
-            <span>사실 시각화 — 판단은 사용자 몫</span>
-          </header>
-          <div className="dmkt2__sec-grid dmkt2__sec-grid--demand2">
-            {!isWidgetHidden('market', 'demand-growth-scatter') && (
-              <div className="dmkt2__card-item dmkt2__card-item--r5" style={spanStyle(widgetSize('demand-growth-scatter'))}>
-                <section className="dcard">
-                  <SectionHeader title="수요 × 성장률" hint="가로=현재 수요 · 세로=성장률" />
-                  <DemandGrowthScatter pool={pool} size={widgetSize('demand-growth-scatter')} />
-                </section>
-              </div>
-            )}
-            {!isWidgetHidden('market', 'cooccurrence-bar') && (
-              <div className="dmkt2__card-item dmkt2__card-item--r3" style={spanStyle(widgetSize('cooccurrence-bar'))}>
-                <CooccurrenceBarWidget pool={pool} headerRight={scopeBadge} />
-              </div>
-            )}
-            {!isWidgetHidden('market', 'career-level-dist') && (
-              <div className="dmkt2__card-item dmkt2__card-item--r2" style={spanStyle(widgetSize('career-level-dist'))}>
-                <CareerLevelDistributionWidget />
-              </div>
-            )}
-            {!isWidgetHidden('market', 'market-skill-unlock') && (
-              <div className="dmkt2__card-item dmkt2__card-item--r2" style={spanStyle(widgetSize('market-skill-unlock'))}>
-                <StackComboInsightWidget pool={pool} />
-              </div>
-            )}
-          </div>
-        </section>
-      )}
-
-      {/* ③ 기술 지형·관계 — 主役. 기술 관계 네트워크(재활용) · 개념→기술 Sankey(신규, 라이브급). */}
+      {/* ② 기술 지형·관계 — 主役. 기술 관계 네트워크(재활용) · 개념→기술 Sankey(신규, 라이브급). */}
       {sec3Visible && (
         <section className="dmkt2__sec">
           <header className="dmkt2__sec-h">
-            <h2>③ 기술 지형·관계</h2>
+            <h2>② 기술 지형·관계</h2>
             <span>기술이 어떻게 얽혀 있나</span>
           </header>
           <div className="dmkt2__sec-grid dmkt2__sec-grid--tech">
@@ -1148,6 +1113,41 @@ export function DesktopMarket() {
             {!isWidgetHidden('market', 'concept-tech-sankey') && (
               <div className="dmkt2__card-item dmkt2__card-item--sankey dmkt2__card-item--r5" style={spanStyle(widgetSize('concept-tech-sankey'))}>
                 <ConceptAlternativeCharts pool={pool} />
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* ③ 기술 수요·성장 — 사실 시각화(판단은 사용자 몫, 신입 문호 자리 대체). */}
+      {sec2Visible && (
+        <section className="dmkt2__sec">
+          <header className="dmkt2__sec-h">
+            <h2>③ 기술 수요·성장</h2>
+            <span>사실 시각화 — 판단은 사용자 몫</span>
+          </header>
+          <div className="dmkt2__sec-grid dmkt2__sec-grid--demand2">
+            {!isWidgetHidden('market', 'demand-growth-scatter') && (
+              <div className="dmkt2__card-item dmkt2__card-item--r5" style={spanStyle(widgetSize('demand-growth-scatter'))}>
+                <section className="dcard">
+                  <SectionHeader title="수요 × 성장률" hint="가로=현재 수요 · 세로=성장률" />
+                  <DemandGrowthScatter pool={pool} size={widgetSize('demand-growth-scatter')} />
+                </section>
+              </div>
+            )}
+            {!isWidgetHidden('market', 'cooccurrence-bar') && (
+              <div className="dmkt2__card-item dmkt2__card-item--r3" style={spanStyle(widgetSize('cooccurrence-bar'))}>
+                <CooccurrenceBarWidget pool={pool} headerRight={scopeBadge} />
+              </div>
+            )}
+            {!isWidgetHidden('market', 'career-level-dist') && (
+              <div className="dmkt2__card-item dmkt2__card-item--r2" style={spanStyle(widgetSize('career-level-dist'))}>
+                <CareerLevelDistributionWidget />
+              </div>
+            )}
+            {!isWidgetHidden('market', 'market-skill-unlock') && (
+              <div className="dmkt2__card-item dmkt2__card-item--r2" style={spanStyle(widgetSize('market-skill-unlock'))}>
+                <StackComboInsightWidget pool={pool} />
               </div>
             )}
           </div>
