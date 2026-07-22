@@ -106,9 +106,9 @@ test('each highlighted phrase carries a distinct inline status icon per verdict 
   const partialHl = screen.getByTestId('sd-hl-R4')
   const gapHl = screen.getByTestId('sd-hl-R6')
 
-  expect(metHl.querySelector('.rv__sd-icon--met')).toHaveTextContent('✓')
-  expect(partialHl.querySelector('.rv__sd-icon--partial')).toHaveTextContent('∼')
-  expect(gapHl.querySelector('.rv__sd-icon--gap')).toHaveTextContent('✕')
+  expect(metHl.querySelector('.rv__sd-icon--met svg')).toBeInTheDocument()
+  expect(partialHl.querySelector('.rv__sd-icon--partial svg')).toBeInTheDocument()
+  expect(gapHl.querySelector('.rv__sd-icon--gap svg')).toBeInTheDocument()
 
   // 색만으로 상태를 구분하지 않는다 — 스크린리더용 텍스트도 항상 같이 존재한다.
   expect(metHl.querySelector('.rv__sd-hl-sr')).toHaveTextContent('준비')

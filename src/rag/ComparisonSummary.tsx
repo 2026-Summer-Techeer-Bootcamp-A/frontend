@@ -1,3 +1,4 @@
+import { Check, Plus } from 'lucide-react'
 import type { PostingPostingPayload, ResumePostingPayload, ToolResult } from './chatContract'
 
 // 비교 요약 — 여러 개의 비교 결과(이력서↔공고 여러 건, 공고↔공고 여러 쌍)를 한눈에 정리하는
@@ -108,7 +109,7 @@ export default function ComparisonSummary({ results }: { results: ToolResult[] }
               <ul className="rv__diffchips">
                 {commonMissing.map((s) => (
                   <li key={s.name} className="rv__diffchip rv__diffchip--missing">
-                    ＋ {s.name}
+                    <Plus size={11} aria-hidden="true" /> {s.name}
                     {s.count >= 2 && <span className="rc__cmpsum-count">{s.count}개 공고</span>}
                   </li>
                 ))}
@@ -128,7 +129,9 @@ export default function ComparisonSummary({ results }: { results: ToolResult[] }
               <div className="rc__cmpsum-k">모든 공고가 공통으로 요구</div>
               <ul className="rv__diffchips">
                 {sharedEverywhere.map((s) => (
-                  <li key={s} className="rv__diffchip rv__diffchip--matched">✓ {s}</li>
+                  <li key={s} className="rv__diffchip rv__diffchip--matched">
+                    <Check size={11} aria-hidden="true" /> {s}
+                  </li>
                 ))}
               </ul>
             </div>
