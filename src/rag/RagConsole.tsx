@@ -403,7 +403,9 @@ function TurnBlock({
           <span className="rc__badge rc__badge--intent">{intentLabel(turn.plan.intent)}</span>
           {turn.final?.degraded && (
             <span className="rc__degraded">
-              Gemini 통신 실패로 자체 임베딩 및 벡터 DB/규칙 기반으로 우회 전환되었어요
+              {turn.final.degradedReasons && turn.final.degradedReasons.length > 0
+                ? turn.final.degradedReasons.join(' · ')
+                : 'Gemini 통신 실패로 자체 임베딩 및 벡터 DB/규칙 기반으로 우회 전환되었어요'}
             </span>
           )}
         </div>
