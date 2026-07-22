@@ -132,6 +132,7 @@ export default function ResumeParsing({
   const [position, setPosition] = useState('')
   const [careerYears, setCareerYears] = useState<number | null>(null)
   const [done, setDone] = useState(false)
+  const [closing, setClosing] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [activeSkill, setActiveSkill] = useState<string>('')
   const sourceRef = useRef<HTMLDivElement>(null)
@@ -279,17 +280,20 @@ export default function ResumeParsing({
                 setMemoSkeletons(0)
                 const rt = (evt.raw_text as string) ?? rawText
                 setRawText(rt)
-                // 1.2s 후 onDone 호출 (애니메이션 감상 시간)
+                // 2s 유지 후 페이드 아웃 시작, 애니메이션이 끝나면 onDone 호출
                 setTimeout(() => {
-                  onDone({
-                    skills: skillList.map(s => s.canonical),
-                    certs,
-                    position,
-                    careerYears,
-                    memoSentences,
-                    rawText: rt,
-                  })
-                }, 1400)
+                  setClosing(true)
+                  setTimeout(() => {
+                    onDone({
+                      skills: skillList.map(s => s.canonical),
+                      certs,
+                      position,
+                      careerYears,
+                      memoSentences,
+                      rawText: rt,
+                    })
+                  }, 380)
+                }, 2000)
                 break
               }
 
@@ -318,8 +322,8 @@ export default function ResumeParsing({
   const segments = buildTextSegments(displayText, piiList, skillList)
 
   return (
-    <div className="rp-backdrop" onClick={onCancel}>
-      <div className="rp-overlay" onClick={(e) => e.stopPropagation()}>
+    <div className={`rp-backdrop ${closing ? 'rp-backdrop--closing' : ''}`} onClick={onCancel}>
+      <div className={`rp-overlay ${closing ? 'rp-overlay--closing' : ''}`} onClick={(e) => e.stopPropagation()}>
       {/* ── 헤더 ── */}
       <div className="rp-header">
         {done

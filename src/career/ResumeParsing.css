@@ -15,6 +15,12 @@
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   animation: rp-backdrop-in 0.22s cubic-bezier(0, 0, 0.2, 1);
+  transition: opacity 0.38s ease;
+}
+.rp-backdrop--closing {
+  opacity: 0;
+  backdrop-filter: blur(0px);
+  -webkit-backdrop-filter: blur(0px);
 }
 @keyframes rp-backdrop-in {
   from { opacity: 0; }
@@ -32,6 +38,11 @@
   background: var(--c-bg, #f7f7f8);
   box-shadow: var(--e4, 0 20px 48px rgba(20, 30, 60, 0.14), 0 6px 16px rgba(20, 30, 60, 0.08));
   animation: rp-card-in 0.26s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: opacity 0.38s ease, transform 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.rp-overlay--closing {
+  opacity: 0;
+  transform: scale(0.96) translateY(6px);
 }
 @keyframes rp-card-in {
   from { opacity: 0; transform: scale(0.96); }
