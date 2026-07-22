@@ -168,7 +168,7 @@ export default function ResumeParsing({
     setClosing(true)
     setTimeout(() => {
       onCancel()
-    }, 250)
+    }, 1750)
   }
 
   // 스켈레톤 수 (초기 3개, 탐지될수록 줄어듦)
@@ -293,13 +293,6 @@ export default function ResumeParsing({
                   return [...prev, { canonical, evidence, active: true }]
                 })
                 setSkillSkeletons((n) => Math.max(0, n - 1))
-                // 1.2s 후 active 해제
-                setTimeout(() => {
-                  setSkillList((prev) =>
-                    prev.map(s => s.canonical === canonical ? { ...s, active: false } : s)
-                  )
-                  setActiveSkill('')
-                }, 1200)
                 advance()
                 break
               }
@@ -340,8 +333,8 @@ export default function ResumeParsing({
                   setClosing(true)
                   setTimeout(() => {
                     onDone(accumulatedRef.current)
-                  }, 380)
-                }, 2000)
+                  }, 1880)
+                }, 3500)
                 break
               }
 
@@ -412,15 +405,8 @@ export default function ResumeParsing({
                 return <span key={i}>{seg.content}</span>
               }
               if (seg.kind === 'pii') {
-                const state = seg.span.state
                 return (
-                  <span
-                    key={i}
-                    className={`rp-pii ${state === 'detected' ? 'rp-pii--detected' : 'rp-pii--redacted'}`}
-                    title={state === 'redacted' ? '개인정보 보호됨' : undefined}
-                  >
-                    {state === 'redacted' ? seg.span.masked : seg.span.value}
-                  </span>
+                  <span key={i} className="rp-pii-badge" title="개인정보 보호됨">🔒 개인정보</span>
                 )
               }
               // skill
