@@ -65,12 +65,15 @@ export function selectChart(r: ToolResult): ChartSpec | null {
   if (r.kind === 'posting_list') return null
 
   switch (r.kind) {
-    // 1) 그래프 = 공동출현. 유일하게 그래프가 정당한 케이스.
+    // 1) 그래프 = 공동출현. 유일하게 그래프가 정당한 케이스 (네트워크 그래프 기본).
     case 'graph': {
       const hasCross = (r.edges ?? []).some((e) => (e as { hop?: unknown }).hop === 2)
-      return hasCross
-        ? { primary: 'heatmap', toggle: 'network', height: 260, reason: '2-hop 메시 → 히트맵 기본' }
-        : { primary: 'network', toggle: 'heatmap', height: 260, reason: '스타 구조 → 네트워크 기본' }
+      return {
+        primary: 'network',
+        toggle: 'heatmap',
+        height: 260,
+        reason: hasCross ? '2-hop 메시 → 네트워크 기본' : '스타 구조 → 네트워크 기본',
+      }
     }
 
     // 2) 단일 수치 (skill_demand 등)
