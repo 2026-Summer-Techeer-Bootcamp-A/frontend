@@ -7,13 +7,14 @@
 .rp-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 900;
+  z-index: 99999;
   display: grid;
   place-items: center;
   padding: 24px;
-  background: rgba(0, 0, 0, 0.34);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  isolation: isolate;
   animation: rp-backdrop-in 0.22s cubic-bezier(0, 0, 0.2, 1);
   transition: opacity 0.38s ease;
 }
@@ -29,14 +30,17 @@
 
 /* ── 모달 카드 ─────────────────────────────────────────────────── */
 .rp-overlay {
+  position: relative;
+  z-index: 100000;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  width: min(1120px, 95vw);
-  height: min(780px, 92vh);
+  width: min(1280px, 96vw);
+  height: min(840px, 94vh);
   border-radius: 18px;
-  background: var(--c-bg, #f7f7f8);
-  box-shadow: var(--e4, 0 20px 48px rgba(20, 30, 60, 0.14), 0 6px 16px rgba(20, 30, 60, 0.08));
+  background: var(--c-card, #ffffff);
+  border: 1px solid var(--line, #e4e4e7);
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.35);
   animation: rp-card-in 0.26s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   transition: opacity 0.38s ease, transform 0.38s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -60,14 +64,14 @@
   flex: none;
 }
 .rp-header__title {
-  font-size: 19px;
+  font-size: 20px;
   font-weight: 800;
   letter-spacing: -0.5px;
   color: var(--c-ink, #18181b);
   flex: 1;
 }
 .rp-header__sub {
-  font-size: 14px;
+  font-size: 14.5px;
   color: var(--c-muted, #71717a);
 }
 .rp-header__pulse {
@@ -120,11 +124,12 @@
   margin-bottom: 10px;
 }
 .rp-source__text {
-  font-size: 14.5px;
-  line-height: 1.7;
+  font-size: 15px;
+  line-height: 1.75;
   color: var(--c-muted, #71717a);
   white-space: pre-wrap;
   word-break: break-word;
+  font-family: 'Pretendard', 'Inter', -apple-system, sans-serif;
 }
 
 /* PII 마스킹 — 블러→취소선 이중 애니메이션 */
@@ -170,7 +175,7 @@
 
 /* ── 오른쪽: 탐지 패널 ─────────────────────────────────────────── */
 .rp-panel {
-  width: 340px;
+  width: 420px;
   flex: none;
   display: flex;
   flex-direction: column;
@@ -187,7 +192,7 @@
   overflow-y: auto;
 }
 .rp-panel__label {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -202,9 +207,9 @@
 
 /* 실제 칩 */
 .rp-chip {
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 700;
-  padding: 6px 12px;
+  padding: 7px 14px;
   border-radius: 999px;
   background: var(--c-chipbg, #f0f0f1);
   color: var(--c-ink, #18181b);
@@ -240,10 +245,10 @@
 
 /* 메모 문장 */
 .rp-memo-sentence {
-  font-size: 13.5px;
-  line-height: 1.6;
+  font-size: 14px;
+  line-height: 1.65;
   color: var(--c-muted, #71717a);
-  padding: 8px 12px;
+  padding: 10px 12px;
   border-left: 2px solid var(--line, #e6e9ef);
   margin-bottom: 6px;
   border-radius: 0 4px 4px 0;
@@ -272,7 +277,7 @@
 }
 .rp-statusbar__msg {
   flex: 1;
-  font-size: 13.5px;
+  font-size: 14px;
   color: var(--c-muted, #71717a);
   font-style: italic;
 }
