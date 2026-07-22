@@ -164,13 +164,28 @@ export default function ResumeSubmit() {
       setCareerMin(String(result.careerYears))
       setCareerMax(String(result.careerYears + 1))
     }
-    // 메모 문장들을 줄바꿈으로 연결해 메모 필드에 자동 채움
-    if (result.memoSentences && result.memoSentences.length > 0) {
-      setMemo(result.memoSentences.join('\n'))
-    }
     if (result.level) setLevel(result.level as Level)
     if (result.regions && result.regions.length > 0) setRegions(result.regions)
     if (result.sectorInterests && result.sectorInterests.length > 0) setSectorInterests(result.sectorInterests)
+
+    let extraMemo = ''
+    if (result.coreCompetencies && result.coreCompetencies.length > 0) {
+      extraMemo += '\n\n[핵심 역량]\n' + result.coreCompetencies.map((c: string) => `- ${c}`).join('\n')
+    }
+    if (result.keyProjects && result.keyProjects.length > 0) {
+      extraMemo += '\n\n[주요 프로젝트]\n' + result.keyProjects.map((p: string) => `- ${p}`).join('\n')
+    }
+    if (result.workStyle) {
+      extraMemo += '\n\n[근무 형태]\n' + result.workStyle
+      if (result.workStyle.includes('재택')) setRemote(true)
+      if (result.workStyle.includes('사무실') || result.workStyle.includes('출근')) setOnsite(true)
+    }
+
+    if (result.memoSentences && result.memoSentences.length > 0) {
+      setMemo((result.memoSentences.join('\n') + extraMemo).trim())
+    } else if (extraMemo) {
+      setMemo(extraMemo.trim())
+    }
     // RAG 세션 시딩 (부가 효과 — 실패해도 무시)
     if (result.rawText) {
       confirmResumeSession({
