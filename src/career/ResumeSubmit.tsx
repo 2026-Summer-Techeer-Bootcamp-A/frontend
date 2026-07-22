@@ -9,6 +9,7 @@ import type { ResumePreferencesDto } from './api'
 import { getAuthToken } from './authStore'
 import { confirmResumeSession } from '../rag/resumeInsightApi'
 import { useIsDesktop } from '../shared/useMediaQuery'
+import ResumeParsing, { type ParsedResult } from './ResumeParsing'
 import techs from '../data/techs.json'
 
 const TECHS = techs as { tech: string; count: number; category: string }[]
@@ -71,11 +72,12 @@ export default function ResumeSubmit() {
 
   const [mode, setMode] = useState<'form' | 'pdf'>('form')
   const [previewTab, setPreviewTab] = useState<'settings' | 'preview'>('settings')
-  const [parsing, setParsing] = useState(false)
-  const [parseError, setParseError] = useState('')
+  const [saveError, setSaveError] = useState('')
   const [pickerOpen, setPickerOpen] = useState(false)
   const [certPickerOpen, setCertPickerOpen] = useState(false)
   const [saving, setSaving] = useState(false)
+  // LLM 파싱 오버레이
+  const [pendingFile, setPendingFile] = useState<File | null>(null)
 
   const [title, setTitle] = useState(existing?.title ?? '내 이력서')
   const [position, setPosition] = useState(
@@ -114,7 +116,7 @@ export default function ResumeSubmit() {
       setSkills(full.skills)
       setCerts(full.certs)
       setMemo(full.memo ?? '')
-    }).catch(() => setParseError('이력서를 불러오지 못했어요. 잠시 후 다시 시도해주세요.'))
+    }).catch(() => setSaveError('이력서를 불러오지 못했어요. 잠시 후 다시 시도해주세요.'))
 
     resumeApi.getPreferences(Number(existing.id), token).then((p) => {
       setLevel(p.level)
@@ -145,54 +147,46 @@ export default function ResumeSubmit() {
   const toggleRegion = (r: string) =>
     setRegions((arr) => (arr.includes(r) ? arr.filter((x) => x !== r) : [...arr, r]))
 
-  const handleFile = async (file: File) => {
-    setParsing(true)
-    setParseError('')
-    try {
-      const result = await resumeApi.parse(file, getAuthToken())
-      // 사전(in_dict)에 없는 파싱 결과(예: "GPA", "PROJECT" 같은 노이즈 토큰)를 그대로 스킬 칩으로
-      // 넣으면 skill_id 매칭이 끊겨 "내 스킬 시장 모멘텀" 위젯이 항상 비게 된다. 사전에 등록된
-      // 스킬만 골라서 합친다.
-      const dictSkills = result.skills.filter((sk) => sk.in_dict === true).map((sk) => sk.canonical)
-      const mergedSkills = [...new Set([...skills, ...dictSkills])]
-      const mergedCerts = [...new Set([...certs, ...result.certs.map((ct) => ct.name)])]
-      setSkills(mergedSkills)
-      setCerts(mergedCerts)
-      if (result.position && POSITIONS.includes(result.position)) setPosition(result.position)
-      if (result.career_min !== null) setCareerMin(String(result.career_min))
-      if (result.career_max !== null) setCareerMax(String(result.career_max))
-      if (!existing) setTitle((t) => (t === '내 이력서' ? file.name.replace(/\.pdf$/i, '') : t))
-      if (dictSkills.length === 0) {
-        setParseError('이력서에서 인식 가능한 기술을 찾지 못했어요')
-      }
+  const handleFile = (file: File) => {
+    // LLM 파싱 오버레이를 띄운다. 완료 후 onParseDone이 폼을 채운다.
+    setPendingFile(file)
+    if (!existing) setTitle((t) => (t === '내 이력서' ? file.name.replace(/\.pdf$/i, '') : t))
+  }
 
-      // PDF 파싱 화면은 저장 이력서 폼을 채우는 게 주 목적이고, 세션 시딩은 부가 효과이므로
-      // 실패해도 폼 작성 흐름을 막지 않는다. resume_text가 있으면 구조화 필드만 합성한 텍스트보다
-      // 풍부한 원문을 confirm 세션에 실어, 이번 브라우저 세션 동안 커리어 적합도 LLM 비교가
-      // 더 정밀한 근거를 쓸 수 있게 한다.
-      if (result.resume_text) {
-        confirmResumeSession({
-          skills: mergedSkills.map((s) => ({ canonical: s, category: 'skill', in_dict: false })),
-          certs: mergedCerts,
-          position: result.position ?? position,
-          careerMin: result.career_min,
-          careerMax: result.career_max,
-          pool: pool === '국외' ? 'global' : 'domestic',
-          memo: memo.trim() || null,
-          resumeText: result.resume_text,
-        }).catch(() => {})
-      }
-
-      setMode('form')
-    } catch (e) {
-      setParseError(e instanceof Error ? e.message : 'PDF를 처리하지 못했어요')
-    } finally {
-      setParsing(false)
+  const onParseDone = (result: ParsedResult) => {
+    setPendingFile(null)
+    const mergedSkills = [...new Set([...skills, ...result.skills])]
+    const mergedCerts  = [...new Set([...certs,  ...result.certs])]
+    setSkills(mergedSkills)
+    setCerts(mergedCerts)
+    if (result.position && POSITIONS.includes(result.position)) setPosition(result.position)
+    if (result.careerYears !== null && result.careerYears !== undefined) {
+      setCareerMin(String(result.careerYears))
+      setCareerMax(String(result.careerYears + 1))
     }
+    // 메모 문장들을 줄바꿈으로 연결해 메모 필드에 자동 채움 (기존 메모가 비어 있을 때만)
+    if (!memo.trim() && result.memoSentences.length > 0) {
+      setMemo(result.memoSentences.join('\n'))
+    }
+    // RAG 세션 시딩 (부가 효과 — 실패해도 무시)
+    if (result.rawText) {
+      confirmResumeSession({
+        skills: mergedSkills.map((s) => ({ canonical: s, category: 'skill', in_dict: false })),
+        certs: mergedCerts,
+        position: result.position ?? position,
+        careerMin: result.careerYears ?? null,
+        careerMax: result.careerYears ? result.careerYears + 1 : null,
+        pool: pool === '국외' ? 'global' : 'domestic',
+        memo: result.memoSentences.join('\n') || null,
+        resumeText: result.rawText,
+      }).catch(() => {})
+    }
+    setMode('form')
   }
 
   const handleSubmit = async () => {
     setSaving(true)
+    setSaveError('')
     try {
       const cMin = Number(careerMin) || 0
       const cMax = Math.max(cMin, Number(careerMax) || cMin)
@@ -217,12 +211,12 @@ export default function ResumeSubmit() {
           level, jobSearchStatus, companyStagePrefs, sectorInterests,
           location: { remote, onsite, regions },
         }, token).catch(() => {
-          setParseError('이력서는 저장됐지만 선호도 저장에 실패했어요. 마이페이지에서 다시 시도해주세요.')
+          setSaveError('이력서는 저장됐지만 선호도 저장에 실패했어요. 마이페이지에서 다시 시도해주세요.')
         })
       }
       navigate('/resume')
     } catch (e) {
-      setParseError(e instanceof Error ? e.message : '저장에 실패했어요')
+      setSaveError(e instanceof Error ? e.message : '저장에 실패했어요')
     } finally {
       setSaving(false)
     }
@@ -271,13 +265,13 @@ export default function ResumeSubmit() {
           <UploadCloud size={30} style={{ color: 'var(--c-accent)' }} />
           <div style={{ marginTop: 8 }}><b>이력서 PDF</b>를 올려주세요</div>
           <div style={{ fontSize: 11.5, marginTop: 4 }}>
-            {parsing ? '분석 중이에요…' : '기술·자격증·포지션·연차를 자동 추출해요'}
+            {'기술·자격증·포지션·연차를 AI가 실시간 분석해요'}
           </div>
-          {parseError && <div className="scr-excluded" style={{ background: '#fbe9e9', color: '#b3261e' }}>{parseError}</div>}
+          {saveError && <div className="scr-excluded" style={{ background: '#fbe9e9', color: '#b3261e' }}>{saveError}</div>}
         </label>
       ) : (
         <>
-          {parseError && <div className="scr-excluded" style={{ background: '#fbe9e9', color: '#b3261e' }}>{parseError}</div>}
+          {saveError && <div className="scr-excluded" style={{ background: '#fbe9e9', color: '#b3261e' }}>{saveError}</div>}
 
           <div className="scr-field">
             <label className="scr-field__lbl">이력서 제목</label>
@@ -420,6 +414,15 @@ export default function ResumeSubmit() {
 
   return (
     <SubScreen title="이력서 제출">
+      {/* LLM 파싱 오버레이 — PDF 업로드 직후 표시 */}
+      {pendingFile && (
+        <ResumeParsing
+          file={pendingFile}
+          onDone={onParseDone}
+          onCancel={() => setPendingFile(null)}
+        />
+      )}
+
       {isDesktop ? (
         <div className="rpv-grid">
           <div className="rpv-settings">{settingsForm}</div>
@@ -434,6 +437,7 @@ export default function ResumeSubmit() {
           {previewTab === 'settings' ? settingsForm : previewCard}
         </>
       )}
+
       <div style={{ height: 20 }} />
 
       <TechSearchSheet open={pickerOpen} onClose={() => setPickerOpen(false)} all={TECHS} owned={skills} onToggle={toggleSkill} />
