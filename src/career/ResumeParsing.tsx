@@ -24,6 +24,9 @@ export interface ParsedResult {
   certs: string[]
   position: string
   careerYears: number | null
+  level?: string
+  regions?: string[]
+  sectorInterests?: string[]
   memoSentences: string[]
   rawText: string
 }
@@ -131,7 +134,22 @@ export default function ResumeParsing({
   const [memoSentences, setMemoSentences] = useState<string[]>([])
   const [position, setPosition] = useState('')
   const [careerYears, setCareerYears] = useState<number | null>(null)
+  const [level, setLevel] = useState<string>('')
+  const [regions, setRegions] = useState<string[]>([])
+  const [sectorInterests, setSectorInterests] = useState<string[]>([])
   const [done, setDone] = useState(false)
+
+  const accumulatedRef = useRef<ParsedResult>({
+    skills: [],
+    certs: [],
+    position: '',
+    careerYears: null,
+    level: '',
+    regions: [],
+    sectorInterests: [],
+    memoSentences: [],
+    rawText: '',
+  })
   const [closing, setClosing] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [activeSkill, setActiveSkill] = useState<string>('')
@@ -201,11 +219,14 @@ export default function ResumeParsing({
             setPhase(type)
 
             switch (type) {
-              case 'start':
-                setRawText(evt.preview_text as string ?? '')
+              case 'start': {
+                const rt = (evt.raw_text as string) || (evt.preview_text as string) || ''
+                setRawText(rt)
+                accumulatedRef.current.rawText = rt
                 // 총 예상치 모름, 후에 complete에서 실제 데이터로 재계산
                 totalSteps = 20
                 break
+              }
 
               case 'pii_detected': {
                 const val = evt.value as string
@@ -227,6 +248,14 @@ export default function ResumeParsing({
               case 'meta_detected':
                 setPosition(evt.position as string ?? '')
                 setCareerYears(evt.career_years as number | null)
+                setLevel(evt.level as string ?? '')
+                setRegions(evt.regions as string[] ?? [])
+                setSectorInterests(evt.sector_interests as string[] ?? [])
+                accumulatedRef.current.position = evt.position as string ?? ''
+                accumulatedRef.current.careerYears = evt.career_years as number | null
+                accumulatedRef.current.level = evt.level as string ?? ''
+                accumulatedRef.current.regions = evt.regions as string[] ?? []
+                accumulatedRef.current.sectorInterests = evt.sector_interests as string[] ?? []
                 advance()
                 break
 
@@ -234,6 +263,9 @@ export default function ResumeParsing({
                 const canonical = evt.canonical as string
                 const evidence = evt.evidence as string ?? ''
                 setActiveSkill(canonical)
+                if (!accumulatedRef.current.skills.includes(canonical)) {
+                  accumulatedRef.current.skills.push(canonical)
+                }
                 setSkillList((prev) => {
                   if (prev.some(s => s.canonical === canonical)) return prev
                   return [...prev, { canonical, evidence, active: true }]
@@ -256,6 +288,9 @@ export default function ResumeParsing({
 
               case 'cert_detected': {
                 const name = evt.name as string
+                if (!accumulatedRef.current.certs.includes(name)) {
+                  accumulatedRef.current.certs.push(name)
+                }
                 setCerts((prev) => prev.includes(name) ? prev : [...prev, name])
                 setCertSkeletons((n) => Math.max(0, n - 1))
                 advance()
@@ -264,6 +299,7 @@ export default function ResumeParsing({
 
               case 'memo_sentence': {
                 const text = evt.text as string
+                accumulatedRef.current.memoSentences.push(text)
                 setMemoSentences((prev) => [...prev, text])
                 setMemoSkeletons((n) => Math.max(0, n - 1))
                 advance()
@@ -280,18 +316,12 @@ export default function ResumeParsing({
                 setMemoSkeletons(0)
                 const rt = (evt.raw_text as string) ?? rawText
                 setRawText(rt)
+                accumulatedRef.current.rawText = rt
                 // 2s 유지 후 페이드 아웃 시작, 애니메이션이 끝나면 onDone 호출
                 setTimeout(() => {
                   setClosing(true)
                   setTimeout(() => {
-                    onDone({
-                      skills: skillList.map(s => s.canonical),
-                      certs,
-                      position,
-                      careerYears,
-                      memoSentences,
-                      rawText: rt,
-                    })
+                    onDone(accumulatedRef.current)
                   }, 380)
                 }, 2000)
                 break
@@ -391,6 +421,36 @@ export default function ResumeParsing({
 
         {/* 오른쪽: 탐지 패널 */}
         <div className="rp-panel">
+
+          {/* 포지션 & 연차 & 레벨 */}
+          <div className="rp-panel__section">
+            <div className="rp-panel__label">직무·경력 (자동)</div>
+            <div className="rp-panel__chips">
+              {position && <span className="rp-chip">{position}</span>}
+              {careerYears !== null && <span className="rp-chip">{careerYears}년</span>}
+              {level && <span className="rp-chip">{level}</span>}
+            </div>
+          </div>
+
+          {/* 선호 지역 */}
+          {regions.length > 0 && (
+            <div className="rp-panel__section">
+              <div className="rp-panel__label">지역</div>
+              <div className="rp-panel__chips">
+                {regions.map((r) => <span key={r} className="rp-chip">{r}</span>)}
+              </div>
+            </div>
+          )}
+
+          {/* 관심 분야 */}
+          {sectorInterests.length > 0 && (
+            <div className="rp-panel__section">
+              <div className="rp-panel__label">관심 분야</div>
+              <div className="rp-panel__chips">
+                {sectorInterests.map((s) => <span key={s} className="rp-chip">{s}</span>)}
+              </div>
+            </div>
+          )}
 
           {/* 기술 스택 */}
           <div className="rp-panel__section">
