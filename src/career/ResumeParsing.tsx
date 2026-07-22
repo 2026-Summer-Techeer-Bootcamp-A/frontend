@@ -42,7 +42,7 @@ interface SkillSpan {
 }
 
 /* ── SSE event parsing ─────────────────────────────────────────── */
-const API_BASE = '/api/resumes'
+const API_BASE = '/api/v1/resume'
 
 /* ── Helpers ───────────────────────────────────────────────────── */
 const PHASE_MSGS: Record<string, string> = {
@@ -318,7 +318,8 @@ export default function ResumeParsing({
   const segments = buildTextSegments(displayText, piiList, skillList)
 
   return (
-    <div className="rp-overlay">
+    <div className="rp-backdrop" onClick={onCancel}>
+      <div className="rp-overlay" onClick={(e) => e.stopPropagation()}>
       {/* ── 헤더 ── */}
       <div className="rp-header">
         {done
@@ -326,7 +327,7 @@ export default function ResumeParsing({
           : <div className="rp-header__pulse" />
         }
         <span className="rp-header__title">
-          {done ? '이력서 분석 완료' : 'Gemini Flash 분석 중'}
+          {done ? '이력서 분석 완료' : '이력서 분석 및 개인정보 제거중'}
         </span>
         <span className="rp-header__sub">
           {done
@@ -457,6 +458,7 @@ export default function ResumeParsing({
             {skillCount}개 · {progress}%
           </span>
         )}
+      </div>
       </div>
     </div>
   )
