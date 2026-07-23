@@ -108,11 +108,13 @@ const WidgetX = lazy(() => import('./pages/widgets/WidgetX'))
 const RagDocs = lazy(() => import('./rag/RagDocs'))
 const PptVisualMaker = lazy(() => import('./ppt/PptVisualMaker'))
 
+import { LoginModalProvider } from './career/LoginModalContext'
+
 export default function App() {
   return (
-    <>
-    <Suspense fallback={<DefaultLoader size="large" />}>
-      <Routes>
+    <LoginModalProvider>
+      <Suspense fallback={<DefaultLoader size="large" />}>
+        <Routes>
         {/* ─────────────────────────────────────────────────────────────
             제품(Product) — 반응형 셸 스왑.
             데스크톱(>=1024px): DesktopShell(사이드바+톱바)이 감싸고 본문은 데스크톱 페이지.
@@ -226,7 +228,7 @@ export default function App() {
         <Route path="*" element={<NotFoundScreen />} />
       </Routes>
     </Suspense>
-    </>
+    </LoginModalProvider>
   )
 }
 

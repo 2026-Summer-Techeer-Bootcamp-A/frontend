@@ -24,6 +24,7 @@ import ConceptAlternativeCharts from '../../career/ConceptAlternativeCharts'
 import CompanyLogo from '../../career/CompanyLogo'
 import { useResumesState, getDynamicPostings, resumeToUpsertPayload } from '../../career/state'
 import { getAuthToken, useAuth } from '../../career/authStore'
+import { useLoginModal } from '../../career/LoginModalContext'
 import { useWidgetData } from '../../career/useWidgetData'
 import { selectDisplayedCoverage } from '../../career/coverageScore'
 import { useDashboardConfig, isWidgetHidden, getWidgetSize, type WidgetSize } from '../../career/dashboardConfig'
@@ -1454,6 +1455,8 @@ export function DesktopMy() {
     return () => window.removeEventListener('keydown', closeOnEscape)
   }, [postingListOpen])
 
+  const { requireAuth } = useLoginModal()
+
   return (
     <div className="dpage dmy">
       <header className="dmy__head">
@@ -1508,7 +1511,7 @@ export function DesktopMy() {
             <div className="dmy__coverage-body">
               <span className="dmy__coverage-label">{coverageLabel}</span>
               <span className="dmy__coverage-desc">{coverageDesc}</span>
-              <button className="dmy__coverage-btn" onClick={() => navigate('/assistant')}>
+              <button className="dmy__coverage-btn" onClick={() => requireAuth(() => navigate('/assistant'), '사용하려면 로그인이 필요합니다')}>
                 자세히 분석 <ArrowUpRight size={13} strokeWidth={2.4} />
               </button>
             </div>
@@ -1591,7 +1594,7 @@ export function DesktopMy() {
           <section className="dcard">
             <SectionHeader title="바로가기" />
             <div className="kit-menulist">
-              <MenuRow icon={<Sparkles size={17} />} label="어시스턴트로 분석" onClick={() => navigate('/assistant')} />
+              <MenuRow icon={<Sparkles size={17} />} label="어시스턴트로 분석" onClick={() => requireAuth(() => navigate('/assistant'), '사용하려면 로그인이 필요합니다')} />
               <MenuRow icon={<Settings size={17} />} label="계정 설정" onClick={() => navigate('/settings')} />
               <MenuRow icon={<FileText size={17} />} label="이력서 관리" onClick={() => navigate('/resume/submit')} />
               <MenuRow icon={<Award size={17} />} label="자격증 갭" onClick={() => navigate('/cert-gap')} />

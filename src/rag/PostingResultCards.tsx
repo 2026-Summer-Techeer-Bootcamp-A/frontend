@@ -65,61 +65,144 @@ function PostingItemCard({ item }: { item: ToolResultItem }) {
 
   return (
     <div className="rv__postingitem">
-      <div className="rv__postingitem-main">
-        <div className="rv__postingitem-title">{item.name}</div>
-        <div className="rv__postingitem-sub">
-          {item.company && <span className="rv__postingitem-co">{item.company}</span>}
-          {pool && <span className="rc__badge">{pool}</span>}
-          {item.region && (
-            <span className="rc__badge rv__postingitem-region">
-              <MapPin size={11} aria-hidden="true" />
-              {item.region}
-            </span>
+      <div className="rv__postingitem-top">
+        <div className="rv__postingitem-main">
+          <div className="rv__postingitem-title">{item.name}</div>
+          <div className="rv__postingitem-sub">
+            {item.company && <span className="rv__postingitem-co">{item.company}</span>}
+            {pool && <span className="rc__badge">{pool}</span>}
+            {item.region && (
+              <span className="rc__badge rv__postingitem-region">
+                <MapPin size={11} aria-hidden="true" />
+                {item.region}
+              </span>
+            )}
+          </div>
+          {hasSkillBadges && (
+            <div className="rv__postingitem-skills">
+              <SkillChipGroup kind="matched" skills={item.matched_skills} />
+              <SkillChipGroup kind="missing" skills={item.missing_skills} />
+              <SkillChipGroup kind="concept" skills={item.concepts} />
+            </div>
           )}
         </div>
-        {pct !== null && (
-          <div className="rc__mc-row rv__postingitem-fit">
-            <span className="rc__mc-label">적합도</span>
-            <span className="rc__mc-track">
-              <span className="rc__mc-fill" style={{ width: `${pct}%` }} />
-            </span>
-            <span className="rc__mc-val">{pct}%</span>
+
+        <div className="rv__postingitem-side">
+          {pct !== null && <CircularMatchGauge pct={pct} />}
+          <div className="rv__postingitem-actions">
+            {idStr != null ? (
+              <Link to={`/job/${idStr}`} className="rv__postingitem-detail">
+                상세보기 <ChevronRight size={13} aria-hidden="true" />
+              </Link>
+            ) : (
+              <span className="rv__postingitem-detail rv__postingitem-detail--disabled">상세 정보 없음</span>
+            )}
+            <button
+              type="button"
+              className="rv__postingitem-bm"
+              aria-pressed={bookmarked}
+              disabled={idStr == null}
+              onClick={() => idStr != null && toggleBookmark(idStr)}
+            >
+              <Bookmark size={14} aria-hidden="true" fill={bookmarked ? 'currentColor' : 'none'} />
+              {bookmarked ? '저장됨' : '북마크'}
+            </button>
           </div>
-        )}
-        {hasSkillBadges && (
-          <div className="rv__postingitem-skills">
-            <SkillChipGroup kind="matched" skills={item.matched_skills} />
-            <SkillChipGroup kind="missing" skills={item.missing_skills} />
-            <SkillChipGroup kind="concept" skills={item.concepts} />
-          </div>
-        )}
-        {item.highlight_snippet && (
-          <div className="rv__postingitem-quote">
-            <span className="rv__postingitem-quote-badge">💡 매칭 인용</span>
-            <mark className="rv__postingitem-highlighter">
-              "{item.highlight_snippet}"
-            </mark>
-          </div>
-        )}
+        </div>
       </div>
-      <div className="rv__postingitem-actions">
-        {idStr != null ? (
-          <Link to={`/job/${idStr}`} className="rv__postingitem-detail">
-            상세보기 <ChevronRight size={13} aria-hidden="true" />
-          </Link>
-        ) : (
-          <span className="rv__postingitem-detail rv__postingitem-detail--disabled">상세 정보 없음</span>
-        )}
-        <button
-          type="button"
-          className="rv__postingitem-bm"
-          aria-pressed={bookmarked}
-          disabled={idStr == null}
-          onClick={() => idStr != null && toggleBookmark(idStr)}
-        >
-          <Bookmark size={14} aria-hidden="true" fill={bookmarked ? 'currentColor' : 'none'} />
-          {bookmarked ? '저장됨' : '북마크'}
-        </button>
+
+      {item.highlight_snippet && <SplitMatchingQuote snippet={item.highlight_snippet} />}
+    </div>
+  )
+}
+
+function CircularMatchGauge({ pct }: { pct: number }) {
+  const size = 36
+  const strokeWidth = 3.5
+  const radius = (size - strokeWidth) / 2
+  const circumference = radius * 2 * Math.PI
+  const strokeDashoffset = circumference - (pct / 100) * circumference
+
+  return (
+    <div className="rv__postingitem-circle-fit">
+      <div className="rv__circle-gauge">
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+          <circle
+            className="rv__circle-bg"
+            stroke="#e2e8f0"
+            fill="transparent"
+            strokeWidth={strokeWidth}
+            r={radius}
+            cx={size / 2}
+            cy={size / 2}
+          />
+          <circle
+            className="rv__circle-progress"
+            stroke="#2563eb"
+            fill="transparent"
+            strokeWidth={strokeWidth}
+            strokeDasharray={`${circumference} ${circumference}`}
+            style={{ strokeDashoffset }}
+            strokeLinecap="round"
+            r={radius}
+            cx={size / 2}
+            cy={size / 2}
+            transform={`rotate(-90 ${size / 2} ${size / 2})`}
+          />
+        </svg>
+        <span className="rv__circle-val">{pct}%</span>
+      </div>
+      <span className="rv__circle-label">적합도</span>
+    </div>
+  )
+}
+
+function SplitMatchingQuote({ snippet }: { snippet: string }) {
+  let queryPart = ''
+  let targetPart = ''
+
+  if (snippet.includes(' :: ')) {
+    const parts = snippet.split(' :: ')
+    queryPart = parts[0].trim()
+    targetPart = parts.slice(1).join(' :: ').trim()
+  } else if (snippet.includes(' 기반 ')) {
+    const parts = snippet.split(' 기반 ')
+    queryPart = parts[0].replace(/^"/, '').trim()
+    targetPart = parts.slice(1).join(' 기반 ').replace(/"$/, '').trim()
+  } else if (snippet.includes(':')) {
+    const parts = snippet.split(':')
+    queryPart = parts[0].trim()
+    targetPart = parts.slice(1).join(':').trim()
+  } else {
+    queryPart = '요청/기준 직무'
+    targetPart = snippet
+  }
+
+  // DB 원문 내 매칭 기술 키워드를 형광펜 하이라이트(<mark>)로 렌더링
+  const renderHighlightedText = (text: string) => {
+    const techRegex = /(JavaScript|TypeScript|HTML\/CSS|React|Node\.js|Express|Python|Django|FastAPI|Docker|Kubernetes|AWS|Git|MSA|REST API|CI\/CD|PostgreSQL|Linux|Server|Back-end|Backend|Frontend|Platform|Engine|DevOps|Java|Spring|C\+\+|C#)/gi
+    const parts = text.split(techRegex)
+    return parts.map((part, i) =>
+      techRegex.test(part) ? (
+        <mark key={i} className="rv__postingitem-highlighter">
+          {part}
+        </mark>
+      ) : (
+        part
+      )
+    )
+  }
+
+  return (
+    <div className="rv__postingitem-quote-split">
+      <div className="rv__quote-col rv__quote-col--query">
+        <span className="rv__quote-col-badge">질문 / 기준 공고</span>
+        <div className="rv__quote-col-text">"{queryPart}"</div>
+      </div>
+      <div className="rv__quote-col-divider" />
+      <div className="rv__quote-col rv__quote-col--target">
+        <span className="rv__quote-col-badge">원문 매칭 하이라이트</span>
+        <div className="rv__quote-col-text">"{renderHighlightedText(targetPart)}"</div>
       </div>
     </div>
   )

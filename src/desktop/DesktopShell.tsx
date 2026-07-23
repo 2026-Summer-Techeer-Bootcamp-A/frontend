@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { THEME, themeVars } from '../career/themes'
 import { useAuth } from '../career/authStore'
+import { useLoginModal } from '../career/LoginModalContext'
 import MacMenu, { type MacMenuEntry } from './MacMenu'
 import GlobalSearch from './GlobalSearch'
 import { PageTransition } from '../career/kit'
@@ -143,6 +144,16 @@ export default function DesktopShell({ children }: { children: ReactNode }) {
 
   const avatarInitial = (user?.nickname || user?.email || '').slice(0, 2).toUpperCase()
 
+  const { requireAuth } = useLoginModal()
+
+  const handleNavClick = (s: Section) => {
+    if (s.key === 'assistant') {
+      requireAuth(() => navigate(s.home), '사용하려면 로그인이 필요합니다')
+      return
+    }
+    navigate(s.home)
+  }
+
   return (
     <div className="dshell" style={themeVars(THEME)}>
       <aside className="dshell__rail">
@@ -157,7 +168,7 @@ export default function DesktopShell({ children }: { children: ReactNode }) {
                 key={s.key}
                 type="button"
                 className={`dshell__railbtn${s.key === active.key ? ' on' : ''}`}
-                onClick={() => navigate(s.home)}
+                onClick={() => handleNavClick(s)}
               >
                 <Icon size={20} strokeWidth={2} />
                 <span className="dshell__raillabel">{s.label}</span>

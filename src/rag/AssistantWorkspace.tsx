@@ -1,18 +1,50 @@
-import { useState } from 'react'
-import { ChevronsLeft, ChevronsRight, GripVertical } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { ChevronsLeft, ChevronsRight, GripVertical, Lock } from 'lucide-react'
 import ResumeInsight from './ResumeInsight'
 import RagConsole from './RagConsole'
+import { useAuth } from '../career/authStore'
+import { useLoginModal } from '../career/LoginModalContext'
 import './assistant-workspace.css'
 
 // 통합 어시스턴트 화면 — 이력서 분석(왼쪽)과 AI 콘솔(오른쪽)을 한 화면에서 나란히 보여준다.
-// 예전엔 /assistant, /assistant/resume 두 탭을 오가야 했는데, 실제로는 이력서를 분석하면서
-// 바로 그 결과를 근거로 어시스턴트에 이어 물어보는 흐름이 자연스러워 한 화면으로 합쳤다.
-// 기본 40/60 분할, 가운데 디바이더의 버튼으로 어느 한쪽을 접어 나머지가 폭 전체를 차지하게 할 수 있다.
+// 비로그인 상태에선 로그인 유도 및 모달이 노출된다.
 
 type Collapsed = 'none' | 'left' | 'right'
 
 export default function AssistantWorkspace() {
   const [collapsed, setCollapsed] = useState<Collapsed>('none')
+  const { isAuthed } = useAuth()
+  const { openLoginModal } = useLoginModal()
+
+  useEffect(() => {
+    if (!isAuthed) {
+      openLoginModal('사용하려면 로그인이 필요합니다')
+    }
+  }, [isAuthed])
+
+  if (!isAuthed) {
+    return (
+      <div className="aw aw--guest">
+        <div className="aw__guest-card">
+          <div className="aw__guest-icon">
+            <Lock size={28} />
+          </div>
+          <h2 className="aw__guest-title">사용하려면 로그인이 필요합니다</h2>
+          <p className="aw__guest-desc">
+            커리어 어시스턴트는 AI 기반 이력서 분석 및 RAG 질의응답을 제공합니다.
+            서비스를 이용하시려면 먼저 로그인해 주세요.
+          </p>
+          <button
+            type="button"
+            className="aw__guest-btn"
+            onClick={() => openLoginModal('사용하려면 로그인이 필요합니다')}
+          >
+            로그인하기
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="aw">

@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Check, Maximize2, Plus, Sparkles, WandSparkles, X } from 'lucide-react'
 import { SectionHeader, PreviewBadge } from '../kit'
 import { useResumesState } from '../state'
-import { getAuthToken } from '../authStore'
+import { getAuthToken, useAuth } from '../authStore'
+import { useLoginModal } from '../LoginModalContext'
 import { useBookmarks, loadBookmarkDetails, toggleBookmark } from '../bookmarkStore'
 import {
   useSelectedGoalIds, useGoalSelectionTouched, toggleGoalId,
@@ -499,7 +500,14 @@ export function WorkflowMap({ size = '2x2' }: { size?: WidgetSize }) {
   const [enrichLoading, setEnrichLoading] = useState(false)
   const [enrichData, setEnrichData] = useState<RoadmapEnrichResponse | null>(null)
 
+  const { isAuthed } = useAuth()
+  const { requireAuth } = useLoginModal()
+
   const handleEnrichClick = async () => {
+    if (!isAuthed) {
+      requireAuth(() => {}, '사용하려면 로그인이 필요합니다')
+      return
+    }
     if (enrichLoading) return
     const hasGoal = selectedPostings.length > 0
     const primary = selectedPostings[0]

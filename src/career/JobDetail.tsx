@@ -14,7 +14,8 @@ import { getDynamicPostings, useResumesState } from './state'
 import { isBookmarked, toggleBookmark, useBookmarks } from './bookmarkStore'
 import { recordView } from './viewHistoryStore'
 import { jobsApi, type PostingCard } from './api'
-import { getAuthToken } from './authStore'
+import { getAuthToken, useAuth } from './authStore'
+import { useLoginModal } from './LoginModalContext'
 import { addMapTileLayer } from './mapTiles'
 import type { ChatAttachment } from '../rag/chatContract'
 import {
@@ -384,7 +385,14 @@ export default function JobDetail() {
     ? { kind: 'resume', id: Number(activeResume.id), title: activeResume.title, subtitle: activeResume.position || undefined }
     : undefined
 
+  const { isAuthed } = useAuth()
+  const { requireAuth } = useLoginModal()
+
   const compareWithResume = async () => {
+    if (!isAuthed) {
+      requireAuth(() => {}, '사용하려면 로그인이 필요합니다')
+      return
+    }
     if (!realPosting) return
     const postingAttachment: ChatAttachment = {
       kind: 'posting',
@@ -448,6 +456,10 @@ export default function JobDetail() {
   }
 
   const compareWithStashed = () => {
+    if (!isAuthed) {
+      requireAuth(() => {}, '사용하려면 로그인이 필요합니다')
+      return
+    }
     if (!realPosting || !pendingCompare || pendingCompare.id === realPosting.id) return
     setAttachmentIntent({
       attachments: [

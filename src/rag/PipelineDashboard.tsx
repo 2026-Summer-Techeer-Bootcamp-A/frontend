@@ -224,7 +224,7 @@ export default function PipelineDashboard({
     status === 'error'
       ? '진행이 중단됐어요'
       : status === 'done'
-        ? `${nodes.length}단계를 지나 답변을 만들었어요`
+        ? ''
         : !steps.some((s) => s.kind === 'tool')
           ? '질문을 분석하고 있어요'
           : steps.some((s) => s.kind === 'eval')
@@ -253,16 +253,18 @@ export default function PipelineDashboard({
         ))}
       </div>
 
-      <div className={`rc__pipe-foot${status === 'done' ? ' rc__pipe-foot--done' : status === 'error' ? ' rc__pipe-foot--error' : ''}`}>
-        <span>{footSentence}</span>
-        {miniStats.length > 0 && (
-          <span className="rc__pipe-mini">
-            {miniStats.map((m, i) => (
-              <span key={i}>{m.code} {m.value}</span>
-            ))}
-          </span>
-        )}
-      </div>
+      {(footSentence || miniStats.length > 0) && (
+        <div className={`rc__pipe-foot${status === 'done' ? ' rc__pipe-foot--done' : status === 'error' ? ' rc__pipe-foot--error' : ''}`}>
+          {footSentence ? <span>{footSentence}</span> : null}
+          {miniStats.length > 0 && (
+            <span className="rc__pipe-mini">
+              {miniStats.map((m, i) => (
+                <span key={i}>{m.code} {m.value}</span>
+              ))}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   )
 }

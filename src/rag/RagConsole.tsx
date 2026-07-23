@@ -24,6 +24,7 @@ import { useAttachments } from './useAttachments'
 import { consumeAttachmentIntent } from './attachmentIntentStore'
 import { routeLabel, intentLabel } from './chatLabels'
 import { useAuth } from '../career/authStore'
+import { useLoginModal } from '../career/LoginModalContext'
 import { readResumeSessionId } from './resumeSession'
 import './rag-console.css'
 
@@ -172,7 +173,13 @@ export default function RagConsole() {
     })
   }
 
+  const { requireAuth } = useLoginModal()
+
   const submit = (question: string, turnAttachments: ChatAttachment[] = []) => {
+    if (!isAuthed) {
+      requireAuth(() => {}, '사용하려면 로그인이 필요합니다')
+      return
+    }
     const q = question.trim()
     if (!q || busy) return
     const id = nextTurnId++
