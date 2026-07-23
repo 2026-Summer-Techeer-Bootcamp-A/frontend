@@ -491,26 +491,68 @@ function TurnBlock({
 // 빌드한다. HTML 문자열을 거치지 않으므로(marked, dangerouslySetInnerHTML 등 배제) LLM 출력에
 // 프롬프트 인젝션이 섞여도 주입 표면 자체가 존재하지 않는다.
 function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
-  return text.split(/(\*\*[^*]+\*\*)/g).filter(Boolean).map((part, i) =>
-    part.startsWith('**') && part.endsWith('**')
-      ? <strong key={`${keyPrefix}-${i}`}>{part.slice(2, -2)}</strong>
-      : <span key={`${keyPrefix}-${i}`}>{part}</span>
-  )
+  // **bold** 정규식: non-greedy (\*\*[\s\S]+?\*\*) 매칭으로 특수기호/공백/괄호 등이 포함되어도 정확히 strong 변환
+  const parts = text.split(/(\*\*[\s\S]+?\*\*)/g).filter(Boolean)
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**') && part.length >= 4) {
+      return <strong key={`${keyPrefix}-${i}`}>{part.slice(2, -2)}</strong>
+    }
+    return <span key={`${keyPrefix}-${i}`}>{part}</span>
+  })
 }
 
-function renderAnswerMarkdown(answer: string): React.ReactNode[] {
-  const blocks = answer.split(/\n{2,}/).map((b) => b.trim()).filter(Boolean)
+function renderAnswerMarkdown(answer: string, hasReportCard: boolean = false): React.ReactNode[] {
+  let cleanAnswer = answer.trim()
+
+  if (hasReportCard && cleanAnswer) {
+    // ReportCard 헤드라인과 1:1로 동일하게 중복되는 첫 문장/헤더를 본문 맨 앞에서 차단
+    const firstBlock = cleanAnswer.split(/\n{2,}/)[0]?.trim() ?? ''
+    const lines = firstBlock.split('\n').map((l) => l.trim()).filter(Boolean)
+    const firstLineText = (lines[0] ?? '').replace(/^-\s*/, '').replace(/\*\*/g, '').trim()
+
+    // 첫 문장과 완전히 똑같은 문장으로 시작하는 경우 첫 줄 또는 단일 블록 소거
+    if (firstLineText.length > 0) {
+      if (lines.length === 1) {
+        const restBlocks = cleanAnswer.split(/\n{2,}/).slice(1)
+        if (restBlocks.length > 0) {
+          cleanAnswer = restBlocks.join('\n\n').trim()
+        }
+      } else {
+        lines.shift()
+        const restBlocks = cleanAnswer.split(/\n{2,}/)
+        restBlocks[0] = lines.join('\n')
+        cleanAnswer = restBlocks.join('\n\n').trim()
+      }
+    }
+  }
+
+  if (!cleanAnswer) return []
+
+  const blocks = cleanAnswer.split(/\n{2,}/).map((b) => b.trim()).filter(Boolean)
   return blocks.map((block, bi) => {
     const lines = block.split('\n').map((l) => l.trim()).filter(Boolean)
-    const isList = lines.length > 0 && lines.every((l) => l.startsWith('- '))
+    const isList = lines.length > 0 && lines.every((l) => l.startsWith('- ') || l.startsWith('* '))
     if (isList) {
       return (
         <ul key={`b-${bi}`}>
-          {lines.map((l, li) => <li key={`b-${bi}-${li}`}>{renderInline(l.slice(2), `b-${bi}-${li}`)}</li>)}
+          {lines.map((l, li) => {
+            const itemContent = l.replace(/^[-*]\s*/, '')
+            return <li key={`b-${bi}-${li}`}>{renderInline(itemContent, `b-${bi}-${li}`)}</li>
+          })}
         </ul>
       )
     }
-    return <p key={`b-${bi}`}>{renderInline(lines.join(' '), `b-${bi}`)}</p>
+
+    return (
+      <p key={`b-${bi}`}>
+        {lines.map((line, li) => (
+          <span key={`b-${bi}-${li}`}>
+            {li > 0 && <br />}
+            {renderInline(line, `b-${bi}-${li}`)}
+          </span>
+        ))}
+      </p>
+    )
   })
 }
 
@@ -527,6 +569,7 @@ function FinalBlock({
 }) {
   const confLabel = final.confidence.level >= 4 ? '높음' : final.confidence.level >= 2 ? '보통' : '낮음'
   const dots = Array.from({ length: 5 }, (_, i) => i < final.confidence.level)
+  const hasReportCard = Boolean(final.answer.trim())
 
   return (
     <div className="rc__out">
@@ -536,7 +579,7 @@ function FinalBlock({
 
       <div className="rc__answer">
         {final.answer.trim()
-          ? renderAnswerMarkdown(final.answer)
+          ? renderAnswerMarkdown(final.answer, hasReportCard)
           : <p>답변 내용이 비어 있어요.</p>}
       </div>
 
