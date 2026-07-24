@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "test": "node --test --experimental-strip-types src/career/homeApi.test.ts src/career/workflow/relations.test.ts src/career/workflow/roadmapOverlay.test.ts tests/coverageScore.test.ts tests/resumeStackClean.test.ts tests/resumeTechTransition.test.ts tests/techChipPile.test.ts tests/techChipPileMono.test.ts tests/resumeSkillRouting.test.ts tests/techPileQuestion.test.ts tests/skillLearningWorkflowWhite.test.ts tests/serviceTitleReveal.test.ts tests/careerGapPath.test.ts tests/serviceTitleDirection.test.ts",
+    "test": "node --test --experimental-strip-types src/career/homeApi.test.ts src/career/workflow/relations.test.ts src/career/workflow/roadmapOverlay.test.ts tests/coverageScore.test.ts tests/resumeStackClean.test.ts tests/resumeTechTransition.test.ts tests/techChipPile.test.ts tests/techChipPileMono.test.ts tests/resumeSkillRouting.test.ts tests/techPileQuestion.test.ts tests/skillLearningWorkflowWhite.test.ts tests/serviceTitleReveal.test.ts tests/careerGapPath.test.ts tests/serviceTitleDirection.test.ts tests/resumeSessionRace.test.ts",
     "build": "tsc -b && vite build",
     "preview": "vite preview"
   },

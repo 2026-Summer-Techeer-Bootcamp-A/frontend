@@ -6,6 +6,7 @@ import { getSavedResumes, getSavedResumeDetail, confirmResumeSession, composeRes
 import type { SavedResumeListItem } from './resumeInsightApi'
 import type { ChatAttachment } from './chatContract'
 import { loadBookmarkAttachments } from './bookmarkAttachments'
+import { beginResumeSessionSeed } from './resumeSession'
 
 // 첨부 피커 — 📎 버튼을 열면 뜨는 팝오버(데스크톱)/바텀시트(모바일 ≤480px, CSS 미디어쿼리로 승격).
 // "최근 본 공고" 섹션(스펙 1.1)은 이번 구현에서 뺐다 — recruitmentApi.ts에는 찜/최근 조회 공고를
@@ -132,9 +133,9 @@ export default function AttachmentPicker({ attachments, onAdd, onRemove, onClose
     onAdd({ kind: 'resume', id: resume.resume_id, title: resume.title, subtitle: resume.position ?? undefined })
     // resume 첨부 자체는 resume_id만 실어(태그 기반 비교용) 나르므로, 원문 인용 LLM 판정이
     // 쓰는 resume_session_id는 여기서 별도로 시딩해야 한다 — 저장 이력서는 원문을 DB에 두지
-    // 않으니 구조화 필드를 텍스트로 합성해 confirm 세션을 새로 튼다. 칩 토글 자체를 막을 이유는
-    // 아니라 응답을 기다리지 않고 백그라운드로 흘려보내고, 실패하면 태그 비교로 조용히 강등된다.
-    getSavedResumeDetail(resume.resume_id)
+    // 않으니 구조화 필드를 텍스트로 합성해 confirm 세션을 새로 튼다. 체크 UI는 즉시 반영하되
+    // 채팅 전송 경로가 아래 seed의 완료를 기다려 선택 직후 전송 경쟁 조건을 막는다.
+    const seed = getSavedResumeDetail(resume.resume_id)
       .then((detail) =>
         confirmResumeSession({
           skills: detail.skills,
@@ -155,9 +156,8 @@ export default function AttachmentPicker({ attachments, onAdd, onRemove, onClose
           }),
         }),
       )
-      .catch(() => {
-        // 세션 시딩 실패 — resumeSessionId 없이 진행하면 백엔드가 태그 기반 비교로 강등한다.
-      })
+      .then((confirmed) => confirmed.session_id)
+    beginResumeSessionSeed(resume.resume_id, seed)
   }
 
   const togglePosting = (posting: ChatAttachment) => {
