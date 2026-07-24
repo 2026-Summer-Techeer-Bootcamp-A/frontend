@@ -25,7 +25,7 @@ import { consumeAttachmentIntent } from './attachmentIntentStore'
 import { routeLabel, intentLabel } from './chatLabels'
 import { useAuth } from '../career/authStore'
 import { useLoginModal } from '../career/LoginModalContext'
-import { readResumeSessionId } from './resumeSession'
+import { readResumeSessionId, resolveResumeSessionId } from './resumeSession'
 import './rag-console.css'
 
 // 실 백엔드(POST /api/v1/chat/stream) 라이브 스트리밍 콘솔.
@@ -129,16 +129,24 @@ export default function RagConsole() {
     setTurns((prev) => prev.map((t) => (t.id === id ? { ...t, ...(typeof patch === 'function' ? patch(t) : patch) } : t)))
   }
 
-  const runTurn = (id: number, question: string, verbose: boolean, turnAttachments: ChatAttachment[]) => {
+  const runTurn = async (id: number, question: string, verbose: boolean, turnAttachments: ChatAttachment[]) => {
     const controller = new AbortController()
     controllersRef.current.set(id, controller)
-    streamChat(
+    const resumeAttachment = turnAttachments.find((attachment) => attachment.kind === 'resume')
+    // 첨부 피커는 체크 상태를 즉시 반영하고 원문 confirm 세션은 백그라운드에서 만든다.
+    // 선택 직후 전송한 경우에는 해당 이력서의 진행 중인 세션만 기다려, 이전 세션이나
+    // 태그 기반 폴백으로 잘못 비교하지 않게 한다.
+    const resumeSessionId = resumeAttachment
+      ? await resolveResumeSessionId(resumeAttachment.id)
+      : readResumeSessionId()
+
+    await streamChat(
       question,
       {
         verbose,
         attachments: turnAttachments.length > 0 ? turnAttachments : undefined,
         signal: controller.signal,
-        resumeSessionId: readResumeSessionId(),
+        resumeSessionId,
       },
       {
         onPlan: (e) => patchTurn(id, { route: e.route, plan: e.plan, planDurationMs: e.duration_ms, planDebug: e.debug }),
@@ -166,11 +174,10 @@ export default function RagConsole() {
           }),
         onError: (message) => patchTurn(id, { status: 'error', error: message }),
       },
-    ).then(() => {
-      // final도 error도 없이 스트림이 그냥 끝난 경우(연결이 조용히 끊긴 케이스) 대비.
-      patchTurn(id, (t) => (t.status === 'loading' ? { status: 'error', error: '스트림이 예기치 않게 끊겼어요.' } : {}))
-      controllersRef.current.delete(id)
-    })
+    )
+    // final도 error도 없이 스트림이 그냥 끝난 경우(연결이 조용히 끊긴 케이스) 대비.
+    patchTurn(id, (t) => (t.status === 'loading' ? { status: 'error', error: '스트림이 예기치 않게 끊겼어요.' } : {}))
+    controllersRef.current.delete(id)
   }
 
   const { requireAuth } = useLoginModal()
